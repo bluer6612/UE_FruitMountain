@@ -106,7 +106,6 @@ void AFruitPlayerController::ThrowFruit()
     UFruitThrowHelper::ThrowFruit(this);
 }
 
-
 void AFruitPlayerController::RotateCamera(float Value)
 {
     if (FMath::Abs(Value) > KINDA_SMALL_NUMBER)
@@ -126,13 +125,36 @@ void AFruitPlayerController::RotateCamera(float Value)
 
         UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius, 30.f);
         
-        // 카메라 회전 후 미리보기 공도 함께 업데이트
+        // 카메라 회전 후 미리보기 공도 함께 업데이트 (제한적으로 실행됨)
         UpdatePreviewBall();
     }
 }
 
+// 기존 UpdatePreviewBall 함수 수정
 void AFruitPlayerController::UpdatePreviewBall()
 {
-    // Helper 클래스로 로직 이관
+    // 이미 업데이트가 예약되어 있으면 중복 실행하지 않음
+    if (!bPreviewBallUpdatePending)
+    {
+        bPreviewBallUpdatePending = true;
+        
+        // 타이머 설정: 일정 시간 후에만 업데이트 실행
+        GetWorld()->GetTimerManager().SetTimer(
+            PreviewBallUpdateTimerHandle,
+            this,
+            &AFruitPlayerController::ExecutePreviewBallUpdate,
+            PreviewBallUpdateDelay,
+            false // 반복 실행 안 함
+        );
+    }
+}
+
+// 실제 업데이트를 수행하는 새 함수 추가
+void AFruitPlayerController::ExecutePreviewBallUpdate()
+{
+    // 실제 업데이트 수행
     UFruitTrajectoryHelper::UpdatePreviewBall(this);
+    
+    // 상태 초기화
+    bPreviewBallUpdatePending = false;
 }

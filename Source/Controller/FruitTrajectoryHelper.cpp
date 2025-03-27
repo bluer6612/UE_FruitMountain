@@ -73,11 +73,12 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(AFruitPlayerController* Controll
 {
     if (!Controller || !Controller->GetWorld())
         return;
-        
-    // 기존 궤적 디버그 정보 제거 (새로운 궤적을 그리기 전에)
-    FlushPersistentDebugLines(Controller->GetWorld());
-    FlushDebugStrings(Controller->GetWorld());
-        
+    
+    UWorld* World = Controller->GetWorld();
+    
+    // 이전 디버그 라인 제거 (필요한 경우에만)
+    FlushPersistentDebugLines(World);
+    
     // 접시까지의 벡터 계산
     FVector ToPlateCenterExact = TargetLocation - StartLocation;
     float ExactDistance = ToPlateCenterExact.Size();
@@ -86,6 +87,9 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(AFruitPlayerController* Controll
     FVector HorizontalDist = ToPlateCenterExact;
     HorizontalDist.Z = 0;
     float HorizontalDistance = HorizontalDist.Size();
+    
+    UE_LOG(LogTemp, Warning, TEXT("궤적 계산 - 시작: %s, 목표: %s, 거리: %f"), 
+        *StartLocation.ToString(), *TargetLocation.ToString(), HorizontalDistance);
     
     // 발사 방향과 힘 계산 (실제 발사 코드와 동일한 로직)
     float HeightFactor;
@@ -115,111 +119,106 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(AFruitPlayerController* Controll
     // 최종 힘과 초기 속도 계산
     float AdjustedForce = Controller->ThrowForce * ForceMultiplier;
     
-    // 질량 가져오기 - 물리 시뮬레이션 및 콜리전 설정 변경 필요
-    float Mass = 1.0f; // 기본 질량값
-    
-    UPrimitiveComponent* PrimComp = nullptr;
-    if (Controller->PreviewBall)
-    {
-        PrimComp = Cast<UPrimitiveComponent>(
-            Controller->PreviewBall->GetComponentByClass(UPrimitiveComponent::StaticClass()));
-            
-        if (PrimComp)
-        {
-            // 원래 물리 및 콜리전 상태 저장
-            bool bWasSimulatingPhysics = PrimComp->IsSimulatingPhysics();
-            ECollisionEnabled::Type OldCollisionType = PrimComp->GetCollisionEnabled();
-            
-            // 일시적으로 물리 시뮬레이션 및 콜리전 활성화
-            PrimComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-            PrimComp->SetSimulatePhysics(true);
-            
-            // 활성화 후 질량 가져오기
-            Mass = PrimComp->GetMass();
-            
-            // 원래 상태로 되돌리기
-            PrimComp->SetSimulatePhysics(bWasSimulatingPhysics);
-            PrimComp->SetCollisionEnabled(OldCollisionType);
-            
-            UE_LOG(LogTemp, Log, TEXT("궤적 계산을 위한 공 질량: %f"), Mass);
-        }
-    }
+    // 질량 가져오기 - 간단하게 처리
+    float Mass = 1.0f; // 기본 질량값 사용
     
     // 초기 속도 계산
     FVector InitialVelocity = LaunchDirection * (AdjustedForce / Mass);
     
     // 중력 가속도 (UE4 기본값은 약 -980 cm/s^2)
-    float GravityZ = GetDefault<UPhysicsSettings>()->DefaultGravityZ;
+    float GravityZ = -980.0f; // 기본값 하드코딩
     FVector Gravity = FVector(0, 0, GravityZ);
+    
+    UE_LOG(LogTemp, Warning, TEXT("궤적 계산 - 방향: %s, 힘: %f, 초기속도: %s"), 
+        *LaunchDirection.ToString(), AdjustedForce, *InitialVelocity.ToString());
     
     // 궤적 계산 - 포물선 운동 방정식 사용
     TArray<FVector> TrajectoryPoints;
-    const int32 NumPoints = 30; // 궤적 포인트 수
-    const float TimeInterval = 0.066f; // 약 15fps에 해당하는 시간 간격
-    const float MaxTime = 3.0f; // 최대 3초까지 시뮬레이션
+    const float TimeStep = 0.1f; // 더 긴 간격으로 변경
+    const float MaxTime = 5.0f; // 더 긴 시간 동안 시뮬레이션
     
-    TrajectoryPoints.Add(StartLocation); // 시작점 추가
+    // 시작점 추가
+    TrajectoryPoints.Add(StartLocation);
     
     // 시간 간격으로 위치 계산
-    for (float Time = TimeInterval; Time < MaxTime; Time += TimeInterval)
+    for (float Time = TimeStep; Time < MaxTime; Time += TimeStep)
     {
         // 포물선 운동 방정식: P = P0 + V0*t + 0.5*a*t^2
         FVector Position = StartLocation + InitialVelocity * Time + 0.5f * Gravity * Time * Time;
         
-        // 바닥 아래로 가지 않도록 체크
+        // 포인트 추가
+        TrajectoryPoints.Add(Position);
+        
+        // 바닥에 닿았는지 확인
         if (Position.Z < 0.0f)
             break;
             
-        TrajectoryPoints.Add(Position);
-        
-        // 목표 지점 부근에 도달했는지 체크
+        // 목표 지점 근처인지 확인
         float DistanceToTarget = FVector::Dist(Position, TargetLocation);
-        if (DistanceToTarget < 10.0f)
+        if (DistanceToTarget < 20.0f) // 더 관대한 범위
             break;
     }
+    
+    UE_LOG(LogTemp, Warning, TEXT("궤적 포인트 수: %d"), TrajectoryPoints.Num());
     
     // 계산된 궤적 그리기
     for (int32 i = 0; i < TrajectoryPoints.Num() - 1; i++)
     {
-        // 각 점에 작은 구체 그리기
-        DrawDebugSphere(
-            Controller->GetWorld(),
-            TrajectoryPoints[i],
-            5.0f,  // 작은 크기의 구체
-            8,
-            FColor::Yellow,
-            false,
-            0.1f,  // 0.1초 유지
-            0,
-            1.0f
-        );
-        
-        // 점들을 선으로 연결
+        // 점들을 선으로 연결 - 기본 빨간색으로 변경하고 지속 시간 늘림
         DrawDebugLine(
-            Controller->GetWorld(),
+            World,
             TrajectoryPoints[i],
             TrajectoryPoints[i + 1],
-            FColor::Yellow,
+            FColor::Red, // 단순 빨간색으로 확실하게 보이게
             false,
-            0.1f,
+            2.0f, // 2초로 지속 시간 크게 늘림
+            0,
+            2.0f // 두꺼운 선으로 표시
+        );
+        
+        // 5개 점마다 구체 그리기 (시각적으로 확인하기 쉽게)
+        if (i % 5 == 0)
+        {
+            DrawDebugSphere(
+                World,
+                TrajectoryPoints[i],
+                5.0f, // 작은 구체
+                8,
+                FColor::Yellow,
+                false,
+                2.0f, // 2초 지속
+                0,
+                1.0f
+            );
+        }
+    }
+    
+    // 마지막 지점은 큰 구체로 표시
+    if (TrajectoryPoints.Num() > 1)
+    {
+        DrawDebugSphere(
+            World,
+            TrajectoryPoints.Last(),
+            10.0f, // 더 큰 구체
+            12,
+            FColor::Green,
+            false,
+            2.0f, // 2초 지속
             0,
             1.0f
         );
     }
     
-    // 목표 지점에 도달 위치 표시
-    if (TrajectoryPoints.Num() > 1)
-    {
-        DrawDebugSphere(
-            Controller->GetWorld(),
-            TrajectoryPoints.Last(),
-            10.0f,  // 도착 지점은 약간 더 크게
-            8,
-            FColor::Green,
-            false,
-            0.1f,
-            0,
-            2.0f
-        );
-    }
+    // 실제 목표 지점도 표시
+    DrawDebugSphere(
+        World,
+        TargetLocation,
+        15.0f, // 큰 구체
+        12,
+        FColor::Blue,
+        false,
+        2.0f, // 2초 지속
+        0,
+        1.0f
+    );
 }

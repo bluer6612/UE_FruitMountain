@@ -75,4 +75,13 @@ protected:
 
     // Axis 입력으로 카메라 회전 처리 함수
     void RotateCamera(float Value);
+
+private:
+    // 미리보기 공 업데이트 제한을 위한 변수들
+    FTimerHandle PreviewBallUpdateTimerHandle;
+    bool bPreviewBallUpdatePending = false;
+    const float PreviewBallUpdateDelay = 0.05f;
+    
+    // 실제 업데이트 수행 함수
+    void ExecutePreviewBallUpdate();
 };
