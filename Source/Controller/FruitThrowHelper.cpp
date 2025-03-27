@@ -91,7 +91,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
             // 현재 위치 저장 (카메라 앞)
             FVector CurrentLocation = Controller->PreviewBall->GetActorLocation();
             
-            // 접시보다 50.f 높게 조정
+            // 접시보다 50.f 높게 조정 (기존과 동일)
             CurrentLocation.Z = PlateCenter.Z + 50.f;
             
             // 먼저 부착 해제 (있는 경우)
@@ -105,16 +105,48 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
             PrimComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
             PrimComp->SetCollisionProfileName(TEXT("PhysicsActor"));
             
-            // 접시를 향한 방향 계산 (현재 위치에서 접시로 향하는 벡터)
-            FVector ToPlateDirection = (PlateCenter - CurrentLocation).GetSafeNormal();
+            // 접시 중앙까지의 정확한 벡터 계산 (직선 벡터)
+            FVector ToPlateCenterExact = PlateCenter - CurrentLocation;
+            float ExactDistance = ToPlateCenterExact.Size();
             
-            // 힘의 크기는 유지, 방향만 변경
-            PrimComp->AddImpulse(ToPlateDirection * Controller->ThrowForce, NAME_None, true);
+            // 접시까지의 수평 거리 계산 (포물선 계산용)
+            FVector HorizontalDist = ToPlateCenterExact;
+            HorizontalDist.Z = 0; // Z 성분 제거하여 수평 거리만 계산
+            float HorizontalDistance = HorizontalDist.Size();
             
-            UE_LOG(LogTemp, Log, TEXT("공 발사 - 위치: %s, 방향: %s, 힘: %f"), 
+            // 이상적인 포물선 발사 각도 계산 (약 45도가 최대 거리)
+            float OptimalAngle = 45.0f; // 기본값 45도
+            float RadAngle = FMath::DegreesToRadians(OptimalAngle);
+            
+            // 발사 벡터 계산 - 수평 방향과 높이 방향 조합
+            FVector HorizontalDir = HorizontalDist.GetSafeNormal();
+            float HeightFactor = FMath::Tan(RadAngle); // 탄젠트 45도 = 1.0
+            
+            // 거리에 따라 각도 미세 조정 (멀면 더 높게, 가까우면 더 낮게)
+            if (HorizontalDistance > 500.0f)
+            {
+                HeightFactor *= 1.2f; // 먼 거리일수록 조금 더 높게
+            }
+            else if (HorizontalDistance < 200.0f)
+            {
+                HeightFactor *= 0.8f; // 가까운 거리일수록 조금 더 낮게
+            }
+            
+            // 수평 방향과 수직 방향 조합
+            FVector LaunchDirection = HorizontalDir + FVector(0, 0, HeightFactor);
+            LaunchDirection.Normalize();
+            
+            // 높은 포물선을 위해 힘 증가 (기존보다 20% 강하게)
+            float AdjustedForce = Controller->ThrowForce * 1.2f;
+            
+            // 발사
+            PrimComp->AddImpulse(LaunchDirection * AdjustedForce, NAME_None, true);
+            
+            UE_LOG(LogTemp, Log, TEXT("공 발사 - 위치: %s, 방향: %s, 힘: %f, 높이계수: %f"), 
                 *CurrentLocation.ToString(),
-                *ToPlateDirection.ToString(),
-                Controller->ThrowForce);
+                *LaunchDirection.ToString(),
+                AdjustedForce,
+                HeightFactor);
             
             // 발사된 공은 더 이상 미리보기 공이 아님
             Controller->PreviewBall = nullptr;
@@ -131,7 +163,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
         {
             // 접시보다 50.f 높은 위치에서 스폰
             FVector SpawnLocation = PlateCenter;
-            SpawnLocation.Z += 50.f; // 이전에는 -50.f였음
+            SpawnLocation.Z += 50.f;
             
             AActor* SpawnedBall = SpawnBall(Controller, SpawnLocation, Controller->CurrentBallType, true);
             if (SpawnedBall)

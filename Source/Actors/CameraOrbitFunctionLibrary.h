@@ -14,7 +14,7 @@ class UE_FRUITMOUNTAIN_API UCameraOrbitFunctionLibrary : public UBlueprintFuncti
 public:
     // ControlledPawn: 소유 Pawn, PlateLocation: 접시 위치,
     // OrbitAngle: 현재 오빗 각도 (도 단위), OrbitRadius: 접시와의 거리,
-    // ElevationAngle: 접시를 내려다보는 각도 (기본 30도)
+    // ElevationAngle: 접시를 내려다보는 각도
     UFUNCTION(BlueprintCallable, Category = "Camera Orbit")
-    static void UpdateCameraOrbit(APawn* ControlledPawn, const FVector& PlateLocation, float OrbitAngle, float OrbitRadius, float ElevationAngle = 30.f);
+    static void UpdateCameraOrbit(APawn* ControlledPawn, const FVector& PlateLocation, float OrbitAngle, float OrbitRadius, float ElevationAngle = 25.f);
 };
