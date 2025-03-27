@@ -1,8 +1,0 @@
-{
-	"SourceFiles": [
-		"D:\\Project\\UE_FruitMountain\\UE_FruitMountain\\Source\\UE_FruitMountain\\UE_FruitMountain.Build.cs",
-		"D:\\Project\\UE_FruitMountain\\UE_FruitMountain\\Source\\UE_FruitMountain.Target.cs",
-		"D:\\Project\\UE_FruitMountain\\UE_FruitMountain\\Source\\UE_FruitMountainEditor.Target.cs"
-	],
-	"EngineVersion": "5.5.3"
-}
