@@ -1,5 +1,5 @@
 #include "UE_FruitMountainGameMode.h"
-#include "Manager/FruitPlayerController.h"
+#include "Controller/FruitPlayerController.h"
 #include "Kismet/GameplayStatics.h"  // 액터 검색 및 스폰을 위한 include
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"

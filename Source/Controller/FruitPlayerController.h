@@ -52,6 +52,10 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Orbit")
     float CameraOrbitRadius; // 접시와의 거리
 
+    // [새로 추가] 카메라 회전 속도 (도/초)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Orbit")
+    float RotateCameraSpeed;
+
     // 회전 기준이 되는 접시(Plate)의 위치
     FVector PlateLocation;
 
@@ -59,4 +63,8 @@ protected:
     void RotateCameraLeft();
     void RotateCameraRight();
     void UpdateCameraPosition();
+
+protected:
+    // [새로 추가] Axis 입력으로 카메라 회전 처리 함수
+    void RotateCamera(float Value);
 };

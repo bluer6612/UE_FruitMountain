@@ -106,10 +106,44 @@ void UFruitInputMappingManager::ConfigureKeyMappings()
         }
     }
 
+    // 새로 추가: "RotateCamera" Axis 매핑
+    bool bAxisMappingChanged = false;
+    TArray<FInputAxisKeyMapping> AxisMappings = InputSettings->GetAxisMappings();
+    bool bFoundNegative = false;
+    bool bFoundPositive = false;
+    for (const FInputAxisKeyMapping& Mapping : AxisMappings)
+    {
+        if (Mapping.AxisName == "RotateCamera")
+        {
+            if (Mapping.Key == EKeys::A && Mapping.Scale < 0.f)
+            {
+                bFoundNegative = true;
+            }
+            if (Mapping.Key == EKeys::D && Mapping.Scale > 0.f)
+            {
+                bFoundPositive = true;
+            }
+        }
+    }
+    if (!bFoundNegative)
+    {
+        InputSettings->AddAxisMapping(FInputAxisKeyMapping("RotateCamera", EKeys::A, -1.f));
+        bAxisMappingChanged = true;
+    }
+    if (!bFoundPositive)
+    {
+        InputSettings->AddAxisMapping(FInputAxisKeyMapping("RotateCamera", EKeys::D, 1.f));
+        bAxisMappingChanged = true;
+    }
+    if (bAxisMappingChanged)
+    {
+        bMappingsChanged = true;
+    }
+
     if (bMappingsChanged)
     {
         InputSettings->SaveKeyMappings();
-        UE_LOG(LogTemp, Log, TEXT("프로젝트 키 매핑이 업데이트 되었습니다."));
+        UE_LOG(LogTemp, Log, TEXT("프로젝트 Axis & 키 매핑이 업데이트 되었습니다."));
     }
     else
     {

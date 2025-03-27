@@ -1,5 +1,5 @@
 #include "FruitPlayerController.h"
-#include "Manager/FruitInputMappingManager.h"
+#include "Controller/FruitInputMappingManager.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
@@ -16,6 +16,9 @@ AFruitPlayerController::AFruitPlayerController()
     // 오빗 기본 값 설정
     CameraOrbitAngle = 0.f;
     CameraOrbitRadius = 500.f;
+    
+    // 카메라 회전 속도 (도/초)
+    RotateCameraSpeed = 180.f;
 }
 
 void AFruitPlayerController::BeginPlay()
@@ -62,9 +65,8 @@ void AFruitPlayerController::SetupInputComponent()
         InputComponent->BindAction("IncreaseAngle", IE_Pressed, this, &AFruitPlayerController::IncreaseAngle);
         InputComponent->BindAction("DecreaseAngle", IE_Pressed, this, &AFruitPlayerController::DecreaseAngle);
         InputComponent->BindAction("ThrowFruit", IE_Pressed, this, &AFruitPlayerController::ThrowFruit);
-        InputComponent->BindAction("RotateCameraLeft", IE_Pressed, this, &AFruitPlayerController::RotateCameraLeft);
-        InputComponent->BindAction("RotateCameraRight", IE_Pressed, this, &AFruitPlayerController::RotateCameraRight);
-        
+        // 기존 RotateCameraLeft/Right 액션 대신 Axis 매핑 사용 (키를 누른 채로 부드럽게 회전)
+        InputComponent->BindAxis("RotateCamera", this, &AFruitPlayerController::RotateCamera);
         UE_LOG(LogTemp, Log, TEXT("입력 바인딩 완료"));
     }
 }
@@ -138,26 +140,24 @@ void AFruitPlayerController::HandleThrow()
     }
 }
 
-void AFruitPlayerController::RotateCameraLeft()
+void AFruitPlayerController::RotateCamera(float Value)
 {
-    float DeltaAngle = 10.f;
-    CameraOrbitAngle += DeltaAngle;
-    if(CameraOrbitAngle >= 360.f)
+    if (FMath::Abs(Value) > KINDA_SMALL_NUMBER)
     {
-        CameraOrbitAngle -= 360.f;
-    }
-    UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius, 30.f);
-    UE_LOG(LogTemp, Log, TEXT("카메라 왼쪽으로 회전, 현재 각도: %f"), CameraOrbitAngle);
-}
+        // 프레임 시간과 회전 속도를 곱해 부드러운 변화 적용
+        float DeltaAngle = Value * RotateCameraSpeed * GetWorld()->DeltaTimeSeconds;
+        CameraOrbitAngle += DeltaAngle;
+        
+        if(CameraOrbitAngle >= 360.f)
+        {
+            CameraOrbitAngle -= 360.f;
+        }
+        else if(CameraOrbitAngle < 0.f)
+        {
+            CameraOrbitAngle += 360.f;
+        }
 
-void AFruitPlayerController::RotateCameraRight()
-{
-    float DeltaAngle = 10.f;
-    CameraOrbitAngle -= DeltaAngle;
-    if(CameraOrbitAngle < 0.f)
-    {
-        CameraOrbitAngle += 360.f;
+        UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius, 30.f);
+        UE_LOG(LogTemp, Log, TEXT("카메라 회전 (Axis): 현재 각도: %f"), CameraOrbitAngle);
     }
-    UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius, 30.f);
-    UE_LOG(LogTemp, Log, TEXT("카메라 오른쪽으로 회전, 현재 각도: %f"), CameraOrbitAngle);
 }
