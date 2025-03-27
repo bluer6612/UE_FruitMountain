@@ -1,0 +1,14 @@
+{
+	"Targets": [
+		{
+			"Name": "UE_FruitMountain",
+			"Path": "..\\Source\\UE_FruitMountain.Target.cs",
+			"Type": "Game"
+		},
+		{
+			"Name": "UE_FruitMountainEditor",
+			"Path": "..\\Source\\UE_FruitMountainEditor.Target.cs",
+			"Type": "Editor"
+		}
+	]
+}
