@@ -50,49 +50,48 @@ void AFruitPlayerController::ThrowFruit()
 
 void AFruitPlayerController::HandleThrow()
 {
-    if (!FruitBallClass)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("FruitBallClass가 설정되어 있지 않습니다."));
-        return;
-    }
-
-    int32 BallType = FMath::RandRange(1, 11);
-    float BaseSize = 25.f;
-    float ScaleFactor = 1.f + 0.1f * (BallType - 1);
-    float BallSize = BaseSize * ScaleFactor;
-
-    // 플레이레벨에 배치된 접시(Plate) 액터의 위치를 찾습니다.
-    FVector SpawnLocation = FVector(0.f, 0.f, 0.f);
+    // 접시 액터가 있는 위치를 찾음 (클래스 멤버와 이름 충돌 방지를 위해 'LocalSpawnLocation' 사용)
+    FVector LocalSpawnLocation = FVector::ZeroVector;
     TArray<AActor*> PlateActors;
     UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Plate"), PlateActors);
     if (PlateActors.Num() > 0)
     {
-        SpawnLocation = PlateActors[0]->GetActorLocation();
+        LocalSpawnLocation = PlateActors[0]->GetActorLocation();
     }
     else
     {
         UE_LOG(LogTemp, Warning, TEXT("접시 액터(Plate)를 찾을 수 없습니다. 기본 위치에서 스폰합니다."));
     }
 
-    FRotator SpawnRotation = FRotator::ZeroRotator;
-    FActorSpawnParameters SpawnParams;
-
-    AActor* SpawnedBall = GetWorld()->SpawnActor<AActor>(FruitBallClass, SpawnLocation, SpawnRotation, SpawnParams);
-    if (SpawnedBall)
+    // 이후 LocalSpawnLocation을 사용하여 과일 액터를 스폰합니다.
+    // 예시:
+    if (FruitBallClass)
     {
-        SpawnedBall->SetActorScale3D(FVector(BallSize, BallSize, BallSize));
-
-        UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(SpawnedBall->GetComponentByClass(UPrimitiveComponent::StaticClass()));
-        if (PrimComp && PrimComp->IsSimulatingPhysics())
+        FRotator SpawnRotation = FRotator::ZeroRotator;
+        FActorSpawnParameters SpawnParams;
+        AActor* SpawnedBall = GetWorld()->SpawnActor<AActor>(FruitBallClass, LocalSpawnLocation, SpawnRotation, SpawnParams);
+        if (SpawnedBall)
         {
-            float RadAngle = FMath::DegreesToRadians(ThrowAngle);
-            FVector ImpulseDirection = FVector(FMath::Cos(RadAngle), 0.f, FMath::Sin(RadAngle)).GetSafeNormal();
-            PrimComp->AddImpulse(ImpulseDirection * ThrowForce, NAME_None, true);
+            // 추가 처리...
+            int32 BallType = FMath::RandRange(1, 11);
+            float BaseSize = 25.f;
+            float ScaleFactor = 1.f + 0.1f * (BallType - 1);
+            float BallSize = BaseSize * ScaleFactor;
+
+            SpawnedBall->SetActorScale3D(FVector(BallSize, BallSize, BallSize));
+
+            UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(SpawnedBall->GetComponentByClass(UPrimitiveComponent::StaticClass()));
+            if (PrimComp && PrimComp->IsSimulatingPhysics())
+            {
+                float RadAngle = FMath::DegreesToRadians(ThrowAngle);
+                FVector ImpulseDirection = FVector(FMath::Cos(RadAngle), 0.f, FMath::Sin(RadAngle)).GetSafeNormal();
+                PrimComp->AddImpulse(ImpulseDirection * ThrowForce, NAME_None, true);
+            }
+            UE_LOG(LogTemp, Log, TEXT("공 타입 %d 스폰됨, 크기: %f"), BallType, BallSize);
         }
-        UE_LOG(LogTemp, Log, TEXT("공 타입 %d 스폰됨, 크기: %f"), BallType, BallSize);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("공 액터 생성 실패"));
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("공 액터 생성 실패"));
+        }
     }
 }
