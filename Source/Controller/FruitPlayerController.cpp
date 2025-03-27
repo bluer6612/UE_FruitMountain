@@ -8,6 +8,7 @@
 #include "Actors/CameraOrbitFunctionLibrary.h"
 #include "FruitThrowHelper.h"
 #include "GameMode/UE_FruitMountainGameMode.h"
+#include "Camera/CameraComponent.h"
 
 AFruitPlayerController::AFruitPlayerController()
 {
@@ -17,7 +18,7 @@ AFruitPlayerController::AFruitPlayerController()
 
     // 오빗 기본 값 설정
     CameraOrbitAngle = 0.f;
-    CameraOrbitRadius = 500.f;
+    CameraOrbitRadius = 700.f;
     
     // 카메라 회전 속도 (도/초)
     RotateCameraSpeed = 180.f;
@@ -46,9 +47,7 @@ void AFruitPlayerController::BeginPlay()
     SetInputMode(InputMode);
     bShowMouseCursor = false;
     
-    UE_LOG(LogTemp, Log, TEXT("키 매핑 설정 시작"));
     UFruitInputMappingManager::ConfigureKeyMappings();
-    UE_LOG(LogTemp, Log, TEXT("키 매핑 설정 완료"));
 
     // 접시 액터를 검색하여 회전 기준 위치로 사용 (접시가 있을 경우)
     TArray<AActor*> PlateActors;
@@ -69,6 +68,10 @@ void AFruitPlayerController::BeginPlay()
     {
         UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius, 30.f);
     });
+
+    // 미리보기 공 생성
+    CurrentBallType = FMath::RandRange(1, 11);
+    UpdatePreviewBall();
 }
 
 void AFruitPlayerController::SetupInputComponent()
@@ -104,59 +107,9 @@ void AFruitPlayerController::ThrowFruit()
 
 void AFruitPlayerController::HandleThrow()
 {
-    // 접시 액터 위치 검색 (스폰 기준 위치)
-    FVector LocalSpawnLocation = FVector::ZeroVector;
-    TArray<AActor*> PlateActors;
-    UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Plate"), PlateActors);
-    if (PlateActors.Num() > 0)
-    {
-        // Plate 위치에서 위로 100만큼 올려서 스폰
-        LocalSpawnLocation = PlateActors[0]->GetActorLocation() + FVector(0, 0, 100.f);
-        UE_LOG(LogTemp, Log, TEXT("접시 액터 발견: 위치 (%f, %f, %f)"),
-               LocalSpawnLocation.X, LocalSpawnLocation.Y, LocalSpawnLocation.Z);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("접시 액터를 찾을 수 없습니다. 기본 위치 (0,0,0)에서 스폰합니다."));
-    }
-
-    // FruitBallClass가 설정되어 있으면 공 액터 스폰 시도
-    if (FruitBallClass)
-    {
-        FRotator SpawnRotation = FRotator::ZeroRotator;
-        FActorSpawnParameters SpawnParams;
-        // 스폰 충돌 관련 설정: 항상 스폰
-        SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-        
-        AActor* SpawnedBall = GetWorld()->SpawnActor<AActor>(FruitBallClass, LocalSpawnLocation, SpawnRotation, SpawnParams);
-        if (SpawnedBall)
-        {
-            // 임의의 공 타입(1~11)으로 크기 조절
-            int32 BallType = FMath::RandRange(1, 11);
-            float BaseSize = 25.f;
-            float ScaleFactor = 1.f + 0.1f * (BallType - 1);
-            float BallSize = BaseSize * ScaleFactor;
-            SpawnedBall->SetActorScale3D(FVector(BallSize));
-            
-            // 물리 시뮬레이션 중이면 ThrowAngle에 따른 힘 부여
-            UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(SpawnedBall->GetComponentByClass(UPrimitiveComponent::StaticClass()));
-            if (PrimComp && PrimComp->IsSimulatingPhysics())
-            {
-                float RadAngle = FMath::DegreesToRadians(ThrowAngle);
-                FVector ImpulseDirection = FVector(FMath::Cos(RadAngle), 0.f, FMath::Sin(RadAngle)).GetSafeNormal();
-                PrimComp->AddImpulse(ImpulseDirection * ThrowForce, NAME_None, true);
-            }
-            UE_LOG(LogTemp, Log, TEXT("공 타입 %d 스폰됨, 크기: %f"), BallType, BallSize);
-        }
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("공 액터 생성에 실패했습니다."));
-        }
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("FruitBallClass가 설정되어 있지 않습니다."));
-    }
+    // 모든 코드가 FruitThrowHelper로 이동했으므로 이 함수는 비워둡니다.
+    // 다른 코드에서 이 함수를 직접 호출하는 곳이 있다면 
+    // UFruitThrowHelper::ThrowFruit(this); 로 리다이렉트할 수 있습니다.
 }
 
 void AFruitPlayerController::RotateCamera(float Value)
@@ -177,6 +130,91 @@ void AFruitPlayerController::RotateCamera(float Value)
         }
 
         UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius, 30.f);
-        UE_LOG(LogTemp, Log, TEXT("카메라 회전 (Axis): 현재 각도: %f"), CameraOrbitAngle);
+        
+        // 카메라 회전 후 미리보기 공도 함께 업데이트
+        UpdatePreviewBall();
+    }
+}
+
+void AFruitPlayerController::UpdatePreviewBall()
+{
+    // 로그 추가
+    UE_LOG(LogTemp, Warning, TEXT("UpdatePreviewBall 호출됨"));
+
+    // 이전 미리보기 공 제거
+    if (PreviewBall)
+    {
+        PreviewBall->Destroy();
+        PreviewBall = nullptr;
+    }
+    
+    if (!FruitBallClass)
+    {
+        UE_LOG(LogTemp, Error, TEXT("미리보기 실패: FruitBallClass가 NULL입니다!"));
+        return;
+    }
+    
+    // 플레이어 카메라 기준 위치 계산
+    APawn* PlayerPawn = GetPawn();
+    if (!PlayerPawn)
+    {
+        UE_LOG(LogTemp, Error, TEXT("미리보기 실패: PlayerPawn이 NULL입니다!"));
+        return;
+    }
+    
+    // 더 간단한 방식으로 미리보기 공 배치 - 카메라 위치 앞쪽으로 고정 거리
+    FVector CameraLocation = PlayerPawn->GetActorLocation();
+    FRotator CameraRotation = PlayerPawn->GetActorRotation();
+    
+    // 카메라 앞쪽으로 더 멀리 배치 (100→200)
+    FVector PreviewLocation = CameraLocation + CameraRotation.Vector() * 200.f;
+    
+    // 디버그 스피어로 위치 시각화 (크기 키움)
+    DrawDebugSphere(GetWorld(), PreviewLocation, 100.f, 12, FColor::Red, false, 3.0f);
+    UE_LOG(LogTemp, Warning, TEXT("미리보기 생성 위치: %s"), *PreviewLocation.ToString());
+    
+    // 미리보기 공 생성
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    SpawnParams.Owner = this;
+    
+    PreviewBall = GetWorld()->SpawnActor<AActor>(FruitBallClass, PreviewLocation, FRotator::ZeroRotator, SpawnParams);
+    if (PreviewBall)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("미리보기 공 생성 성공!"));
+        
+        float BaseSize = 2.5f; // 기존 5.f에서 2배 증가
+        float ScaleFactor = 1.f + 0.05f * (CurrentBallType - 1);
+        float BallSize = BaseSize * ScaleFactor;
+        PreviewBall->SetActorScale3D(FVector(BallSize));
+        
+        // 미리보기 공은 물리 비활성화
+        UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(PreviewBall->GetComponentByClass(UPrimitiveComponent::StaticClass()));
+        if (PrimComp)
+        {
+            PrimComp->SetSimulatePhysics(false);
+            PrimComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        }
+        
+        // 부착 시도를 별도로 수행
+        UCameraComponent* CameraComp = PlayerPawn->FindComponentByClass<UCameraComponent>();
+        if (CameraComp)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("카메라 컴포넌트 찾음, 부착 시도"));
+            // 방법 1: 월드 기준 위치 유지하며 부착
+            PreviewBall->AttachToComponent(CameraComp, FAttachmentTransformRules::KeepWorldTransform);
+            
+            // 방법 2: 카메라 기준 고정 위치에 배치
+            // PreviewBall->SetActorRelativeLocation 대신 아래 사용
+            // PreviewBall->SetRelativeLocation(FVector(200.f, 0.f, -50.f));
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("카메라 컴포넌트를 찾을 수 없습니다!"));
+        }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("미리보기 공 생성에 실패했습니다!"));
     }
 }
