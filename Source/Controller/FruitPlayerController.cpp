@@ -105,12 +105,6 @@ void AFruitPlayerController::ThrowFruit()
     UFruitThrowHelper::ThrowFruit(this);
 }
 
-void AFruitPlayerController::HandleThrow()
-{
-    // 모든 코드가 FruitThrowHelper로 이동했으므로 이 함수는 비워둡니다.
-    // 다른 코드에서 이 함수를 직접 호출하는 곳이 있다면 
-    // UFruitThrowHelper::ThrowFruit(this); 로 리다이렉트할 수 있습니다.
-}
 
 void AFruitPlayerController::RotateCamera(float Value)
 {
@@ -138,83 +132,6 @@ void AFruitPlayerController::RotateCamera(float Value)
 
 void AFruitPlayerController::UpdatePreviewBall()
 {
-    // 로그 추가
-    UE_LOG(LogTemp, Warning, TEXT("UpdatePreviewBall 호출됨"));
-
-    // 이전 미리보기 공 제거
-    if (PreviewBall)
-    {
-        PreviewBall->Destroy();
-        PreviewBall = nullptr;
-    }
-    
-    if (!FruitBallClass)
-    {
-        UE_LOG(LogTemp, Error, TEXT("미리보기 실패: FruitBallClass가 NULL입니다!"));
-        return;
-    }
-    
-    // 플레이어 카메라 기준 위치 계산
-    APawn* PlayerPawn = GetPawn();
-    if (!PlayerPawn)
-    {
-        UE_LOG(LogTemp, Error, TEXT("미리보기 실패: PlayerPawn이 NULL입니다!"));
-        return;
-    }
-    
-    // 더 간단한 방식으로 미리보기 공 배치 - 카메라 위치 앞쪽으로 고정 거리
-    FVector CameraLocation = PlayerPawn->GetActorLocation();
-    FRotator CameraRotation = PlayerPawn->GetActorRotation();
-    
-    // 카메라 앞쪽으로 더 멀리 배치 (100→200)
-    FVector PreviewLocation = CameraLocation + CameraRotation.Vector() * 200.f;
-    
-    // 디버그 스피어로 위치 시각화 (크기 키움)
-    DrawDebugSphere(GetWorld(), PreviewLocation, 100.f, 12, FColor::Red, false, 3.0f);
-    UE_LOG(LogTemp, Warning, TEXT("미리보기 생성 위치: %s"), *PreviewLocation.ToString());
-    
-    // 미리보기 공 생성
-    FActorSpawnParameters SpawnParams;
-    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-    SpawnParams.Owner = this;
-    
-    PreviewBall = GetWorld()->SpawnActor<AActor>(FruitBallClass, PreviewLocation, FRotator::ZeroRotator, SpawnParams);
-    if (PreviewBall)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("미리보기 공 생성 성공!"));
-        
-        float BaseSize = 2.5f; // 기존 5.f에서 2배 증가
-        float ScaleFactor = 1.f + 0.05f * (CurrentBallType - 1);
-        float BallSize = BaseSize * ScaleFactor;
-        PreviewBall->SetActorScale3D(FVector(BallSize));
-        
-        // 미리보기 공은 물리 비활성화
-        UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(PreviewBall->GetComponentByClass(UPrimitiveComponent::StaticClass()));
-        if (PrimComp)
-        {
-            PrimComp->SetSimulatePhysics(false);
-            PrimComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-        }
-        
-        // 부착 시도를 별도로 수행
-        UCameraComponent* CameraComp = PlayerPawn->FindComponentByClass<UCameraComponent>();
-        if (CameraComp)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("카메라 컴포넌트 찾음, 부착 시도"));
-            // 방법 1: 월드 기준 위치 유지하며 부착
-            PreviewBall->AttachToComponent(CameraComp, FAttachmentTransformRules::KeepWorldTransform);
-            
-            // 방법 2: 카메라 기준 고정 위치에 배치
-            // PreviewBall->SetActorRelativeLocation 대신 아래 사용
-            // PreviewBall->SetRelativeLocation(FVector(200.f, 0.f, -50.f));
-        }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT("카메라 컴포넌트를 찾을 수 없습니다!"));
-        }
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("미리보기 공 생성에 실패했습니다!"));
-    }
+    // Helper 클래스로 로직 이관
+    UFruitThrowHelper::UpdatePreviewBall(this);
 }

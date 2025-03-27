@@ -53,8 +53,6 @@ protected:
     void DecreaseAngle();
     // 스페이스바 입력에 따라 과일을 던짐
     void ThrowFruit();
-    // 실제 과일 발사 처리 로직 (과일 액터 생성 등 구현 예정)
-    void HandleThrow();
 
     // 카메라(Pawn) 오빗 관련 변수 및 함수
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Orbit")
