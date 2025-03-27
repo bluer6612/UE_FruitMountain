@@ -1,5 +1,5 @@
 #include "FruitPlayerController.h"
-#include "FruitInputMappingManager.h"
+#include "Manager/FruitInputMappingManager.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"

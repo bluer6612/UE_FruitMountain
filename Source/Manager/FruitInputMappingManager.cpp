@@ -16,7 +16,7 @@ void UFruitInputMappingManager::ConfigureKeyMappings()
 
     bool bMappingsChanged = false;
 
-    // "IncreaseAngle" 매핑: Up키
+    // "IncreaseAngle" 매핑: Up 키
     {
         bool bFound = false;
         for (const FInputActionKeyMapping& Mapping : InputSettings->GetActionMappings())
@@ -34,7 +34,7 @@ void UFruitInputMappingManager::ConfigureKeyMappings()
         }
     }
 
-    // "DecreaseAngle" 매핑: Down키
+    // "DecreaseAngle" 매핑: Down 키
     {
         bool bFound = false;
         for (const FInputActionKeyMapping& Mapping : InputSettings->GetActionMappings())
