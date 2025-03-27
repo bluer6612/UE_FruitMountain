@@ -14,6 +14,10 @@ public:
 
     virtual void BeginPlay() override;
 
+    // 던질 공(과일) 액터의 클래스, 에디터에서 지정 (예: 블루프린트 클래스)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Throwing")
+    TSubclassOf<AActor> FruitBallClass;
+
 protected:
     virtual void SetupInputComponent() override;
 
@@ -31,10 +35,6 @@ protected:
     // 각도 조정 단위 (한 번 입력 시 변경되는 값)
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Throwing")
     float AngleStep;
-
-    // 던질 공(과일) 액터의 클래스, 에디터에서 지정 (예: 블루프린트 클래스)
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Throwing")
-    TSubclassOf<AActor> FruitBallClass;
 
     // 위쪽 방향키로 각도 증가
     void IncreaseAngle();

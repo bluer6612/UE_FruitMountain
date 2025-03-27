@@ -6,6 +6,8 @@
 #include "GameFramework/InputSettings.h"
 #include "Engine/Engine.h"
 #include "Actors/CameraOrbitFunctionLibrary.h"
+#include "FruitThrowHelper.h"
+#include "GameMode/UE_FruitMountainGameMode.h"
 
 AFruitPlayerController::AFruitPlayerController()
 {
@@ -24,6 +26,18 @@ AFruitPlayerController::AFruitPlayerController()
 void AFruitPlayerController::BeginPlay()
 {
     Super::BeginPlay();
+
+    // GameMode를 캐스팅하여 FruitBallClass 값을 가져옴
+    AUE_FruitMountainGameMode* GM = Cast<AUE_FruitMountainGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
+    if (GM && GM->FruitBallClass)
+    {
+        FruitBallClass = GM->FruitBallClass;
+        UE_LOG(LogTemp, Log, TEXT("PlayerController 쪽 FruitBallClass를 GameMode 쪽 값으로 설정했습니다."));
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("GameMode의 FruitBallClass가 비어 있습니다."));
+    }
     
     UE_LOG(LogTemp, Log, TEXT("AFruitPlayerController::BeginPlay 호출됨"));
 
@@ -85,24 +99,25 @@ void AFruitPlayerController::DecreaseAngle()
 
 void AFruitPlayerController::ThrowFruit()
 {
-    UE_LOG(LogTemp, Log, TEXT("과일 발사! 각도: %f, 힘: %f"), ThrowAngle, ThrowForce);
-    HandleThrow();
+    UFruitThrowHelper::ThrowFruit(this);
 }
 
 void AFruitPlayerController::HandleThrow()
 {
-    // 접시 액터 위치 검색 (로컬 스폰 위치)
+    // 접시 액터 위치 검색 (스폰 기준 위치)
     FVector LocalSpawnLocation = FVector::ZeroVector;
     TArray<AActor*> PlateActors;
     UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Plate"), PlateActors);
     if (PlateActors.Num() > 0)
     {
-        LocalSpawnLocation = PlateActors[0]->GetActorLocation();
-        UE_LOG(LogTemp, Log, TEXT("접시 액터 발견: 위치 (%f, %f, %f)"), LocalSpawnLocation.X, LocalSpawnLocation.Y, LocalSpawnLocation.Z);
+        // Plate 위치에서 위로 100만큼 올려서 스폰
+        LocalSpawnLocation = PlateActors[0]->GetActorLocation() + FVector(0, 0, 100.f);
+        UE_LOG(LogTemp, Log, TEXT("접시 액터 발견: 위치 (%f, %f, %f)"),
+               LocalSpawnLocation.X, LocalSpawnLocation.Y, LocalSpawnLocation.Z);
     }
     else
     {
-        UE_LOG(LogTemp, Warning, TEXT("접시 액터(Plate)를 찾을 수 없습니다. 기본 위치 (0,0,0)에서 스폰합니다."));
+        UE_LOG(LogTemp, Warning, TEXT("접시 액터를 찾을 수 없습니다. 기본 위치 (0,0,0)에서 스폰합니다."));
     }
 
     // FruitBallClass가 설정되어 있으면 공 액터 스폰 시도
@@ -110,19 +125,20 @@ void AFruitPlayerController::HandleThrow()
     {
         FRotator SpawnRotation = FRotator::ZeroRotator;
         FActorSpawnParameters SpawnParams;
+        // 스폰 충돌 관련 설정: 항상 스폰
         SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
         
         AActor* SpawnedBall = GetWorld()->SpawnActor<AActor>(FruitBallClass, LocalSpawnLocation, SpawnRotation, SpawnParams);
         if (SpawnedBall)
         {
-            // 공의 타입에 따라 크기 조절 (1~11 사이 임의의 값)
+            // 임의의 공 타입(1~11)으로 크기 조절
             int32 BallType = FMath::RandRange(1, 11);
             float BaseSize = 25.f;
             float ScaleFactor = 1.f + 0.1f * (BallType - 1);
             float BallSize = BaseSize * ScaleFactor;
             SpawnedBall->SetActorScale3D(FVector(BallSize));
-
-            // 물리 시뮬레이션이 가능하면, ThrowAngle에 따른 힘을 가함
+            
+            // 물리 시뮬레이션 중이면 ThrowAngle에 따른 힘 부여
             UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(SpawnedBall->GetComponentByClass(UPrimitiveComponent::StaticClass()));
             if (PrimComp && PrimComp->IsSimulatingPhysics())
             {

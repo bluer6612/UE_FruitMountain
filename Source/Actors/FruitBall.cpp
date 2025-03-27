@@ -20,7 +20,7 @@ AFruitBall::AFruitBall()
     {
         MeshComponent->SetStaticMesh(MeshAsset.Object);
         // 기본 크기 조정 (필요 시 수정)
-        MeshComponent->SetRelativeScale3D(FVector(0.5f));
+        MeshComponent->SetRelativeScale3D(FVector(1.0f));
     }
 }
 

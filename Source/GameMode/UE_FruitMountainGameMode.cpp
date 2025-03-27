@@ -21,8 +21,6 @@ AUE_FruitMountainGameMode::AUE_FruitMountainGameMode()
 
     FruitBallClass = AFruitBall::StaticClass();
 
-    UE_LOG(LogTemp, Log, TEXT("PlateClass 기본값으로 APlateActor가 설정되었습니다."));
-
     UE_LOG(LogTemp, Log, TEXT("AUE_FruitMountainGameMode 생성자 호출됨 - 기본 컨트롤러가 명시적으로 설정되었습니다."));
 }
 

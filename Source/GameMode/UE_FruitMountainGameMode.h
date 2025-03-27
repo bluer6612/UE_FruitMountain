@@ -15,12 +15,12 @@ public:
     virtual void StartPlay() override;
     virtual void Tick(float DeltaTime) override;
 
+    // 공(FruitBall) 액터를 스폰하기 위한 클래스
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Gameplay")
+    TSubclassOf<AActor> FruitBallClass;
+
 protected:
     // 접시(Plate) 액터를 스폰하기 위한 클래스
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Gameplay")
     TSubclassOf<AActor> PlateClass;
-
-    // 공(FruitBall) 액터를 스폰하기 위한 클래스
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Gameplay")
-    TSubclassOf<AActor> FruitBallClass;
 };

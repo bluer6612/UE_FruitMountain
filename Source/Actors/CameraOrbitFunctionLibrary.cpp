@@ -29,7 +29,7 @@ void UCameraOrbitFunctionLibrary::UpdateCameraOrbit(APawn* ControlledPawn, const
     FRotator NewRotation = (PlateLocation - NewLocation).Rotation();
     ControlledPawn->SetActorRotation(NewRotation);
 
-    UE_LOG(LogTemp, Log, TEXT("카메라 위치 업데이트 (라이브러리): 위치=(%f, %f, %f), 각도=(%f, %f, %f)"),
-           NewLocation.X, NewLocation.Y, NewLocation.Z,
-           NewRotation.Pitch, NewRotation.Yaw, NewRotation.Roll);
+    // UE_LOG(LogTemp, Log, TEXT("카메라 위치 업데이트 (라이브러리): 위치=(%f, %f, %f), 각도=(%f, %f, %f)"),
+    //        NewLocation.X, NewLocation.Y, NewLocation.Z,
+    //        NewRotation.Pitch, NewRotation.Yaw, NewRotation.Roll);
 }

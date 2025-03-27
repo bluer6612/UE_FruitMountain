@@ -15,4 +15,19 @@ public:
 
 protected:
     virtual void BeginPlay() override;
+
+public:	
+    virtual void Tick(float DeltaTime) override;
+
+    // 바닥 Mesh
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Plate")
+    class UStaticMeshComponent* BottomMesh;
+
+    // 왼쪽 벽
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Plate")
+    class UStaticMeshComponent* LeftWallMesh;
+
+    // 오른쪽 벽
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Plate")
+    class UStaticMeshComponent* RightWallMesh;
 };
