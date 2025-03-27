@@ -1,16 +1,17 @@
 {
-    "FileVersion": 3,
-    "Version": "1.0",
-    "VersionName": "1.0",
-    "ProjectName": "UE_FruitMountain",
-    "Description": "A 3D watermelon game project built on Unreal Engine.",
-    "Category": "Games",
-    "Modules": [
-        {
-            "Name": "UE_FruitMountain",
-            "Type": "Runtime",
-            "LoadingPhase": "Default"
-        }
-    ],
-    "Plugins": []
+	"FileVersion": 3,
+	"Version": "1.0",
+	"VersionName": "1.0",
+	"ProjectName": "UE_FruitMountain",
+	"Description": "A 3D watermelon game project built on Unreal Engine.",
+	"Category": "Games",
+	"Modules": [
+		{
+			"Name": "UE_FruitMountain",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [],
+	"EngineAssociation": "5.5"
 }

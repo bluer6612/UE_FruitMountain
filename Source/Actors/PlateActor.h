@@ -1,0 +1,18 @@
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "PlateActor.generated.h"
+
+UCLASS()
+// 주석: Plate 액터를 코드로 구현하는 클래스
+class UE_FRUITMOUNTAIN_API APlateActor : public AActor
+{
+    GENERATED_BODY()
+    
+public:
+    APlateActor();
+
+protected:
+    virtual void BeginPlay() override;
+};

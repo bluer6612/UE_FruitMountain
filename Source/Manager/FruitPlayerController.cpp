@@ -5,12 +5,17 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/InputSettings.h"
 #include "Engine/Engine.h"
+#include "Actors/CameraOrbitFunctionLibrary.h"
 
 AFruitPlayerController::AFruitPlayerController()
 {
     ThrowAngle = 45.f;
     ThrowForce = 1000.f;
     AngleStep = 5.f;
+
+    // 오빗 기본 값 설정
+    CameraOrbitAngle = 0.f;
+    CameraOrbitRadius = 500.f;
 }
 
 void AFruitPlayerController::BeginPlay()
@@ -27,6 +32,22 @@ void AFruitPlayerController::BeginPlay()
     UE_LOG(LogTemp, Log, TEXT("키 매핑 설정 시작"));
     UFruitInputMappingManager::ConfigureKeyMappings();
     UE_LOG(LogTemp, Log, TEXT("키 매핑 설정 완료"));
+
+    // 접시 액터를 검색하여 회전 기준 위치로 사용 (접시가 있을 경우)
+    TArray<AActor*> PlateActors;
+    UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Plate"), PlateActors);
+    if(PlateActors.Num() > 0)
+    {
+        PlateLocation = PlateActors[0]->GetActorLocation();
+    }
+    else
+    {
+        PlateLocation = FVector::ZeroVector;
+        UE_LOG(LogTemp, Warning, TEXT("접시 액터를 찾을 수 없습니다. 기본 위치 (0,0,0) 사용."));
+    }
+
+    // 초기 카메라(=Pawn) 위치 업데이트: 접시 기준, 30도 내려다봄
+    UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius, 30.f);
 }
 
 void AFruitPlayerController::SetupInputComponent()
@@ -37,6 +58,8 @@ void AFruitPlayerController::SetupInputComponent()
         InputComponent->BindAction("IncreaseAngle", IE_Pressed, this, &AFruitPlayerController::IncreaseAngle);
         InputComponent->BindAction("DecreaseAngle", IE_Pressed, this, &AFruitPlayerController::DecreaseAngle);
         InputComponent->BindAction("ThrowFruit", IE_Pressed, this, &AFruitPlayerController::ThrowFruit);
+        InputComponent->BindAction("RotateCameraLeft", IE_Pressed, this, &AFruitPlayerController::RotateCameraLeft);
+        InputComponent->BindAction("RotateCameraRight", IE_Pressed, this, &AFruitPlayerController::RotateCameraRight);
         
         UE_LOG(LogTemp, Log, TEXT("입력 바인딩 완료"));
     }
@@ -109,4 +132,28 @@ void AFruitPlayerController::HandleThrow()
     {
         UE_LOG(LogTemp, Warning, TEXT("FruitBallClass가 설정되어 있지 않습니다."));
     }
+}
+
+void AFruitPlayerController::RotateCameraLeft()
+{
+    float DeltaAngle = 10.f;
+    CameraOrbitAngle += DeltaAngle;
+    if(CameraOrbitAngle >= 360.f)
+    {
+        CameraOrbitAngle -= 360.f;
+    }
+    UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius, 30.f);
+    UE_LOG(LogTemp, Log, TEXT("카메라 왼쪽으로 회전, 현재 각도: %f"), CameraOrbitAngle);
+}
+
+void AFruitPlayerController::RotateCameraRight()
+{
+    float DeltaAngle = 10.f;
+    CameraOrbitAngle -= DeltaAngle;
+    if(CameraOrbitAngle < 0.f)
+    {
+        CameraOrbitAngle += 360.f;
+    }
+    UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius, 30.f);
+    UE_LOG(LogTemp, Log, TEXT("카메라 오른쪽으로 회전, 현재 각도: %f"), CameraOrbitAngle);
 }
