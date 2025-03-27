@@ -16,43 +16,7 @@ void UFruitInputMappingManager::ConfigureKeyMappings()
 
     bool bMappingsChanged = false;
 
-    // "IncreaseAngle" 매핑: W 키
-    {
-        bool bFound = false;
-        for (const FInputActionKeyMapping& Mapping : InputSettings->GetActionMappings())
-        {
-            if (Mapping.ActionName == "IncreaseAngle" && Mapping.Key == EKeys::W)
-            {
-                bFound = true;
-                break;
-            }
-        }
-        if (!bFound)
-        {
-            InputSettings->AddActionMapping(FInputActionKeyMapping("IncreaseAngle", EKeys::W));
-            bMappingsChanged = true;
-        }
-    }
-
-    // "DecreaseAngle" 매핑: S 키
-    {
-        bool bFound = false;
-        for (const FInputActionKeyMapping& Mapping : InputSettings->GetActionMappings())
-        {
-            if (Mapping.ActionName == "DecreaseAngle" && Mapping.Key == EKeys::S)
-            {
-                bFound = true;
-                break;
-            }
-        }
-        if (!bFound)
-        {
-            InputSettings->AddActionMapping(FInputActionKeyMapping("DecreaseAngle", EKeys::S));
-            bMappingsChanged = true;
-        }
-    }
-
-    // "ThrowFruit" 매핑: SpaceBar (변경 없음)
+    // "ThrowFruit" 매핑: SpaceBar
     {
         bool bFound = false;
         for (const FInputActionKeyMapping& Mapping : InputSettings->GetActionMappings())
@@ -69,46 +33,43 @@ void UFruitInputMappingManager::ConfigureKeyMappings()
             bMappingsChanged = true;
         }
     }
-
-    // "RotateCameraLeft" 매핑: A 키
-    {
-        bool bFound = false;
-        for (const FInputActionKeyMapping& Mapping : InputSettings->GetActionMappings())
-        {
-            if (Mapping.ActionName == "RotateCameraLeft" && Mapping.Key == EKeys::A)
-            {
-                bFound = true;
-                break;
-            }
-        }
-        if (!bFound)
-        {
-            InputSettings->AddActionMapping(FInputActionKeyMapping("RotateCameraLeft", EKeys::A));
-            bMappingsChanged = true;
-        }
-    }
-
-    // "RotateCameraRight" 매핑: D 키
-    {
-        bool bFound = false;
-        for (const FInputActionKeyMapping& Mapping : InputSettings->GetActionMappings())
-        {
-            if (Mapping.ActionName == "RotateCameraRight" && Mapping.Key == EKeys::D)
-            {
-                bFound = true;
-                break;
-            }
-        }
-        if (!bFound)
-        {
-            InputSettings->AddActionMapping(FInputActionKeyMapping("RotateCameraRight", EKeys::D));
-            bMappingsChanged = true;
-        }
-    }
-
-    // 새로 추가: "RotateCamera" Axis 매핑
-    bool bAxisMappingChanged = false;
+    
+    // "AdjustAngle" Axis 매핑
+    bool bAdjustAngleAxisMappingChanged = false;
     TArray<FInputAxisKeyMapping> AxisMappings = InputSettings->GetAxisMappings();
+    bool bFoundAdjustAngleNegative = false;
+    bool bFoundAdjustAnglePositive = false;
+    for (const FInputAxisKeyMapping& Mapping : AxisMappings)
+    {
+        if (Mapping.AxisName == "AdjustAngle")
+        {
+            if (Mapping.Key == EKeys::S && Mapping.Scale < 0.f)
+            {
+                bFoundAdjustAngleNegative = true;
+            }
+            if (Mapping.Key == EKeys::W && Mapping.Scale > 0.f)
+            {
+                bFoundAdjustAnglePositive = true;
+            }
+        }
+    }
+    if (!bFoundAdjustAngleNegative)
+    {
+        InputSettings->AddAxisMapping(FInputAxisKeyMapping("AdjustAngle", EKeys::S, -1.f));
+        bAdjustAngleAxisMappingChanged = true;
+    }
+    if (!bFoundAdjustAnglePositive)
+    {
+        InputSettings->AddAxisMapping(FInputAxisKeyMapping("AdjustAngle", EKeys::W, 1.f));
+        bAdjustAngleAxisMappingChanged = true;
+    }
+    if (bAdjustAngleAxisMappingChanged)
+    {
+        bMappingsChanged = true;
+    }
+
+    // "RotateCamera" Axis 매핑
+    bool bAxisMappingChanged = false;
     bool bFoundNegative = false;
     bool bFoundPositive = false;
     for (const FInputAxisKeyMapping& Mapping : AxisMappings)

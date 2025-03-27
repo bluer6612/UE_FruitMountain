@@ -80,11 +80,6 @@ void AFruitPlayerController::SetupInputComponent()
     Super::SetupInputComponent();
     if (InputComponent)
     {
-        // 기존 액션 바인딩을 축 바인딩으로 변경
-        // InputComponent->BindAction("IncreaseAngle", IE_Pressed, this, &AFruitPlayerController::IncreaseAngle);
-        // InputComponent->BindAction("DecreaseAngle", IE_Pressed, this, &AFruitPlayerController::DecreaseAngle);
-        
-        // 새로운 축 바인딩 추가
         InputComponent->BindAxis("AdjustAngle", this, &AFruitPlayerController::AdjustAngle);
         InputComponent->BindAxis("RotateCamera", this, &AFruitPlayerController::RotateCamera);
         InputComponent->BindAction("ThrowFruit", IE_Pressed, this, &AFruitPlayerController::ThrowFruit);
