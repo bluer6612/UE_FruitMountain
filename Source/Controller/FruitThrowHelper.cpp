@@ -1,11 +1,11 @@
 #include "FruitThrowHelper.h"
 #include "FruitPlayerController.h"
+#include "FruitTrajectoryHelper.h" // 새 헬퍼 클래스 include
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/PrimitiveComponent.h"
 #include "Camera/CameraComponent.h"
-#include "DrawDebugHelpers.h"
 
 // 공통 함수로 볼 생성 로직 통합
 AActor* UFruitThrowHelper::SpawnBall(AFruitPlayerController* Controller, const FVector& Location, int32 BallType, bool bEnablePhysics)
@@ -38,17 +38,24 @@ AActor* UFruitThrowHelper::SpawnBall(AFruitPlayerController* Controller, const F
             
         if (PrimComp)
         {
-            // 물리 활성화 여부 설정
-            PrimComp->SetSimulatePhysics(bEnablePhysics);
-            
             if (bEnablePhysics)
             {
-                PrimComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+                // 물리 시뮬레이션 활성화
+                PrimComp->SetSimulatePhysics(true);
+                PrimComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics); // 콜리전 설정 명시적으로 추가
                 PrimComp->SetCollisionProfileName(TEXT("PhysicsActor"));
             }
             else
             {
-                PrimComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+                // 물리 시뮬레이션 비활성화 (미리보기용)
+                PrimComp->SetSimulatePhysics(false);
+                PrimComp->SetCollisionEnabled(ECollisionEnabled::NoCollision); // 미리보기시 콜리전 비활성화
+                
+                // 다른 액터에 부착
+                SpawnedBall->AttachToComponent(
+                    Controller->GetPawn()->GetRootComponent(),
+                    FAttachmentTransformRules::KeepWorldTransform
+                );
             }
         }
         
@@ -91,7 +98,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
             // 현재 위치 저장 (카메라 앞)
             FVector CurrentLocation = Controller->PreviewBall->GetActorLocation();
             
-            // 접시보다 50.f 높게 조정 (기존과 동일)
+            // 접시보다 50.f 높게 유지
             CurrentLocation.Z = PlateCenter.Z + 50.f;
             
             // 먼저 부착 해제 (있는 경우)
@@ -114,46 +121,94 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
             HorizontalDist.Z = 0; // Z 성분 제거하여 수평 거리만 계산
             float HorizontalDistance = HorizontalDist.Size();
             
-            // 이상적인 포물선 발사 각도 계산 (약 45도가 최대 거리)
-            float OptimalAngle = 45.0f; // 기본값 45도
-            float RadAngle = FMath::DegreesToRadians(OptimalAngle);
-            
-            // 발사 벡터 계산 - 수평 방향과 높이 방향 조합
+            // 거리에 따른 힘과 각도 정밀 조정
+            // 1. 기본 발사 방향 (수평)
             FVector HorizontalDir = HorizontalDist.GetSafeNormal();
-            float HeightFactor = FMath::Tan(RadAngle); // 탄젠트 45도 = 1.0
             
-            // 거리에 따라 각도 미세 조정 (멀면 더 높게, 가까우면 더 낮게)
-            if (HorizontalDistance > 500.0f)
+            // 2. 수직 높이 요소 계산 - 거리에 반비례하게 설정
+            float HeightFactor;
+            
+            // 거리에 따른 정밀 조정 (가까울수록 더 높게, 멀수록 적절히 감소)
+            if (HorizontalDistance < 200.0f)
             {
-                HeightFactor *= 1.2f; // 먼 거리일수록 조금 더 높게
+                // 매우 가까울 때 - 높은 각도
+                HeightFactor = 1.2f;
             }
-            else if (HorizontalDistance < 200.0f)
+            else if (HorizontalDistance < 400.0f)
             {
-                HeightFactor *= 0.8f; // 가까운 거리일수록 조금 더 낮게
+                // 중간 거리 - 중간 각도
+                HeightFactor = 1.0f;
+            }
+            else if (HorizontalDistance < 600.0f)
+            {
+                // 약간 먼 거리 - 약간 낮은 각도
+                HeightFactor = 0.8f;
+            }
+            else
+            {
+                // 매우 먼 거리 - 낮은 각도
+                HeightFactor = 0.6f;
             }
             
-            // 수평 방향과 수직 방향 조합
+            // 3. 최종 발사 방향
             FVector LaunchDirection = HorizontalDir + FVector(0, 0, HeightFactor);
             LaunchDirection.Normalize();
             
-            // 높은 포물선을 위해 힘 증가 (기존보다 20% 강하게)
-            float AdjustedForce = Controller->ThrowForce * 1.2f;
+            // 4. 거리에 따라 힘 정밀 조정 (기본값의 비율로 설정)
+            float ForceMultiplier;
+            if (HorizontalDistance < 200.0f)
+            {
+                // 가까운 거리는 약한 힘 (기본 힘의 50%)
+                ForceMultiplier = 0.5f;
+            }
+            else if (HorizontalDistance < 400.0f)
+            {
+                // 중간 거리는 중간 힘 (기본 힘의 80%)
+                ForceMultiplier = 0.8f;
+            }
+            else if (HorizontalDistance < 600.0f)
+            {
+                // 먼 거리는 기본 힘 (100%)
+                ForceMultiplier = 1.0f;
+            }
+            else
+            {
+                // 매우 먼 거리는 강한 힘 (120%)
+                ForceMultiplier = 1.2f;
+            }
+            
+            // 최종 힘 계산
+            float AdjustedForce = Controller->ThrowForce * ForceMultiplier;
+            
+            // 디버그 라인으로 발사 방향 표시
+            DrawDebugLine(
+                Controller->GetWorld(),
+                CurrentLocation,
+                CurrentLocation + LaunchDirection * 100.0f,
+                FColor::Green,
+                false,
+                3.0f,
+                0,
+                2.0f
+            );
             
             // 발사
             PrimComp->AddImpulse(LaunchDirection * AdjustedForce, NAME_None, true);
             
-            UE_LOG(LogTemp, Log, TEXT("공 발사 - 위치: %s, 방향: %s, 힘: %f, 높이계수: %f"), 
+            UE_LOG(LogTemp, Log, TEXT("공 발사(정밀) - 위치: %s, 접시: %s, 거리: %f, 힘: %f(x%f), 높이계수: %f"), 
                 *CurrentLocation.ToString(),
-                *LaunchDirection.ToString(),
+                *PlateCenter.ToString(),
+                HorizontalDistance,
                 AdjustedForce,
+                ForceMultiplier,
                 HeightFactor);
             
             // 발사된 공은 더 이상 미리보기 공이 아님
             Controller->PreviewBall = nullptr;
             
-            // 던진 후 다음 미리보기 공 준비 (새로운 타입으로 랜덤 선택)
+            // 던진 후 다음 미리보기 공 준비
             Controller->CurrentBallType = FMath::RandRange(1, 11);
-            UpdatePreviewBall(Controller);
+            UFruitTrajectoryHelper::UpdatePreviewBall(Controller); // 여기 변경
         }
     }
     else
@@ -180,7 +235,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
                 
                 // 던진 후 다음 미리보기 공 준비 (새로운 타입으로 랜덤 선택)
                 Controller->CurrentBallType = FMath::RandRange(1, 11);
-                Controller->UpdatePreviewBall();
+                UFruitTrajectoryHelper::UpdatePreviewBall(Controller); // 여기 변경
             }
             else
             {
@@ -191,62 +246,5 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
         {
             UE_LOG(LogTemp, Warning, TEXT("FruitBallClass가 설정되어 있지 않습니다."));
         }
-    }
-}
-
-// 미리보기 공 업데이트 함수 수정
-void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
-{
-    if (!Controller)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("UpdatePreviewBall: Controller가 유효하지 않습니다."));
-        return;
-    }
-
-    // 접시 위치 찾기
-    FVector PlateCenter = FVector::ZeroVector;
-    TArray<AActor*> PlateActors;
-    UGameplayStatics::GetAllActorsWithTag(Controller->GetWorld(), FName("Plate"), PlateActors);
-    if (PlateActors.Num() > 0)
-    {
-        PlateCenter = PlateActors[0]->GetActorLocation();
-    }
-
-    // 이전 미리보기 공 제거
-    if (Controller->PreviewBall)
-    {
-        Controller->PreviewBall->Destroy();
-        Controller->PreviewBall = nullptr;
-    }
-    
-    // 플레이어 카메라 정보 가져오기
-    APawn* PlayerPawn = Controller->GetPawn();
-    if (!PlayerPawn)
-    {
-        UE_LOG(LogTemp, Error, TEXT("미리보기 실패: PlayerPawn이 NULL입니다!"));
-        return;
-    }
-    
-    // 플레이어 방향 계산
-    FVector PlayerLocation = PlayerPawn->GetActorLocation();
-    FVector PlayerDirection = PlayerPawn->GetActorForwardVector();
-    
-    // 접시보다 50.f 높게 설정된 위치 계산
-    FVector PreviewLocation = FVector(
-        PlayerLocation.X + PlayerDirection.X * 300.f,
-        PlayerLocation.Y + PlayerDirection.Y * 300.f,
-        PlateCenter.Z + 50.f  // 접시보다 50.f 높게 설정
-    );
-    
-    // 공통 함수 호출로 공 생성 (물리 비활성화)
-    Controller->PreviewBall = SpawnBall(Controller, PreviewLocation, Controller->CurrentBallType, false);
-    
-    if (Controller->PreviewBall)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("미리보기 공 생성 성공 - 위치: %s"), *PreviewLocation.ToString());
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("미리보기 공 생성에 실패했습니다!"));
     }
 }

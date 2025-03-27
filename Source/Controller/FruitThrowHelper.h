@@ -17,8 +17,4 @@ public:
     // 공 던지기 기능
     UFUNCTION(BlueprintCallable, Category="FruitThrow")
     static void ThrowFruit(class AFruitPlayerController* Controller);
-    
-    // 미리보기 공 업데이트 기능
-    UFUNCTION(BlueprintCallable, Category="FruitThrow")
-    static void UpdatePreviewBall(class AFruitPlayerController* Controller);
 };

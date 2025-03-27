@@ -9,6 +9,7 @@
 #include "FruitThrowHelper.h"
 #include "GameMode/UE_FruitMountainGameMode.h"
 #include "Camera/CameraComponent.h"
+#include "FruitTrajectoryHelper.h"
 
 AFruitPlayerController::AFruitPlayerController()
 {
@@ -133,5 +134,5 @@ void AFruitPlayerController::RotateCamera(float Value)
 void AFruitPlayerController::UpdatePreviewBall()
 {
     // Helper 클래스로 로직 이관
-    UFruitThrowHelper::UpdatePreviewBall(this);
+    UFruitTrajectoryHelper::UpdatePreviewBall(this);
 }
