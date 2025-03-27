@@ -31,6 +31,7 @@ void UFruitInputMappingManager::ConfigureKeyMappings()
         {
             InputSettings->AddActionMapping(FInputActionKeyMapping("IncreaseAngle", EKeys::Up));
             bMappingsChanged = true;
+            UE_LOG(LogTemp, Log, TEXT("키 매핑 추가됨: IncreaseAngle -> Up 키"));
         }
     }
 
@@ -49,6 +50,7 @@ void UFruitInputMappingManager::ConfigureKeyMappings()
         {
             InputSettings->AddActionMapping(FInputActionKeyMapping("DecreaseAngle", EKeys::Down));
             bMappingsChanged = true;
+            UE_LOG(LogTemp, Log, TEXT("키 매핑 추가됨: DecreaseAngle -> Down 키"));
         }
     }
 
@@ -67,6 +69,7 @@ void UFruitInputMappingManager::ConfigureKeyMappings()
         {
             InputSettings->AddActionMapping(FInputActionKeyMapping("ThrowFruit", EKeys::SpaceBar));
             bMappingsChanged = true;
+            UE_LOG(LogTemp, Log, TEXT("키 매핑 추가됨: ThrowFruit -> SpaceBar"));
         }
     }
 
