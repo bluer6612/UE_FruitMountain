@@ -7,53 +7,31 @@ APlateActor::APlateActor()
     PrimaryActorTick.bCanEverTick = false;
     RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootScene"));
 
-    static ConstructorHelpers::FObjectFinder<UStaticMesh> CylinderAsset(TEXT("/Engine/BasicShapes/Cylinder"));
-    if (!CylinderAsset.Succeeded())
-        return;
-
-    // 바닥 (원형 얕은 판)
-    UStaticMeshComponent* Bottom = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Bottom"));
-    Bottom->SetupAttachment(RootComponent);
-    Bottom->SetStaticMesh(CylinderAsset.Object);
-    Bottom->SetRelativeScale3D(FVector(4.f, 4.f, 0.2f));
-    Bottom->SetRelativeRotation(FRotator(90.f, 0.f, 0.f));
-    Bottom->SetRelativeLocation(FVector(0.f, 0.f, -10.f));
-    Bottom->SetCollisionProfileName(TEXT("BlockAll"));
-
-    // 원형 U자 테두리를 여러 세그먼트로 생성
-    const int32 NumSegments = 16; // 세그먼트 개수
-    const float Radius = 200.f;   // 접시 반지름
-    const float WallHeight = 50.f;
-    const float GapAngle = 60.f;  // 열려 있는 각도(손잡이 부분)
-
-    for (int32 i = 0; i < NumSegments; ++i)
+    // Bowl 형태 메시를 찾는다 (Starter Content나 프로젝트에 실제로 존재해야 함)
+    // 예시 경로: "/Game/StarterContent/Props/SM_Bowl"
+    static ConstructorHelpers::FObjectFinder<UStaticMesh> BowlAsset(TEXT("/Game/StarterContent/Props/SM_Bowl"));
+    if (!BowlAsset.Succeeded())
     {
-        // i번째 세그먼트의 중심 각도
-        float Angle = 360.f * (float)i / NumSegments;
-
-        // U자 모양을 만들기 위해 GapAngle 범위만큼 생략
-        // 예: 0~60도 범위를 비움 (각도 비교는 상황에 맞게 조정)
-        if (Angle >= 0.f && Angle < GapAngle)
-            continue;
-
-        // 위치 및 회전 계산
-        float Rad = FMath::DegreesToRadians(Angle);
-        float X = FMath::Cos(Rad) * Radius;
-        float Y = FMath::Sin(Rad) * Radius;
-        float Yaw = Angle;
-
-        // 메시 생성
-        FName SegmentName = *FString::Printf(TEXT("WallSegment_%d"), i);
-        UStaticMeshComponent* WallSegment = CreateDefaultSubobject<UStaticMeshComponent>(SegmentName);
-        WallSegment->SetupAttachment(RootComponent);
-        WallSegment->SetStaticMesh(CylinderAsset.Object);
-        // 세그먼트 두께/높이 조정
-        WallSegment->SetRelativeScale3D(FVector(5.f, 0.1f, WallHeight / 100.f));
-        WallSegment->SetRelativeRotation(FRotator(0.f, Yaw, 0.f));
-        WallSegment->SetRelativeLocation(FVector(X, Y, WallHeight * 0.5f));
-        WallSegment->SetCollisionProfileName(TEXT("BlockAll"));
+        UE_LOG(LogTemp, Warning, TEXT("BowlAsset not found! 경로를 확인하세요."));
+        return;
     }
 
+    // 그릇 메시
+    UStaticMeshComponent* BowlMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BowlMesh"));
+    BowlMesh->SetupAttachment(RootComponent);
+    BowlMesh->SetStaticMesh(BowlAsset.Object);
+
+    // 그릇 전체 스케일 조정 (너비, 너비, 높이)
+    BowlMesh->SetRelativeScale3D(FVector(2.f, 2.f, 2.f));
+    // 접시가 수평으로 놓이도록 회전값 조절 (필요 시 변경)
+    BowlMesh->SetRelativeRotation(FRotator(0.f, 0.f, 0.f));
+    // 중심 위치 조정
+    BowlMesh->SetRelativeLocation(FVector(0.f, 0.f, 0.f));
+
+    // 충돌 설정
+    BowlMesh->SetCollisionProfileName(TEXT("BlockAll"));
+
+    // 태그 추가(필요 시)
     Tags.Add(FName("Plate"));
 }
 
