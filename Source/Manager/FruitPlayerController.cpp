@@ -36,7 +36,7 @@ void AFruitPlayerController::BeginPlay()
     // 접시 액터를 검색하여 회전 기준 위치로 사용 (접시가 있을 경우)
     TArray<AActor*> PlateActors;
     UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Plate"), PlateActors);
-    if(PlateActors.Num() > 0)
+    if (PlateActors.Num() > 0)
     {
         PlateLocation = PlateActors[0]->GetActorLocation();
     }
@@ -45,9 +45,13 @@ void AFruitPlayerController::BeginPlay()
         PlateLocation = FVector::ZeroVector;
         UE_LOG(LogTemp, Warning, TEXT("접시 액터를 찾을 수 없습니다. 기본 위치 (0,0,0) 사용."));
     }
-
-    // 초기 카메라(=Pawn) 위치 업데이트: 접시 기준, 30도 내려다봄
-    UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius, 30.f);
+    
+    // Pawn이 확실히 할당된 후 카메라 위치를 업데이트하여 접시를 바라보게 함
+    // (다음 틱에서 호출)
+    GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
+    {
+        UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius, 30.f);
+    });
 }
 
 void AFruitPlayerController::SetupInputComponent()

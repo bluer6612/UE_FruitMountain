@@ -5,11 +5,15 @@
 #include "GameFramework/Actor.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Actors/PlateActor.h"
+#include "Actors/PlayerPawn.h" // 실제 사용할 Pawn 클래스 헤더
 
 AUE_FruitMountainGameMode::AUE_FruitMountainGameMode()
 {
     // 기본 플레이어 컨트롤러를 AFruitPlayerController로 명시적으로 설정
     PlayerControllerClass = AFruitPlayerController::StaticClass();
+
+    // DefaultPawnClass 지정 (적절한 Pawn 클래스로 교체)
+    DefaultPawnClass = APlayerPawn::StaticClass();
 
     // Blueprint 없이 코드로 만든 PlateActor를 기본값으로 할당
     PlateClass = APlateActor::StaticClass();

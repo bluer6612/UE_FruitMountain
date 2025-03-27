@@ -16,12 +16,12 @@ void UFruitInputMappingManager::ConfigureKeyMappings()
 
     bool bMappingsChanged = false;
 
-    // "IncreaseAngle" 매핑: Up 키
+    // "IncreaseAngle" 매핑: W 키
     {
         bool bFound = false;
         for (const FInputActionKeyMapping& Mapping : InputSettings->GetActionMappings())
         {
-            if (Mapping.ActionName == "IncreaseAngle" && Mapping.Key == EKeys::Up)
+            if (Mapping.ActionName == "IncreaseAngle" && Mapping.Key == EKeys::W)
             {
                 bFound = true;
                 break;
@@ -29,17 +29,17 @@ void UFruitInputMappingManager::ConfigureKeyMappings()
         }
         if (!bFound)
         {
-            InputSettings->AddActionMapping(FInputActionKeyMapping("IncreaseAngle", EKeys::Up));
+            InputSettings->AddActionMapping(FInputActionKeyMapping("IncreaseAngle", EKeys::W));
             bMappingsChanged = true;
         }
     }
 
-    // "DecreaseAngle" 매핑: Down 키
+    // "DecreaseAngle" 매핑: S 키
     {
         bool bFound = false;
         for (const FInputActionKeyMapping& Mapping : InputSettings->GetActionMappings())
         {
-            if (Mapping.ActionName == "DecreaseAngle" && Mapping.Key == EKeys::Down)
+            if (Mapping.ActionName == "DecreaseAngle" && Mapping.Key == EKeys::S)
             {
                 bFound = true;
                 break;
@@ -47,12 +47,12 @@ void UFruitInputMappingManager::ConfigureKeyMappings()
         }
         if (!bFound)
         {
-            InputSettings->AddActionMapping(FInputActionKeyMapping("DecreaseAngle", EKeys::Down));
+            InputSettings->AddActionMapping(FInputActionKeyMapping("DecreaseAngle", EKeys::S));
             bMappingsChanged = true;
         }
     }
 
-    // "ThrowFruit" 매핑: SpaceBar
+    // "ThrowFruit" 매핑: SpaceBar (변경 없음)
     {
         bool bFound = false;
         for (const FInputActionKeyMapping& Mapping : InputSettings->GetActionMappings())
@@ -66,6 +66,42 @@ void UFruitInputMappingManager::ConfigureKeyMappings()
         if (!bFound)
         {
             InputSettings->AddActionMapping(FInputActionKeyMapping("ThrowFruit", EKeys::SpaceBar));
+            bMappingsChanged = true;
+        }
+    }
+
+    // "RotateCameraLeft" 매핑: A 키
+    {
+        bool bFound = false;
+        for (const FInputActionKeyMapping& Mapping : InputSettings->GetActionMappings())
+        {
+            if (Mapping.ActionName == "RotateCameraLeft" && Mapping.Key == EKeys::A)
+            {
+                bFound = true;
+                break;
+            }
+        }
+        if (!bFound)
+        {
+            InputSettings->AddActionMapping(FInputActionKeyMapping("RotateCameraLeft", EKeys::A));
+            bMappingsChanged = true;
+        }
+    }
+
+    // "RotateCameraRight" 매핑: D 키
+    {
+        bool bFound = false;
+        for (const FInputActionKeyMapping& Mapping : InputSettings->GetActionMappings())
+        {
+            if (Mapping.ActionName == "RotateCameraRight" && Mapping.Key == EKeys::D)
+            {
+                bFound = true;
+                break;
+            }
+        }
+        if (!bFound)
+        {
+            InputSettings->AddActionMapping(FInputActionKeyMapping("RotateCameraRight", EKeys::D));
             bMappingsChanged = true;
         }
     }
