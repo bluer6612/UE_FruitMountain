@@ -91,7 +91,7 @@ void AFruitPlayerController::ThrowFruit()
 
 void AFruitPlayerController::HandleThrow()
 {
-    // 접시 액터가 있는 위치를 찾음 (클래스 멤버와 이름 충돌 방지를 위해 'LocalSpawnLocation' 사용)
+    // 접시 액터 위치 검색 (로컬 스폰 위치)
     FVector LocalSpawnLocation = FVector::ZeroVector;
     TArray<AActor*> PlateActors;
     UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Plate"), PlateActors);
@@ -105,21 +105,24 @@ void AFruitPlayerController::HandleThrow()
         UE_LOG(LogTemp, Warning, TEXT("접시 액터(Plate)를 찾을 수 없습니다. 기본 위치 (0,0,0)에서 스폰합니다."));
     }
 
-    // FruitBallClass가 설정되어 있으면 과일 액터 스폰
+    // FruitBallClass가 설정되어 있으면 공 액터 스폰 시도
     if (FruitBallClass)
     {
         FRotator SpawnRotation = FRotator::ZeroRotator;
         FActorSpawnParameters SpawnParams;
+        SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+        
         AActor* SpawnedBall = GetWorld()->SpawnActor<AActor>(FruitBallClass, LocalSpawnLocation, SpawnRotation, SpawnParams);
         if (SpawnedBall)
         {
+            // 공의 타입에 따라 크기 조절 (1~11 사이 임의의 값)
             int32 BallType = FMath::RandRange(1, 11);
             float BaseSize = 25.f;
             float ScaleFactor = 1.f + 0.1f * (BallType - 1);
             float BallSize = BaseSize * ScaleFactor;
+            SpawnedBall->SetActorScale3D(FVector(BallSize));
 
-            SpawnedBall->SetActorScale3D(FVector(BallSize, BallSize, BallSize));
-
+            // 물리 시뮬레이션이 가능하면, ThrowAngle에 따른 힘을 가함
             UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(SpawnedBall->GetComponentByClass(UPrimitiveComponent::StaticClass()));
             if (PrimComp && PrimComp->IsSimulatingPhysics())
             {
