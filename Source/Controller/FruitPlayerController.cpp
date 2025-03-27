@@ -80,25 +80,35 @@ void AFruitPlayerController::SetupInputComponent()
     Super::SetupInputComponent();
     if (InputComponent)
     {
-        InputComponent->BindAction("IncreaseAngle", IE_Pressed, this, &AFruitPlayerController::IncreaseAngle);
-        InputComponent->BindAction("DecreaseAngle", IE_Pressed, this, &AFruitPlayerController::DecreaseAngle);
-        InputComponent->BindAction("ThrowFruit", IE_Pressed, this, &AFruitPlayerController::ThrowFruit);
-        // 기존 RotateCameraLeft/Right 액션 대신 Axis 매핑 사용 (키를 누른 채로 부드럽게 회전)
+        // 기존 액션 바인딩을 축 바인딩으로 변경
+        // InputComponent->BindAction("IncreaseAngle", IE_Pressed, this, &AFruitPlayerController::IncreaseAngle);
+        // InputComponent->BindAction("DecreaseAngle", IE_Pressed, this, &AFruitPlayerController::DecreaseAngle);
+        
+        // 새로운 축 바인딩 추가
+        InputComponent->BindAxis("AdjustAngle", this, &AFruitPlayerController::AdjustAngle);
         InputComponent->BindAxis("RotateCamera", this, &AFruitPlayerController::RotateCamera);
+        InputComponent->BindAction("ThrowFruit", IE_Pressed, this, &AFruitPlayerController::ThrowFruit);
         UE_LOG(LogTemp, Log, TEXT("입력 바인딩 완료"));
     }
 }
 
-void AFruitPlayerController::IncreaseAngle()
+// 새로운 각도 조정 함수 (축 매핑용)
+void AFruitPlayerController::AdjustAngle(float Value)
 {
-    ThrowAngle += AngleStep;
-    UE_LOG(LogTemp, Log, TEXT("각도 증가: 현재 각도 %f"), ThrowAngle);
-}
-
-void AFruitPlayerController::DecreaseAngle()
-{
-    ThrowAngle -= AngleStep;
-    UE_LOG(LogTemp, Log, TEXT("각도 감소: 현재 각도 %f"), ThrowAngle);
+    if (FMath::Abs(Value) > KINDA_SMALL_NUMBER)
+    {
+        // 프레임 시간과 조정 속도를 곱해 부드러운 변화 적용
+        float DeltaAngle = Value * AngleAdjustSpeed * GetWorld()->DeltaTimeSeconds;
+        ThrowAngle += DeltaAngle;
+        
+        // 각도 범위 제한 (0도에서 90도 사이)
+        ThrowAngle = FMath::Clamp(ThrowAngle, 0.0f, 90.0f);
+        
+        UE_LOG(LogTemp, Log, TEXT("각도 조정: 현재 각도 %f"), ThrowAngle);
+        
+        // 각도 변경 후 미리보기 공도 함께 업데이트 (제한적으로 실행됨)
+        UpdatePreviewBall();
+    }
 }
 
 void AFruitPlayerController::ThrowFruit()

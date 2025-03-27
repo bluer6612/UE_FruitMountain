@@ -29,6 +29,10 @@ public:
     // 각도 조정 단위 (한 번 입력 시 변경되는 값)
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Throwing")
     float AngleStep;
+
+    // 각도 조정 속도 (도/초)
+    UPROPERTY(EditAnywhere, Category = "Throwing")
+    float AngleAdjustSpeed = 60.f;
     
     // 미리보기 공 액터
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ball")
@@ -47,12 +51,14 @@ protected:
     // 프로젝트 시작 시 C++로 키 매핑 설정
     void SetupProjectInputMappings();
 
-    // 위쪽 방향키로 각도 증가
-    void IncreaseAngle();
-    // 아래쪽 방향키로 각도 감소
-    void DecreaseAngle();
     // 스페이스바 입력에 따라 과일을 던짐
     void ThrowFruit();
+
+    // Axis 입력 처리 함수
+    void AdjustAngle(float Value);
+
+    // Axis 입력으로 카메라 회전 처리 함수
+    void RotateCamera(float Value);
 
     // 카메라(Pawn) 오빗 관련 변수 및 함수
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Orbit")
@@ -68,19 +74,11 @@ protected:
     // 회전 기준이 되는 접시(Plate)의 위치
     FVector PlateLocation;
 
-    // 왼쪽, 오른쪽 입력 처리 함수 및 카메라 업데이트 함수
-    void RotateCameraLeft();
-    void RotateCameraRight();
-    void UpdateCameraPosition();
-
-    // Axis 입력으로 카메라 회전 처리 함수
-    void RotateCamera(float Value);
-
 private:
     // 미리보기 공 업데이트 제한을 위한 변수들
     FTimerHandle PreviewBallUpdateTimerHandle;
     bool bPreviewBallUpdatePending = false;
-    const float PreviewBallUpdateDelay = 0.05f;
+    const float PreviewBallUpdateDelay = 0.02f;
     
     // 실제 업데이트 수행 함수
     void ExecutePreviewBallUpdate();

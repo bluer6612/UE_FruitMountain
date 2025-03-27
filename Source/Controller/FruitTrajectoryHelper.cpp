@@ -76,7 +76,7 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(AFruitPlayerController* Controll
     
     UWorld* World = Controller->GetWorld();
     
-    // 이전 디버그 라인 제거 (필요한 경우에만)
+    // 이전 영구 디버그 라인 제거
     FlushPersistentDebugLines(World);
     
     // 접시까지의 벡터 계산
@@ -161,22 +161,22 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(AFruitPlayerController* Controll
     
     UE_LOG(LogTemp, Warning, TEXT("궤적 포인트 수: %d"), TrajectoryPoints.Num());
     
-    // 계산된 궤적 그리기
+    // 계산된 궤적 그리기 - 영구적으로 표시하도록 변경
     for (int32 i = 0; i < TrajectoryPoints.Num() - 1; i++)
     {
-        // 점들을 선으로 연결 - 기본 빨간색으로 변경하고 지속 시간 늘림
+        // 점들을 선으로 연결 - 영구적으로 표시(true로 변경)
         DrawDebugLine(
             World,
             TrajectoryPoints[i],
             TrajectoryPoints[i + 1],
-            FColor::Red, // 단순 빨간색으로 확실하게 보이게
-            false,
-            2.0f, // 2초로 지속 시간 크게 늘림
+            FColor::Blue,
+            true, // false -> true로 변경 (영구적으로 표시)
+            -1.0f, // 타임아웃을 -1로 설정하여 무한대로 유지
             0,
             2.0f // 두꺼운 선으로 표시
         );
         
-        // 5개 점마다 구체 그리기 (시각적으로 확인하기 쉽게)
+        // 5개 점마다 구체 그리기 - 영구적으로 표시
         if (i % 5 == 0)
         {
             DrawDebugSphere(
@@ -184,16 +184,16 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(AFruitPlayerController* Controll
                 TrajectoryPoints[i],
                 5.0f, // 작은 구체
                 8,
-                FColor::Yellow,
-                false,
-                2.0f, // 2초 지속
+                FColor::Blue,
+                true, // false -> true로 변경 (영구적으로 표시)
+                -1.0f, // 타임아웃을 -1로 설정하여 무한대로 유지
                 0,
                 1.0f
             );
         }
     }
     
-    // 마지막 지점은 큰 구체로 표시
+    // 마지막 지점은 큰 구체로 표시 - 영구적으로 표시
     if (TrajectoryPoints.Num() > 1)
     {
         DrawDebugSphere(
@@ -202,22 +202,22 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(AFruitPlayerController* Controll
             10.0f, // 더 큰 구체
             12,
             FColor::Green,
-            false,
-            2.0f, // 2초 지속
+            true, // false -> true로 변경 (영구적으로 표시)
+            -1.0f, // 타임아웃을 -1로 설정하여 무한대로 유지
             0,
             1.0f
         );
     }
     
-    // 실제 목표 지점도 표시
+    // 실제 목표 지점도 표시 - 영구적으로 표시
     DrawDebugSphere(
         World,
         TargetLocation,
         15.0f, // 큰 구체
         12,
         FColor::Blue,
-        false,
-        2.0f, // 2초 지속
+        true, // false -> true로 변경 (영구적으로 표시)
+        -1.0f, // 타임아웃을 -1로 설정하여 무한대로 유지
         0,
         1.0f
     );
