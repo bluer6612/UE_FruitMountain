@@ -49,13 +49,11 @@ float AFruitBall::CalculateBallMass(int32 BallType, float BaseBallScale)
     float BallRadius = BallSize / 2.0f; // 반지름 (cm)
     float BallVolume = (4.0f/3.0f) * PI * FMath::Pow(BallRadius, 3); // 구의 체적 (cm^3)
     
-    // 밀도 계수 (그램/cm^3) - 약 0.3으로 설정하여 15cm 공이 약 1kg이 되도록 함
-    float DensityFactor = 0.3f;
-    
+    // 밀도 계수 (그램/cm^3) - 25배 증가 (원래 0.3f → 1.5f에서 추가로 5배 증가)
     // 체적 * 밀도 = 질량 (그램)
     // 킬로그램으로 변환 (1000으로 나눔)
     float BallMass = (BallVolume * DensityFactor) / 1000.0f;
     
-    // 최소 질량 보장
-    return FMath::Max(BallMass, 0.5f);
+    // 최소 질량 보장 (이것도 5배 증가)
+    return FMath::Max(BallMass, 12.5f); // 이전 2.5f에서 5배 증가
 }

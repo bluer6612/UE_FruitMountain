@@ -20,6 +20,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Ball Properties")
     float BaseBallSize = 15.0f;
     
+    // 밀도 계수 - 다른 클래스에서 참조할 수 있도록 상수로 정의
+    static constexpr float DensityFactor = 7.5f; // 추가로 5배 증가된 밀도 (1.5f에서 7.5f로)
+    
     // 공 크기 getter 함수 - 외부에서 공 크기 접근용
     UFUNCTION(BlueprintCallable, Category="Ball Properties")
     float GetBaseBallSize() const { return BaseBallSize; }

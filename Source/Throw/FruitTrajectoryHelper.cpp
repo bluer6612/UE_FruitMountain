@@ -1,21 +1,18 @@
 #include "FruitTrajectoryHelper.h"
 #include "FruitPlayerController.h"
 #include "FruitThrowHelper.h"
-#include "FruitPhysicsHelper.h" // 새 헬퍼 클래스 포함
-#include "FruitSpawnHelper.h" // 공의 질량 계산을 위한 헬퍼 클래스 포함
+#include "FruitPhysicsHelper.h"
+#include "FruitSpawnHelper.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/PrimitiveComponent.h"
 #include "DrawDebugHelpers.h"
 #include "PhysicsEngine/PhysicsSettings.h"
+#include "Actors/FruitBall.h" // FruitBall 헤더 포함
 
-// 궤적 계산 함수 - 부드러운 포물선 곡선 생성
-TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(
-    AFruitPlayerController* Controller,
-    const FVector& StartLocation,
-    const FVector& TargetLocation,
-    float BallMass)
+// 궤적 계산 함수 - 인자 한 줄로 정리
+TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(AFruitPlayerController* Controller, const FVector& StartLocation, const FVector& TargetLocation, float BallMass)
 {
     TArray<FVector> TrajectoryPoints;
     
@@ -25,14 +22,15 @@ TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(
     // 정확한 목표 지점 사용
     FVector PreciseTargetLocation = TargetLocation;
     
-    // FruitPhysicsHelper 함수 호출하여 던지기 파라미터 계산
+    // FruitPhysicsHelper 함수 호출하여 던지기 파라미터 계산 - 인자 한 줄로
     float AdjustedForce;
     FVector LaunchDirection;
     UFruitPhysicsHelper::CalculateThrowParameters(Controller, StartLocation, PreciseTargetLocation, AdjustedForce, LaunchDirection, BallMass);
         
-    // 초기 속도 계산 - 질량과 무관하게 일정한 속도로 궤적 시뮬레이션
-    float StandardMass = 10.0f; // 표준 질량 정의
-    FVector InitialVelocity = LaunchDirection * (AdjustedForce / StandardMass); // 표준 질량으로 나누어 질량 효과 제거
+    // 초기 속도 계산 - FruitBall 클래스의 표준 질량 사용
+    // 중요: FruitBall의 밀도 계수와 일관되게 곱하여 같은 비율 유지
+    float StandardMass = AFruitBall::DensityFactor * 50.0f / 0.3f; // 원래 표준 질량에 밀도 비율 적용
+    FVector InitialVelocity = LaunchDirection * (AdjustedForce / StandardMass);
     
     // 중력 가속도
     float GravityZ = -980.0f;
@@ -42,7 +40,7 @@ TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(
     TrajectoryPoints.Add(StartLocation);
     
     // 시간 간격으로 위치 계산 - 더 촘촘한 포인트 생성
-    const float TimeStep = 0.02f; // 0.05f에서 0.02f로 줄여 더 촘촘하게 포인트 생성
+    const float TimeStep = 0.02f;
     const float MaxTime = 5.0f;
     bool bHitTarget = false;
     
@@ -113,7 +111,7 @@ TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(
         }
         else
         {
-            // 인접한 제어점 간의 선형 보간 (더 복잡한 베지어 또는 스플라인 보간으로 대체 가능)
+            // 인접한 제어점 간의 선형 보간
             float PointPosition = Alpha * (ControlPoints.Num() - 1);
             int32 PointIndex = FMath::FloorToInt(PointPosition);
             float LocalAlpha = PointPosition - PointIndex;
@@ -134,7 +132,7 @@ TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(
     return TrajectoryPoints;
 }
 
-// 부드러운 포물선 궤적 그리기 함수
+// 포물선 궤적 그리기 함수 - 일정한 크기의 구 사용
 void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVector>& TrajectoryPoints, const FVector& TargetLocation, bool bPersistent, int32 TrajectoryID)
 {
     if (!World || TrajectoryPoints.Num() < 2)
@@ -144,25 +142,38 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVec
     float Duration = -1.0f; // 무기한 지속
     bool PersistentFlag = true; // 항상 영구적
     
-    // 색상 설정 - 더 선명한 색상 사용
-    FColor LineColor = FColor::Blue;  // 밝은 파란색
+    // 색상 및 두께 설정
+    FColor LineColor = FColor::Blue;
+    FColor SphereColor = FColor(0, 100, 255);
+    float LineThickness = 2.0f;
     
-    // 선 두께 - 부드러운 곡선에 적합한 두께
-    float LineThickness = 2.5f;  // 더 두꺼운 선
+    // 표시할 구의 개수 제한
+    const int32 MaxSpheresCount = 20;
+    int32 SphereInterval = FMath::Max(1, TrajectoryPoints.Num() / MaxSpheresCount);
     
-    // 부드러운 곡선 그리기 - 모든 포인트를 선으로 연결
+    // 모든 구에 동일한 크기 적용
+    const float UniformSphereSize = 2.0f;
+    
+    // 1. 궤적 포인트에 균일한 크기의 구 세그먼트 그리기
+    for (int32 i = 0; i < TrajectoryPoints.Num(); i += SphereInterval)
+    {
+        // 모든 지점에 동일한 크기의 구 그리기
+        DrawDebugSphere(World, TrajectoryPoints[i], UniformSphereSize, 8, SphereColor, PersistentFlag, Duration, 0, 1.0f);
+    }
+    
+    // 2. 선으로 모든 포인트 연결
     for (int32 i = 0; i < TrajectoryPoints.Num() - 1; i++)
     {
         // 두 점이 유효한지 확인
         if (!TrajectoryPoints[i].IsZero() && !TrajectoryPoints[i+1].IsZero())
         {
-            // 더 작은 간격으로 선 그리기 - 부드러운 곡선 효과
+            // 선 그리기
             DrawDebugLine(World, TrajectoryPoints[i], TrajectoryPoints[i + 1], LineColor, PersistentFlag, Duration, TrajectoryID, LineThickness);
         }
     }
 }
 
-// 궤적 업데이트 함수 개선 - 정확한 접시 위치 사용
+// 궤적 업데이트 함수 - 인자 한 줄로 정리
 void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Controller, const FVector& StartLocation, const FVector& TargetLocation, bool bPersistent, int32 CustomTrajectoryID)
 {
     if (!Controller || !Controller->GetWorld())
@@ -173,7 +184,7 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     // 이전의 모든 디버그 라인을 강제로 제거
     FlushPersistentDebugLines(World);
     
-    // 고정 ID 사용 - 다른 디버그 라인과 충돌 방지
+    // 고정 ID 사용
     const int32 TrajectoryID = (CustomTrajectoryID != 0) ? CustomTrajectoryID : 9999;
     
     // 공의 질량 계산
@@ -185,13 +196,11 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     // 공이 있으면 공의 실제 중심 위치 계산
     if (Controller->PreviewBall)
     {
-        // 공의 크기 가져오기
+        // 공의 크기 및 반지름 계산
         float BallSize = Controller->PreviewBall->GetActorScale3D().X;
+        float BallRadius = BallSize * 25.0f;
         
-        // 정확한 반지름 계산 (BallSize * 50.0f / 2)
-        float BallRadius = BallSize * 25.0f; // 공의 실제 반지름
-        
-        // 중심 보정치 적용 - 정확한 반지름 적용
+        // 중심 보정치 적용
         FVector UpVector = FVector(0, 0, BallRadius);
         AdjustedStartLocation = Controller->PreviewBall->GetActorLocation() + UpVector;
     }
@@ -204,39 +213,33 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     UGameplayStatics::GetAllActorsWithTag(World, FName("Plate"), PlateActors);
     if (PlateActors.Num() > 0)
     {
-        // 첫 번째 접시 액터 사용
+        // 접시 위치 조정
         AActor* PlateActor = PlateActors[0];
-        
-        // 접시의 정확한 위치 (중앙 + 약간 위로)
         FVector PlateCenter = PlateActor->GetActorLocation();
-        
-        // 접시 위에 도달하도록 약간 위로 조정 (10 유닛)
         PlateCenter.Z += 10.0f;
-        
-        // 정확한 목표 위치 사용
         PreciseTargetLocation = PlateCenter;
         
-        // 컨트롤러에 접시 위치 업데이트 (만약 컨트롤러에 해당 속성이 있다면)
+        // 컨트롤러에 접시 위치 업데이트
         if (Controller->GetClass()->FindPropertyByName(TEXT("PlateLocation")))
         {
             Controller->PlateLocation = PlateCenter;
         }
     }
     
-    // 궤적 계산 (인자 한 줄로)
+    // 궤적 계산 - 인자 한 줄로
     TArray<FVector> NewTrajectoryPoints = CalculateTrajectoryPoints(Controller, AdjustedStartLocation, PreciseTargetLocation, BallMass);
     
     // 궤적 포인트가 충분한지 확인
     if (NewTrajectoryPoints.Num() < 2)
         return;
     
-    // 새 궤적 그리기 (항상 영구적으로) - 라인만 그림
+    // 새 궤적 그리기 - 인자 한 줄로
     DrawTrajectoryPath(World, NewTrajectoryPoints, PreciseTargetLocation, true, TrajectoryID);
 }
 
-// 하위 호환성을 위한 영구 궤적 그리기 함수 구현
+// 하위 호환성을 위한 영구 궤적 그리기 함수 - 인자 한 줄로
 void UFruitTrajectoryHelper::DrawPersistentTrajectoryPath(AFruitPlayerController* Controller, const FVector& StartLocation, const FVector& TargetLocation)
 {
-    // 단순히 UpdateTrajectoryPath 함수를 호출하고 영구적 파라미터를 true로 설정
+    // UpdateTrajectoryPath 함수 호출 - 인자 한 줄로
     UpdateTrajectoryPath(Controller, StartLocation, TargetLocation, true);
 }

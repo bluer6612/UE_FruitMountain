@@ -34,10 +34,10 @@ public:
 
     // 각도 조정 속도 (도/초)
     UPROPERTY(EditAnywhere, Category = "Throwing")
-    float AngleAdjustSpeed = 60.f;
+    float AngleAdjustSpeed = 120.f;
 
     // 공 던지기 관련 변수
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Throwing")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Throwing")
     float BallThrowDelay = 0.5f;
     
     // 미리보기 공 액터

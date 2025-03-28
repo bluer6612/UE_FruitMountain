@@ -112,7 +112,7 @@ void AFruitPlayerController::AdjustAngle(float Value)
         // 각도 범위 제한 (0도에서 90도 사이)
         ThrowAngle = FMath::Clamp(ThrowAngle, 0.0f, 90.0f);
         
-        UE_LOG(LogTemp, Log, TEXT("각도 조정: 현재 각도 %f"), ThrowAngle);
+        //UE_LOG(LogTemp, Log, TEXT("각도 조정: 현재 각도 %f"), ThrowAngle);
         
         // 각도 변경 후 미리보기 공도 함께 업데이트 (제한적으로 실행됨)
         UpdatePreviewBall();
