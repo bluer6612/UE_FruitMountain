@@ -10,7 +10,7 @@
 #include "DrawDebugHelpers.h"
 #include "PhysicsEngine/PhysicsSettings.h"
 
-// 궤적 생성 및 그리기를 위한 공통 함수
+// 궤적 계산 함수 - FruitPhysicsHelper 활용
 TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(
     AFruitPlayerController* Controller,
     const FVector& StartLocation,
@@ -22,13 +22,16 @@ TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(
     if (!Controller)
         return TrajectoryPoints;
     
-    // 공통 함수 호출하여 던지기 파라미터 계산 (인자 한 줄로)
+    // 정확한 목표 지점 사용
+    FVector PreciseTargetLocation = TargetLocation;
+    
+    // FruitPhysicsHelper 함수 호출하여 던지기 파라미터 계산
     float AdjustedForce;
     FVector LaunchDirection;
-    UFruitPhysicsHelper::CalculateThrowParameters(Controller, StartLocation, TargetLocation, AdjustedForce, LaunchDirection, BallMass);
+    UFruitPhysicsHelper::CalculateThrowParameters(Controller, StartLocation, PreciseTargetLocation, AdjustedForce, LaunchDirection, BallMass);
         
-    // 초기 속도 계산
-    FVector InitialVelocity = LaunchDirection * (AdjustedForce / BallMass);
+    // 초기 속도 계산 - 약간 더 강한 힘 적용 (1.05배)
+    FVector InitialVelocity = LaunchDirection * (AdjustedForce * 1.05f / BallMass);
     
     // 중력 가속도
     float GravityZ = -980.0f;
@@ -40,6 +43,7 @@ TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(
     // 시간 간격으로 위치 계산
     const float TimeStep = 0.05f; // 더 촘촘하게 포인트 생성
     const float MaxTime = 5.0f;
+    bool bHitTarget = false;
     
     for (float Time = TimeStep; Time < MaxTime; Time += TimeStep)
     {
@@ -53,44 +57,53 @@ TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(
         if (Position.Z < 0.0f)
             break;
             
-        // 목표 지점 근처인지 확인
-        float DistanceToTarget = FVector::Dist(Position, TargetLocation);
-        if (DistanceToTarget < 20.0f)
+        // 목표 지점 근처인지 확인 - 더 작은 값으로 정확도 향상
+        float DistanceToTarget = FVector::Dist(Position, PreciseTargetLocation);
+        if (DistanceToTarget < 10.0f)
+        {
+            bHitTarget = true;
             break;
+        }
+    }
+    
+    // 목표 지점에 닿지 않았다면, 마지막 포인트를 목표 지점까지 보간
+    if (!bHitTarget && TrajectoryPoints.Num() > 0)
+    {
+        // 마지막 포인트와 목표 지점 사이에 추가 포인트 생성
+        FVector LastPoint = TrajectoryPoints.Last();
+        
+        // 5개의 추가 보간 포인트 생성
+        for (int32 i = 1; i <= 5; i++)
+        {
+            float Alpha = (float)i / 6.0f;
+            FVector InterpPoint = FMath::Lerp(LastPoint, PreciseTargetLocation, Alpha);
+            TrajectoryPoints.Add(InterpPoint);
+        }
+        
+        // 마지막에 정확한 목표 지점 추가
+        TrajectoryPoints.Add(PreciseTargetLocation);
     }
     
     return TrajectoryPoints;
 }
 
-// 확실하게 보이는 궤적 그리기 함수 (인자 한 줄 작성으로 수정)
+// 확실하게 보이는 궤적 그리기 함수 - 점 제거하고 라인만 그리도록 수정
 void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVector>& TrajectoryPoints, const FVector& TargetLocation, bool bPersistent, int32 TrajectoryID)
 {
     if (!World || TrajectoryPoints.Num() < 2)
-    {
-        UE_LOG(LogTemp, Error, TEXT("유효하지 않은 파라미터로 궤적 그리기가 실패했습니다."));
         return;
-    }
     
     // 항상 영구적으로 표시
     float Duration = -1.0f; // 무기한 지속
     bool PersistentFlag = true; // 항상 영구적
     
     // 색상 설정 - 더 선명한 색상 사용
-    FColor LineColor = FColor::Blue;         // 밝은 파란색
-    FColor PointColor = FColor::Cyan;        // 청록색 점
-    FColor EndColor = FColor::Green;         // 밝은 초록색 끝점
+    FColor LineColor = FColor::Blue;  // 밝은 파란색
     
-    // 선 두께 및 점 크기 - 더 크게 설정
-    float LineThickness = 1.5f;  // 더 두꺼운 선
-    float PointSize = 5.0f;      // 더 큰 점
-    float EndPointSize = 5.0f;  // 더 큰 끝점
+    // 선 두께 - 더 두껍게 설정하여 가시성 향상
+    float LineThickness = 2.0f;  // 더 두꺼운 선
     
-    // 점 간격 - 더 촘촘하게
-    int32 PointInterval = 5;
-    
-    UE_LOG(LogTemp, Warning, TEXT("궤적 그리기 시작: %d개 포인트"), TrajectoryPoints.Num());
-    
-    // 새 궤적 그리기
+    // 새 궤적 그리기 - 라인만 그림
     for (int32 i = 0; i < TrajectoryPoints.Num() - 1; i++)
     {
         // 두 점이 유효한지 확인
@@ -98,35 +111,11 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVec
         {
             // 점들을 선으로 연결 (인자 한 줄로)
             DrawDebugLine(World, TrajectoryPoints[i], TrajectoryPoints[i + 1], LineColor, PersistentFlag, Duration, TrajectoryID, LineThickness);
-            
-            // 디버그 로그 (라인 생성 확인)
-            if (i % 10 == 0)
-            {
-                UE_LOG(LogTemp, Verbose, TEXT("  - 라인 그리기 [%d]: %s -> %s"), 
-                    i, *TrajectoryPoints[i].ToString(), *TrajectoryPoints[i+1].ToString());
-            }
-            
-            // 일정 간격으로 구체 그리기 (인자 한 줄로)
-            if (i % PointInterval == 0)
-            {
-                DrawDebugSphere(World, TrajectoryPoints[i], PointSize, 8, PointColor, PersistentFlag, Duration, TrajectoryID, 1.0f);
-            }
         }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT("  - 유효하지 않은 궤적 포인트: [%d]=%s, [%d]=%s"), 
-                i, *TrajectoryPoints[i].ToString(), i+1, *TrajectoryPoints[i+1].ToString());
-        }
-    }
-    
-    // 마지막 지점은 큰 구체로 표시 (인자 한 줄로)
-    if (TrajectoryPoints.Num() > 1 && !TrajectoryPoints.Last().IsZero())
-    {
-        DrawDebugSphere(World, TrajectoryPoints.Last(), EndPointSize, 12, EndColor, PersistentFlag, Duration, TrajectoryID, 1.0f);
     }
 }
 
-// 통합된 궤적 그리기 함수 - 공통 로직을 하나로 합침
+// 궤적 업데이트 함수 개선 - 정확한 접시 위치 사용
 void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Controller, const FVector& StartLocation, const FVector& TargetLocation, bool bPersistent, int32 CustomTrajectoryID)
 {
     if (!Controller || !Controller->GetWorld())
@@ -146,6 +135,30 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     // 시작점 조정
     FVector AdjustedStartLocation = StartLocation;
     
+    // 접시 위치 정확히 찾기
+    FVector PreciseTargetLocation = TargetLocation;
+    
+    // 접시가 태그로 설정되어 있는지 확인
+    TArray<AActor*> PlateActors;
+    UGameplayStatics::GetAllActorsWithTag(World, FName("Plate"), PlateActors);
+    if (PlateActors.Num() > 0)
+    {
+        // 첫 번째 접시 액터 사용
+        AActor* PlateActor = PlateActors[0];
+        
+        // 접시의 정확한 위치 (중앙 + 약간 위로)
+        FVector PlateCenter = PlateActor->GetActorLocation();
+        
+        // 접시 위에 도달하도록 약간 위로 조정 (10 유닛)
+        PlateCenter.Z += 10.0f;
+        
+        // 정확한 목표 위치 사용
+        PreciseTargetLocation = PlateCenter;
+        
+        // 컨트롤러에 접시 위치 업데이트
+        Controller->PlateLocation = PlateCenter;
+    }
+    
     // 공이 있으면 공의 실제 중심 위치 계산
     if (Controller->PreviewBall)
     {
@@ -158,47 +171,17 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
         // 중심 보정치 적용 - 정확한 반지름 적용
         FVector UpVector = FVector(0, 0, BallRadius);
         AdjustedStartLocation = Controller->PreviewBall->GetActorLocation() + UpVector;
-        
-        // 디버그 시각화 - 디버깅 모드에서만 수행
-        if (Controller->bDebugMode)
-        {
-            // 디버그 - 공 중심 위치 로깅
-            UE_LOG(LogTemp, Warning, TEXT("미리보기 공 위치: %s, 보정된 위치: %s (공 크기: %f, 공 반지름: %f)"), 
-                *Controller->PreviewBall->GetActorLocation().ToString(), 
-                *AdjustedStartLocation.ToString(),
-                BallSize,
-                BallRadius);
-            
-            // 디버그 - 공의 실제 위치와 보정된 위치를 시각적으로 표시
-            DrawDebugSphere(World, Controller->PreviewBall->GetActorLocation(), 5.0f, 8, FColor::White, true, -1.0f, 0, 1.0f);
-            DrawDebugSphere(World, AdjustedStartLocation, 5.0f, 8, FColor::Yellow, true, -1.0f, 0, 1.0f);
-            DrawDebugLine(World, Controller->PreviewBall->GetActorLocation(), AdjustedStartLocation, FColor::Cyan, true, -1.0f, 0, 1.0f);
-        }
-    }
-    else
-    {
-        UE_LOG(LogTemp, Verbose, TEXT("미리보기 공이 없습니다!"));
     }
     
     // 궤적 계산 (인자 한 줄로)
-    TArray<FVector> NewTrajectoryPoints = CalculateTrajectoryPoints(Controller, AdjustedStartLocation, TargetLocation, BallMass);
+    TArray<FVector> NewTrajectoryPoints = CalculateTrajectoryPoints(Controller, AdjustedStartLocation, PreciseTargetLocation, BallMass);
     
     // 궤적 포인트가 충분한지 확인
     if (NewTrajectoryPoints.Num() < 2)
-    {
-        UE_LOG(LogTemp, Error, TEXT("궤적 계산 실패: 포인트 개수 = %d"), NewTrajectoryPoints.Num());
         return;
-    }
     
-    // 새 궤적 그리기 (항상 영구적으로)
-    DrawTrajectoryPath(World, NewTrajectoryPoints, TargetLocation, true, TrajectoryID);
-    
-    // 시작점과 목표점 표시 (인자 한 줄로) - 디버깅 모드에서만 수행
-    if (Controller->bDebugMode)
-    {
-        DrawDebugSphere(World, AdjustedStartLocation, 10.0f, 8, FColor::Yellow, true, -1.0f, 0, 1.0f);
-        DrawDebugSphere(World, TargetLocation, 15.0f, 8, FColor::Red, true, -1.0f, 0, 1.0f);
-    }
+    // 새 궤적 그리기 (항상 영구적으로) - 라인만 그림
+    DrawTrajectoryPath(World, NewTrajectoryPoints, PreciseTargetLocation, true, TrajectoryID);
 }
 
 // 이전 DrawPersistentTrajectoryPath 함수를 새 함수 호출로 대체

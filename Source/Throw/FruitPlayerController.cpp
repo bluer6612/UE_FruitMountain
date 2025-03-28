@@ -121,7 +121,45 @@ void AFruitPlayerController::AdjustAngle(float Value)
 
 void AFruitPlayerController::ThrowFruit()
 {
-    UFruitThrowHelper::ThrowFruit(this);
+    // 이미 던지는 중이면 무시
+    static bool bIsThrowingInProgress = false;
+    if (bIsThrowingInProgress)
+        return;
+    
+    // 던지기 시작 표시
+    bIsThrowingInProgress = true;
+    
+    // 입력 비활성화 - 던지는 동안 모든 조작 막기
+    DisableInput(this);
+    
+    // 0.5초 후 실제 공 생성 및 입력 다시 활성화
+    FTimerHandle ThrowDelayTimerHandle;
+    GetWorld()->GetTimerManager().SetTimer(
+        ThrowDelayTimerHandle,
+        [this]()
+        {
+            // 실제 던지기 액션 수행
+            UFruitThrowHelper::ThrowFruit(this);
+            
+            // 던지기 완료 표시
+            bIsThrowingInProgress = false;
+            
+            // 입력 다시 활성화
+            EnableInput(this);
+            
+            // 미리보기 공을 다시 보이게 함
+            if (PreviewBall)
+            {
+                PreviewBall->SetActorHiddenInGame(false);
+            }
+            
+            // 새로운 미리보기 공 업데이트 (공 타입 바꾸기)
+            CurrentBallType = FMath::RandRange(1, 11); // 다음에 던질 공 타입 랜덤 변경
+            UpdatePreviewBall();
+        },
+        BallThrowDelay,
+        false // 반복 실행 안 함
+    );
 }
 
 // 카메라 회전 처리 함수 수정
@@ -197,8 +235,6 @@ void AFruitPlayerController::AdjustCameraHeight()
         
         // 새 위치 적용
         CameraComp->SetRelativeLocation(CameraRelativeLocation);
-        
-        UE_LOG(LogTemp, Warning, TEXT("카메라 높이 조정: %f 유닛 증가"), CameraHeightOffset);
     }
     else
     {
@@ -216,8 +252,6 @@ void AFruitPlayerController::AdjustCameraHeight()
             
             // 새 위치 적용
             SpringArm->SetRelativeLocation(SpringArmRelativeLocation);
-            
-            UE_LOG(LogTemp, Warning, TEXT("스프링암 높이 조정: %f 유닛 증가"), CameraHeightOffset);
         }
     }
 }

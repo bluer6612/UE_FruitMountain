@@ -55,9 +55,8 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
     float CameraHeightOffset;
 
-    // 디버그 시각화 활성화 여부
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Debug")
-    bool bDebugMode = false;
+    // 회전 기준이 되는 접시(Plate)의 위치
+    FVector PlateLocation;
 
     // 미리보기 공 업데이트 함수
     void UpdatePreviewBall();
@@ -81,9 +80,6 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Orbit")
     float RotateCameraSpeed;
 
-    // 회전 기준이 되는 접시(Plate)의 위치
-    FVector PlateLocation;
-
     // 카메라 높이 조정 함수
     UFUNCTION()
     void AdjustCameraHeight();
@@ -93,6 +89,7 @@ private:
     FTimerHandle PreviewBallUpdateTimerHandle;
     bool bPreviewBallUpdatePending = false;
     const float PreviewBallUpdateDelay = 0.02f;
+    const float BallThrowDelay = 0.75f;
     
     // 실제 업데이트 수행 함수
     void ExecutePreviewBallUpdate();

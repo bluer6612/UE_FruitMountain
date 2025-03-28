@@ -10,7 +10,7 @@
 #include "Camera/CameraComponent.h"
 #include "Actors/PlateActor.h"
 
-// ThrowFruit 함수 수정 - 질량 처리 부분 수정
+// ThrowFruit 함수 - FruitPhysicsHelper 활용
 void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
 {
     if (!Controller)
@@ -50,7 +50,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
             
         if (MeshComp)
         {
-            // 물리 시뮬레이션 활성화 확인만
+            // 물리 시뮬레이션 활성화 확인
             if (!MeshComp->IsSimulatingPhysics())
             {
                 MeshComp->SetSimulatePhysics(true);
@@ -64,18 +64,15 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
             if (PlateActors.Num() > 0)
             {
                 PlateCenter = PlateActors[0]->GetActorLocation();
+                
+                // 접시 약간 위를 목표로 설정
+                PlateCenter.Z += 10.0f;
             }
             
             // 물리 시뮬레이션 활성화 상태에서 질량 확인
-            // 이미 SpawnBall에서 질량을 설정했으므로 그 값이 사용됨
             float ActualMass = MeshComp->GetMass();
-            if (FMath::Abs(ActualMass - BallMass) > 0.1f)
-            {
-                UE_LOG(LogTemp, Warning, TEXT("질량 불일치: 계산값=%f, 실제값=%f, 계산값 사용"),
-                    BallMass, ActualMass);
-            }
             
-            // 공통 함수 호출하여 던지기 파라미터 계산 (계산된 질량 사용)
+            // FruitPhysicsHelper의 공통 함수 호출하여 던지기 파라미터 계산
             float AdjustedForce;
             FVector LaunchDirection;
             UFruitPhysicsHelper::CalculateThrowParameters(
@@ -84,7 +81,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
                 PlateCenter,
                 AdjustedForce,
                 LaunchDirection,
-                BallMass); // 계산된 질량 사용
+                BallMass);
                 
             // 최종 힘 적용
             float PhysicsCalibrationFactor = 20.0f;
