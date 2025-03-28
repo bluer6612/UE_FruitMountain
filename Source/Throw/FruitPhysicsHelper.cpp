@@ -1,7 +1,7 @@
 #include "FruitPhysicsHelper.h"
 #include "FruitPlayerController.h"
 
-// 던지기 파라미터 계산 함수 - 힘을 크게 감소하여 적절한 포물선 구현
+// 던지기 파라미터 계산 함수 - 힘 조절 및 정확한 궤적 생성
 void UFruitPhysicsHelper::CalculateThrowParameters(
     AFruitPlayerController* Controller, 
     const FVector& StartLocation, 
@@ -10,7 +10,7 @@ void UFruitPhysicsHelper::CalculateThrowParameters(
     FVector& OutLaunchDirection,
     float BallMass)
 {
-    // 기본값 설정 - 매우 낮은 기본 힘
+    // 기본값 설정
     OutAdjustedForce = 100.0f;
     OutLaunchDirection = FVector::ForwardVector;
     
@@ -52,10 +52,11 @@ void UFruitPhysicsHelper::CalculateThrowParameters(
     OutLaunchDirection = HorizontalDir * HorizontalComponent + FVector(0, 0, 1) * ZComponent;
     OutLaunchDirection.Normalize();
     
-    // --- 대폭 감소된 힘 계산 ---
+    // --- 거리 기반 힘 계산 ---
     
-    // 투사체 운동 공식 사용하되 매우 약한 힘으로 조정
+    // 투사체 운동 공식 사용
     float HorizontalDistance = FVector::Dist2D(StartLocation, TargetLocation);
+    float HeightDifference = TargetLocation.Z - StartLocation.Z;
     
     // 투사 각도의 2배 사인 값 계산 (투사체 공식에 사용)
     float SinDoubleAngle = FMath::Sin(2 * AngleRad);
@@ -63,19 +64,40 @@ void UFruitPhysicsHelper::CalculateThrowParameters(
     // 분모가 0이 되는 것 방지 (각도가 0이나 90도일 때)
     if (SinDoubleAngle < 0.1f) SinDoubleAngle = 0.1f;
     
-    // 이론적 초기 속도 계산 (투사체 운동 공식 기반) - 매우 작은 계수 적용
-    float RequiredVelocity = FMath::Sqrt((HorizontalDistance * FMath::Abs(GravityZ)) / SinDoubleAngle);
+    // 이론적 초기 속도 계산 (투사체 운동 공식)
+    // v = sqrt((d*g) / sin(2*angle) + (2*h*g) / sin^2(angle))
+    // 여기서 d는 수평 거리, h는 높이 차이, g는 중력 가속도, angle은 던지기 각도
+    float Term1 = (HorizontalDistance * FMath::Abs(GravityZ)) / SinDoubleAngle;
+    float Term2 = 0.0f;
     
-    // 힘 계산 - 매우 작은 계수 적용 (0.01f)
-    float ForceAdjustFactor = 0.01f;
+    if (HeightDifference != 0.0f) {
+        float SinAngleSquared = FMath::Sin(AngleRad) * FMath::Sin(AngleRad);
+        if (SinAngleSquared > 0.01f) {
+            Term2 = (2.0f * HeightDifference * FMath::Abs(GravityZ)) / SinAngleSquared;
+        }
+    }
+    
+    float RequiredVelocity = FMath::Sqrt(Term1 + Term2);
+    
+    // 힘 계산 - 거리에 따라 동적으로 조정
+    float ForceAdjustFactor = 0.05f; // 기본 계수 크게 증가
+    
+    // 거리에 따른 추가 보정 (먼 거리일수록 더 강한 힘 적용)
+    if (Distance > 800.0f) {
+        ForceAdjustFactor *= 1.5f;
+    } else if (Distance > 500.0f) {
+        ForceAdjustFactor *= 1.3f;
+    } else if (Distance < 300.0f) {
+        ForceAdjustFactor *= 0.8f;
+    }
     
     // 질량 고려 힘 계산
     OutAdjustedForce = RequiredVelocity * BallMass * ForceAdjustFactor;
     
-    // 힘 제한 - 매우 낮은 범위로 제한
-    OutAdjustedForce = FMath::Clamp(OutAdjustedForce, 10.0f * BallMass, 200.0f * BallMass);
+    // 힘 제한 - 더 넓은 범위로 확장
+    OutAdjustedForce = FMath::Clamp(OutAdjustedForce, 20.0f * BallMass, 400.0f * BallMass);
     
     // 디버그 로그
-    UE_LOG(LogTemp, Warning, TEXT("던지기 계산: 거리=%f, 각도=%f도, 힘=%f, 질량=%f"), 
-        Distance, OptimalAngle, OutAdjustedForce, BallMass);
+    UE_LOG(LogTemp, Warning, TEXT("던지기 계산: 거리=%f, 각도=%f도, 속도=%f, 힘=%f, 질량=%f"), 
+        Distance, OptimalAngle, RequiredVelocity, OutAdjustedForce, BallMass);
 }
