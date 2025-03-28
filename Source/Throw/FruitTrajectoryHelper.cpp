@@ -30,8 +30,8 @@ TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(
     FVector LaunchDirection;
     UFruitPhysicsHelper::CalculateThrowParameters(Controller, StartLocation, PreciseTargetLocation, AdjustedForce, LaunchDirection, BallMass);
         
-    // 초기 속도 계산 - 궤적 시뮬레이션용 계수 적용
-    FVector InitialVelocity = LaunchDirection * (AdjustedForce * 1.2f / BallMass); // 1.05f에서 1.2f로 증가
+    // 초기 속도 계산 - 궤적 시뮬레이션용 계수 적용 (약간 더 높게)
+    FVector InitialVelocity = LaunchDirection * (AdjustedForce * 1.1f / BallMass); // 1.2f에서 1.1f로 감소
     
     // 중력 가속도
     float GravityZ = -980.0f;
