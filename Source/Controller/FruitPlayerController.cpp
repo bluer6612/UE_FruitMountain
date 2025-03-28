@@ -19,7 +19,7 @@ AFruitPlayerController::AFruitPlayerController()
 
     // 오빗 기본 값 설정
     CameraOrbitAngle = 0.f;
-    CameraOrbitRadius = 700.f;
+    CameraOrbitRadius = 500.f;
     
     // 카메라 회전 속도 (도/초)
     RotateCameraSpeed = 180.f;

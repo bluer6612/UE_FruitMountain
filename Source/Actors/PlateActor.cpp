@@ -18,21 +18,10 @@ APlateActor::APlateActor()
     PlateMesh->SetupAttachment(RootComponent);
     PlateMesh->SetStaticMesh(PlateAsset.Object);
 
-    // 원판을 얇게, 25.f 위에 배치
-    PlateMesh->SetRelativeScale3D(FVector(20.f, 20.f, 0.1f));
-    PlateMesh->SetRelativeRotation(FRotator(0.f, 0.f, 0.f));
-    PlateMesh->SetRelativeLocation(FVector(0.f, 0.f, 25.f));
+    PlateMesh->SetWorldScale3D(PlateScale);
+    PlateMesh->SetWorldRotation(PlateRotation);
+    PlateMesh->SetWorldLocation(PlateLocation);
 
     PlateMesh->SetCollisionProfileName(TEXT("BlockAll"));
     Tags.Add(FName("Plate"));
-}
-
-void APlateActor::BeginPlay()
-{
-    Super::BeginPlay();
-}
-
-void APlateActor::Tick(float DeltaTime)
-{
-    Super::Tick(DeltaTime);
 }

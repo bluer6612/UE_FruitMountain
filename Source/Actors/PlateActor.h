@@ -13,21 +13,13 @@ class UE_FRUITMOUNTAIN_API APlateActor : public AActor
 public:
     APlateActor();
 
-protected:
-    virtual void BeginPlay() override;
+public:
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Plate")
+    FVector PlateScale = FVector(60.f, 60.f, 10.f);
 
-public:	
-    virtual void Tick(float DeltaTime) override;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Plate")
+    FRotator PlateRotation = FRotator(0.f, 0.f, 0.f);
 
-    // 바닥 Mesh
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Plate")
-    class UStaticMeshComponent* BottomMesh;
-
-    // 왼쪽 벽
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Plate")
-    class UStaticMeshComponent* LeftWallMesh;
-
-    // 오른쪽 벽
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Plate")
-    class UStaticMeshComponent* RightWallMesh;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Plate")
+    FVector PlateLocation = FVector(0.f, 0.f, 0.f);
 };

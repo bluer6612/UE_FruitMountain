@@ -218,7 +218,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
         {
             // 접시보다 50.f 높은 위치에서 스폰
             FVector SpawnLocation = PlateCenter;
-            SpawnLocation.Z += 50.f;
+            SpawnLocation.Z += 125.f;
             
             AActor* SpawnedBall = SpawnBall(Controller, SpawnLocation, Controller->CurrentBallType, true);
             if (SpawnedBall)
