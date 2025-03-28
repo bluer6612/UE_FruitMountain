@@ -124,31 +124,40 @@ void AFruitPlayerController::ThrowFruit()
     UFruitThrowHelper::ThrowFruit(this);
 }
 
+// 카메라 회전 처리 함수 수정
 void AFruitPlayerController::RotateCamera(float Value)
 {
-    if (FMath::Abs(Value) > KINDA_SMALL_NUMBER)
-    {
-        // 프레임 시간과 회전 속도를 곱해 부드러운 변화 적용
-        float DeltaAngle = Value * RotateCameraSpeed * GetWorld()->DeltaTimeSeconds;
-        CameraOrbitAngle += DeltaAngle;
-        
-        if(CameraOrbitAngle >= 360.f)
-        {
-            CameraOrbitAngle -= 360.f;
-        }
-        else if(CameraOrbitAngle < 0.f)
-        {
-            CameraOrbitAngle += 360.f;
-        }
-
-        UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius, 30.f);
-        
-        // 카메라 회전 후 미리보기 공도 함께 업데이트 (제한적으로 실행됨)
-        UpdatePreviewBall();
-    }
+    if (FMath::IsNearlyZero(Value))
+        return;
+    
+    // 회전 속도 적용
+    float DeltaAngle = Value * RotateCameraSpeed * GetWorld()->GetDeltaSeconds();
+    
+    // 각도 업데이트
+    CameraOrbitAngle += DeltaAngle;
+    
+    // 360도 범위 내로 제한
+    CameraOrbitAngle = FMath::Fmod(CameraOrbitAngle, 360.0f);
+    if (CameraOrbitAngle < 0.0f)
+        CameraOrbitAngle += 360.0f;
+    
+    // 중요: 카메라 위치 업데이트
+    UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius, 30.f);
+    
+    // 즉시 공 위치 업데이트 (재귀 호출 없이)
+    UFruitThrowHelper::UpdatePreviewBall(this);
 }
 
-// 기존 UpdatePreviewBall 함수 수정
+// 실제 업데이트 수행 함수 수정
+void AFruitPlayerController::ExecutePreviewBallUpdate()
+{
+    bPreviewBallUpdatePending = false;
+    
+    // 공 위치 업데이트 함수 직접 호출 (UFruitThrowHelper를 통해)
+    UFruitThrowHelper::UpdatePreviewBall(this);
+}
+
+// UpdatePreviewBall 함수 수정 - 무한 재귀 방지
 void AFruitPlayerController::UpdatePreviewBall()
 {
     // 이미 업데이트가 예약되어 있으면 중복 실행하지 않음
@@ -165,16 +174,6 @@ void AFruitPlayerController::UpdatePreviewBall()
             false // 반복 실행 안 함
         );
     }
-}
-
-// 실제 업데이트를 수행하는 새 함수 추가
-void AFruitPlayerController::ExecutePreviewBallUpdate()
-{
-    // 실제 업데이트 수행
-    UFruitThrowHelper::UpdatePreviewBall(this);
-    
-    // 상태 초기화
-    bPreviewBallUpdatePending = false;
 }
 
 // 카메라 높이 조정 함수 추가

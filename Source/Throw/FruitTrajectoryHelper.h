@@ -18,7 +18,7 @@ public:
         const FVector& TargetLocation,
         float BallMass);
     
-    // 궤적 시각화 공통 함수
+    // 궤적 시각화 함수
     UFUNCTION()
     static void DrawTrajectoryPath(
         UWorld* World,
@@ -27,13 +27,16 @@ public:
         bool bPersistent,
         int32 TrajectoryID);
     
-    // 다음 두 함수는 기존과 동일한 이름으로 유지 (호환성)
+    // 통합된 궤적 업데이트 함수 - 기본 매개변수 추가
     UFUNCTION(BlueprintCallable, Category="Trajectory")
     static void UpdateTrajectoryPath(
         class AFruitPlayerController* Controller,
         const FVector& StartLocation,
-        const FVector& TargetLocation);
+        const FVector& TargetLocation,
+        bool bPersistent = true, 
+        int32 CustomTrajectoryID = 9999);
     
+    // 하위 호환성을 위한 영구 궤적 그리기 함수
     UFUNCTION(BlueprintCallable, Category="Trajectory")
     static void DrawPersistentTrajectoryPath(
         class AFruitPlayerController* Controller,

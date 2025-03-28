@@ -55,6 +55,10 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
     float CameraHeightOffset;
 
+    // 디버그 시각화 활성화 여부
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Debug")
+    bool bDebugMode = false;
+
     // 미리보기 공 업데이트 함수
     void UpdatePreviewBall();
 

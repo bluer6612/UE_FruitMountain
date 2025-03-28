@@ -111,12 +111,19 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
     );
 }
 
-// UpdatePreviewBall 함수 수정 - 문법 오류 해결
+// UpdatePreviewBall 함수 수정 - 문제 디버깅
 void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
 {
     if (!Controller)
     {
         UE_LOG(LogTemp, Warning, TEXT("UpdatePreviewBall: Controller가 유효하지 않습니다."));
+        return;
+    }
+
+    // 먼저 FruitBallClass가 유효한지 확인
+    if (!Controller->FruitBallClass)
+    {
+        UE_LOG(LogTemp, Error, TEXT("FruitBallClass가 설정되지 않았습니다!"));
         return;
     }
 
@@ -130,13 +137,42 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
         return;
     }
     
+    //UE_LOG(LogTemp, Warning, TEXT("미리보기 위치 계산됨: %s"), *PreviewLocation.ToString());
+    
     // 미리보기 공이 없는 경우에만 새로 생성
     if (!Controller->PreviewBall)
     {
+        // 기존 미리보기 공 제거 (혹시 무효한 참조가 있을 경우를 대비)
+        if (Controller->PreviewBall)
+        {
+            Controller->PreviewBall->Destroy();
+            Controller->PreviewBall = nullptr;
+        }
+        
+        // 새 미리보기 공 생성
         Controller->PreviewBall = UFruitSpawnHelper::SpawnBall(
             Controller, PreviewLocation, Controller->CurrentBallType, false);
             
-        UE_LOG(LogTemp, Warning, TEXT("미리보기 공 생성: 위치=%s"), *PreviewLocation.ToString());
+        if (Controller->PreviewBall)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("미리보기 공 생성 성공: 위치=%s"), *PreviewLocation.ToString());
+            
+            // 접시 위치 찾기
+            FVector PlateCenter = FVector::ZeroVector;
+            TArray<AActor*> PlateActors;
+            UGameplayStatics::GetAllActorsWithTag(Controller->GetWorld(), FName("Plate"), PlateActors);
+            if (PlateActors.Num() > 0)
+            {
+                PlateCenter = PlateActors[0]->GetActorLocation();
+                
+                // 예상 경로 업데이트
+                UFruitTrajectoryHelper::UpdateTrajectoryPath(Controller, PreviewLocation, PlateCenter);
+            }
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("미리보기 공 생성 실패!"));
+        }
     }
     else
     {
