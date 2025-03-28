@@ -19,17 +19,43 @@ AFruitBall::AFruitBall()
     if (MeshAsset.Succeeded())
     {
         MeshComponent->SetStaticMesh(MeshAsset.Object);
-        // 기본 크기 조정 (필요 시 수정)
-        MeshComponent->SetRelativeScale3D(FVector(1.0f));
+        
+        // 기본 크기 15.0f (월드 스케일) 적용
+        // 언리얼에서는 100배 축소된 값 사용 - 15.0f → 0.15f
+        float ActorScale = BaseBallSize / 100.0f;
+        MeshComponent->SetRelativeScale3D(FVector(ActorScale));
     }
 }
 
-void AFruitBall::BeginPlay()
+// 공 타입에 따른 크기 계산 함수 (정적 함수)
+float AFruitBall::CalculateBallSize(int32 BallType, float BaseBallScale)
 {
-    Super::BeginPlay();
+    // 각 타입마다 크기 10% 증가 (1.0, 1.1, 1.2, 1.3, ...)
+    float GrowthFactor = 1.0f + 0.1f * (BallType - 1);
+    
+    // 최종 공 크기 계산 (월드 스케일)
+    float BallSize = BaseBallScale * GrowthFactor;
+    
+    return BallSize;
 }
 
-void AFruitBall::Tick(float DeltaTime)
+// 공 타입과 크기에 따른 질량 계산 함수 (정적 함수)
+float AFruitBall::CalculateBallMass(int32 BallType, float BaseBallScale)
 {
-    Super::Tick(DeltaTime);
+    // 공 크기 계산 (월드 스케일)
+    float BallSize = CalculateBallSize(BallType, BaseBallScale);
+    
+    // 크기에 비례하여 질량 계산 - 체적 기반 (r^3에 비례)
+    float BallRadius = BallSize / 2.0f; // 반지름 (cm)
+    float BallVolume = (4.0f/3.0f) * PI * FMath::Pow(BallRadius, 3); // 구의 체적 (cm^3)
+    
+    // 밀도 계수 (그램/cm^3) - 약 0.3으로 설정하여 15cm 공이 약 1kg이 되도록 함
+    float DensityFactor = 0.3f;
+    
+    // 체적 * 밀도 = 질량 (그램)
+    // 킬로그램으로 변환 (1000으로 나눔)
+    float BallMass = (BallVolume * DensityFactor) / 1000.0f;
+    
+    // 최소 질량 보장
+    return FMath::Max(BallMass, 0.5f);
 }
