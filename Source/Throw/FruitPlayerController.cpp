@@ -10,6 +10,7 @@
 #include "Camera/CameraComponent.h"
 #include "Throw/FruitThrowHelper.h"
 #include "Throw/FruitTrajectoryHelper.h"
+#include "Throw/FruitPhysicsHelper.h"
 #include "GameFramework/SpringArmComponent.h"
 
 AFruitPlayerController::AFruitPlayerController()
@@ -20,7 +21,7 @@ AFruitPlayerController::AFruitPlayerController()
 
     // 오빗 기본 값 설정
     CameraOrbitAngle = 0.f;
-    CameraOrbitRadius = 500.f;
+    CameraOrbitRadius = 350.f;
     
     // 카메라 회전 속도 (도/초)
     RotateCameraSpeed = 180.f;
@@ -28,7 +29,7 @@ AFruitPlayerController::AFruitPlayerController()
     CurrentBallType = 1;
 
     // 카메라 높이 설정
-    CameraHeightOffset = 50.f;
+    CameraHeightOffset = 100.f;
 }
 
 void AFruitPlayerController::BeginPlay()
@@ -109,13 +110,19 @@ void AFruitPlayerController::AdjustAngle(float Value)
         float DeltaAngle = Value * AngleAdjustSpeed * GetWorld()->DeltaTimeSeconds;
         ThrowAngle += DeltaAngle;
         
-        // 각도 범위 제한 (0도에서 90도 사이)
-        ThrowAngle = FMath::Clamp(ThrowAngle, 0.0f, 90.0f);
+        // 각도 범위 제한 (30도에서 90도 사이로 제한)
+        ThrowAngle = FMath::Clamp(ThrowAngle, 30.0f, 90.0f);
         
-        //UE_LOG(LogTemp, Log, TEXT("각도 조정: 현재 각도 %f"), ThrowAngle);
+        // 모든 시스템에 동일한 각도 전파
+        UFruitPhysicsHelper::SetGlobalThrowAngle(ThrowAngle);
         
-        // 각도 변경 후 미리보기 공도 함께 업데이트 (제한적으로 실행됨)
+        UE_LOG(LogTemp, Log, TEXT("각도 조정: 현재 각도 %f"), ThrowAngle);
+        
+        // 각도 변경 후 미리보기 공 업데이트
         UpdatePreviewBall();
+        
+        // 각도 변경 후 궤적도 업데이트
+        UpdateTrajectory();
     }
 }
 
@@ -256,4 +263,46 @@ void AFruitPlayerController::AdjustCameraHeight()
             SpringArm->SetRelativeLocation(SpringArmRelativeLocation);
         }
     }
+}
+
+// 궤적 업데이트 함수 구현
+void AFruitPlayerController::UpdateTrajectory()
+{
+    if (!PreviewBall || !GetWorld())
+        return;
+    
+    // 미리보기 공의 위치와 접시 위치를 이용하여 궤적 업데이트
+    FVector StartLocation = PreviewBall->GetActorLocation();
+    
+    // 접시 위치 가져오기 (저장된 위치 또는 액터 검색)
+    FVector TargetLocation = PlateLocation;
+    
+    // 접시 위치가 초기화되지 않았다면 태그로 검색
+    if (TargetLocation.IsZero())
+    {
+        TArray<AActor*> PlateActors;
+        UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Plate"), PlateActors);
+        if (PlateActors.Num() > 0)
+        {
+            TargetLocation = PlateActors[0]->GetActorLocation();
+            TargetLocation.Z += 10.0f; // 접시 표면 위로 약간 올림
+            PlateLocation = TargetLocation; // 저장
+        }
+    }
+    
+    // 유효한 위치가 있는지 확인
+    if (TargetLocation.IsZero())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("접시 위치를 찾을 수 없어 궤적을 업데이트할 수 없습니다."));
+        return;
+    }
+    
+    // 로그 출력으로 각도 확인
+    UE_LOG(LogTemp, Log, TEXT("궤적 업데이트: 현재 각도=%f, 시작=%s, 목표=%s"), 
+        UFruitPhysicsHelper::GetGlobalThrowAngle(), 
+        *StartLocation.ToString(), 
+        *TargetLocation.ToString());
+    
+    // 궤적 업데이트 함수 호출
+    UFruitTrajectoryHelper::UpdateTrajectoryPath(this, StartLocation, TargetLocation);
 }

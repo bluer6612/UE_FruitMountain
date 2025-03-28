@@ -64,6 +64,10 @@ public:
 
     // 미리보기 공 업데이트 함수
     void UpdatePreviewBall();
+
+    // 궤적 업데이트 함수 추가
+    UFUNCTION(BlueprintCallable, Category="Trajectory")
+    void UpdateTrajectory();
 protected:
     virtual void SetupInputComponent() override;
 

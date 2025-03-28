@@ -4,47 +4,77 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/Actor.h"
 #include "DrawDebugHelpers.h"
-#include "Actors/FruitBall.h" // FruitBall 헤더 포함
 
-// 던지기 파라미터 계산 함수
+// 정적 변수 초기화
+float UFruitPhysicsHelper::GlobalThrowAngle = 20.0f;
+
+// 전역 던지기 각도 설정 함수 구현
+void UFruitPhysicsHelper::SetGlobalThrowAngle(float Angle)
+{
+    GlobalThrowAngle = Angle;
+}
+
+// 현재 전역 던지기 각도 반환 함수
+float UFruitPhysicsHelper::GetGlobalThrowAngle()
+{
+    return GlobalThrowAngle;
+}
+
+// 던지기 파라미터 계산 함수에서 각도 제한 수정
 void UFruitPhysicsHelper::CalculateThrowParameters(AFruitPlayerController* Controller, const FVector& StartLocation, const FVector& TargetLocation, float& OutAdjustedForce, FVector& OutLaunchDirection, float BallMass)
 {
-    // 방향 및 거리 계산
-    FVector Direction = TargetLocation - StartLocation;
-    float Distance = Direction.Size();
+    // 1. 목표 지점까지의 벡터 계산
+    FVector DirectionToTarget = TargetLocation - StartLocation;
+    float HorizontalDistance = FVector(DirectionToTarget.X, DirectionToTarget.Y, 0.0f).Size();
+    float HeightDifference = DirectionToTarget.Z;
     
-    // --- 발사 각도 계산 ---
-    float BaseAngle = 20.0f; // 기본 발사 각도 (도)
-    float AngleRad = FMath::DegreesToRadians(BaseAngle); // 라디안 변환
+    // 2. 던지기 각도 설정 (컨트롤러의 ThrowAngle 직접 사용)
+    float UseAngle = FMath::Clamp(Controller->ThrowAngle, 30.0f, 90.0f);  // 각도 범위 보장
+    float ThrowAngleRadians = FMath::DegreesToRadians(UseAngle);
     
-    // 방향 벡터 정규화 및 높이 조정
-    Direction.Normalize();
-    OutLaunchDirection = FVector(Direction.X, Direction.Y, 0.0f);
-    OutLaunchDirection.Normalize();
+    // 중력 및 삼각함수 계산
+    float Gravity = 980.0f;
+    float CosTheta = FMath::Cos(ThrowAngleRadians);
+    float TanTheta = FMath::Tan(ThrowAngleRadians);
     
-    // Z 성분 추가 (발사 각도 적용)
-    OutLaunchDirection.Z = FMath::Tan(AngleRad);
-    OutLaunchDirection.Normalize();
+    // 분모 계산 및 유효성 검사
+    float Denominator = 2.0f * (CosTheta * CosTheta) * (HorizontalDistance * TanTheta + HeightDifference);
     
-    // --- 질량 기반 힘 계산 (질량이 높을수록 더 적은 힘 적용) ---
+    // 분모가 매우 작거나 음수가 되는 경우 처리 (높은 각도 문제)
+    if (Denominator <= 1.0f)
+    {
+        // 대체 계산: 높은 각도에서도 작동하는 공식 사용
+        // v₀ = sqrt(g * d / sin(2θ)) 공식 적용 (최대 거리 계산법)
+        float Sin2Theta = FMath::Sin(2 * ThrowAngleRadians);
+        if (Sin2Theta > 0.1f)  // 0에 가까우면 계산 안정성 위해 제한
+        {
+            float InitialVelocity = FMath::Sqrt((Gravity * HorizontalDistance) / Sin2Theta);
+            OutAdjustedForce = BallMass * InitialVelocity;
+        }
+        else
+        {
+            // 안전 기본값
+            OutAdjustedForce = 8000.0f;
+        }
+    }
+    else
+    {
+        // 원래 공식 계산
+        float InitialVelocity = FMath::Sqrt((Gravity * HorizontalDistance * HorizontalDistance) / Denominator);
+        OutAdjustedForce = BallMass * InitialVelocity;
+    }
     
-    // 기본 힘 계산
-    float BaseForce = 2000.0f;
-    float DistanceFactor = FMath::Clamp(Distance / 300.0f, 0.8f, 3.0f);
-
-    // 중요: 질량 역수 계수 적용 - FruitBall 클래스의 표준 질량 사용
-    float StandardMass = AFruitBall::DensityFactor * 50.0f / 0.3f; // 원래 표준 질량에 밀도 비율 적용
-    float MassRatio = StandardMass / BallMass; // 질량이 클수록 작은 값이 됨
-
-    // 최종 힘 계산 (질량이 높을수록 힘 감소)
-    OutAdjustedForce = BaseForce * DistanceFactor * MassRatio;
-
-    // 추가 제한: 최소/최대 힘 설정
-    float MinForce = 1000.0f;
-    float MaxForce = 10000.0f;
-    OutAdjustedForce = FMath::Clamp(OutAdjustedForce, MinForce, MaxForce);
+    // 힘 범위 제한 - 높은 각도에 맞게 상한선 증가
+    OutAdjustedForce = FMath::Clamp(OutAdjustedForce, 3000.0f, 18000.0f);
     
-    // 디버그 로깅
-    UE_LOG(LogTemp, Warning, TEXT("던지기 계산: 거리=%f, 각도=%f도, 힘=%f, 질량=%f, 질량비율=%f"), 
-        Distance, BaseAngle, OutAdjustedForce, BallMass, MassRatio);
+    // 발사 방향 벡터 계산
+    FVector HorizontalDir = FVector(DirectionToTarget.X, DirectionToTarget.Y, 0.0f).GetSafeNormal();
+    OutLaunchDirection = FVector(
+        HorizontalDir.X,
+        HorizontalDir.Y,
+        FMath::Tan(ThrowAngleRadians)
+    ).GetSafeNormal();
+    
+    UE_LOG(LogTemp, Warning, TEXT("던지기 계산: 거리=%.1f, 높이차=%.1f, 각도=%.1f도, 힘=%.1f, 질량=%.1f"),
+        HorizontalDistance, HeightDifference, UseAngle, OutAdjustedForce, BallMass);
 }
