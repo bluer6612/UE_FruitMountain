@@ -50,24 +50,28 @@ void AFruitPlayerController::BeginPlay()
     
     UFruitInputMappingManager::ConfigureKeyMappings();
 
-    // 접시 액터를 검색하여 회전 기준 위치로 사용 (접시가 있을 경우)
-    TArray<AActor*> PlateActors;
-    UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Plate"), PlateActors);
-    if (PlateActors.Num() > 0)
-    {
-        PlateLocation = PlateActors[0]->GetActorLocation();
-    }
-    else
-    {
-        PlateLocation = FVector::ZeroVector;
-        UE_LOG(LogTemp, Warning, TEXT("접시 액터를 찾을 수 없습니다. 기본 위치 (0,0,0) 사용."));
-    }
-    
-    // Pawn이 확실히 할당된 후 카메라 위치를 업데이트하여 접시를 바라보게 함
-    // (다음 틱에서 호출)
+    // 타이머를 사용하여 약간의 지연 후 접시 액터 검색 (타이밍 문제 해결)
     GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
     {
-        UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius, 30.f);
+        // 접시 액터를 검색하여 회전 기준 위치로 사용
+        TArray<AActor*> PlateActors;
+        UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Plate"), PlateActors);
+        if (PlateActors.Num() > 0)
+        {
+            PlateLocation = PlateActors[0]->GetActorLocation();
+            UE_LOG(LogTemp, Log, TEXT("접시 액터를 찾았습니다: %s"), *PlateLocation.ToString());
+            
+            // 카메라 위치 업데이트
+            UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius, 30.f);
+        }
+        else
+        {
+            PlateLocation = FVector::ZeroVector;
+            UE_LOG(LogTemp, Warning, TEXT("접시 액터를 찾을 수 없습니다. 기본 위치 (0,0,0) 사용."));
+            
+            // 카메라 위치 업데이트
+            UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius, 30.f);
+        }
     });
 
     // 미리보기 공 생성

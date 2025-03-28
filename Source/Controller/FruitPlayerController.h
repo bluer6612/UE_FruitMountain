@@ -41,6 +41,13 @@ public:
     // 현재 선택된 공 타입 (1~11)
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ball")
     int32 CurrentBallType;
+
+    // 카메라(Pawn) 오빗 관련 변수 및 함수
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Orbit")
+    float CameraOrbitAngle; // 현재 각도 (도 단위)
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Orbit")
+    float CameraOrbitRadius; // 접시와의 거리
     
     // 미리보기 공 업데이트 함수
     void UpdatePreviewBall();
@@ -59,13 +66,6 @@ protected:
 
     // Axis 입력으로 카메라 회전 처리 함수
     void RotateCamera(float Value);
-
-    // 카메라(Pawn) 오빗 관련 변수 및 함수
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Orbit")
-    float CameraOrbitAngle; // 현재 각도 (도 단위)
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Orbit")
-    float CameraOrbitRadius; // 접시와의 거리
 
     // 카메라 회전 속도 (도/초)
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Orbit")

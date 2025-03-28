@@ -6,6 +6,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Components/PrimitiveComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Actors/PlateActor.h"
 
 // 공통 함수로 볼 생성 로직 통합
 AActor* UFruitThrowHelper::SpawnBall(AFruitPlayerController* Controller, const FVector& Location, int32 BallType, bool bEnablePhysics)
@@ -66,6 +67,56 @@ AActor* UFruitThrowHelper::SpawnBall(AFruitPlayerController* Controller, const F
     return SpawnedBall;
 }
 
+// 접시 가장자리 계산 함수 수정 - 카메라 방향 기준 가장 가까운 접시 가장자리에 공 생성
+FVector UFruitThrowHelper::CalculatePlateEdgeSpawnPosition(UWorld* World, float HeightOffset, float CameraAngle)
+{
+    // 접시 위치 확인
+    FVector PlateCenter = FVector::ZeroVector;
+    float PlateRadius = 0.0f;
+    TArray<AActor*> PlateActors;
+    UGameplayStatics::GetAllActorsWithTag(World, FName("Plate"), PlateActors);
+
+    if (PlateActors.Num() > 0)
+    {
+        // 접시 정보 가져오기
+        APlateActor* PlateActorRef = Cast<APlateActor>(PlateActors[0]);
+        if (PlateActorRef)
+        {
+            PlateCenter = PlateActorRef->GetActorLocation();
+            
+            // 접시 반지름 계산
+            FVector Bounds = PlateActorRef->GetComponentsBoundingBox().GetSize();
+            PlateRadius = FMath::Max(Bounds.X, Bounds.Y) * 0.45f; // 가장자리에 더 가깝게 조정
+            
+            // 접시 높이 가져오기
+            float PlateHeight = Bounds.Z;
+            
+            // 카메라 방향 벡터 계산
+            float RadianAngle = FMath::DegreesToRadians(CameraAngle);
+            FVector CameraDirection;
+            CameraDirection.X = FMath::Cos(RadianAngle);
+            CameraDirection.Y = FMath::Sin(RadianAngle);
+            CameraDirection.Z = 0.0f;
+            CameraDirection.Normalize();
+            
+            // 카메라 방향의 반대쪽 접시 가장자리 지점 계산 (카메라에서 가장 먼 곳)
+            FVector EdgePoint = PlateCenter + CameraDirection * PlateRadius;
+            
+            // 높이 조정 - 접시 위로 HeightOffset만큼 더 높게
+            EdgePoint.Z = PlateCenter.Z + PlateHeight + HeightOffset;
+            
+            UE_LOG(LogTemp, Warning, TEXT("접시 가장자리 공 생성: 중심=%s, 크기=%s, 생성=%s, 카메라각도=%f"),
+                *PlateCenter.ToString(), *Bounds.ToString(), *EdgePoint.ToString(), CameraAngle);
+                
+            return EdgePoint;
+        }
+    }
+    
+    UE_LOG(LogTemp, Warning, TEXT("접시 액터를 찾을 수 없습니다."));
+    return FVector::ZeroVector;
+}
+
+// 공 던지기 함수 수정
 void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
 {
     if (!Controller)
@@ -73,178 +124,51 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
         UE_LOG(LogTemp, Warning, TEXT("Controller가 유효하지 않습니다."));
         return;
     }
-
-    // 접시 위치 찾기
-    FVector PlateCenter = FVector::ZeroVector;
-    float PlateRadius = 0.0f;
-    TArray<AActor*> PlateActors;
-    UGameplayStatics::GetAllActorsWithTag(Controller->GetWorld(), FName("Plate"), PlateActors);
-    if (PlateActors.Num() > 0)
+    
+    // 공통 함수 사용하여 스폰 위치 계산 (카메라 각도 전달)
+    FVector SpawnLocation = CalculatePlateEdgeSpawnPosition(
+        Controller->GetWorld(), 50.f, Controller->CameraOrbitAngle);
+    
+    if (SpawnLocation == FVector::ZeroVector)
     {
-        PlateCenter = PlateActors[0]->GetActorLocation();
-        PlateRadius = PlateActors[0]->FindComponentByClass<UPrimitiveComponent>()->Bounds.SphereRadius;
-        UE_LOG(LogTemp, Log, TEXT("접시 위치: %s, 반경: %f"), *PlateCenter.ToString(), PlateRadius);
+        UE_LOG(LogTemp, Warning, TEXT("유효한 스폰 위치를 계산할 수 없습니다."));
+        return;
     }
     
-    // 미리보기 공이 존재하는지 확인
-    if (Controller->PreviewBall)
+    UE_LOG(LogTemp, Warning, TEXT("공 생성 위치: %s"), *SpawnLocation.ToString());
+    
+    // 공 스폰 후 물리 적용
+    AActor* SpawnedBall = SpawnBall(Controller, SpawnLocation, Controller->CurrentBallType, true);
+    
+    // 공 던지기 - 접시 중심을 향해 힘 적용
+    if (SpawnedBall)
     {
-        UE_LOG(LogTemp, Log, TEXT("미리보기 공을 발사합니다."));
-        
-        // 물리 컴포넌트 가져오기
-        UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(Controller->PreviewBall->GetComponentByClass(UPrimitiveComponent::StaticClass()));
+        UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(SpawnedBall->GetComponentByClass(UPrimitiveComponent::StaticClass()));
         if (PrimComp)
         {
-            // 현재 위치 저장 (카메라 앞)
-            FVector CurrentLocation = Controller->PreviewBall->GetActorLocation();
-            
-            // 접시보다 50.f 높게 유지
-            CurrentLocation.Z = PlateCenter.Z + 50.f;
-            
-            // 먼저 부착 해제 (있는 경우)
-            Controller->PreviewBall->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-            
-            // 새로운 높이로 위치 설정
-            Controller->PreviewBall->SetActorLocation(CurrentLocation);
-            
-            // 물리 시뮬레이션 활성화
-            PrimComp->SetSimulatePhysics(true);
-            PrimComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-            PrimComp->SetCollisionProfileName(TEXT("PhysicsActor"));
-            
-            // 접시 중앙까지의 정확한 벡터 계산 (직선 벡터)
-            FVector ToPlateCenterExact = PlateCenter - CurrentLocation;
-            float ExactDistance = ToPlateCenterExact.Size();
-            
-            // 접시까지의 수평 거리 계산 (포물선 계산용)
-            FVector HorizontalDist = ToPlateCenterExact;
-            HorizontalDist.Z = 0; // Z 성분 제거하여 수평 거리만 계산
-            float HorizontalDistance = HorizontalDist.Size();
-            
-            // 거리에 따른 힘과 각도 정밀 조정
-            // 1. 기본 발사 방향 (수평)
-            FVector HorizontalDir = HorizontalDist.GetSafeNormal();
-            
-            // 2. 수직 높이 요소 계산 - 거리에 반비례하게 설정
-            float HeightFactor;
-            
-            // 거리에 따른 정밀 조정 (가까울수록 더 높게, 멀수록 적절히 감소)
-            if (HorizontalDistance < 200.0f)
+            // 접시 위치 찾기
+            FVector PlateCenter = FVector::ZeroVector;
+            TArray<AActor*> PlateActors;
+            UGameplayStatics::GetAllActorsWithTag(Controller->GetWorld(), FName("Plate"), PlateActors);
+            if (PlateActors.Num() > 0)
             {
-                // 매우 가까울 때 - 높은 각도
-                HeightFactor = 1.2f;
-            }
-            else if (HorizontalDistance < 400.0f)
-            {
-                // 중간 거리 - 중간 각도
-                HeightFactor = 1.0f;
-            }
-            else if (HorizontalDistance < 600.0f)
-            {
-                // 약간 먼 거리 - 약간 낮은 각도
-                HeightFactor = 0.8f;
-            }
-            else
-            {
-                // 매우 먼 거리 - 낮은 각도
-                HeightFactor = 0.6f;
+                PlateCenter = PlateActors[0]->GetActorLocation();
             }
             
-            // 3. 최종 발사 방향
-            FVector LaunchDirection = HorizontalDir + FVector(0, 0, HeightFactor);
-            LaunchDirection.Normalize();
+            // 접시 중심을 향하는 벡터
+            FVector ThrowDirection = PlateCenter - SpawnLocation;
+            ThrowDirection.Normalize();
             
-            // 4. 거리에 따라 힘 정밀 조정 (기본값의 비율로 설정)
-            float ForceMultiplier;
-            if (HorizontalDistance < 200.0f)
-            {
-                // 가까운 거리는 약한 힘 (기본 힘의 50%)
-                ForceMultiplier = 0.5f;
-            }
-            else if (HorizontalDistance < 400.0f)
-            {
-                // 중간 거리는 중간 힘 (기본 힘의 80%)
-                ForceMultiplier = 0.8f;
-            }
-            else if (HorizontalDistance < 600.0f)
-            {
-                // 먼 거리는 기본 힘 (100%)
-                ForceMultiplier = 1.0f;
-            }
-            else
-            {
-                // 매우 먼 거리는 강한 힘 (120%)
-                ForceMultiplier = 1.2f;
-            }
+            // 포물선 궤적을 위해 약간 위쪽으로 힘 적용
+            ThrowDirection.Z += 0.6f;
+            ThrowDirection.Normalize();
             
-            // 최종 힘 계산
-            float AdjustedForce = Controller->ThrowForce * ForceMultiplier;
+            // 던지는 힘 적용
+            float ThrowForce = 700.0f;
+            PrimComp->AddImpulse(ThrowDirection * ThrowForce);
             
-            // 디버그 라인으로 발사 방향 표시
-            DrawDebugLine(
-                Controller->GetWorld(),
-                CurrentLocation,
-                CurrentLocation + LaunchDirection * 100.0f,
-                FColor::Green,
-                false,
-                3.0f,
-                0,
-                2.0f
-            );
-            
-            // 발사
-            PrimComp->AddImpulse(LaunchDirection * AdjustedForce, NAME_None, true);
-            
-            UE_LOG(LogTemp, Log, TEXT("공 발사(정밀) - 위치: %s, 접시: %s, 거리: %f, 힘: %f(x%f), 높이계수: %f"), 
-                *CurrentLocation.ToString(),
-                *PlateCenter.ToString(),
-                HorizontalDistance,
-                AdjustedForce,
-                ForceMultiplier,
-                HeightFactor);
-            
-            // 발사된 공은 더 이상 미리보기 공이 아님
-            Controller->PreviewBall = nullptr;
-            
-            // 던진 후 다음 미리보기 공 준비
-            Controller->CurrentBallType = FMath::RandRange(1, 11);
-            UFruitTrajectoryHelper::UpdatePreviewBall(Controller); // 여기 변경
-        }
-    }
-    else
-    {
-        // FruitBallClass가 설정되어 있으면 공 액터 스폰 시도
-        if (Controller->FruitBallClass)
-        {
-            // 접시보다 50.f 높은 위치에서 스폰
-            FVector SpawnLocation = PlateCenter;
-            SpawnLocation.Z += 125.f;
-            
-            AActor* SpawnedBall = SpawnBall(Controller, SpawnLocation, Controller->CurrentBallType, true);
-            if (SpawnedBall)
-            {
-                // 물리 시뮬레이션 중이면 ThrowAngle에 따른 힘 부여
-                UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(SpawnedBall->GetComponentByClass(UPrimitiveComponent::StaticClass()));
-                if (PrimComp && PrimComp->IsSimulatingPhysics())
-                {
-                    float RadAngle = FMath::DegreesToRadians(Controller->ThrowAngle);
-                    FVector ImpulseDirection = FVector(FMath::Cos(RadAngle), 0.f, FMath::Sin(RadAngle)).GetSafeNormal();
-                    PrimComp->AddImpulse(ImpulseDirection * Controller->ThrowForce, NAME_None, true);
-                }
-                UE_LOG(LogTemp, Log, TEXT("공 타입 %d 스폰됨"), Controller->CurrentBallType);
-                
-                // 던진 후 다음 미리보기 공 준비 (새로운 타입으로 랜덤 선택)
-                Controller->CurrentBallType = FMath::RandRange(1, 11);
-                UFruitTrajectoryHelper::UpdatePreviewBall(Controller); // 여기 변경
-            }
-            else
-            {
-                UE_LOG(LogTemp, Warning, TEXT("공 액터 생성에 실패했습니다."));
-            }
-        }
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("FruitBallClass가 설정되어 있지 않습니다."));
+            UE_LOG(LogTemp, Warning, TEXT("공 던지기: 방향=%s, 힘=%f"), 
+                *ThrowDirection.ToString(), ThrowForce);
         }
     }
 }

@@ -17,15 +17,6 @@ void UFruitTrajectoryHelper::UpdatePreviewBall(AFruitPlayerController* Controlle
         return;
     }
 
-    // 접시 위치 찾기
-    FVector PlateCenter = FVector::ZeroVector;
-    TArray<AActor*> PlateActors;
-    UGameplayStatics::GetAllActorsWithTag(Controller->GetWorld(), FName("Plate"), PlateActors);
-    if (PlateActors.Num() > 0)
-    {
-        PlateCenter = PlateActors[0]->GetActorLocation();
-    }
-
     // 이전 미리보기 공 제거
     if (Controller->PreviewBall)
     {
@@ -33,24 +24,15 @@ void UFruitTrajectoryHelper::UpdatePreviewBall(AFruitPlayerController* Controlle
         Controller->PreviewBall = nullptr;
     }
     
-    // 플레이어 카메라 정보 가져오기
-    APawn* PlayerPawn = Controller->GetPawn();
-    if (!PlayerPawn)
+    // 공통 함수를 사용하여 위치 계산 (카메라 각도 전달)
+    FVector PreviewLocation = UFruitThrowHelper::CalculatePlateEdgeSpawnPosition(
+        Controller->GetWorld(), 50.f, Controller->CameraOrbitAngle);
+    
+    if (PreviewLocation == FVector::ZeroVector)
     {
-        UE_LOG(LogTemp, Error, TEXT("미리보기 실패: PlayerPawn이 NULL입니다!"));
+        UE_LOG(LogTemp, Error, TEXT("미리보기 실패: 유효한 위치를 계산할 수 없습니다!"));
         return;
     }
-    
-    // 플레이어 방향 계산
-    FVector PlayerLocation = PlayerPawn->GetActorLocation();
-    FVector PlayerDirection = PlayerPawn->GetActorForwardVector();
-    
-    // 접시보다 50.f 높게 설정된 위치 계산
-    FVector PreviewLocation = FVector(
-        PlayerLocation.X + PlayerDirection.X * 300.f,
-        PlayerLocation.Y + PlayerDirection.Y * 300.f,
-        PlateCenter.Z + 50.f  // 접시보다 50.f 높게 설정
-    );
     
     // 공통 함수 호출로 공 생성 (물리 비활성화)
     Controller->PreviewBall = UFruitThrowHelper::SpawnBall(Controller, PreviewLocation, Controller->CurrentBallType, false);
@@ -58,6 +40,15 @@ void UFruitTrajectoryHelper::UpdatePreviewBall(AFruitPlayerController* Controlle
     if (Controller->PreviewBall)
     {
         UE_LOG(LogTemp, Warning, TEXT("미리보기 공 생성 성공 - 위치: %s"), *PreviewLocation.ToString());
+        
+        // 접시 위치 찾기
+        FVector PlateCenter = FVector::ZeroVector;
+        TArray<AActor*> PlateActors;
+        UGameplayStatics::GetAllActorsWithTag(Controller->GetWorld(), FName("Plate"), PlateActors);
+        if (PlateActors.Num() > 0)
+        {
+            PlateCenter = PlateActors[0]->GetActorLocation();
+        }
         
         // 예상 경로 계산 및 표시
         DrawTrajectoryPath(Controller, PreviewLocation, PlateCenter);
@@ -88,8 +79,8 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(AFruitPlayerController* Controll
     HorizontalDist.Z = 0;
     float HorizontalDistance = HorizontalDist.Size();
     
-    UE_LOG(LogTemp, Warning, TEXT("궤적 계산 - 시작: %s, 목표: %s, 거리: %f"), 
-        *StartLocation.ToString(), *TargetLocation.ToString(), HorizontalDistance);
+    // UE_LOG(LogTemp, Warning, TEXT("궤적 계산 - 시작: %s, 목표: %s, 거리: %f"), 
+    //     *StartLocation.ToString(), *TargetLocation.ToString(), HorizontalDistance);
     
     // 발사 방향과 힘 계산 (실제 발사 코드와 동일한 로직)
     float HeightFactor;
@@ -129,8 +120,8 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(AFruitPlayerController* Controll
     float GravityZ = -980.0f; // 기본값 하드코딩
     FVector Gravity = FVector(0, 0, GravityZ);
     
-    UE_LOG(LogTemp, Warning, TEXT("궤적 계산 - 방향: %s, 힘: %f, 초기속도: %s"), 
-        *LaunchDirection.ToString(), AdjustedForce, *InitialVelocity.ToString());
+    // UE_LOG(LogTemp, Warning, TEXT("궤적 계산 - 방향: %s, 힘: %f, 초기속도: %s"), 
+    //     *LaunchDirection.ToString(), AdjustedForce, *InitialVelocity.ToString());
     
     // 궤적 계산 - 포물선 운동 방정식 사용
     TArray<FVector> TrajectoryPoints;
@@ -158,8 +149,6 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(AFruitPlayerController* Controll
         if (DistanceToTarget < 20.0f) // 더 관대한 범위
             break;
     }
-    
-    UE_LOG(LogTemp, Warning, TEXT("궤적 포인트 수: %d"), TrajectoryPoints.Num());
     
     // 계산된 궤적 그리기 - 영구적으로 표시하도록 변경
     for (int32 i = 0; i < TrajectoryPoints.Num() - 1; i++)

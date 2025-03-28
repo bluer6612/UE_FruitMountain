@@ -17,4 +17,8 @@ public:
     // 공 던지기 기능
     UFUNCTION(BlueprintCallable, Category="FruitThrow")
     static void ThrowFruit(class AFruitPlayerController* Controller);
+    
+    // 접시 가장자리에 공 소환 위치 계산 (공통 함수) - 카메라 각도 매개변수 추가
+    UFUNCTION(BlueprintCallable, Category="FruitThrow")
+    static FVector CalculatePlateEdgeSpawnPosition(UWorld* World, float HeightOffset = 100.f, float CameraAngle = 0.f);
 };
