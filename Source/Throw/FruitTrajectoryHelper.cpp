@@ -1,5 +1,5 @@
 #include "FruitTrajectoryHelper.h"
-#include "Controller/FruitPlayerController.h"
+#include "FruitPlayerController.h"
 #include "FruitThrowHelper.h"
 #include "FruitPhysicsHelper.h" // 새 헬퍼 클래스 포함
 #include "Engine/World.h"
@@ -9,7 +9,7 @@
 #include "DrawDebugHelpers.h"
 #include "PhysicsEngine/PhysicsSettings.h"
 
-// 미리보기 공 업데이트 함수
+// 미리보기 공 업데이트 함수 효율적으로 개선
 void UFruitTrajectoryHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
 {
     if (!Controller)
@@ -18,13 +18,6 @@ void UFruitTrajectoryHelper::UpdatePreviewBall(AFruitPlayerController* Controlle
         return;
     }
 
-    // 이전 미리보기 공 제거
-    if (Controller->PreviewBall)
-    {
-        Controller->PreviewBall->Destroy();
-        Controller->PreviewBall = nullptr;
-    }
-    
     // 공통 함수를 사용하여 위치 계산 (카메라 각도 전달)
     FVector PreviewLocation = UFruitThrowHelper::CalculatePlateEdgeSpawnPosition(
         Controller->GetWorld(), 50.f, Controller->CameraOrbitAngle);
@@ -35,13 +28,29 @@ void UFruitTrajectoryHelper::UpdatePreviewBall(AFruitPlayerController* Controlle
         return;
     }
     
-    // 공통 함수 호출로 공 생성 (물리 비활성화)
-    Controller->PreviewBall = UFruitThrowHelper::SpawnBall(Controller, PreviewLocation, Controller->CurrentBallType, false);
+    // 미리보기 공이 없는 경우에만 새로 생성
+    if (!Controller->PreviewBall)
+    {
+        // 공통 함수 호출로 공 생성 (물리 비활성화)
+        Controller->PreviewBall = UFruitThrowHelper::SpawnBall(Controller, PreviewLocation, Controller->CurrentBallType, false);
+        UE_LOG(LogTemp, Warning, TEXT("미리보기 공 새로 생성 - 위치: %s"), *PreviewLocation.ToString());
+    }
+    else
+    {
+        // 기존 공의 위치만 업데이트
+        Controller->PreviewBall->SetActorLocation(PreviewLocation);
+        
+        // 필요한 경우 크기도 업데이트
+        float BaseSize = 0.5f;
+        float ScaleFactor = 1.f + 0.1f * (Controller->CurrentBallType - 1);
+        float BallSize = BaseSize * ScaleFactor;
+        Controller->PreviewBall->SetActorScale3D(FVector(BallSize));
+        
+        UE_LOG(LogTemp, Warning, TEXT("미리보기 공 위치 업데이트 - 위치: %s"), *PreviewLocation.ToString());
+    }
     
     if (Controller->PreviewBall)
     {
-        UE_LOG(LogTemp, Warning, TEXT("미리보기 공 생성 성공 - 위치: %s"), *PreviewLocation.ToString());
-        
         // 접시 위치 찾기
         FVector PlateCenter = FVector::ZeroVector;
         TArray<AActor*> PlateActors;
