@@ -1,6 +1,7 @@
 #include "FruitTrajectoryHelper.h"
-#include "FruitPlayerController.h"
+#include "Controller/FruitPlayerController.h"
 #include "FruitThrowHelper.h"
+#include "FruitPhysicsHelper.h" // 새 헬퍼 클래스 포함
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
@@ -82,39 +83,18 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(AFruitPlayerController* Controll
     // UE_LOG(LogTemp, Warning, TEXT("궤적 계산 - 시작: %s, 목표: %s, 거리: %f"), 
     //     *StartLocation.ToString(), *TargetLocation.ToString(), HorizontalDistance);
     
-    // 발사 방향과 힘 계산 (실제 발사 코드와 동일한 로직)
-    float HeightFactor;
-    if (HorizontalDistance < 200.0f)
-        HeightFactor = 1.2f;
-    else if (HorizontalDistance < 400.0f)
-        HeightFactor = 1.0f;
-    else if (HorizontalDistance < 600.0f)
-        HeightFactor = 0.8f;
-    else
-        HeightFactor = 0.6f;
-    
-    FVector HorizontalDir = HorizontalDist.GetSafeNormal();
-    FVector LaunchDirection = HorizontalDir + FVector(0, 0, HeightFactor);
-    LaunchDirection.Normalize();
-    
-    float ForceMultiplier;
-    if (HorizontalDistance < 200.0f)
-        ForceMultiplier = 0.5f;
-    else if (HorizontalDistance < 400.0f)
-        ForceMultiplier = 0.8f;
-    else if (HorizontalDistance < 600.0f)
-        ForceMultiplier = 1.0f;
-    else
-        ForceMultiplier = 1.2f;
-    
-    // 최종 힘과 초기 속도 계산
-    float AdjustedForce = Controller->ThrowForce * ForceMultiplier;
-    
-    // 질량 가져오기 - 간단하게 처리
-    float Mass = 1.0f; // 기본 질량값 사용
+    // 공통 함수 호출하여 던지기 파라미터 계산
+    float AdjustedForce;
+    FVector LaunchDirection;
+    UFruitPhysicsHelper::CalculateThrowParameters(
+        StartLocation,
+        TargetLocation,
+        Controller->ThrowForce,
+        AdjustedForce,
+        LaunchDirection);
     
     // 초기 속도 계산
-    FVector InitialVelocity = LaunchDirection * (AdjustedForce / Mass);
+    FVector InitialVelocity = LaunchDirection * AdjustedForce;
     
     // 중력 가속도 (UE4 기본값은 약 -980 cm/s^2)
     float GravityZ = -980.0f; // 기본값 하드코딩

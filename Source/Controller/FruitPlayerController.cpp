@@ -6,10 +6,10 @@
 #include "GameFramework/InputSettings.h"
 #include "Engine/Engine.h"
 #include "Actors/CameraOrbitFunctionLibrary.h"
-#include "FruitThrowHelper.h"
 #include "GameMode/UE_FruitMountainGameMode.h"
 #include "Camera/CameraComponent.h"
-#include "FruitTrajectoryHelper.h"
+#include "Throw/FruitThrowHelper.h"
+#include "Throw/FruitTrajectoryHelper.h"
 
 AFruitPlayerController::AFruitPlayerController()
 {
