@@ -177,9 +177,9 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
             float AdjustedForce;
             FVector LaunchDirection;
             UFruitPhysicsHelper::CalculateThrowParameters(
+                Controller,
                 SpawnLocation,
                 PlateCenter,
-                Controller->ThrowForce,
                 AdjustedForce,
                 LaunchDirection);
                 

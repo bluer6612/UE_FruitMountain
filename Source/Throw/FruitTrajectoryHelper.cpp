@@ -96,9 +96,9 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(AFruitPlayerController* Controll
     float AdjustedForce;
     FVector LaunchDirection;
     UFruitPhysicsHelper::CalculateThrowParameters(
+        Controller,
         StartLocation,
         TargetLocation,
-        Controller->ThrowForce,
         AdjustedForce,
         LaunchDirection);
     
