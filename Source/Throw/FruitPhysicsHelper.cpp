@@ -1,7 +1,7 @@
 #include "FruitPhysicsHelper.h"
 #include "FruitPlayerController.h"
 
-// 던지기 파라미터 계산 함수 - 안정적인 힘 계산으로 수정
+// 던지기 파라미터 계산 함수 - 질량에 따른 보정으로 모든 공이 접시 중앙에 도달하도록 함
 void UFruitPhysicsHelper::CalculateThrowParameters(
     AFruitPlayerController* Controller, 
     const FVector& StartLocation, 
@@ -11,7 +11,7 @@ void UFruitPhysicsHelper::CalculateThrowParameters(
     float BallMass)
 {
     // 기본값 설정
-    OutAdjustedForce = 100.0f;
+    OutAdjustedForce = 500.0f;
     OutLaunchDirection = FVector::ForwardVector;
     
     if (!Controller)
@@ -52,19 +52,27 @@ void UFruitPhysicsHelper::CalculateThrowParameters(
     OutLaunchDirection = HorizontalDir * HorizontalComponent + FVector(0, 0, 1) * ZComponent;
     OutLaunchDirection.Normalize();
     
-    // --- 단순화된 힘 계산 (거리 기반) ---
+    // --- 질량 기반 힘 계산 (질량이 높을수록 더 적은 힘 적용) ---
     
-    // 단순한 선형 관계로 힘 계산 (거리에 비례하는 힘)
-    float BaseForce = 20.0f; // 매우 낮은 기본 힘
-    float DistanceFactor = FMath::Clamp(Distance / 300.0f, 0.5f, 2.0f);
+    // 기본 힘 계산
+    float BaseForce = 6000.0f; // 기본 힘
+    float DistanceFactor = FMath::Clamp(Distance / 300.0f, 0.8f, 3.0f);
     
-    // 질량 반영 힘 계산 - 단순하고 안정적인 공식 사용
-    OutAdjustedForce = BaseForce * DistanceFactor * BallMass;
+    // 중요: 질량 역수 계수 적용 - 질량이 높을수록 힘 감소
+    // 표준 질량을 10으로 가정하고, 그것에 맞게 힘 조정
+    float StandardMass = 10.0f;
+    float MassRatio = StandardMass / BallMass; // 질량이 클수록 작은 값이 됨
     
-    // 최종 힘 제한 - 범위 축소
-    OutAdjustedForce = FMath::Clamp(OutAdjustedForce, 20.0f * BallMass, 100.0f * BallMass);
+    // 최종 힘 계산 (질량이 높을수록 힘 감소)
+    // 질량이 10배 증가하면 힘은 1/10로 감소
+    OutAdjustedForce = BaseForce * DistanceFactor * MassRatio;
+    
+    // 추가 제한: 최소/최대 힘 설정
+    float MinForce = 200.0f;
+    float MaxForce = 2000.0f;
+    OutAdjustedForce = FMath::Clamp(OutAdjustedForce, MinForce, MaxForce);
     
     // 디버그 로그
-    UE_LOG(LogTemp, Warning, TEXT("던지기 계산: 거리=%f, 각도=%f도, 힘=%f, 질량=%f"), 
-        Distance, OptimalAngle, OutAdjustedForce, BallMass);
+    UE_LOG(LogTemp, Warning, TEXT("던지기 계산: 거리=%f, 각도=%f도, 힘=%f, 질량=%f, 질량비율=%f"), 
+        Distance, OptimalAngle, OutAdjustedForce, BallMass, MassRatio);
 }

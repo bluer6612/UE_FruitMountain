@@ -83,8 +83,8 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
                 LaunchDirection,
                 ActualMass);
                 
-            // 최종 힘 적용 - 훨씬 낮은 보정 계수 사용
-            float PhysicsCalibrationFactor = 3.0f; // 8.0f에서 3.0f로 감소
+            // 최종 힘 적용 - 일관된 보정 계수 사용
+            float PhysicsCalibrationFactor = 1.0f; // 계수를 1로 설정 (이미 CalculateThrowParameters에서 적절하게 계산됨)
             FVector FinalImpulse = LaunchDirection * (AdjustedForce * PhysicsCalibrationFactor);
             
             // 즉시 충격량 적용하여 공이 날아가도록 함
