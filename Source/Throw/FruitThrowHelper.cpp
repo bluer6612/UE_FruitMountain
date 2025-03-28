@@ -10,7 +10,7 @@
 #include "Camera/CameraComponent.h"
 #include "Actors/PlateActor.h"
 
-// 공 던지기 함수 수정
+// ThrowFruit 함수 수정 - 중복 코드 제거
 void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
 {
     if (!Controller)
@@ -26,7 +26,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
         Controller->PreviewBall = nullptr;
     }
     
-    // 공통 함수 사용하여 스폰 위치 계산 - 새 클래스의 함수 호출
+    // 공 스폰 위치 계산
     FVector SpawnLocation = UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(
         Controller->GetWorld(), 50.f, Controller->CameraOrbitAngle);
     
@@ -39,7 +39,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
     // 공 스폰 후 물리 적용 - 새 클래스의 함수 호출
     AActor* SpawnedBall = UFruitSpawnHelper::SpawnBall(Controller, SpawnLocation, Controller->CurrentBallType, true);
     
-    // 공 던지기 - 질량 처리 부분
+    // 공 던지기 - 접시 중심을 향해 힘 적용
     if (SpawnedBall)
     {
         UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(
@@ -47,6 +47,13 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
             
         if (MeshComp)
         {
+            // 물리 시뮬레이션 활성화 확인만
+            if (!MeshComp->IsSimulatingPhysics())
+            {
+                MeshComp->SetSimulatePhysics(true);
+                UE_LOG(LogTemp, Warning, TEXT("던지기 직전 물리 활성화"));
+            }
+            
             // 접시 위치 찾기
             FVector PlateCenter = FVector::ZeroVector;
             TArray<AActor*> PlateActors;
@@ -56,10 +63,10 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
                 PlateCenter = PlateActors[0]->GetActorLocation();
             }
             
-            // 공의 질량 정보 가져오기 - 이미 SpawnBall에서 10.0f로 고정됨
-            float BallMass = 10.0f; // 고정값 사용
+            // 질량은 SpawnBall에서 이미 설정됨 - 그 값 가져오기
+            float BallMass = MeshComp->GetMass();
             
-            // 공통 함수 호출하여 던지기 파라미터 계산 (질량 정보 전달)
+            // 공통 함수 호출하여 던지기 파라미터 계산
             float AdjustedForce;
             FVector LaunchDirection;
             UFruitPhysicsHelper::CalculateThrowParameters(
@@ -70,7 +77,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
                 LaunchDirection,
                 BallMass);
                 
-            // 최종 힘 적용 (물리 환경에 맞게 보정)
+            // 최종 힘 적용
             float PhysicsCalibrationFactor = 20.0f;
             MeshComp->AddImpulse(LaunchDirection * (AdjustedForce * PhysicsCalibrationFactor));
             
@@ -95,7 +102,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
     );
 }
 
-// 미리보기 공 업데이트 함수 수정
+// UpdatePreviewBall 함수 수정 - 중복 코드 제거
 void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
 {
     if (!Controller)
@@ -104,7 +111,7 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
         return;
     }
 
-    // 공통 함수를 사용하여 위치 계산 - 새 클래스의 함수 호출
+    // 공통 함수를 사용하여 위치 계산
     FVector PreviewLocation = UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(
         Controller->GetWorld(), 50.f, Controller->CameraOrbitAngle);
     
@@ -114,52 +121,51 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
         return;
     }
     
-    // 미리보기 공이 없는 경우에만 새로 생성 - 새 클래스의 함수 호출
+    // 미리보기 공이 없는 경우에만 새로 생성
     if (!Controller->PreviewBall)
     {
-        // 공 생성 (물리 비활성화)
-        Controller->PreviewBall = UFruitSpawnHelper::SpawnBall(Controller, PreviewLocation, Controller->CurrentBallType, false);
-        UE_LOG(LogTemp, Warning, TEXT("미리보기 공 새로 생성 - 위치: %s"), *PreviewLocation.ToString());
+        Controller->PreviewBall = UFruitSpawnHelper::SpawnBall(
+            Controller, PreviewLocation, Controller->CurrentBallType, false);
+            
+        UE_LOG(LogTemp, Warning, TEXT("미리보기 공 생성: 위치=%s"), *PreviewLocation.ToString());
     }
     else
     {
         // 기존 공의 위치만 업데이트
         Controller->PreviewBall->SetActorLocation(PreviewLocation);
         
-        // 필요한 경우 크기도 업데이트
-        float BaseSize = 0.5f;
-        float ScaleFactor = 1.f + 0.1f * (Controller->CurrentBallType - 1);
-        float BallSize = BaseSize * ScaleFactor;
+        // 크기도 업데이트 - 공통 함수 사용
+        float BallSize = UFruitSpawnHelper::CalculateBallSize(Controller->CurrentBallType);
         Controller->PreviewBall->SetActorScale3D(FVector(BallSize));
         
-        // 질량 처리 코드 추가
-        UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(Controller->PreviewBall->GetComponentByClass(UPrimitiveComponent::StaticClass()));
-        if (PrimComp)
+        // 질량 업데이트 - 공통 함수 사용
+        UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(
+            Controller->PreviewBall->GetComponentByClass(UStaticMeshComponent::StaticClass()));
+            
+        if (MeshComp)
         {
-            UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(PrimComp);
-            if (MeshComp)
+            float BallMass = UFruitSpawnHelper::CalculateBallMass(Controller->CurrentBallType);
+            MeshComp->SetMassOverrideInKg(NAME_None, BallMass);
+            
+            UE_LOG(LogTemp, Warning, TEXT("미리보기 공 업데이트: 위치=%s, 크기=%f, 질량=%f"), 
+                *PreviewLocation.ToString(), BallSize, BallMass);
+            
+            // 접시 위치 찾기
+            FVector PlateCenter = FVector::ZeroVector;
+            TArray<AActor*> PlateActors;
+            UGameplayStatics::GetAllActorsWithTag(Controller->GetWorld(), FName("Plate"), PlateActors);
+            if (PlateActors.Num() > 0)
             {
-                const float FixedMass = 10.0f; // 모든 공에 동일한 질량 적용
-                MeshComp->SetMassOverrideInKg(NAME_None, FixedMass);
+                PlateCenter = PlateActors[0]->GetActorLocation();
+                
+                // 예상 경로 업데이트
+                UFruitTrajectoryHelper::UpdateTrajectoryPath(Controller, PreviewLocation, PlateCenter);
             }
         }
-        
-        UE_LOG(LogTemp, Warning, TEXT("미리보기 공 위치 업데이트 - 위치: %s"), *PreviewLocation.ToString());
-    }
-    
-    if (Controller->PreviewBall)
-    {
-        // 접시 위치 찾기
-        FVector PlateCenter = FVector::ZeroVector;
-        TArray<AActor*> PlateActors;
-        UGameplayStatics::GetAllActorsWithTag(Controller->GetWorld(), FName("Plate"), PlateActors);
-        if (PlateActors.Num() > 0)
+        else
         {
-            PlateCenter = PlateActors[0]->GetActorLocation();
+            UE_LOG(LogTemp, Error, TEXT("미리보기 공에 StaticMeshComponent를 찾을 수 없습니다!"));
         }
-        
-        // 예상 경로 업데이트
-        UFruitTrajectoryHelper::UpdateTrajectoryPath(Controller, PreviewLocation, PlateCenter);
     }
     else
     {

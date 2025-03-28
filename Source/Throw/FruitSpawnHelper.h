@@ -13,6 +13,14 @@ class UE_FRUITMOUNTAIN_API UFruitSpawnHelper : public UBlueprintFunctionLibrary
     GENERATED_BODY()
 
 public:
+    // 공 크기 계산 함수 추가
+    UFUNCTION(BlueprintCallable, Category="FruitSpawn")
+    static float CalculateBallSize(int32 BallType);
+    
+    // 공 질량 계산 함수 추가
+    UFUNCTION(BlueprintCallable, Category="FruitSpawn")
+    static float CalculateBallMass(int32 BallType);
+    
     // 공 생성 함수
     UFUNCTION(BlueprintCallable, Category="FruitSpawn")
     static class AActor* SpawnBall(

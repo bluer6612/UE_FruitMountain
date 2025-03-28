@@ -6,7 +6,24 @@
 #include "Components/PrimitiveComponent.h"
 #include "Actors/PlateActor.h"
 
-// 공 생성 함수 구현
+// 크기 계산 함수 구현
+float UFruitSpawnHelper::CalculateBallSize(int32 BallType)
+{
+    float BaseSize = 0.5f;
+    float ScaleFactor = 1.f + 0.1f * (BallType - 1);
+    float BallSize = BaseSize * ScaleFactor;
+    return BallSize;
+}
+
+// 질량 계산 함수 구현
+float UFruitSpawnHelper::CalculateBallMass(int32 BallType)
+{
+    float BallSize = CalculateBallSize(BallType);
+    float BallMass = BallSize * 20.0f; // 크기에 따라 질량 조정
+    return BallMass;
+}
+
+// SpawnBall 함수 수정 - 공통 함수 사용
 AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, const FVector& Location, int32 BallType, bool bEnablePhysics)
 {
     if (!Controller || !Controller->FruitBallClass)
@@ -25,49 +42,41 @@ AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, const F
         
     if (SpawnedBall)
     {
-        // 크기 설정 - 모든 공에 동일한 계산식 적용
-        float BaseSize = 0.5f;
-        float ScaleFactor = 1.f + 0.1f * (BallType - 1);
-        float BallSize = BaseSize * ScaleFactor;
+        // 공통 함수로 크기 및 질량 계산
+        float BallSize = CalculateBallSize(BallType);
+        float BallMass = CalculateBallMass(BallType);
+        
+        // 크기 설정
         SpawnedBall->SetActorScale3D(FVector(BallSize));
         
-        // 물리 컴포넌트 설정
-        UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(
-            SpawnedBall->GetComponentByClass(UPrimitiveComponent::StaticClass()));
+        // StaticMeshComponent 찾기
+        UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(
+            SpawnedBall->GetComponentByClass(UStaticMeshComponent::StaticClass()));
             
-        if (PrimComp)
+        if (MeshComp)
         {
-            // StaticMeshComponent로 캐스팅
-            UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(PrimComp);
-            if (MeshComp)
+            // 물리 관련 설정
+            if (bEnablePhysics)
             {
-                if (bEnablePhysics)
-                {
-                    // 물리 시뮬레이션 활성화
-                    MeshComp->SetSimulatePhysics(true);
-                    MeshComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-                    MeshComp->SetCollisionProfileName(TEXT("PhysicsActor"));
-                    
-                    // 중요: 크기와 상관없이 질량 고정 (시뮬레이션이 켜진 후에 설정)
-                    const float FixedMass = 10.0f; // 모든 공에 동일한 질량 적용
-                    MeshComp->SetMassOverrideInKg(NAME_None, FixedMass);
-                    
-                    UE_LOG(LogTemp, Warning, TEXT("공 생성: 타입=%d, 크기=%f, 질량=%f 고정"),
-                        BallType, BallSize, FixedMass);
-                }
-                else
-                {
-                    // 물리 시뮬레이션 비활성화 (미리보기용)
-                    MeshComp->SetSimulatePhysics(false);
-                    MeshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision); // 미리보기시 콜리전 비활성화
-                    
-                    // 다른 액터에 부착
-                    SpawnedBall->AttachToComponent(
-                        Controller->GetPawn()->GetRootComponent(),
-                        FAttachmentTransformRules::KeepWorldTransform
-                    );
-                }
+                // 물리 시뮬레이션 활성화
+                MeshComp->SetSimulatePhysics(true);
+                MeshComp->SetEnableGravity(true);
+                MeshComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+                MeshComp->SetCollisionProfileName(TEXT("PhysicsActor"));
             }
+            else
+            {
+                // 미리보기용 공 설정 (물리 비활성화)
+                MeshComp->SetSimulatePhysics(false);
+                MeshComp->SetEnableGravity(false);
+                MeshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+            }
+            
+            // 질량은 물리 시뮬레이션 여부와 상관없이 설정 (계산용)
+            MeshComp->SetMassOverrideInKg(NAME_None, BallMass);
+            
+            UE_LOG(LogTemp, Warning, TEXT("%s 공 생성: 타입=%d, 크기=%f, 질량=%f"),
+                bEnablePhysics ? TEXT("던지는") : TEXT("미리보기"), BallType, BallSize, BallMass);
         }
     }
     
