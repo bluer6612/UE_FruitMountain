@@ -13,12 +13,13 @@ class UE_FRUITMOUNTAIN_API UFruitPhysicsHelper : public UBlueprintFunctionLibrar
     GENERATED_BODY()
 
 public:
-    // 던지는 힘 계산을 위한 공통 함수 - Controller에서 직접 ThrowForce 사용
+    // 던지는 힘 계산을 위한 공통 함수 - 질량 고려 버전
     UFUNCTION(BlueprintCallable, Category="FruitPhysics")
     static void CalculateThrowParameters(
         class AFruitPlayerController* Controller,
         const FVector& StartPosition,
         const FVector& TargetPosition,
         float& OutAdjustedForce,
-        FVector& OutLaunchDirection);
+        FVector& OutLaunchDirection,
+        float BallMass = 10.0f); // 기본값 추가
 };

@@ -9,67 +9,206 @@
 #include "DrawDebugHelpers.h"
 #include "PhysicsEngine/PhysicsSettings.h"
 
-// 미리보기 공 업데이트 함수 효율적으로 개선
-void UFruitTrajectoryHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
+// 궤적 생성 및 그리기를 위한 공통 함수
+void UFruitTrajectoryHelper::CalculateTrajectoryPoints(
+    AFruitPlayerController* Controller,
+    const FVector& StartLocation,
+    const FVector& TargetLocation,
+    TArray<FVector>& OutTrajectoryPoints)
 {
     if (!Controller)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("UpdatePreviewBall: Controller가 유효하지 않습니다."));
         return;
-    }
-
-    // 공통 함수를 사용하여 위치 계산 (카메라 각도 전달)
-    FVector PreviewLocation = UFruitThrowHelper::CalculatePlateEdgeSpawnPosition(
-        Controller->GetWorld(), 50.f, Controller->CameraOrbitAngle);
-    
-    if (PreviewLocation == FVector::ZeroVector)
-    {
-        UE_LOG(LogTemp, Error, TEXT("미리보기 실패: 유효한 위치를 계산할 수 없습니다!"));
-        return;
-    }
-    
-    // 미리보기 공이 없는 경우에만 새로 생성
-    if (!Controller->PreviewBall)
-    {
-        // 공통 함수 호출로 공 생성 (물리 비활성화)
-        Controller->PreviewBall = UFruitThrowHelper::SpawnBall(Controller, PreviewLocation, Controller->CurrentBallType, false);
-        UE_LOG(LogTemp, Warning, TEXT("미리보기 공 새로 생성 - 위치: %s"), *PreviewLocation.ToString());
-    }
-    else
-    {
-        // 기존 공의 위치만 업데이트
-        Controller->PreviewBall->SetActorLocation(PreviewLocation);
         
-        // 필요한 경우 크기도 업데이트
-        float BaseSize = 0.5f;
-        float ScaleFactor = 1.f + 0.1f * (Controller->CurrentBallType - 1);
-        float BallSize = BaseSize * ScaleFactor;
-        Controller->PreviewBall->SetActorScale3D(FVector(BallSize));
-        
-        UE_LOG(LogTemp, Warning, TEXT("미리보기 공 위치 업데이트 - 위치: %s"), *PreviewLocation.ToString());
-    }
+    // 초기화
+    OutTrajectoryPoints.Empty();
     
+    // 공의 질량 계산
+    float BallMass = 10.0f; // 기본값
+    
+    // 공이 있으면 질량 가져오기
     if (Controller->PreviewBall)
     {
-        // 접시 위치 찾기
-        FVector PlateCenter = FVector::ZeroVector;
-        TArray<AActor*> PlateActors;
-        UGameplayStatics::GetAllActorsWithTag(Controller->GetWorld(), FName("Plate"), PlateActors);
-        if (PlateActors.Num() > 0)
+        // StaticMeshComponent에서 질량 가져오기
+        UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(
+            Controller->PreviewBall->GetComponentByClass(UStaticMeshComponent::StaticClass()));
+            
+        if (MeshComp)
         {
-            PlateCenter = PlateActors[0]->GetActorLocation();
+            BallMass = MeshComp->GetMass();
         }
-        
-        // 예상 경로 계산 및 표시
-        DrawTrajectoryPath(Controller, PreviewLocation, PlateCenter);
+        else
+        {
+            // 크기 기반 질량 예상 계산 (컴포넌트가 없는 경우)
+            float BaseSize = 0.5f;
+            float ScaleFactor = 1.f + 0.1f * (Controller->CurrentBallType - 1);
+            float BallSize = BaseSize * ScaleFactor;
+            
+            // 질량은 부피에 비례함 (크기의 세제곱)
+            BallMass = 10.0f * FMath::Pow(BallSize, 3.0f) / FMath::Pow(0.5f, 3.0f);
+        }
     }
-    else
+    
+    // 공통 함수 호출하여 던지기 파라미터 계산
+    float AdjustedForce;
+    FVector LaunchDirection;
+    UFruitPhysicsHelper::CalculateThrowParameters(
+        Controller,
+        StartLocation,
+        TargetLocation,
+        AdjustedForce,
+        LaunchDirection,
+        BallMass);
+    
+    // 초기 속도 계산
+    FVector InitialVelocity = LaunchDirection * AdjustedForce;
+    
+    // 중력 가속도
+    float GravityZ = -980.0f;
+    FVector Gravity = FVector(0, 0, GravityZ);
+    
+    // 시작점 추가
+    OutTrajectoryPoints.Add(StartLocation);
+    
+    // 시간 간격으로 위치 계산
+    const float TimeStep = 0.1f;
+    const float MaxTime = 5.0f;
+    
+    for (float Time = TimeStep; Time < MaxTime; Time += TimeStep)
     {
-        UE_LOG(LogTemp, Error, TEXT("미리보기 공 생성에 실패했습니다!"));
+        // 포물선 운동 방정식: P = P0 + V0*t + 0.5*a*t^2
+        FVector Position = StartLocation + InitialVelocity * Time + 0.5f * Gravity * Time * Time;
+        
+        // 포인트 추가
+        OutTrajectoryPoints.Add(Position);
+        
+        // 바닥에 닿았는지 확인
+        if (Position.Z < 0.0f)
+            break;
+            
+        // 목표 지점 근처인지 확인
+        float DistanceToTarget = FVector::Dist(Position, TargetLocation);
+        if (DistanceToTarget < 20.0f)
+            break;
     }
 }
 
-// 예상 궤적 계산 및 그리기 함수
+// 최적화된 궤적 업데이트 함수
+void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Controller, const FVector& StartLocation, const FVector& TargetLocation)
+{
+    if (!Controller || !Controller->GetWorld())
+        return;
+    
+    UWorld* World = Controller->GetWorld();
+    
+    // 정적 변수로 이전 궤적 정보 유지
+    static TArray<FVector> LastTrajectoryPoints;
+    static int32 TrajectoryID = 0;
+    
+    // 이전 궤적 제거
+    if (LastTrajectoryPoints.Num() > 0) {
+        for (int32 i = 0; i < LastTrajectoryPoints.Num() - 1; i++) {
+            // 이전 라인 제거
+            DrawDebugLine(
+                World,
+                LastTrajectoryPoints[i],
+                LastTrajectoryPoints[i + 1],
+                FColor::Black,
+                false,
+                0.0f,
+                TrajectoryID,
+                0.0f
+            );
+            
+            // 이전 구체 제거
+            if (i % 5 == 0) {
+                DrawDebugSphere(
+                    World,
+                    LastTrajectoryPoints[i],
+                    5.0f,
+                    8,
+                    FColor::Black,
+                    false,
+                    0.0f,
+                    TrajectoryID,
+                    0.0f
+                );
+            }
+        }
+    }
+    
+    // 궤적 ID 업데이트
+    TrajectoryID++;
+    
+    // 공통 함수를 통해 궤적 점들 계산
+    TArray<FVector> NewTrajectoryPoints;
+    CalculateTrajectoryPoints(Controller, StartLocation, TargetLocation, NewTrajectoryPoints);
+    
+    // 새 궤적 그리기
+    for (int32 i = 0; i < NewTrajectoryPoints.Num() - 1; i++)
+    {
+        // 점들을 선으로 연결
+        DrawDebugLine(
+            World,
+            NewTrajectoryPoints[i],
+            NewTrajectoryPoints[i + 1],
+            FColor::Blue,
+            false, // 임시 표시
+            0.1f,  // 다음 프레임까지 유지
+            TrajectoryID, // 고유 ID 사용
+            2.0f
+        );
+        
+        // 5개 점마다 구체 그리기
+        if (i % 5 == 0)
+        {
+            DrawDebugSphere(
+                World,
+                NewTrajectoryPoints[i],
+                5.0f,
+                8,
+                FColor::Blue,
+                false,
+                0.1f,
+                TrajectoryID,
+                1.0f
+            );
+        }
+    }
+    
+    // 마지막 지점은 큰 구체로 표시
+    if (NewTrajectoryPoints.Num() > 1)
+    {
+        DrawDebugSphere(
+            World,
+            NewTrajectoryPoints.Last(),
+            10.0f,
+            12,
+            FColor::Green,
+            false,
+            0.1f,
+            TrajectoryID,
+            1.0f
+        );
+    }
+    
+    // 실제 목표 지점도 표시
+    DrawDebugSphere(
+        World,
+        TargetLocation,
+        15.0f,
+        12,
+        FColor::Blue,
+        false,
+        0.1f,
+        TrajectoryID,
+        1.0f
+    );
+    
+    // 현재 궤적 저장
+    LastTrajectoryPoints = NewTrajectoryPoints;
+}
+
+// 간소화된 DrawTrajectoryPath 함수
 void UFruitTrajectoryHelper::DrawTrajectoryPath(AFruitPlayerController* Controller, const FVector& StartLocation, const FVector& TargetLocation)
 {
     if (!Controller || !Controller->GetWorld())
@@ -80,122 +219,67 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(AFruitPlayerController* Controll
     // 이전 영구 디버그 라인 제거
     FlushPersistentDebugLines(World);
     
-    // 접시까지의 벡터 계산
-    FVector ToPlateCenterExact = TargetLocation - StartLocation;
-    float ExactDistance = ToPlateCenterExact.Size();
-    
-    // 수평 거리 계산
-    FVector HorizontalDist = ToPlateCenterExact;
-    HorizontalDist.Z = 0;
-    float HorizontalDistance = HorizontalDist.Size();
-    
-    // UE_LOG(LogTemp, Warning, TEXT("궤적 계산 - 시작: %s, 목표: %s, 거리: %f"), 
-    //     *StartLocation.ToString(), *TargetLocation.ToString(), HorizontalDistance);
-    
-    // 공통 함수 호출하여 던지기 파라미터 계산
-    float AdjustedForce;
-    FVector LaunchDirection;
-    UFruitPhysicsHelper::CalculateThrowParameters(
-        Controller,
-        StartLocation,
-        TargetLocation,
-        AdjustedForce,
-        LaunchDirection);
-    
-    // 초기 속도 계산
-    FVector InitialVelocity = LaunchDirection * AdjustedForce;
-    
-    // 중력 가속도 (UE4 기본값은 약 -980 cm/s^2)
-    float GravityZ = -980.0f; // 기본값 하드코딩
-    FVector Gravity = FVector(0, 0, GravityZ);
-    
-    // UE_LOG(LogTemp, Warning, TEXT("궤적 계산 - 방향: %s, 힘: %f, 초기속도: %s"), 
-    //     *LaunchDirection.ToString(), AdjustedForce, *InitialVelocity.ToString());
-    
-    // 궤적 계산 - 포물선 운동 방정식 사용
+    // 공통 함수를 통해 궤적 점들 계산
     TArray<FVector> TrajectoryPoints;
-    const float TimeStep = 0.1f; // 더 긴 간격으로 변경
-    const float MaxTime = 5.0f; // 더 긴 시간 동안 시뮬레이션
+    CalculateTrajectoryPoints(Controller, StartLocation, TargetLocation, TrajectoryPoints);
     
-    // 시작점 추가
-    TrajectoryPoints.Add(StartLocation);
-    
-    // 시간 간격으로 위치 계산
-    for (float Time = TimeStep; Time < MaxTime; Time += TimeStep)
-    {
-        // 포물선 운동 방정식: P = P0 + V0*t + 0.5*a*t^2
-        FVector Position = StartLocation + InitialVelocity * Time + 0.5f * Gravity * Time * Time;
-        
-        // 포인트 추가
-        TrajectoryPoints.Add(Position);
-        
-        // 바닥에 닿았는지 확인
-        if (Position.Z < 0.0f)
-            break;
-            
-        // 목표 지점 근처인지 확인
-        float DistanceToTarget = FVector::Dist(Position, TargetLocation);
-        if (DistanceToTarget < 20.0f) // 더 관대한 범위
-            break;
-    }
-    
-    // 계산된 궤적 그리기 - 영구적으로 표시하도록 변경
+    // 계산된 궤적 그리기 - 영구적으로 표시
     for (int32 i = 0; i < TrajectoryPoints.Num() - 1; i++)
     {
-        // 점들을 선으로 연결 - 영구적으로 표시(true로 변경)
+        // 점들을 선으로 연결
         DrawDebugLine(
             World,
             TrajectoryPoints[i],
             TrajectoryPoints[i + 1],
             FColor::Blue,
-            true, // false -> true로 변경 (영구적으로 표시)
-            -1.0f, // 타임아웃을 -1로 설정하여 무한대로 유지
+            true,
+            -1.0f,
             0,
-            2.0f // 두꺼운 선으로 표시
+            2.0f
         );
         
-        // 5개 점마다 구체 그리기 - 영구적으로 표시
+        // 5개 점마다 구체 그리기
         if (i % 5 == 0)
         {
             DrawDebugSphere(
                 World,
                 TrajectoryPoints[i],
-                5.0f, // 작은 구체
+                5.0f,
                 8,
                 FColor::Blue,
-                true, // false -> true로 변경 (영구적으로 표시)
-                -1.0f, // 타임아웃을 -1로 설정하여 무한대로 유지
+                true,
+                -1.0f,
                 0,
                 1.0f
             );
         }
     }
     
-    // 마지막 지점은 큰 구체로 표시 - 영구적으로 표시
+    // 마지막 지점과 목표 지점 표시
     if (TrajectoryPoints.Num() > 1)
     {
         DrawDebugSphere(
             World,
             TrajectoryPoints.Last(),
-            10.0f, // 더 큰 구체
+            10.0f,
             12,
             FColor::Green,
-            true, // false -> true로 변경 (영구적으로 표시)
-            -1.0f, // 타임아웃을 -1로 설정하여 무한대로 유지
+            true,
+            -1.0f,
             0,
             1.0f
         );
     }
     
-    // 실제 목표 지점도 표시 - 영구적으로 표시
+    // 실제 목표 지점도 표시
     DrawDebugSphere(
         World,
         TargetLocation,
-        15.0f, // 큰 구체
+        15.0f,
         12,
         FColor::Blue,
-        true, // false -> true로 변경 (영구적으로 표시)
-        -1.0f, // 타임아웃을 -1로 설정하여 무한대로 유지
+        true,
+        -1.0f,
         0,
         1.0f
     );

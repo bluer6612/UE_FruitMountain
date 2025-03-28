@@ -162,7 +162,7 @@ void AFruitPlayerController::UpdatePreviewBall()
 void AFruitPlayerController::ExecutePreviewBallUpdate()
 {
     // 실제 업데이트 수행
-    UFruitTrajectoryHelper::UpdatePreviewBall(this);
+    UFruitThrowHelper::UpdatePreviewBall(this);
     
     // 상태 초기화
     bPreviewBallUpdatePending = false;
