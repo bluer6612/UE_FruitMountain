@@ -23,7 +23,7 @@ float UFruitSpawnHelper::CalculateBallMass(int32 BallType)
     return BallMass;
 }
 
-// SpawnBall 함수 수정 - 공통 함수 사용
+// SpawnBall 함수 수정 - 물리 시뮬레이션 관련 수정
 AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, const FVector& Location, int32 BallType, bool bEnablePhysics)
 {
     if (!Controller || !Controller->FruitBallClass)
@@ -31,6 +31,10 @@ AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, const F
         UE_LOG(LogTemp, Warning, TEXT("SpawnBall: Controller 또는 FruitBallClass가 유효하지 않습니다."));
         return nullptr;
     }
+
+    // 공 속성 계산 - 크기 및 질량
+    float BallSize = CalculateBallSize(BallType);
+    float BallMass = CalculateBallMass(BallType);
 
     // 공 액터 스폰
     FActorSpawnParameters SpawnParams;
@@ -42,10 +46,6 @@ AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, const F
         
     if (SpawnedBall)
     {
-        // 공통 함수로 크기 및 질량 계산
-        float BallSize = CalculateBallSize(BallType);
-        float BallMass = CalculateBallMass(BallType);
-        
         // 크기 설정
         SpawnedBall->SetActorScale3D(FVector(BallSize));
         
@@ -55,7 +55,7 @@ AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, const F
             
         if (MeshComp)
         {
-            // 물리 관련 설정
+            // 중요: 물리 시뮬레이션 활성화 후 질량 설정
             if (bEnablePhysics)
             {
                 // 물리 시뮬레이션 활성화
@@ -63,6 +63,12 @@ AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, const F
                 MeshComp->SetEnableGravity(true);
                 MeshComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
                 MeshComp->SetCollisionProfileName(TEXT("PhysicsActor"));
+                
+                // 물리 시뮬레이션이 활성화된 후에만 질량 설정 가능
+                MeshComp->SetMassOverrideInKg(NAME_None, BallMass);
+                
+                UE_LOG(LogTemp, Warning, TEXT("던지는 공 생성: 타입=%d, 크기=%f, 질량=%f, 시뮬레이션=켜짐"),
+                    BallType, BallSize, BallMass);
             }
             else
             {
@@ -70,13 +76,15 @@ AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, const F
                 MeshComp->SetSimulatePhysics(false);
                 MeshComp->SetEnableGravity(false);
                 MeshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+                
+                // 물리 시뮬레이션이 꺼져 있으면 질량을 설정할 수 없음
+                // 대신 계산된 질량 값을 태그나 게임 데이터로 저장
+                FString MassTag = FString::Printf(TEXT("BallMass:%f"), BallMass);
+                SpawnedBall->Tags.Add(FName(*MassTag));
+                
+                UE_LOG(LogTemp, Warning, TEXT("미리보기 공 생성: 타입=%d, 크기=%f, 계산된 질량=%f, 시뮬레이션=꺼짐"),
+                    BallType, BallSize, BallMass);
             }
-            
-            // 질량은 물리 시뮬레이션 여부와 상관없이 설정 (계산용)
-            MeshComp->SetMassOverrideInKg(NAME_None, BallMass);
-            
-            UE_LOG(LogTemp, Warning, TEXT("%s 공 생성: 타입=%d, 크기=%f, 질량=%f"),
-                bEnablePhysics ? TEXT("던지는") : TEXT("미리보기"), BallType, BallSize, BallMass);
         }
     }
     

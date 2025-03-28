@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "Camera/CameraComponent.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "FruitPlayerController.generated.h"
 
 UCLASS()
@@ -49,6 +51,10 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Orbit")
     float CameraOrbitRadius; // 접시와의 거리
     
+    // 카메라 높이 오프셋
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
+    float CameraHeightOffset;
+
     // 미리보기 공 업데이트 함수
     void UpdatePreviewBall();
 
@@ -73,6 +79,10 @@ protected:
 
     // 회전 기준이 되는 접시(Plate)의 위치
     FVector PlateLocation;
+
+    // 카메라 높이 조정 함수
+    UFUNCTION()
+    void AdjustCameraHeight();
 
 private:
     // 미리보기 공 업데이트 제한을 위한 변수들

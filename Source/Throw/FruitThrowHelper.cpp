@@ -10,7 +10,7 @@
 #include "Camera/CameraComponent.h"
 #include "Actors/PlateActor.h"
 
-// ThrowFruit 함수 수정 - 중복 코드 제거
+// ThrowFruit 함수 수정 - 질량 처리 부분 수정
 void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
 {
     if (!Controller)
@@ -36,7 +36,10 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
         return;
     }
     
-    // 공 스폰 후 물리 적용 - 새 클래스의 함수 호출
+    // 공 스폰 전 질량 계산 (공 종류에 따라)
+    float BallMass = UFruitSpawnHelper::CalculateBallMass(Controller->CurrentBallType);
+    
+    // 공 스폰 후 물리 적용
     AActor* SpawnedBall = UFruitSpawnHelper::SpawnBall(Controller, SpawnLocation, Controller->CurrentBallType, true);
     
     // 공 던지기 - 접시 중심을 향해 힘 적용
@@ -63,10 +66,16 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
                 PlateCenter = PlateActors[0]->GetActorLocation();
             }
             
-            // 질량은 SpawnBall에서 이미 설정됨 - 그 값 가져오기
-            float BallMass = MeshComp->GetMass();
+            // 물리 시뮬레이션 활성화 상태에서 질량 확인
+            // 이미 SpawnBall에서 질량을 설정했으므로 그 값이 사용됨
+            float ActualMass = MeshComp->GetMass();
+            if (FMath::Abs(ActualMass - BallMass) > 0.1f)
+            {
+                UE_LOG(LogTemp, Warning, TEXT("질량 불일치: 계산값=%f, 실제값=%f, 계산값 사용"),
+                    BallMass, ActualMass);
+            }
             
-            // 공통 함수 호출하여 던지기 파라미터 계산
+            // 공통 함수 호출하여 던지기 파라미터 계산 (계산된 질량 사용)
             float AdjustedForce;
             FVector LaunchDirection;
             UFruitPhysicsHelper::CalculateThrowParameters(
@@ -75,14 +84,14 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
                 PlateCenter,
                 AdjustedForce,
                 LaunchDirection,
-                BallMass);
+                BallMass); // 계산된 질량 사용
                 
             // 최종 힘 적용
             float PhysicsCalibrationFactor = 20.0f;
             MeshComp->AddImpulse(LaunchDirection * (AdjustedForce * PhysicsCalibrationFactor));
             
-            UE_LOG(LogTemp, Warning, TEXT("공 던지기: 최종 힘=%f, 질량=%f"),
-                AdjustedForce * PhysicsCalibrationFactor, BallMass);
+            UE_LOG(LogTemp, Warning, TEXT("공 던지기: 최종 힘=%f, 계산 질량=%f, 실제 질량=%f"),
+                AdjustedForce * PhysicsCalibrationFactor, BallMass, ActualMass);
         }
     }
     
@@ -102,7 +111,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
     );
 }
 
-// UpdatePreviewBall 함수 수정 - 중복 코드 제거
+// UpdatePreviewBall 함수 수정 - 문법 오류 해결
 void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
 {
     if (!Controller)
@@ -167,7 +176,8 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
             UE_LOG(LogTemp, Error, TEXT("미리보기 공에 StaticMeshComponent를 찾을 수 없습니다!"));
         }
     }
-    else
+
+    if (!Controller->PreviewBall)
     {
         UE_LOG(LogTemp, Error, TEXT("미리보기 공 생성에 실패했습니다!"));
     }

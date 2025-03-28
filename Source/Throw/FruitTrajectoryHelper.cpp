@@ -2,6 +2,7 @@
 #include "FruitPlayerController.h"
 #include "FruitThrowHelper.h"
 #include "FruitPhysicsHelper.h" // 새 헬퍼 클래스 포함
+#include "FruitSpawnHelper.h" // 공의 질량 계산을 위한 헬퍼 클래스 포함
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
@@ -10,43 +11,16 @@
 #include "PhysicsEngine/PhysicsSettings.h"
 
 // 궤적 생성 및 그리기를 위한 공통 함수
-void UFruitTrajectoryHelper::CalculateTrajectoryPoints(
+TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(
     AFruitPlayerController* Controller,
     const FVector& StartLocation,
     const FVector& TargetLocation,
-    TArray<FVector>& OutTrajectoryPoints)
+    float BallMass)
 {
+    TArray<FVector> TrajectoryPoints;
+    
     if (!Controller)
-        return;
-        
-    // 초기화
-    OutTrajectoryPoints.Empty();
-    
-    // 공의 질량 계산
-    float BallMass = 10.0f; // 기본값
-    
-    // 공이 있으면 질량 가져오기
-    if (Controller->PreviewBall)
-    {
-        // StaticMeshComponent에서 질량 가져오기
-        UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(
-            Controller->PreviewBall->GetComponentByClass(UStaticMeshComponent::StaticClass()));
-            
-        if (MeshComp)
-        {
-            BallMass = MeshComp->GetMass();
-        }
-        else
-        {
-            // 크기 기반 질량 예상 계산 (컴포넌트가 없는 경우)
-            float BaseSize = 0.5f;
-            float ScaleFactor = 1.f + 0.1f * (Controller->CurrentBallType - 1);
-            float BallSize = BaseSize * ScaleFactor;
-            
-            // 질량은 부피에 비례함 (크기의 세제곱)
-            BallMass = 10.0f * FMath::Pow(BallSize, 3.0f) / FMath::Pow(0.5f, 3.0f);
-        }
-    }
+        return TrajectoryPoints;
     
     // 공통 함수 호출하여 던지기 파라미터 계산
     float AdjustedForce;
@@ -58,19 +32,19 @@ void UFruitTrajectoryHelper::CalculateTrajectoryPoints(
         AdjustedForce,
         LaunchDirection,
         BallMass);
-    
+        
     // 초기 속도 계산
-    FVector InitialVelocity = LaunchDirection * AdjustedForce;
+    FVector InitialVelocity = LaunchDirection * (AdjustedForce / BallMass);
     
     // 중력 가속도
     float GravityZ = -980.0f;
     FVector Gravity = FVector(0, 0, GravityZ);
     
     // 시작점 추가
-    OutTrajectoryPoints.Add(StartLocation);
+    TrajectoryPoints.Add(StartLocation);
     
     // 시간 간격으로 위치 계산
-    const float TimeStep = 0.1f;
+    const float TimeStep = 0.05f; // 더 촘촘하게 포인트 생성
     const float MaxTime = 5.0f;
     
     for (float Time = TimeStep; Time < MaxTime; Time += TimeStep)
@@ -79,7 +53,7 @@ void UFruitTrajectoryHelper::CalculateTrajectoryPoints(
         FVector Position = StartLocation + InitialVelocity * Time + 0.5f * Gravity * Time * Time;
         
         // 포인트 추가
-        OutTrajectoryPoints.Add(Position);
+        TrajectoryPoints.Add(Position);
         
         // 바닥에 닿았는지 확인
         if (Position.Z < 0.0f)
@@ -90,9 +64,37 @@ void UFruitTrajectoryHelper::CalculateTrajectoryPoints(
         if (DistanceToTarget < 20.0f)
             break;
     }
+    
+    return TrajectoryPoints;
 }
 
-// 최적화된 궤적 업데이트 함수
+// 최적화된 궤적 시각화 함수
+void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVector>& TrajectoryPoints, 
+    const FVector& TargetLocation, bool bPersistent, int32 TrajectoryID)
+{
+    if (!World || TrajectoryPoints.Num() < 2)
+        return;
+    
+    // 선 그리기 설정
+    float Duration = bPersistent ? -1.0f : 0.2f;
+    
+    // 새 궤적 그리기
+    for (int32 i = 0; i < TrajectoryPoints.Num() - 1; i++)
+    {
+        // 점들을 선으로 연결
+        DrawDebugLine(
+            World,
+            TrajectoryPoints[i],
+            TrajectoryPoints[i + 1],
+            FColor::Blue,
+            bPersistent,
+            Duration,
+            TrajectoryID,
+        
+    }
+}
+
+// 최적화된 궤적 업데이트 함수 수정 - 선 그리기 문제 해결
 void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Controller, const FVector& StartLocation, const FVector& TargetLocation)
 {
     if (!Controller || !Controller->GetWorld())
@@ -112,11 +114,11 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
                 World,
                 LastTrajectoryPoints[i],
                 LastTrajectoryPoints[i + 1],
-                FColor::Black,
-                false,
-                0.0f,
-                TrajectoryID,
-                0.0f
+                FColor::Black, // 기존 선을 지우기 위한 색상
+                false, // 임시 표시
+                0.0f,  // 즉시 사라짐
+                TrajectoryID,  // 동일 ID 사용
+                0.0f   // 보이지 않게
             );
             
             // 이전 구체 제거
@@ -126,7 +128,7 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
                     LastTrajectoryPoints[i],
                     5.0f,
                     8,
-                    FColor::Black,
+                    FColor::Black, // 기존 구체를 지우기 위한 색상
                     false,
                     0.0f,
                     TrajectoryID,
@@ -138,6 +140,20 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     
     // 궤적 ID 업데이트
     TrajectoryID++;
+    
+    // 공의 질량 계산 - 공의 종류에 따라
+    float BallMass = UFruitSpawnHelper::CalculateBallMass(Controller->CurrentBallType);
+    
+    // 공통 함수 호출하여 던지기 파라미터 계산
+    float AdjustedForce;
+    FVector LaunchDirection;
+    UFruitPhysicsHelper::CalculateThrowParameters(
+        Controller,
+        StartLocation,
+        TargetLocation,
+        AdjustedForce,
+        LaunchDirection,
+        BallMass); // 계산된 질량 사용
     
     // 공통 함수를 통해 궤적 점들 계산
     TArray<FVector> NewTrajectoryPoints;

@@ -10,6 +10,7 @@
 #include "Camera/CameraComponent.h"
 #include "Throw/FruitThrowHelper.h"
 #include "Throw/FruitTrajectoryHelper.h"
+#include "GameFramework/SpringArmComponent.h"
 
 AFruitPlayerController::AFruitPlayerController()
 {
@@ -23,6 +24,11 @@ AFruitPlayerController::AFruitPlayerController()
     
     // 카메라 회전 속도 (도/초)
     RotateCameraSpeed = 180.f;
+
+    CurrentBallType = 1;
+
+    // 카메라 높이 설정
+    CameraHeightOffset = 50.f;
 }
 
 void AFruitPlayerController::BeginPlay()
@@ -77,6 +83,9 @@ void AFruitPlayerController::BeginPlay()
     // 미리보기 공 생성
     CurrentBallType = FMath::RandRange(1, 11);
     UpdatePreviewBall();
+
+    // 카메라 높이 조정
+    AdjustCameraHeight();
 }
 
 void AFruitPlayerController::SetupInputComponent()
@@ -166,4 +175,50 @@ void AFruitPlayerController::ExecutePreviewBallUpdate()
     
     // 상태 초기화
     bPreviewBallUpdatePending = false;
+}
+
+// 카메라 높이 조정 함수 추가
+void AFruitPlayerController::AdjustCameraHeight()
+{
+    APawn* ControlledPawn = GetPawn();
+    if (!ControlledPawn)
+        return;
+    
+    // 카메라 컴포넌트 찾기
+    UCameraComponent* CameraComp = Cast<UCameraComponent>(
+        ControlledPawn->GetComponentByClass(UCameraComponent::StaticClass()));
+    
+    if (CameraComp)
+    {
+        // 현재 카메라 상대 위치 가져오기
+        FVector CameraRelativeLocation = CameraComp->GetRelativeLocation();
+        
+        // Z축 높이 50 유닛 증가
+        CameraRelativeLocation.Z += CameraHeightOffset;
+        
+        // 새 위치 적용
+        CameraComp->SetRelativeLocation(CameraRelativeLocation);
+        
+        UE_LOG(LogTemp, Warning, TEXT("카메라 높이 조정: %f 유닛 증가"), CameraHeightOffset);
+    }
+    else
+    {
+        // 스프링암 컴포넌트 찾기 (카메라가 스프링암에 부착된 경우)
+        USpringArmComponent* SpringArm = Cast<USpringArmComponent>(
+            ControlledPawn->GetComponentByClass(USpringArmComponent::StaticClass()));
+            
+        if (SpringArm)
+        {
+            // 스프링암 상대 위치 가져오기
+            FVector SpringArmRelativeLocation = SpringArm->GetRelativeLocation();
+            
+            // Z축 높이 50 유닛 증가
+            SpringArmRelativeLocation.Z += CameraHeightOffset;
+            
+            // 새 위치 적용
+            SpringArm->SetRelativeLocation(SpringArmRelativeLocation);
+            
+            UE_LOG(LogTemp, Warning, TEXT("스프링암 높이 조정: %f 유닛 증가"), CameraHeightOffset);
+        }
+    }
 }
