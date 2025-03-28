@@ -119,6 +119,7 @@ void AFruitPlayerController::AdjustAngle(float Value)
     }
 }
 
+// 과일 던지기 함수 수정 - 던진 후 즉시 공이 보이도록 수정
 void AFruitPlayerController::ThrowFruit()
 {
     // 이미 던지는 중이면 무시
@@ -129,29 +130,30 @@ void AFruitPlayerController::ThrowFruit()
     // 던지기 시작 표시
     bIsThrowingInProgress = true;
     
+    // 미리보기 공 숨기기 - 제거하되 즉시 실제 공 생성
+    if (PreviewBall)
+    {
+        PreviewBall->Destroy();
+        PreviewBall = nullptr;
+    }
+    
     // 입력 비활성화 - 던지는 동안 모든 조작 막기
     DisableInput(this);
     
-    // 0.5초 후 실제 공 생성 및 입력 다시 활성화
+    // 즉시 공 생성하여 던지기 실행
+    UFruitThrowHelper::ThrowFruit(this);
+    
+    // 0.5초 후 입력 다시 활성화 및 새 미리보기 공 생성
     FTimerHandle ThrowDelayTimerHandle;
     GetWorld()->GetTimerManager().SetTimer(
         ThrowDelayTimerHandle,
         [this]()
         {
-            // 실제 던지기 액션 수행
-            UFruitThrowHelper::ThrowFruit(this);
-            
             // 던지기 완료 표시
             bIsThrowingInProgress = false;
             
             // 입력 다시 활성화
             EnableInput(this);
-            
-            // 미리보기 공을 다시 보이게 함
-            if (PreviewBall)
-            {
-                PreviewBall->SetActorHiddenInGame(false);
-            }
             
             // 새로운 미리보기 공 업데이트 (공 타입 바꾸기)
             CurrentBallType = FMath::RandRange(1, 11); // 다음에 던질 공 타입 랜덤 변경

@@ -19,7 +19,8 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
         return;
     }
     
-    // 미리보기 공이 있으면 먼저 제거
+    // 미리보기 공이 있는지 확인하고 필요시 제거
+    // (이미 PlayerController에서 제거했을 수 있음)
     if (Controller->PreviewBall)
     {
         Controller->PreviewBall->Destroy();
@@ -39,7 +40,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
     // 공 스폰 전 질량 계산 (공 종류에 따라)
     float BallMass = UFruitSpawnHelper::CalculateBallMass(Controller->CurrentBallType);
     
-    // 공 스폰 후 물리 적용
+    // 공 스폰 후 물리 적용 - 즉시 표시되도록 설정
     AActor* SpawnedBall = UFruitSpawnHelper::SpawnBall(Controller, SpawnLocation, Controller->CurrentBallType, true);
     
     // 공 던지기 - 접시 중심을 향해 힘 적용
@@ -54,7 +55,6 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
             if (!MeshComp->IsSimulatingPhysics())
             {
                 MeshComp->SetSimulatePhysics(true);
-                UE_LOG(LogTemp, Warning, TEXT("던지기 직전 물리 활성화"));
             }
             
             // 접시 위치 찾기
@@ -81,11 +81,14 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
                 PlateCenter,
                 AdjustedForce,
                 LaunchDirection,
-                BallMass);
+                ActualMass);
                 
-            // 최종 힘 적용
-            float PhysicsCalibrationFactor = 20.0f;
-            MeshComp->AddImpulse(LaunchDirection * (AdjustedForce * PhysicsCalibrationFactor));
+            // 최종 힘 적용 - 매우 낮은 보정 계수 사용
+            float PhysicsCalibrationFactor = 2.0f; // 훨씬 작은 값으로 감소
+            FVector FinalImpulse = LaunchDirection * (AdjustedForce * PhysicsCalibrationFactor);
+            
+            // 즉시 충격량 적용하여 공이 날아가도록 함
+            MeshComp->AddImpulse(FinalImpulse);
             
             UE_LOG(LogTemp, Warning, TEXT("공 던지기: 최종 힘=%f, 계산 질량=%f, 실제 질량=%f"),
                 AdjustedForce * PhysicsCalibrationFactor, BallMass, ActualMass);
@@ -95,7 +98,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
     // 다음 공 타입 랜덤 설정
     Controller->CurrentBallType = FMath::RandRange(1, 11);
     
-    // 약간의 딜레이 후 새 미리보기 공 업데이트
+    // 약간의 딜레이 후 새 미리보기 공 업데이트 - 하드코딩된 값 대신 BallThrowDelay 사용
     FTimerHandle UpdatePreviewTimerHandle;
     Controller->GetWorld()->GetTimerManager().SetTimer(
         UpdatePreviewTimerHandle,
@@ -103,7 +106,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
         {
             Controller->UpdatePreviewBall();
         },
-        0.5f,
+        Controller->BallThrowDelay, // 하드코딩된 0.5f 대신 BallThrowDelay 사용
         false
     );
 }

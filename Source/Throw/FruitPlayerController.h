@@ -61,6 +61,10 @@ public:
     // 미리보기 공 업데이트 함수
     void UpdatePreviewBall();
 
+    // 공 던지기 관련 변수
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Throw Settings")
+    float BallThrowDelay = 0.5f;
+
 protected:
     virtual void SetupInputComponent() override;
 
@@ -89,7 +93,6 @@ private:
     FTimerHandle PreviewBallUpdateTimerHandle;
     bool bPreviewBallUpdatePending = false;
     const float PreviewBallUpdateDelay = 0.02f;
-    const float BallThrowDelay = 0.75f;
     
     // 실제 업데이트 수행 함수
     void ExecutePreviewBallUpdate();

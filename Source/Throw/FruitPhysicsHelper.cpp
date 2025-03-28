@@ -1,7 +1,7 @@
 #include "FruitPhysicsHelper.h"
 #include "FruitPlayerController.h"
 
-// 던지기 파라미터 계산 함수 - 모든 공 던지기 로직에서 공통으로 사용
+// 던지기 파라미터 계산 함수 - 힘을 크게 감소하여 적절한 포물선 구현
 void UFruitPhysicsHelper::CalculateThrowParameters(
     AFruitPlayerController* Controller, 
     const FVector& StartLocation, 
@@ -10,8 +10,8 @@ void UFruitPhysicsHelper::CalculateThrowParameters(
     FVector& OutLaunchDirection,
     float BallMass)
 {
-    // 기본값 설정
-    OutAdjustedForce = 1000.0f;
+    // 기본값 설정 - 매우 낮은 기본 힘
+    OutAdjustedForce = 100.0f;
     OutLaunchDirection = FVector::ForwardVector;
     
     if (!Controller)
@@ -22,36 +22,60 @@ void UFruitPhysicsHelper::CalculateThrowParameters(
     float Distance = Direction.Size();
     
     // 목표 지점이 너무 가까우면 기본값 반환
-    // if (Distance < 100.0f)
-    //     return;
+    if (Distance < 50.0f)
+        return;
     
     // 방향 벡터 정규화
     Direction.Normalize();
 
-    // Z 방향 조정 - 거리에 따른 최적 투사 각도 계산
-    float VerticalAdjustment = FMath::Clamp(Distance / 1500.0f, 0.3f, 0.7f);
-    
-    // 수평 방향과 수직 방향 분리
-    FVector HorizontalDir = Direction;
-    HorizontalDir.Z = 0.0f;
-    HorizontalDir.Normalize();
-    
-    // 거리에 따라 궤적 높이 조정 (Z 성분)
-    Direction = HorizontalDir * (1.0f - VerticalAdjustment) + FVector(0, 0, 1) * VerticalAdjustment;
-    Direction.Normalize();
+    // --- 투사체 운동 공식 기반 계산 ---
     
     // 중력 상수
     const float GravityZ = -980.0f;
     
-    // 거리 기반 힘 계산 - 포물선 운동 공식에 기반
-    float DistanceFactor = FMath::Clamp(Distance / 500.0f, 0.8f, 3.0f);
+    // Controller의 ThrowAngle 값 사용 (0~90도 범위 내에서 제한)
+    float OptimalAngle = FMath::Clamp(Controller->ThrowAngle, 20.0f, 70.0f);
     
-    // 기본 힘 - 질량과 중력을 고려한 기본값
-    float BaseForce = 500.0f;
+    // 각도를 라디안으로 변환
+    float AngleRad = FMath::DegreesToRadians(OptimalAngle);
     
-    // 질량, 거리, 중력을 고려한 최종 힘 계산
-    OutAdjustedForce = BallMass * BaseForce * FMath::Sqrt(DistanceFactor);
+    // 수평 방향 계산
+    FVector HorizontalDir = Direction;
+    HorizontalDir.Z = 0.0f;
+    HorizontalDir.Normalize();
     
-    // 최종 방향 설정
-    OutLaunchDirection = Direction;
+    // Z 방향 조정 - 컨트롤러의 던지기 각도 적용
+    float ZComponent = FMath::Sin(AngleRad);
+    float HorizontalComponent = FMath::Cos(AngleRad);
+    
+    // 최종 방향 벡터 구성
+    OutLaunchDirection = HorizontalDir * HorizontalComponent + FVector(0, 0, 1) * ZComponent;
+    OutLaunchDirection.Normalize();
+    
+    // --- 대폭 감소된 힘 계산 ---
+    
+    // 투사체 운동 공식 사용하되 매우 약한 힘으로 조정
+    float HorizontalDistance = FVector::Dist2D(StartLocation, TargetLocation);
+    
+    // 투사 각도의 2배 사인 값 계산 (투사체 공식에 사용)
+    float SinDoubleAngle = FMath::Sin(2 * AngleRad);
+    
+    // 분모가 0이 되는 것 방지 (각도가 0이나 90도일 때)
+    if (SinDoubleAngle < 0.1f) SinDoubleAngle = 0.1f;
+    
+    // 이론적 초기 속도 계산 (투사체 운동 공식 기반) - 매우 작은 계수 적용
+    float RequiredVelocity = FMath::Sqrt((HorizontalDistance * FMath::Abs(GravityZ)) / SinDoubleAngle);
+    
+    // 힘 계산 - 매우 작은 계수 적용 (0.01f)
+    float ForceAdjustFactor = 0.01f;
+    
+    // 질량 고려 힘 계산
+    OutAdjustedForce = RequiredVelocity * BallMass * ForceAdjustFactor;
+    
+    // 힘 제한 - 매우 낮은 범위로 제한
+    OutAdjustedForce = FMath::Clamp(OutAdjustedForce, 10.0f * BallMass, 200.0f * BallMass);
+    
+    // 디버그 로그
+    UE_LOG(LogTemp, Warning, TEXT("던지기 계산: 거리=%f, 각도=%f도, 힘=%f, 질량=%f"), 
+        Distance, OptimalAngle, OutAdjustedForce, BallMass);
 }
