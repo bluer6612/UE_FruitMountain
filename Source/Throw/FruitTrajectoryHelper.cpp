@@ -126,13 +126,13 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVec
     }
     
     // 포물선 상의 주요 지점에만 마커 표시
-    const int32 MarkerCount = 5; // 마커 개수 줄이기
+    const int32 MarkerCount = 5;
     for (int32 i = 0; i < MarkerCount; i++)
     {
         int32 Index = (i * (TrajectoryPoints.Num() - 1)) / (MarkerCount - 1);
         if (Index < TrajectoryPoints.Num())
         {
-            DrawDebugBox(World, TrajectoryPoints[Index], FVector(0.4f), FQuat::Identity, MarkerColor, true, -1.0f, TrajectoryID);
+            DrawDebugBox(World, TrajectoryPoints[Index], FVector(0.01f), FQuat::Identity, MarkerColor, true, -1.0f, TrajectoryID);
         }
     }
 }
@@ -243,7 +243,7 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     {
         float t = (float)i / (MarkerCount - 1);
         FVector Point = FMath::Pow(1.0f - t, 2) * Start + 2 * t * (1.0f - t) * Peak + t * t * End;
-        DrawDebugBox(World, Point, FVector(0.8f), FQuat::Identity, MarkerColor, true, -1.0f, TrajectoryID);
+        DrawDebugBox(World, Point, FVector(0.01f), FQuat::Identity, MarkerColor, true, -1.0f, TrajectoryID);
     }
     
     // CalculateTrajectoryPoints 함수에서도 이와 동일한 로직을 구현해야 함
