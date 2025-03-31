@@ -25,11 +25,46 @@ TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(AFruitPlayerCo
     UFruitPhysicsHelper::GetThrowAngleRange(MinAngle, MaxAngle);
     UseAngle = FMath::Clamp(UseAngle, MinAngle, MaxAngle);
     
+    // 실제 궤적 계산 전에 각도에 따른 타겟 위치 조정
+    FVector AdjustedTargetLocation = TargetLocation;
+
+    // 접시 정보 찾기
+    TArray<AActor*> PlateActors;
+    UGameplayStatics::GetAllActorsWithTag(Controller->GetWorld(), FName("Plate"), PlateActors);
+    if (PlateActors.Num() > 0)
+    {
+        // 접시 중심과 크기 정보
+        AActor* PlateActor = PlateActors[0];
+        FVector PlateOrigin;
+        FVector PlateExtent;
+        PlateActor->GetActorBounds(false, PlateOrigin, PlateExtent);
+        
+        // 방향 벡터 계산
+        FVector DirectionToPlate = PlateOrigin - StartLocation;
+        DirectionToPlate.Z = 0.0f;
+        DirectionToPlate.Normalize();
+        
+        // 각도 반전 비율 계산
+        float ReverseAngleRatio = FMath::GetMappedRangeValueClamped(
+            FVector2D(MinAngle, MaxAngle),
+            FVector2D(1.0f, 0.0f),
+            UseAngle
+        );
+        
+        // 오프셋 거리 계산
+        float PlateRadius = FMath::Min(PlateExtent.X, PlateExtent.Y) * 0.8f;
+        float OffsetDistance = PlateRadius * 0.8f * ReverseAngleRatio;
+        
+        // 타겟 위치 조정 (UpdateTrajectoryPath와 동일한 논리)
+        AdjustedTargetLocation = PlateOrigin - DirectionToPlate * OffsetDistance;
+        AdjustedTargetLocation.Z = TargetLocation.Z;
+    }
+    
     // 2. FruitPhysicsHelper에서 초기 속도 계산 함수 호출
     FVector LaunchVelocity;
     
-    // 던지기 각도에 따라 속도 조정
-    bool bSuccess = UFruitPhysicsHelper::CalculateThrowVelocity(StartLocation, TargetLocation, UseAngle, BallMass, LaunchVelocity);
+    // 조정된 타겟 위치로 초기 속도 계산
+    bool bSuccess = UFruitPhysicsHelper::CalculateThrowVelocity(StartLocation, AdjustedTargetLocation, UseAngle, BallMass, LaunchVelocity);
     
     if (!bSuccess)
     {
@@ -121,12 +156,14 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     UFruitPhysicsHelper::GetThrowAngleRange(MinAngle, MaxAngle);
     float UseAngle = FMath::Clamp(Controller->ThrowAngle, MinAngle, MaxAngle);
     
-    // 시작점과 종료점
+    // 시작점과 기본 종료점
     FVector Start = StartLocation;
-    FVector End = TargetLocation;
+    FVector BaseEnd = TargetLocation;
     
     // 접시 높이 정보 가져오기 - 접시 액터 찾기
-    float PlateTopHeight = End.Z;
+    float PlateTopHeight = BaseEnd.Z;
+    float PlateRadius = 50.0f; // 접시 반지름 기본값
+    FVector PlateCenter = BaseEnd;
     TArray<AActor*> PlateActors;
     UGameplayStatics::GetAllActorsWithTag(World, FName("Plate"), PlateActors);
     
@@ -138,6 +175,10 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
         FVector PlateExtent;
         PlateActor->GetActorBounds(false, PlateOrigin, PlateExtent);
         
+        // 접시 중심 및 크기 정보 저장
+        PlateCenter = PlateOrigin;
+        PlateRadius = FMath::Min(PlateExtent.X, PlateExtent.Y) * 0.8f; // 접시 반지름 근사값 (80% 사용)
+        
         // 접시 상부 높이 계산 (Z축 중심에서 Z축 범위의 절반을 더함)
         PlateTopHeight = PlateOrigin.Z + PlateExtent.Z;
         
@@ -147,10 +188,31 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     else
     {
         // 접시를 찾지 못한 경우 기본값으로 조금 더 높게 설정
-        PlateTopHeight = FMath::Max(End.Z, 20.0f);
+        PlateTopHeight = FMath::Max(BaseEnd.Z, 20.0f);
     }
     
-    // 종료점 높이를 접시 상부 높이로 조정
+    // *** 여기서 각도에 따라 도착 위치를 변경 ***
+    // 각도가 낮을수록 더 멀리, 높을수록 더 가까이 도착하도록 조정
+    // 1. 방향 벡터 계산 (플레이어에서 접시 중심을 향하는 방향)
+    FVector DirectionToPlate = PlateCenter - Start;
+    DirectionToPlate.Z = 0.0f; // 수평 방향만 고려
+    DirectionToPlate.Normalize();
+
+    // 2. 각도 반전 - 높은 각도(60)일 때 짧은 거리, 낮은 각도(15)일 때 긴 거리
+    float ReverseAngleRatio = FMath::GetMappedRangeValueClamped(
+        FVector2D(MinAngle, MaxAngle),  // 입력 범위: 15도~60도
+        FVector2D(1.0f, 0.0f),          // 출력 범위: 1.0(멀리)~0.0(가까이)
+        UseAngle
+    );
+
+    // 3. 오프셋 계산 - 각도가 낮을수록 더 멀리 이동
+    float OffsetDistance = PlateRadius * 0.8f * ReverseAngleRatio;
+
+    // 4. 오프셋 적용 방향 변경 - 접시 중심에서 바깥쪽으로 이동
+    // 각도가 낮을수록(15) 더 바깥쪽, 각도가 높을수록(60) 더 중앙에 가깝게
+    FVector End = BaseEnd - DirectionToPlate * OffsetDistance;
+
+    // 5. 종료점 높이 조정
     End.Z = PlateTopHeight;
     
     // 수평 거리
@@ -203,12 +265,5 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     }
     
     // 디버그 로그 수정
-    UE_LOG(LogTemp, Log, TEXT("접시 상부 높이=%f로 궤적 계산: 각도=%f, 거리=%f, 높이=%f"), PlateTopHeight, UseAngle, HorizontalDistance, PeakHeight);
-}
-
-// 하위 호환성을 위한 영구 궤적 그리기 함수 - 인자 한 줄로
-void UFruitTrajectoryHelper::DrawPersistentTrajectoryPath(AFruitPlayerController* Controller, const FVector& StartLocation, const FVector& TargetLocation)
-{
-    // UpdateTrajectoryPath 함수 호출 - 인자 한 줄로
-    UpdateTrajectoryPath(Controller, StartLocation, TargetLocation, true);
+    UE_LOG(LogTemp, Log, TEXT("각도=%f에 따른 궤적 계산: 접시중심에서 오프셋=%f, 높이=%f"), UseAngle, OffsetDistance, PeakHeight);
 }

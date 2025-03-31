@@ -35,11 +35,4 @@ public:
         const FVector& TargetLocation,
         bool bPersistent = true, 
         int32 CustomTrajectoryID = 9999);
-    
-    // 하위 호환성을 위한 영구 궤적 그리기 함수
-    UFUNCTION(BlueprintCallable, Category="Trajectory")
-    static void DrawPersistentTrajectoryPath(
-        class AFruitPlayerController* Controller,
-        const FVector& StartLocation,
-        const FVector& TargetLocation);
 };
