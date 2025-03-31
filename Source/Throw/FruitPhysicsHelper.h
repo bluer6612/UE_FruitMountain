@@ -20,14 +20,15 @@ public:
         FVector& OutLaunchDirection,
         float BallMass);
 
-    // 전역 던지기 각도 설정 함수 추가
-    UFUNCTION(BlueprintCallable, Category="Physics")
-    static void SetGlobalThrowAngle(float Angle);
-
-    // 현재 설정된 전역 던지기 각도 반환
-    UFUNCTION(BlueprintCallable, Category="Physics")
-    static float GetGlobalThrowAngle();
-
-    // 던지기 각도 저장용 정적 변수
-    static float GlobalThrowAngle;
+    // const 정적 변수로 선언 (UPROPERTY 없이)
+    static const float MinThrowAngle;
+    static const float MaxThrowAngle;
+    
+    // 각도 제한 확인 함수
+    UFUNCTION(BlueprintCallable, Category = "Physics Globals")
+    static bool IsAngleInValidRange(float Angle);
+    
+    // 각도 범위 가져오기
+    UFUNCTION(BlueprintCallable, Category = "Physics Globals")
+    static void GetThrowAngleRange(float& OutMinAngle, float& OutMaxAngle);
 };

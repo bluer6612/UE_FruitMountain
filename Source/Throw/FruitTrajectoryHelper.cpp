@@ -165,8 +165,10 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     // 기존 궤적 비우기
     FlushPersistentDebugLines(World);
     
-    // 현재 각도 가져오기
-    float UseAngle = FMath::Clamp(Controller->ThrowAngle, 15.0f, 60.0f);
+    // 현재 각도 가져오기 (상수 대신 글로벌 변수 사용)
+    float MinAngle, MaxAngle;
+    UFruitPhysicsHelper::GetThrowAngleRange(MinAngle, MaxAngle);
+    float UseAngle = FMath::Clamp(Controller->ThrowAngle, MinAngle, MaxAngle);
     
     // 시작점과 종료점
     FVector Start = StartLocation;
@@ -176,11 +178,11 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     FVector HorizontalDelta = End - Start;
     float HorizontalDistance = FVector(HorizontalDelta.X, HorizontalDelta.Y, 0.0f).Size();
     
-    // 각도에 따른 높이 비율 계산 (각도가 높을수록 더 높은 포물선)
+    // 각도에 따른 높이 비율 계산 (상수 대신 글로벌 변수 사용)
     float PeakHeightRatio = FMath::GetMappedRangeValueClamped(
-        FVector2D(15.0f, 60.0f),  // 각도 범위
-        FVector2D(0.2f, 0.8f),    // 높이 비율 범위 (더 낮게 조정)
-        UseAngle                  // 현재 각도
+        FVector2D(MinAngle, MaxAngle),  // 각도 범위
+        FVector2D(0.2f, 0.8f),          // 높이 비율 범위
+        UseAngle
     );
     
     // 정점 높이 = 수평 거리 * 높이 비율

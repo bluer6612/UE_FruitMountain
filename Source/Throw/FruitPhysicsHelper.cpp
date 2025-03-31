@@ -5,19 +5,21 @@
 #include "GameFramework/Actor.h"
 #include "DrawDebugHelpers.h"
 
-// 정적 변수 초기화
-float UFruitPhysicsHelper::GlobalThrowAngle = 20.0f;
+// const 정적 변수 초기화
+const float UFruitPhysicsHelper::MinThrowAngle = 15.0f;
+const float UFruitPhysicsHelper::MaxThrowAngle = 60.0f;
 
-// 전역 던지기 각도 설정 함수 구현
-void UFruitPhysicsHelper::SetGlobalThrowAngle(float Angle)
+// 각도 제한 확인 함수
+bool UFruitPhysicsHelper::IsAngleInValidRange(float Angle)
 {
-    GlobalThrowAngle = Angle;
+    return (Angle >= MinThrowAngle && Angle <= MaxThrowAngle);
 }
 
-// 현재 전역 던지기 각도 반환 함수
-float UFruitPhysicsHelper::GetGlobalThrowAngle()
+// 각도 범위 가져오기
+void UFruitPhysicsHelper::GetThrowAngleRange(float& OutMinAngle, float& OutMaxAngle)
 {
-    return GlobalThrowAngle;
+    OutMinAngle = MinThrowAngle;
+    OutMaxAngle = MaxThrowAngle;
 }
 
 // 던지기 파라미터 계산 함수에서 각도 제한 수정
@@ -29,7 +31,7 @@ void UFruitPhysicsHelper::CalculateThrowParameters(AFruitPlayerController* Contr
     float HeightDifference = DirectionToTarget.Z;
     
     // 던지기 각도 설정
-    float UseAngle = FMath::Clamp(Controller->ThrowAngle, 15.0f, 60.0f);
+    float UseAngle = FMath::Clamp(Controller->ThrowAngle, MinThrowAngle, MaxThrowAngle);
     float ThrowAngleRadians = FMath::DegreesToRadians(UseAngle);
     
     // 삼각함수 계산

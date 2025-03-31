@@ -19,6 +19,7 @@ APlayerPawn::APlayerPawn()
     CameraComponent->FieldOfView = 90.f;
 
     FVector CurrentLocation = CameraComponent->GetRelativeLocation();
+    CurrentLocation.Y += 10.f;
     CurrentLocation.Z += 100.f;
     CameraComponent->SetRelativeLocation(CurrentLocation);
 

@@ -94,26 +94,35 @@ void AFruitPlayerController::SetupInputComponent()
 // 새로운 각도 조정 함수 (축 매핑용)
 void AFruitPlayerController::AdjustAngle(float Value)
 {
-    if (FMath::Abs(Value) > KINDA_SMALL_NUMBER)
+    if (FMath::Abs(Value) < KINDA_SMALL_NUMBER)
+        return;
+    
+    // 프레임 시간과 조정 속도를 곱해 부드러운 변화 적용
+    float DeltaAngle = Value * AngleAdjustSpeed * GetWorld()->DeltaTimeSeconds;
+    
+    // 변경 전에 최종 각도가 제한 범위를 벗어나는지 확인 (한 번의 if문으로 처리)
+    float NewAngle = ThrowAngle + DeltaAngle;
+    
+    // 변경 전에 제한 검사 - 범위를 벗어나면 작업 수행하지 않음
+    if ((NewAngle > UFruitPhysicsHelper::MaxThrowAngle && DeltaAngle > 0.0f) || 
+        (NewAngle < UFruitPhysicsHelper::MinThrowAngle && DeltaAngle < 0.0f))
     {
-        // 프레임 시간과 조정 속도를 곱해 부드러운 변화 적용
-        float DeltaAngle = Value * AngleAdjustSpeed * GetWorld()->DeltaTimeSeconds;
-        ThrowAngle += DeltaAngle;
-        
-        // 각도 범위 제한
-        ThrowAngle = FMath::Clamp(ThrowAngle, 15.0f, 60.0f);
-        
-        // 모든 시스템에 동일한 각도 전파
-        UFruitPhysicsHelper::SetGlobalThrowAngle(ThrowAngle);
-        
-        UE_LOG(LogTemp, Log, TEXT("각도 조정: 현재 각도 %f"), ThrowAngle);
-        
-        // 각도 변경 후 미리보기 공 업데이트
-        UpdatePreviewBall();
-        
-        // 각도 변경 후 궤적도 업데이트
-        UpdateTrajectory();
+        return;
     }
+    
+    // 허용 범위 내의 변경이면 실행
+    ThrowAngle = NewAngle;
+    
+    // 안전을 위한 클램핑 (불필요하지만 추가 보호)
+    ThrowAngle = FMath::Clamp(ThrowAngle, UFruitPhysicsHelper::MinThrowAngle, UFruitPhysicsHelper::MaxThrowAngle);
+    
+    UE_LOG(LogTemp, Log, TEXT("각도 조정: 현재 각도 %.1f"), ThrowAngle);
+    
+    // 각도 변경 후 미리보기 공 업데이트
+    UpdatePreviewBall();
+    
+    // 각도 변경 후 궤적도 업데이트
+    UpdateTrajectory();
 }
 
 // 과일 던지기 함수 수정 - 던진 후 즉시 공이 보이도록 수정
@@ -244,12 +253,6 @@ void AFruitPlayerController::UpdateTrajectory()
         UE_LOG(LogTemp, Warning, TEXT("접시 위치를 찾을 수 없어 궤적을 업데이트할 수 없습니다."));
         return;
     }
-    
-    // 로그 출력으로 각도 확인
-    UE_LOG(LogTemp, Log, TEXT("궤적 업데이트: 현재 각도=%f, 시작=%s, 목표=%s"), 
-        UFruitPhysicsHelper::GetGlobalThrowAngle(), 
-        *StartLocation.ToString(), 
-        *TargetLocation.ToString());
     
     // 궤적 업데이트 함수 호출
     UFruitTrajectoryHelper::UpdateTrajectoryPath(this, StartLocation, TargetLocation);
