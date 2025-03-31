@@ -34,7 +34,7 @@ public:
 
     // 각도 조정 속도 (도/초)
     UPROPERTY(EditAnywhere, Category = "Throwing")
-    float AngleAdjustSpeed = 120.f;
+    float AngleAdjustSpeed = 60.f;
 
     // 공 던지기 관련 변수
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Throwing")
@@ -62,12 +62,26 @@ public:
     // 회전 기준이 되는 접시(Plate)의 위치
     FVector PlateLocation;
 
+    // 접시 정보 관련 변수
+    UPROPERTY(BlueprintReadWrite, Category="Plate")
+    FVector PlateCenter;
+    
+    UPROPERTY(BlueprintReadWrite, Category="Plate")
+    float PlateHeight;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Spawn")
+    float SpawnHeightOffset;
+    
     // 미리보기 공 업데이트 함수
     void UpdatePreviewBall();
 
     // 궤적 업데이트 함수 추가
     UFUNCTION(BlueprintCallable, Category="Trajectory")
     void UpdateTrajectory();
+
+    // 접시 정보 업데이트 함수
+    UFUNCTION(BlueprintCallable, Category="Plate")
+    void UpdatePlateInfo();
 protected:
     virtual void SetupInputComponent() override;
 
@@ -99,4 +113,7 @@ private:
     
     // 실제 업데이트 수행 함수
     void ExecutePreviewBallUpdate();
+
+    // 접시 업데이트 타이머 핸들
+    FTimerHandle PlateUpdateTimerHandle;
 };

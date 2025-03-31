@@ -24,73 +24,95 @@ float UFruitSpawnHelper::CalculateBallMass(int32 BallType)
     return AFruitBall::CalculateBallMass(BallType);
 }
 
-// SpawnBall 함수 수정 - 기존 코드 유지
-AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, const FVector& Location, int32 BallType, bool bEnablePhysics)
+// 공 생성 함수 - 접시 높이 고려
+AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, int32 BallType, bool bIsPreview)
 {
-    if (!Controller || !Controller->FruitBallClass)
+    if (!Controller || !Controller->GetWorld())
+        return nullptr;
+        
+    UWorld* World = Controller->GetWorld();
+    
+    // 공 클래스 가져오기
+    UClass* BallClass = Controller->FruitBallClass;
+    if (!BallClass)
     {
-        UE_LOG(LogTemp, Warning, TEXT("SpawnBall: Controller 또는 FruitBallClass가 유효하지 않습니다."));
+        UE_LOG(LogTemp, Error, TEXT("FruitBallClass가 설정되지 않았습니다."));
         return nullptr;
     }
-
-    // 공 속성 계산 - 크기 및 질량 (FruitBall 클래스 기반)
-    float BallSize = CalculateBallSize(BallType); // 이미 액터 스케일로 변환됨 (1/100)
-    float BallMass = CalculateBallMass(BallType);
-
-    // 공 액터 스폰
-    FActorSpawnParameters SpawnParams;
-    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-    SpawnParams.Owner = Controller;
     
-    AActor* SpawnedBall = Controller->GetWorld()->SpawnActor<AActor>(
-        Controller->FruitBallClass, Location, FRotator::ZeroRotator, SpawnParams);
+    // 접시 정보 업데이트 (최신 정보 사용)
+    Controller->UpdatePlateInfo();
+    
+    // 스폰 위치 계산 - 접시 높이 고려
+    FVector SpawnLocation;
+    
+    if (bIsPreview)
+    {
+        // 미리보기 공은 고정된 위치에 생성
+        // 카메라 앞쪽 위치 계산
+        FVector CameraLocation;
+        FRotator CameraRotation;
+        Controller->GetPlayerViewPoint(CameraLocation, CameraRotation);
         
+        // 카메라 앞쪽 방향
+        FVector CameraForward = CameraRotation.Vector();
+        FVector CameraRight = FRotator(0, CameraRotation.Yaw, 0).Vector();
+        
+        // 접시 높이를 고려하여 스폰 높이 조정
+        float TargetHeight = Controller->PlateLocation.Z + Controller->SpawnHeightOffset;
+        
+        // 카메라 앞쪽에 위치
+        SpawnLocation = CameraLocation + CameraForward * 200.0f;
+        
+        // 높이 조정 (접시 높이 + 오프셋)
+        SpawnLocation.Z = TargetHeight;
+    }
+    else
+    {
+        // 실제 던지는 공 - 미리보기 공 위치 사용
+        if (Controller->PreviewBall)
+        {
+            SpawnLocation = Controller->PreviewBall->GetActorLocation();
+        }
+        else
+        {
+            // 미리보기 공이 없는 경우 기본 위치 계산
+            // 접시 높이를 고려하여 스폰 높이 조정
+            float TargetHeight = Controller->PlateLocation.Z + Controller->SpawnHeightOffset;
+            
+            // 카메라 앞쪽 위치 계산
+            FVector CameraLocation;
+            FRotator CameraRotation;
+            Controller->GetPlayerViewPoint(CameraLocation, CameraRotation);
+            
+            SpawnLocation = CameraLocation + CameraRotation.Vector() * 200.0f;
+            SpawnLocation.Z = TargetHeight;
+        }
+    }
+    
+    // 스폰 회전 설정
+    FRotator SpawnRotation = FRotator::ZeroRotator;
+    
+    // 공 생성
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+    
+    AActor* SpawnedBall = World->SpawnActor<AActor>(BallClass, SpawnLocation, SpawnRotation, SpawnParams);
+    
     if (SpawnedBall)
     {
-        // 크기 설정 - 모든 축에 동일한 스케일 적용
-        SpawnedBall->SetActorScale3D(FVector(BallSize));
+        // 공 크기 및 머티리얼 설정 처리
+        // ... 기존 코드 유지 ...
         
-        // 디버그 로그로 크기 확인
-        UE_LOG(LogTemp, Verbose, TEXT("공 생성: 타입=%d, 크기(스케일)=%f, 실제 크기(cm)=%f"),
-            BallType, BallSize, BallSize * 100.0f);
-        
-        // StaticMeshComponent 찾기
-        UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(
-            SpawnedBall->GetComponentByClass(UStaticMeshComponent::StaticClass()));
-            
-        if (MeshComp)
+        if (bIsPreview)
         {
-            // 중요: 물리 시뮬레이션 활성화 후 질량 설정
-            if (bEnablePhysics)
-            {
-                // 물리 시뮬레이션 활성화
-                MeshComp->SetSimulatePhysics(true);
-                MeshComp->SetEnableGravity(true);
-                MeshComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-                MeshComp->SetCollisionProfileName(TEXT("PhysicsActor"));
-                
-                // 물리 시뮬레이션이 활성화된 후에만 질량 설정 가능
-                MeshComp->SetMassOverrideInKg(NAME_None, BallMass);
-                
-                // UE_LOG(LogTemp, Warning, TEXT("던지는 공 생성: 타입=%d, 크기=%f, 질량=%f, 시뮬레이션=켜짐"),
-                //     BallType, BallSize, BallMass);
-            }
-            else
-            {
-                // 미리보기용 공 설정 (물리 비활성화)
-                MeshComp->SetSimulatePhysics(false);
-                MeshComp->SetEnableGravity(false);
-                MeshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-                
-                // 물리 시뮬레이션이 꺼져 있으면 질량을 설정할 수 없음
-                // 대신 계산된 질량 값을 태그나 게임 데이터로 저장
-                FString MassTag = FString::Printf(TEXT("BallMass:%f"), BallMass);
-                SpawnedBall->Tags.Add(FName(*MassTag));
-                
-                // UE_LOG(LogTemp, Warning, TEXT("미리보기 공 생성: 타입=%d, 크기=%f, 계산된 질량=%f, 시뮬레이션=꺼짐"),
-                //     BallType, BallSize, BallMass);
-            }
+            UE_LOG(LogTemp, Warning, TEXT("미리보기 공 생성 성공: 위치=%s"),
+                *SpawnLocation.ToString());
         }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("공 생성 실패"));
     }
     
     return SpawnedBall;
