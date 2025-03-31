@@ -1,17 +1,17 @@
 #include "FruitTrajectoryHelper.h"
 #include "FruitPlayerController.h"
 #include "FruitThrowHelper.h"
-#include "FruitPhysicsHelper.h"
 #include "FruitSpawnHelper.h"
+#include "Physics/FruitPhysicsHelper.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/PrimitiveComponent.h"
 #include "DrawDebugHelpers.h"
 #include "PhysicsEngine/PhysicsSettings.h"
-#include "Actors/FruitBall.h" // FruitBall 헤더 포함
+#include "Actors/FruitBall.h"
 
-// 포물선 궤적 계산 함수 - 완전히 재작성
+// 포물선 궤적 계산 함수 - 최적화 버전
 TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(AFruitPlayerController* Controller, const FVector& StartLocation, const FVector& TargetLocation, float BallMass)
 {
     TArray<FVector> TrajectoryPoints;
@@ -19,67 +19,36 @@ TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(AFruitPlayerCo
     if (!Controller)
         return TrajectoryPoints;
     
-    // 1. 기본 파라미터 설정
-    float UseAngle = FMath::Clamp(Controller->ThrowAngle, 15.0f, 60.0f);
-    float ThrowAngleRad = FMath::DegreesToRadians(UseAngle);
-    float Gravity = 980.0f; // 중력 가속도 (양수로 설정)
+    // 1. FruitPhysicsHelper에서 필요한 던지기 파라미터 가져오기
+    float UseAngle = Controller->ThrowAngle;
+    float MinAngle, MaxAngle;
+    UFruitPhysicsHelper::GetThrowAngleRange(MinAngle, MaxAngle);
+    UseAngle = FMath::Clamp(UseAngle, MinAngle, MaxAngle);
     
-    // 2. 수평 거리와 높이 차이 계산
-    FVector HorizontalDelta = TargetLocation - StartLocation;
-    float HorizontalDistance = FVector(HorizontalDelta.X, HorizontalDelta.Y, 0.0f).Size();
-    float HeightDifference = TargetLocation.Z - StartLocation.Z;
+    // 2. FruitPhysicsHelper에서 초기 속도 계산 함수 호출
+    FVector LaunchVelocity;
     
-    // 3. 초기 속도 계산 (단순 물리 공식 사용)
-    // v₀² = (g * d²) / (2 * cos²θ * (d * tanθ - h))
-    float Numerator = Gravity * HorizontalDistance * HorizontalDistance;
-    float Denominator = 2.0f * FMath::Cos(ThrowAngleRad) * FMath::Cos(ThrowAngleRad) * 
-                       (HorizontalDistance * FMath::Tan(ThrowAngleRad) - HeightDifference);
+    // 던지기 각도에 따라 속도 조정
+    bool bSuccess = UFruitPhysicsHelper::CalculateThrowVelocity(StartLocation, TargetLocation, UseAngle, BallMass, LaunchVelocity);
     
-    // 분모가 0이 되지 않도록 보호
-    if (FMath::Abs(Denominator) < 0.001f)
-        Denominator = 0.001f;
-    
-    float InitialSpeedSquared = Numerator / Denominator;
-    float InitialSpeed;
-    
-    // 속도가 음수가 나오면 포물선이 도달할 수 없는 것이므로 기본값 사용
-    if (InitialSpeedSquared <= 0.0f)
+    if (!bSuccess)
     {
-        InitialSpeed = 300.0f; // 기본 속도 사용
-        UE_LOG(LogTemp, Warning, TEXT("계산된 초기 속도가 음수입니다. 기본값 사용: %f"), InitialSpeed);
-    }
-    else
-    {
-        InitialSpeed = FMath::Sqrt(InitialSpeedSquared);
+        // 계산 실패 시 기본값 사용
+        UE_LOG(LogTemp, Warning, TEXT("물리 계산에 실패하여 기본 속도 사용"));
         
-        // 안전 범위 제한
-        InitialSpeed = FMath::Clamp(InitialSpeed, 100.0f, 500.0f);
+        // 기본 방향과 속도 설정
+        float ThrowAngleRad = FMath::DegreesToRadians(UseAngle);
+        FVector HorizontalDelta = TargetLocation - StartLocation;
+        FVector HorizontalDir = FVector(HorizontalDelta.X, HorizontalDelta.Y, 0.0f).GetSafeNormal();
+        
+        FVector LaunchDirection = FVector(HorizontalDir.X * FMath::Cos(ThrowAngleRad), HorizontalDir.Y * FMath::Cos(ThrowAngleRad), FMath::Sin(ThrowAngleRad)).GetSafeNormal();
+        
+        LaunchVelocity = LaunchDirection * 300.0f; // 기본 속도
     }
     
-    // 각도에 따른 초기 속도 조정 (각도가 높을수록 속도 감소)
-    if (UseAngle > 45.0f)
-    {
-        float AngleRatio = FMath::GetMappedRangeValueClamped(
-            FVector2D(45.0f, 60.0f),
-            FVector2D(1.0f, 0.7f),
-            UseAngle
-        );
-        InitialSpeed *= AngleRatio;
-    }
-    
-    // 4. 발사 방향 계산
-    FVector HorizontalDir = FVector(HorizontalDelta.X, HorizontalDelta.Y, 0.0f).GetSafeNormal();
-    FVector LaunchDirection = FVector(
-        HorizontalDir.X * FMath::Cos(ThrowAngleRad),
-        HorizontalDir.Y * FMath::Cos(ThrowAngleRad),
-        FMath::Sin(ThrowAngleRad)
-    ).GetSafeNormal();
-    
-    // 5. 초기 속도 벡터 계산
-    FVector InitialVelocity = LaunchDirection * InitialSpeed;
-    
-    // 6. 시간에 따른 포물선 궤적 계산
-    const float TimeStep = 0.05f; // 더 큰 시간 간격으로 포인트 수 줄이기
+    // 3. 시간에 따른 포물선 궤적 계산
+    float Gravity = 980.0f; // 중력 가속도
+    const float TimeStep = 0.05f;
     const float MaxTime = 5.0f;
     FVector Gravity3D = FVector(0, 0, -Gravity);
     
@@ -89,7 +58,7 @@ TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(AFruitPlayerCo
     // 시간에 따른 위치 계산 (포물선 방정식)
     for (float Time = TimeStep; Time < MaxTime; Time += TimeStep)
     {
-        FVector Position = StartLocation + InitialVelocity * Time + 0.5f * Gravity3D * Time * Time;
+        FVector Position = StartLocation + LaunchVelocity * Time + 0.5f * Gravity3D * Time * Time;
         TrajectoryPoints.Add(Position);
         
         // 지면에 닿았거나 목표 근처에 도달했는지 확인
@@ -97,9 +66,9 @@ TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(AFruitPlayerCo
             break;
     }
     
-    // 7. 로그 출력
-    UE_LOG(LogTemp, Log, TEXT("새 포물선 계산: 거리=%.1f, 높이차=%.1f, 각도=%.1f, 속도=%.1f, 방향=%s, 포인트=%d개"),
-        HorizontalDistance, HeightDifference, UseAngle, InitialSpeed, *LaunchDirection.ToString(), TrajectoryPoints.Num());
+    // 로그 출력
+    UE_LOG(LogTemp, Log, TEXT("최적화된 포물선 계산: 각도=%.1f, 속도=%.1f, 방향=%s, 포인트=%d개"),
+        UseAngle, LaunchVelocity.Size(), *LaunchVelocity.GetSafeNormal().ToString(), TrajectoryPoints.Num());
     
     return TrajectoryPoints;
 }
@@ -120,16 +89,7 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVec
     // 모든 포인트를 연결하는 선 그리기 (포물선 형태)
     for (int32 i = 0; i < TrajectoryPoints.Num() - 1; i++)
     {
-        DrawDebugLine(
-            World,
-            TrajectoryPoints[i],
-            TrajectoryPoints[i + 1],
-            LineColor,
-            true,  // 영구적
-            -1.0f, // 무기한
-            TrajectoryID,
-            0.5f   // 선 두께
-        );
+        DrawDebugLine(World, TrajectoryPoints[i], TrajectoryPoints[i + 1], LineColor, true, -1.0f, TrajectoryID, 0.5f);
     }
     
     // 포물선 상의 주요 지점에만 마커 표시
@@ -139,21 +99,12 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVec
         int32 Index = (i * (TrajectoryPoints.Num() - 1)) / (MarkerCount - 1);
         if (Index < TrajectoryPoints.Num())
         {
-            DrawDebugBox(
-                World,
-                TrajectoryPoints[Index],
-                FVector(0.4f), // 작은 크기
-                FQuat::Identity,
-                MarkerColor,
-                true,
-                -1.0f,
-                TrajectoryID
-            );
+            DrawDebugBox(World, TrajectoryPoints[Index], FVector(0.4f), FQuat::Identity, MarkerColor, true, -1.0f, TrajectoryID);
         }
     }
 }
 
-// 기존 UpdateTrajectoryPath 함수를 사용하되 몇 가지 수정
+// UpdateTrajectoryPath 함수 수정 부분
 void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Controller, const FVector& StartLocation, const FVector& TargetLocation, bool bPersistent, int32 CustomTrajectoryID)
 {
     if (!Controller || !Controller->GetWorld())
@@ -165,7 +116,7 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     // 기존 궤적 비우기
     FlushPersistentDebugLines(World);
     
-    // 현재 각도 가져오기 (상수 대신 글로벌 변수 사용)
+    // 현재 각도 가져오기
     float MinAngle, MaxAngle;
     UFruitPhysicsHelper::GetThrowAngleRange(MinAngle, MaxAngle);
     float UseAngle = FMath::Clamp(Controller->ThrowAngle, MinAngle, MaxAngle);
@@ -174,16 +125,40 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     FVector Start = StartLocation;
     FVector End = TargetLocation;
     
+    // 접시 높이 정보 가져오기 - 접시 액터 찾기
+    float PlateTopHeight = End.Z;
+    TArray<AActor*> PlateActors;
+    UGameplayStatics::GetAllActorsWithTag(World, FName("Plate"), PlateActors);
+    
+    if (PlateActors.Num() > 0)
+    {
+        // 접시 액터의 충돌 정보 활용
+        AActor* PlateActor = PlateActors[0];
+        FVector PlateOrigin = PlateActor->GetActorLocation();
+        FVector PlateExtent;
+        PlateActor->GetActorBounds(false, PlateOrigin, PlateExtent);
+        
+        // 접시 상부 높이 계산 (Z축 중심에서 Z축 범위의 절반을 더함)
+        PlateTopHeight = PlateOrigin.Z + PlateExtent.Z;
+        
+        // 약간의 오프셋 추가 (공이 접시 위에 안정적으로 위치하도록)
+        PlateTopHeight += 5.0f;
+    }
+    else
+    {
+        // 접시를 찾지 못한 경우 기본값으로 조금 더 높게 설정
+        PlateTopHeight = FMath::Max(End.Z, 20.0f);
+    }
+    
+    // 종료점 높이를 접시 상부 높이로 조정
+    End.Z = PlateTopHeight;
+    
     // 수평 거리
     FVector HorizontalDelta = End - Start;
     float HorizontalDistance = FVector(HorizontalDelta.X, HorizontalDelta.Y, 0.0f).Size();
     
-    // 각도에 따른 높이 비율 계산 (상수 대신 글로벌 변수 사용)
-    float PeakHeightRatio = FMath::GetMappedRangeValueClamped(
-        FVector2D(MinAngle, MaxAngle),  // 각도 범위
-        FVector2D(0.2f, 0.8f),          // 높이 비율 범위
-        UseAngle
-    );
+    // 각도에 따른 높이 비율 계산
+    float PeakHeightRatio = FMath::GetMappedRangeValueClamped(FVector2D(MinAngle, MaxAngle), FVector2D(0.2f, 0.8f), UseAngle);
     
     // 정점 높이 = 수평 거리 * 높이 비율
     float PeakHeight = HorizontalDistance * PeakHeightRatio;
@@ -192,12 +167,12 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     FVector Peak = Start + HorizontalDelta * 0.5f;
     Peak.Z = FMath::Max(Start.Z, End.Z) + PeakHeight;
     
-    // 색상 - 반투명 하늘색
-    FColor LineColor = FColor(135, 206, 235, 120);  // 더 투명하게
-    FColor MarkerColor = FColor(135, 206, 235, 160); // 더 투명하게
+    // 색상 - 더 선명한 하늘색
+    FColor LineColor = FColor(135, 206, 235, 180);
+    FColor MarkerColor = FColor(135, 206, 235, 220);
     
     // 포물선 세그먼트 수 - 부드러운 곡선을 위해
-    const int32 CurveSegments = 15;
+    const int32 CurveSegments = 18;
     
     // 베지어 곡선으로 포물선 그리기
     for (int32 i = 0; i < CurveSegments; i++)
@@ -206,55 +181,29 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
         float t2 = (float)(i + 1) / CurveSegments;
         
         // 2차 베지어 곡선 계산 - 완벽한 2차 포물선 형태
-        FVector Point1 = FMath::Pow(1.0f - t1, 2) * Start + 
-                         2 * t1 * (1.0f - t1) * Peak + 
-                         t1 * t1 * End;
-                         
-        FVector Point2 = FMath::Pow(1.0f - t2, 2) * Start + 
-                         2 * t2 * (1.0f - t2) * Peak + 
-                         t2 * t2 * End;
+        FVector Point1 = FMath::Pow(1.0f - t1, 2) * Start + 2 * t1 * (1.0f - t1) * Peak + t1 * t1 * End;
+        FVector Point2 = FMath::Pow(1.0f - t2, 2) * Start + 2 * t2 * (1.0f - t2) * Peak + t2 * t2 * End;
         
-        // 선 그리기 - 더 얇게
-        DrawDebugLine(
-            World,
-            Point1,
-            Point2,
-            LineColor,
-            true,
-            -1.0f,
-            TrajectoryID,
-            0.5f  // 더 얇은 선
-        );
+        // 선 그리기 - 한 줄로 변경
+        DrawDebugLine(World, Point1, Point2, LineColor, true, -1.0f, TrajectoryID, 1.2f);
     }
     
-    // 마커는 적게, 더 작게
-    const int32 MarkerCount = 4;
+    // 마커는 시작, 중간, 끝 지점만
+    const int32 MarkerCount = 3;
     
     for (int32 i = 0; i < MarkerCount; i++)
     {
         float t = (float)i / (MarkerCount - 1);
         
         // 포물선 상의 위치 계산
-        FVector Point = FMath::Pow(1.0f - t, 2) * Start + 
-                        2 * t * (1.0f - t) * Peak + 
-                        t * t * End;
+        FVector Point = FMath::Pow(1.0f - t, 2) * Start + 2 * t * (1.0f - t) * Peak + t * t * End;
         
-        // 작은 큐브로 표시
-        DrawDebugBox(
-            World,
-            Point,
-            FVector(0.3f),  // 더 작은 크기
-            FQuat::Identity,
-            MarkerColor,
-            true,
-            -1.0f,
-            TrajectoryID
-        );
+        // 큐브로 표시 - 한 줄로 변경
+        DrawDebugBox(World, Point, FVector(0.8f), FQuat::Identity, MarkerColor, true, -1.0f, TrajectoryID);
     }
     
-    // 디버그 로그
-    UE_LOG(LogTemp, Log, TEXT("개선된 베지어 궤적: 각도=%f, 거리=%f, 높이=%f"), 
-        UseAngle, HorizontalDistance, PeakHeight);
+    // 디버그 로그 수정
+    UE_LOG(LogTemp, Log, TEXT("접시 상부 높이=%f로 궤적 계산: 각도=%f, 거리=%f, 높이=%f"), PlateTopHeight, UseAngle, HorizontalDistance, PeakHeight);
 }
 
 // 하위 호환성을 위한 영구 궤적 그리기 함수 - 인자 한 줄로

@@ -1,7 +1,7 @@
 #include "FruitThrowHelper.h"
 #include "FruitPlayerController.h"
 #include "FruitTrajectoryHelper.h"
-#include "FruitPhysicsHelper.h"
+#include "Physics/FruitPhysicsHelper.h"
 #include "FruitSpawnHelper.h" // 새로운 헬퍼 클래스 추가
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"

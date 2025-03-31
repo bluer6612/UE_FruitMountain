@@ -5,12 +5,12 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/InputSettings.h"
 #include "Engine/Engine.h"
-#include "Actors/CameraOrbitFunctionLibrary.h"
+#include "Setting/CameraOrbitFunctionLibrary.h"
 #include "Setting/UE_FruitMountainGameMode.h"
 #include "Camera/CameraComponent.h"
 #include "Throw/FruitThrowHelper.h"
 #include "Throw/FruitTrajectoryHelper.h"
-#include "Throw/FruitPhysicsHelper.h"
+#include "Physics/FruitPhysicsHelper.h"
 #include "GameFramework/SpringArmComponent.h"
 
 AFruitPlayerController::AFruitPlayerController()
@@ -91,40 +91,6 @@ void AFruitPlayerController::SetupInputComponent()
     }
 }
 
-// 새로운 각도 조정 함수 (축 매핑용)
-void AFruitPlayerController::AdjustAngle(float Value)
-{
-    if (FMath::Abs(Value) < KINDA_SMALL_NUMBER)
-        return;
-    
-    // 프레임 시간과 조정 속도를 곱해 부드러운 변화 적용
-    float DeltaAngle = Value * AngleAdjustSpeed * GetWorld()->DeltaTimeSeconds;
-    
-    // 변경 전에 최종 각도가 제한 범위를 벗어나는지 확인 (한 번의 if문으로 처리)
-    float NewAngle = ThrowAngle + DeltaAngle;
-    
-    // 변경 전에 제한 검사 - 범위를 벗어나면 작업 수행하지 않음
-    if ((NewAngle > UFruitPhysicsHelper::MaxThrowAngle && DeltaAngle > 0.0f) || 
-        (NewAngle < UFruitPhysicsHelper::MinThrowAngle && DeltaAngle < 0.0f))
-    {
-        return;
-    }
-    
-    // 허용 범위 내의 변경이면 실행
-    ThrowAngle = NewAngle;
-    
-    // 안전을 위한 클램핑 (불필요하지만 추가 보호)
-    ThrowAngle = FMath::Clamp(ThrowAngle, UFruitPhysicsHelper::MinThrowAngle, UFruitPhysicsHelper::MaxThrowAngle);
-    
-    UE_LOG(LogTemp, Log, TEXT("각도 조정: 현재 각도 %.1f"), ThrowAngle);
-    
-    // 각도 변경 후 미리보기 공 업데이트
-    UpdatePreviewBall();
-    
-    // 각도 변경 후 궤적도 업데이트
-    UpdateTrajectory();
-}
-
 // 과일 던지기 함수 수정 - 던진 후 즉시 공이 보이도록 수정
 void AFruitPlayerController::ThrowFruit()
 {
@@ -168,6 +134,38 @@ void AFruitPlayerController::ThrowFruit()
         BallThrowDelay,
         false // 반복 실행 안 함
     );
+}
+
+// 새로운 각도 조정 함수 (축 매핑용)
+void AFruitPlayerController::AdjustAngle(float Value)
+{
+    if (FMath::Abs(Value) < KINDA_SMALL_NUMBER)
+        return;
+    
+    // 프레임 시간과 조정 속도를 곱해 부드러운 변화 적용
+    float DeltaAngle = Value * AngleAdjustSpeed * GetWorld()->DeltaTimeSeconds;
+    
+    // 변경 전에 최종 각도가 제한 범위를 벗어나는지 확인 (한 번의 if문으로 처리)
+    float NewAngle = ThrowAngle + DeltaAngle;
+    
+    // 변경 전에 제한 검사 - 범위를 벗어나면 작업 수행하지 않음
+    if ((NewAngle > UFruitPhysicsHelper::MaxThrowAngle && DeltaAngle > 0.0f) || 
+        (NewAngle < UFruitPhysicsHelper::MinThrowAngle && DeltaAngle < 0.0f))
+    {
+        return;
+    }
+    
+    // 허용 범위 내의 변경이면 실행
+    ThrowAngle = NewAngle;
+    
+    // 안전을 위한 클램핑 (불필요하지만 추가 보호)
+    ThrowAngle = FMath::Clamp(ThrowAngle, UFruitPhysicsHelper::MinThrowAngle, UFruitPhysicsHelper::MaxThrowAngle);
+    
+    // 각도 변경 후 미리보기 공 업데이트
+    UpdatePreviewBall();
+    
+    // 각도 변경 후 궤적도 업데이트
+    UpdateTrajectory();
 }
 
 // 카메라 회전 처리 함수 수정
