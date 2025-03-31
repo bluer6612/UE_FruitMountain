@@ -40,24 +40,24 @@ TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(AFruitPlayerCo
         PlateActor->GetActorBounds(false, PlateOrigin, PlateExtent);
         
         // 방향 벡터 계산
-        FVector DirectionToPlate = PlateOrigin - StartLocation;
-        DirectionToPlate.Z = 0.0f;
-        DirectionToPlate.Normalize();
-        
-        // 각도 반전 비율 계산
-        float ReverseAngleRatio = FMath::GetMappedRangeValueClamped(
+        FVector DirectionToTarget = PlateOrigin - StartLocation;
+        float BaseDistance = DirectionToTarget.Size2D(); 
+        DirectionToTarget.Z = 0.0f;
+        DirectionToTarget.Normalize();
+
+        // 각도에 따른 비율 계산
+        float DistanceRatio = FMath::GetMappedRangeValueClamped(
             FVector2D(MinAngle, MaxAngle),
-            FVector2D(1.0f, 0.0f),
+            FVector2D(1.0f, 0.5f),
             UseAngle
         );
-        
-        // 오프셋 거리 계산
-        float PlateRadius = FMath::Min(PlateExtent.X, PlateExtent.Y) * 0.8f;
-        float OffsetDistance = PlateRadius * 0.8f * ReverseAngleRatio;
-        
-        // 타겟 위치 조정 (UpdateTrajectoryPath와 동일한 논리)
-        AdjustedTargetLocation = PlateOrigin - DirectionToPlate * OffsetDistance;
-        AdjustedTargetLocation.Z = TargetLocation.Z;
+
+        // 최종 도달 거리 계산
+        float AdjustedDistance = BaseDistance * DistanceRatio;
+
+        // 최종 도착 위치 계산
+        AdjustedTargetLocation = StartLocation + DirectionToTarget * AdjustedDistance;
+        AdjustedTargetLocation.Z = PlateOrigin.Z + PlateExtent.Z + 5.0f; // 접시 위로
     }
     
     // 2. FruitPhysicsHelper에서 초기 속도 계산 함수 호출
@@ -143,7 +143,9 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVec
 void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Controller, const FVector& StartLocation, const FVector& TargetLocation, bool bPersistent, int32 CustomTrajectoryID)
 {
     if (!Controller || !Controller->GetWorld())
+    {
         return;
+    }
     
     UWorld* World = Controller->GetWorld();
     const int32 TrajectoryID = (CustomTrajectoryID != 0) ? CustomTrajectoryID : 9999;
@@ -158,12 +160,12 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     
     // 시작점과 기본 종료점
     FVector Start = StartLocation;
-    FVector BaseEnd = TargetLocation;
     
     // 접시 높이 정보 가져오기 - 접시 액터 찾기
-    float PlateTopHeight = BaseEnd.Z;
+    float PlateTopHeight = 20.0f; // 기본값
+    FVector PlateCenter = TargetLocation;
     float PlateRadius = 50.0f; // 접시 반지름 기본값
-    FVector PlateCenter = BaseEnd;
+    
     TArray<AActor*> PlateActors;
     UGameplayStatics::GetAllActorsWithTag(World, FName("Plate"), PlateActors);
     
@@ -177,50 +179,42 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
         
         // 접시 중심 및 크기 정보 저장
         PlateCenter = PlateOrigin;
-        PlateRadius = FMath::Min(PlateExtent.X, PlateExtent.Y) * 0.8f; // 접시 반지름 근사값 (80% 사용)
+        PlateRadius = FMath::Min(PlateExtent.X, PlateExtent.Y) * 0.8f; // 접시 반지름 근사값
         
-        // 접시 상부 높이 계산 (Z축 중심에서 Z축 범위의 절반을 더함)
-        PlateTopHeight = PlateOrigin.Z + PlateExtent.Z;
-        
-        // 약간의 오프셋 추가 (공이 접시 위에 안정적으로 위치하도록)
-        PlateTopHeight += 5.0f;
-    }
-    else
-    {
-        // 접시를 찾지 못한 경우 기본값으로 조금 더 높게 설정
-        PlateTopHeight = FMath::Max(BaseEnd.Z, 20.0f);
+        // 접시 상부 높이 계산
+        PlateTopHeight = PlateOrigin.Z + PlateExtent.Z + 5.0f; // 약간의 오프셋 추가
     }
     
-    // *** 여기서 각도에 따라 도착 위치를 변경 ***
-    // 각도가 낮을수록 더 멀리, 높을수록 더 가까이 도착하도록 조정
-    // 1. 방향 벡터 계산 (플레이어에서 접시 중심을 향하는 방향)
+    // 방향 벡터 계산 (플레이어에서 접시 중심을 향하는 방향)
     FVector DirectionToPlate = PlateCenter - Start;
+    float BaseDistance = DirectionToPlate.Size2D(); // XY 평면 상의 거리
     DirectionToPlate.Z = 0.0f; // 수평 방향만 고려
     DirectionToPlate.Normalize();
-
-    // 2. 각도 반전 - 높은 각도(60)일 때 짧은 거리, 낮은 각도(15)일 때 긴 거리
-    float ReverseAngleRatio = FMath::GetMappedRangeValueClamped(
+    
+    // 각도에 따른 비율 계산 - 높은 각도=짧은 거리, 낮은 각도=긴 거리
+    float DistanceRatio = FMath::GetMappedRangeValueClamped(
         FVector2D(MinAngle, MaxAngle),  // 입력 범위: 15도~60도
-        FVector2D(1.0f, 0.0f),          // 출력 범위: 1.0(멀리)~0.0(가까이)
+        FVector2D(1.0f, 0.5f),          // 출력 범위: 1.0(멀리)~0.5(가까이)
         UseAngle
     );
-
-    // 3. 오프셋 계산 - 각도가 낮을수록 더 멀리 이동
-    float OffsetDistance = PlateRadius * 0.8f * ReverseAngleRatio;
-
-    // 4. 오프셋 적용 방향 변경 - 접시 중심에서 바깥쪽으로 이동
-    // 각도가 낮을수록(15) 더 바깥쪽, 각도가 높을수록(60) 더 중앙에 가깝게
-    FVector End = BaseEnd - DirectionToPlate * OffsetDistance;
-
-    // 5. 종료점 높이 조정
-    End.Z = PlateTopHeight;
     
-    // 수평 거리
+    // 최종 도달 거리 계산
+    float AdjustedDistance = BaseDistance * DistanceRatio;
+    
+    // 최종 도착 위치 계산
+    FVector End = Start + DirectionToPlate * AdjustedDistance;
+    End.Z = PlateTopHeight; // 높이는 접시 상단으로 고정
+    
+    // 포물선 궤적 계산을 위한 변수
     FVector HorizontalDelta = End - Start;
     float HorizontalDistance = FVector(HorizontalDelta.X, HorizontalDelta.Y, 0.0f).Size();
     
-    // 각도에 따른 높이 비율 계산
-    float PeakHeightRatio = FMath::GetMappedRangeValueClamped(FVector2D(MinAngle, MaxAngle), FVector2D(0.2f, 0.8f), UseAngle);
+    // 각도에 따른 높이 비율 계산 (각도가 높을수록 더 높게)
+    float PeakHeightRatio = FMath::GetMappedRangeValueClamped(
+        FVector2D(MinAngle, MaxAngle), 
+        FVector2D(0.2f, 0.8f), 
+        UseAngle
+    );
     
     // 정점 높이 = 수평 거리 * 높이 비율
     float PeakHeight = HorizontalDistance * PeakHeightRatio;
@@ -229,11 +223,11 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     FVector Peak = Start + HorizontalDelta * 0.5f;
     Peak.Z = FMath::Max(Start.Z, End.Z) + PeakHeight;
     
-    // 색상 - 더 선명한 하늘색
+    // 색상 - 선명한 하늘색
     FColor LineColor = FColor(135, 206, 235, 180);
     FColor MarkerColor = FColor(135, 206, 235, 220);
     
-    // 포물선 세그먼트 수 - 부드러운 곡선을 위해
+    // 포물선 세그먼트 수
     const int32 CurveSegments = 18;
     
     // 베지어 곡선으로 포물선 그리기
@@ -242,28 +236,23 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
         float t1 = (float)i / CurveSegments;
         float t2 = (float)(i + 1) / CurveSegments;
         
-        // 2차 베지어 곡선 계산 - 완벽한 2차 포물선 형태
+        // 2차 베지어 곡선 계산
         FVector Point1 = FMath::Pow(1.0f - t1, 2) * Start + 2 * t1 * (1.0f - t1) * Peak + t1 * t1 * End;
         FVector Point2 = FMath::Pow(1.0f - t2, 2) * Start + 2 * t2 * (1.0f - t2) * Peak + t2 * t2 * End;
         
-        // 선 그리기 - 한 줄로 변경
         DrawDebugLine(World, Point1, Point2, LineColor, true, -1.0f, TrajectoryID, 1.2f);
     }
     
     // 마커는 시작, 중간, 끝 지점만
     const int32 MarkerCount = 3;
-    
     for (int32 i = 0; i < MarkerCount; i++)
     {
         float t = (float)i / (MarkerCount - 1);
-        
-        // 포물선 상의 위치 계산
         FVector Point = FMath::Pow(1.0f - t, 2) * Start + 2 * t * (1.0f - t) * Peak + t * t * End;
-        
-        // 큐브로 표시 - 한 줄로 변경
         DrawDebugBox(World, Point, FVector(0.8f), FQuat::Identity, MarkerColor, true, -1.0f, TrajectoryID);
     }
     
-    // 디버그 로그 수정
-    UE_LOG(LogTemp, Log, TEXT("각도=%f에 따른 궤적 계산: 접시중심에서 오프셋=%f, 높이=%f"), UseAngle, OffsetDistance, PeakHeight);
+    // CalculateTrajectoryPoints 함수에서도 이와 동일한 로직을 구현해야 함
+    UE_LOG(LogTemp, Log, TEXT("각도=%f에 따른 궤적 계산: 기본거리=%.1f, 조정거리=%.1f(비율:%.2f), 높이=%.1f"), 
+        UseAngle, BaseDistance, AdjustedDistance, DistanceRatio, PeakHeight);
 }
