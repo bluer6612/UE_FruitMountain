@@ -29,16 +29,13 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
     
     // 공 스폰 위치 계산
     FVector SpawnLocation = UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(
-        Controller->GetWorld(), Controller->CameraOrbitAngle);
+                            Controller->GetWorld(), Controller->CameraOrbitAngle);
     
     if (SpawnLocation == FVector::ZeroVector)
     {
         UE_LOG(LogTemp, Warning, TEXT("유효한 스폰 위치를 계산할 수 없습니다."));
         return;
     }
-    
-    // 공 스폰 전 질량 계산 (공 종류에 따라)
-    float BallMass = UFruitSpawnHelper::CalculateBallMass(Controller->CurrentBallType);
     
     // 공 스폰 후 물리 적용 - 즉시 표시되도록 설정
     AActor* SpawnedBall = UFruitSpawnHelper::SpawnBall(Controller, SpawnLocation, Controller->CurrentBallType, true);
@@ -75,14 +72,8 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
             // 던지기 파라미터 계산
             float AdjustedForce;
             FVector LaunchDirection;
-            UFruitPhysicsHelper::CalculateThrowParameters(
-                Controller,
-                SpawnLocation,
-                PlateCenter,
-                AdjustedForce,
-                LaunchDirection,
-                ActualMass);
-                
+            UFruitPhysicsHelper::CalculateThrowParameters(Controller, SpawnLocation, PlateCenter, AdjustedForce, LaunchDirection, ActualMass);
+
             // 충격량 직접 적용 - 보정 계수 제거하고 정확한 힘 사용
             FVector FinalImpulse = LaunchDirection * AdjustedForce;
             
@@ -100,12 +91,12 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
     // 약간의 딜레이 후 새 미리보기 공 업데이트 - 하드코딩된 값 대신 BallThrowDelay 사용
     FTimerHandle UpdatePreviewTimerHandle;
     Controller->GetWorld()->GetTimerManager().SetTimer(
-        UpdatePreviewTimerHandle,
-        [Controller]()
-        {
-            Controller->UpdatePreviewBall();
-        },
-        Controller->BallThrowDelay, // 하드코딩된 0.5f 대신 BallThrowDelay 사용
+        UpdatePreviewTimerHandle, 
+        [Controller]() 
+        { 
+            Controller->UpdatePreviewBall(); 
+        }, 
+        Controller->BallThrowDelay, 
         false
     );
 }
@@ -127,16 +118,13 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
     }
 
     // 공통 함수를 사용하여 위치 계산
-    FVector PreviewLocation = UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(
-        Controller->GetWorld(), Controller->CameraOrbitAngle);
+    FVector PreviewLocation = UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(Controller->GetWorld(), Controller->CameraOrbitAngle);
     
     if (PreviewLocation == FVector::ZeroVector)
     {
         UE_LOG(LogTemp, Error, TEXT("미리보기 실패: 유효한 위치를 계산할 수 없습니다!"));
         return;
     }
-    
-    //UE_LOG(LogTemp, Warning, TEXT("미리보기 위치 계산됨: %s"), *PreviewLocation.ToString());
     
     // 미리보기 공이 없는 경우에만 새로 생성
     if (!Controller->PreviewBall)
@@ -149,8 +137,7 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
         }
         
         // 새 미리보기 공 생성
-        Controller->PreviewBall = UFruitSpawnHelper::SpawnBall(
-            Controller, PreviewLocation, Controller->CurrentBallType, false);
+        Controller->PreviewBall = UFruitSpawnHelper::SpawnBall(Controller, PreviewLocation, Controller->CurrentBallType, false);
             
         if (Controller->PreviewBall)
         {
