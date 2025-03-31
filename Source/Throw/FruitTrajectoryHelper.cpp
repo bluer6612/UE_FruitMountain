@@ -48,7 +48,7 @@ TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(AFruitPlayerCo
         // 중간 각도에서 가장 멀리, 너무 높거나 낮으면 가까이 도착
         float OptimalAngle = (MinAngle + MaxAngle) * 0.5f;
         float AngleDeviation = FMath::Abs(UseAngle - OptimalAngle) / ((MaxAngle - MinAngle) * 0.5f);
-        float DistanceRatio = FMath::Clamp(1.0f - AngleDeviation * 0.5f, 0.5f, 1.0f);
+        float DistanceRatio = FMath::Clamp(1.0f - AngleDeviation * 0.7f, 0.3f, 1.0f);
 
         // 최종 도달 거리 계산
         float AdjustedDistance = BaseDistance * DistanceRatio;
@@ -190,11 +190,9 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     DirectionToPlate.Normalize();
     
     // 각도에 따른 비율 계산 - 중간 각도에서 가장 멀리, 너무 높거나 낮으면 가까이 도착
-    float OptimalAngle = (MinAngle + MaxAngle) * 0.5f; // 중간값(약 37.5도)
-    float AngleDeviation = FMath::Abs(UseAngle - OptimalAngle) / ((MaxAngle - MinAngle) * 0.5f); // 편차 (0~1)
-
-    // 편차가 클수록(중간에서 멀수록) 거리는 짧아짐
-    float DistanceRatio = FMath::Clamp(1.0f - AngleDeviation * 0.5f, 0.5f, 1.0f);
+    float OptimalAngle = (MinAngle + MaxAngle) * 0.5f;
+    float AngleDeviation = FMath::Abs(UseAngle - OptimalAngle) / ((MaxAngle - MinAngle) * 0.5f);
+    float DistanceRatio = FMath::Clamp(1.0f - AngleDeviation * 0.7f, 0.3f, 1.0f);
 
     // 최종 도달 거리 계산
     float AdjustedDistance = BaseDistance * DistanceRatio;
@@ -209,9 +207,7 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     
     // 각도에 따른 높이 비율 계산 (각도가 높을수록 더 높게)
     float PeakHeightRatio = FMath::GetMappedRangeValueClamped(
-        FVector2D(MinAngle, MaxAngle), 
-        FVector2D(0.2f, 0.8f), 
-        UseAngle
+        FVector2D(MinAngle, MaxAngle), FVector2D(0.15f, 0.9f), UseAngle
     );
     
     // 정점 높이 = 수평 거리 * 높이 비율
