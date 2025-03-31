@@ -21,7 +21,7 @@ AFruitPlayerController::AFruitPlayerController()
 
     // 오빗 기본 값 설정
     CameraOrbitAngle = 0.f;
-    CameraOrbitRadius = 225.f;
+    CameraOrbitRadius = 350.f;
     
     // 카메라 회전 속도 (도/초)
     RotateCameraSpeed = 180.f;
@@ -29,12 +29,7 @@ AFruitPlayerController::AFruitPlayerController()
     CurrentBallType = 1;
 
     // 카메라 높이 설정
-    CameraHeightOffset = 75.f;
-
-    // 접시 관련 변수 초기화
-    PlateCenter = FVector::ZeroVector;
-    PlateHeight = 0.0f;
-    SpawnHeightOffset = 100.0f;
+    CameraHeightOffset = 100.f;
 }
 
 void AFruitPlayerController::BeginPlay()
@@ -50,24 +45,9 @@ void AFruitPlayerController::BeginPlay()
     }
     else
     {
-        UE_LOG(LogTemp, Warning, TEXT("FruitBallClass를 찾을 수 없어 기본값을 사용합니다."));
+        UE_LOG(LogTemp, Warning, TEXT("GameMode의 FruitBallClass가 비어 있습니다."));
     }
     
-    // 게임 시작 시 접시 위치와 높이 계산
-    UpdatePlateInfo();
-    
-    // 일정 시간마다 접시 정보 업데이트 (접시 위치가 변경될 수 있으므로)
-    GetWorldTimerManager().SetTimer(
-        PlateUpdateTimerHandle,
-        this,
-        &AFruitPlayerController::UpdatePlateInfo,
-        2.0f, // 2초마다 업데이트
-        true  // 반복 실행
-    );
-    
-    // 초기 공 미리보기 생성
-    CreatePreviewBall();
-
     UE_LOG(LogTemp, Log, TEXT("AFruitPlayerController::BeginPlay 호출됨"));
 
     // 입력 모드를 게임 전용으로 설정하여 키 입력이 제대로 전달되는지 확인
@@ -121,51 +101,6 @@ void AFruitPlayerController::SetupInputComponent()
     }
 }
 
-// 과일 던지기 함수 수정 - 던진 후 즉시 공이 보이도록 수정
-void AFruitPlayerController::ThrowFruit()
-{
-    // 이미 던지는 중이면 무시
-    static bool bIsThrowingInProgress = false;
-    if (bIsThrowingInProgress)
-        return;
-
-    // 던지기 시작 표시
-    bIsThrowingInProgress = true;
-
-    // 미리보기 공 숨기기 - 제거하되 즉시 실제 공 생성
-    if (PreviewBall)
-    {
-        PreviewBall->Destroy();
-        PreviewBall = nullptr;
-    }
-
-    // 입력 비활성화 - 던지는 동안 모든 조작 막기
-    DisableInput(this);
-
-    // 즉시 공 생성하여 던지기 실행
-    UFruitThrowHelper::ThrowFruit(this);
-
-    // 0.5초 후 입력 다시 활성화 및 새 미리보기 공 생성
-    FTimerHandle ThrowDelayTimerHandle;
-    GetWorld()->GetTimerManager().SetTimer(
-        ThrowDelayTimerHandle,
-        [this]()
-        {
-            // 던지기 완료 표시
-            bIsThrowingInProgress = false;
-
-            // 입력 다시 활성화
-            EnableInput(this);
-
-            // 새로운 미리보기 공 업데이트 (공 타입 바꾸기)
-            CurrentBallType = FMath::RandRange(1, 11); // 다음에 던질 공 타입 랜덤 변경
-            UpdatePreviewBall();
-        },
-        BallThrowDelay,
-        false // 반복 실행 안 함
-    );
-}
-
 // 새로운 각도 조정 함수 (축 매핑용)
 void AFruitPlayerController::AdjustAngle(float Value)
 {
@@ -175,8 +110,8 @@ void AFruitPlayerController::AdjustAngle(float Value)
         float DeltaAngle = Value * AngleAdjustSpeed * GetWorld()->DeltaTimeSeconds;
         ThrowAngle += DeltaAngle;
         
-        // 각도 범위 제한 (45도에서 90도 사이로 제한)
-        ThrowAngle = FMath::Clamp(ThrowAngle, 45.0f, 75.0f);
+        // 각도 범위 제한 (30도에서 90도 사이로 제한)
+        ThrowAngle = FMath::Clamp(ThrowAngle, 30.0f, 90.0f);
         
         // 모든 시스템에 동일한 각도 전파
         UFruitPhysicsHelper::SetGlobalThrowAngle(ThrowAngle);
@@ -189,6 +124,51 @@ void AFruitPlayerController::AdjustAngle(float Value)
         // 각도 변경 후 궤적도 업데이트
         UpdateTrajectory();
     }
+}
+
+// 과일 던지기 함수 수정 - 던진 후 즉시 공이 보이도록 수정
+void AFruitPlayerController::ThrowFruit()
+{
+    // 이미 던지는 중이면 무시
+    static bool bIsThrowingInProgress = false;
+    if (bIsThrowingInProgress)
+        return;
+    
+    // 던지기 시작 표시
+    bIsThrowingInProgress = true;
+    
+    // 미리보기 공 숨기기 - 제거하되 즉시 실제 공 생성
+    if (PreviewBall)
+    {
+        PreviewBall->Destroy();
+        PreviewBall = nullptr;
+    }
+    
+    // 입력 비활성화 - 던지는 동안 모든 조작 막기
+    DisableInput(this);
+    
+    // 즉시 공 생성하여 던지기 실행
+    UFruitThrowHelper::ThrowFruit(this);
+    
+    // 0.5초 후 입력 다시 활성화 및 새 미리보기 공 생성
+    FTimerHandle ThrowDelayTimerHandle;
+    GetWorld()->GetTimerManager().SetTimer(
+        ThrowDelayTimerHandle,
+        [this]()
+        {
+            // 던지기 완료 표시
+            bIsThrowingInProgress = false;
+            
+            // 입력 다시 활성화
+            EnableInput(this);
+            
+            // 새로운 미리보기 공 업데이트 (공 타입 바꾸기)
+            CurrentBallType = FMath::RandRange(1, 11); // 다음에 던질 공 타입 랜덤 변경
+            UpdatePreviewBall();
+        },
+        BallThrowDelay,
+        false // 반복 실행 안 함
+    );
 }
 
 // 카메라 회전 처리 함수 수정
@@ -325,62 +305,4 @@ void AFruitPlayerController::UpdateTrajectory()
     
     // 궤적 업데이트 함수 호출
     UFruitTrajectoryHelper::UpdateTrajectoryPath(this, StartLocation, TargetLocation);
-}
-
-// 접시 정보 업데이트 함수 추가
-void AFruitPlayerController::UpdatePlateInfo()
-{
-    if (!GetWorld())
-        return;
-        
-    // 접시 태그로 찾기
-    TArray<AActor*> PlateActors;
-    UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Plate"), PlateActors);
-    
-    if (PlateActors.Num() > 0)
-    {
-        // 접시 액터 가져오기
-        AActor* PlateActor = PlateActors[0];
-        
-        // 접시 중심 위치 저장
-        PlateCenter = PlateActor->GetActorLocation();
-        
-        // 접시의 메시 컴포넌트 찾기
-        UStaticMeshComponent* PlateMesh = Cast<UStaticMeshComponent>(PlateActor->GetComponentByClass(UStaticMeshComponent::StaticClass()));
-        if (PlateMesh && PlateMesh->GetStaticMesh())
-        {
-            // 접시의 바운드 정보 가져오기
-            FBoxSphereBounds PlateBounds = PlateMesh->GetStaticMesh()->GetBounds();
-            
-            // 메시 스케일 고려
-            FVector PlateScale = PlateActor->GetActorScale3D();
-            
-            // 접시 높이 계산 (Z 방향 크기의 절반)
-            PlateHeight = PlateBounds.BoxExtent.Z * PlateScale.Z;
-            
-            // 접시 표면 위치 계산 (중심 + 높이)
-            PlateLocation = PlateCenter;
-            PlateLocation.Z += PlateHeight;
-            
-            // 로그 출력
-            UE_LOG(LogTemp, Log, TEXT("접시 정보 업데이트: 중심=%s, 높이=%f, 표면=%s"),
-                *PlateCenter.ToString(), PlateHeight, *PlateLocation.ToString());
-                
-            // 미리보기 공 위치 업데이트
-            UpdatePreviewBall();
-        }
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("접시 메시를 찾을 수 없습니다."));
-            
-            // 기본값 사용
-            PlateHeight = 10.0f;
-            PlateLocation = PlateCenter;
-            PlateLocation.Z += PlateHeight;
-        }
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Plate 태그가 있는 액터를 찾을 수 없습니다."));
-    }
 }
