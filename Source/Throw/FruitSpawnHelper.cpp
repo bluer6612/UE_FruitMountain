@@ -96,7 +96,7 @@ AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, const F
     return SpawnedBall;
 }
 
-// 접시 가장자리 위치 계산 함수 구현
+// 접시 가장자리 위치 계산 함수 구현 - 테이블 높이 포함
 FVector UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(UWorld* World, float CameraAngle)
 {
     // 접시 위치 확인
@@ -113,12 +113,18 @@ FVector UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(UWorld* World, float 
         {
             PlateCenter = PlateActorRef->GetActorLocation();
             
+            // 접시 전체 바운딩 박스 가져오기 (테이블 포함)
+            FBox TotalBounds = PlateActorRef->GetComponentsBoundingBox();
+            FVector Bounds = TotalBounds.GetSize();
+            
             // 접시 반지름 계산
-            FVector Bounds = PlateActorRef->GetComponentsBoundingBox().GetSize();
             PlateRadius = FMath::Max(Bounds.X, Bounds.Y) * 0.45f; // 가장자리에 더 가깝게 조정
             
-            // 접시 높이 가져오기
-            float PlateHeight = Bounds.Z;
+            // 테이블과 접시를 포함한 전체 높이 가져오기
+            float TotalHeight = Bounds.Z;
+            
+            // 접시 상단 높이 가져오기 (테이블 포함)
+            float TopSurfaceHeight = TotalBounds.Max.Z - PlateCenter.Z;
             
             // 카메라 방향 벡터 계산
             float RadianAngle = FMath::DegreesToRadians(CameraAngle);
@@ -131,8 +137,13 @@ FVector UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(UWorld* World, float 
             // 카메라 방향의 반대쪽 접시 가장자리 지점 계산 (카메라에서 가장 먼 곳)
             FVector EdgePoint = PlateCenter + CameraDirection * PlateRadius;
             
-            // 높이 조정 - 접시 위로
-            EdgePoint.Z = PlateCenter.Z + PlateHeight + 25.0f;
+            // 높이 조정 - 접시+테이블 위로, 공 크기를 고려한 오프셋 적용
+            float BallTypeOffset = 10.0f; // 가장 작은 공 크기(타입1) 기준 추가 여유 높이
+            EdgePoint.Z = TotalBounds.Max.Z + BallTypeOffset;
+            
+            // 디버그 로그
+            UE_LOG(LogTemp, Verbose, TEXT("공 스폰 위치 계산: 접시 중심=(%.1f, %.1f, %.1f), 테이블 포함 높이=%.1f, 최종 높이=%.1f"),
+                PlateCenter.X, PlateCenter.Y, PlateCenter.Z, TotalHeight, EdgePoint.Z);
                 
             return EdgePoint;
         }
