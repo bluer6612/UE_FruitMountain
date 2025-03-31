@@ -29,7 +29,7 @@ void UFruitPhysicsHelper::CalculateThrowParameters(AFruitPlayerController* Contr
     float HeightDifference = DirectionToTarget.Z;
     
     // 2. 던지기 각도 설정 (컨트롤러의 ThrowAngle 직접 사용)
-    float UseAngle = FMath::Clamp(Controller->ThrowAngle, 30.0f, 90.0f);  // 각도 범위 보장
+    float UseAngle = FMath::Clamp(Controller->ThrowAngle, 15.0f, 60.0f);  // 각도 범위 보장
     float ThrowAngleRadians = FMath::DegreesToRadians(UseAngle);
     
     // 중력 및 삼각함수 계산
@@ -65,7 +65,7 @@ void UFruitPhysicsHelper::CalculateThrowParameters(AFruitPlayerController* Contr
     }
     
     // 힘 범위 제한 - 높은 각도에 맞게 상한선 증가
-    OutAdjustedForce = FMath::Clamp(OutAdjustedForce, 3000.0f, 18000.0f);
+    OutAdjustedForce = FMath::Clamp(OutAdjustedForce, 3000.0f, 12000.0f);
     
     // 발사 방향 벡터 계산
     FVector HorizontalDir = FVector(DirectionToTarget.X, DirectionToTarget.Y, 0.0f).GetSafeNormal();

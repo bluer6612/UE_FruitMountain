@@ -101,7 +101,7 @@ void AFruitPlayerController::AdjustAngle(float Value)
         ThrowAngle += DeltaAngle;
         
         // 각도 범위 제한
-        ThrowAngle = FMath::Clamp(ThrowAngle, 45.0f, 60.0f);
+        ThrowAngle = FMath::Clamp(ThrowAngle, 15.0f, 60.0f);
         
         // 모든 시스템에 동일한 각도 전파
         UFruitPhysicsHelper::SetGlobalThrowAngle(ThrowAngle);
