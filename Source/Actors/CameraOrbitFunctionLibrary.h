@@ -16,5 +16,5 @@ public:
     // OrbitAngle: 현재 오빗 각도 (도 단위), OrbitRadius: 접시와의 거리,
     // ElevationAngle: 접시를 내려다보는 각도
     UFUNCTION(BlueprintCallable, Category = "Camera Orbit")
-    static void UpdateCameraOrbit(APawn* ControlledPawn, const FVector& PlateLocation, float OrbitAngle, float OrbitRadius, float ElevationAngle = 25.f);
+    static void UpdateCameraOrbit(APawn* ControlledPawn, const FVector& PlateLocation, float OrbitAngle, float OrbitRadius);
 };

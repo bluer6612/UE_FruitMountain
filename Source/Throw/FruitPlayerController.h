@@ -34,11 +34,22 @@ public:
 
     // 각도 조정 속도 (도/초)
     UPROPERTY(EditAnywhere, Category = "Throwing")
-    float AngleAdjustSpeed = 120.f;
+    float AngleAdjustSpeed = 60.f;
 
     // 공 던지기 관련 변수
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Throwing")
     float BallThrowDelay = 0.5f;
+
+    // 카메라 회전 속도 (도/초)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Orbit")
+    float RotateCameraSpeed = 180.f;
+
+    // 카메라(Pawn) 오빗 관련 변수 및 함수
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Orbit")
+    float CameraOrbitAngle = 0.f; // 현재 각도 (도 단위)
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Orbit")
+    float CameraOrbitRadius; // 접시와의 거리
     
     // 미리보기 공 액터
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ball")
@@ -47,17 +58,6 @@ public:
     // 현재 선택된 공 타입 (1~11)
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ball")
     int32 CurrentBallType;
-
-    // 카메라(Pawn) 오빗 관련 변수 및 함수
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Orbit")
-    float CameraOrbitAngle; // 현재 각도 (도 단위)
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Orbit")
-    float CameraOrbitRadius; // 접시와의 거리
-    
-    // 카메라 높이 오프셋
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
-    float CameraHeightOffset;
 
     // 회전 기준이 되는 접시(Plate)의 위치
     FVector PlateLocation;
@@ -82,14 +82,6 @@ protected:
 
     // Axis 입력으로 카메라 회전 처리 함수
     void RotateCamera(float Value);
-
-    // 카메라 회전 속도 (도/초)
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Orbit")
-    float RotateCameraSpeed;
-
-    // 카메라 높이 조정 함수
-    UFUNCTION()
-    void AdjustCameraHeight();
 
 private:
     // 미리보기 공 업데이트 제한을 위한 변수들

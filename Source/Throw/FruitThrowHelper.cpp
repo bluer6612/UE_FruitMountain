@@ -29,7 +29,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
     
     // 공 스폰 위치 계산
     FVector SpawnLocation = UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(
-        Controller->GetWorld(), 50.f, Controller->CameraOrbitAngle);
+        Controller->GetWorld(), Controller->CameraOrbitAngle);
     
     if (SpawnLocation == FVector::ZeroVector)
     {
@@ -128,7 +128,7 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
 
     // 공통 함수를 사용하여 위치 계산
     FVector PreviewLocation = UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(
-        Controller->GetWorld(), 50.f, Controller->CameraOrbitAngle);
+        Controller->GetWorld(), Controller->CameraOrbitAngle);
     
     if (PreviewLocation == FVector::ZeroVector)
     {

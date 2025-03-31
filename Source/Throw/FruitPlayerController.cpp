@@ -20,16 +20,9 @@ AFruitPlayerController::AFruitPlayerController()
     AngleStep = 5.f;
 
     // 오빗 기본 값 설정
-    CameraOrbitAngle = 0.f;
-    CameraOrbitRadius = 350.f;
-    
-    // 카메라 회전 속도 (도/초)
-    RotateCameraSpeed = 180.f;
+    CameraOrbitRadius = 130.f;
 
     CurrentBallType = 1;
-
-    // 카메라 높이 설정
-    CameraHeightOffset = 100.f;
 }
 
 void AFruitPlayerController::BeginPlay()
@@ -69,7 +62,7 @@ void AFruitPlayerController::BeginPlay()
             UE_LOG(LogTemp, Log, TEXT("접시 액터를 찾았습니다: %s"), *PlateLocation.ToString());
             
             // 카메라 위치 업데이트
-            UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius, 30.f);
+            UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius);
         }
         else
         {
@@ -77,16 +70,13 @@ void AFruitPlayerController::BeginPlay()
             UE_LOG(LogTemp, Warning, TEXT("접시 액터를 찾을 수 없습니다. 기본 위치 (0,0,0) 사용."));
             
             // 카메라 위치 업데이트
-            UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius, 30.f);
+            UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius);
         }
     });
 
     // 미리보기 공 생성
     CurrentBallType = FMath::RandRange(1, 11);
     UpdatePreviewBall();
-
-    // 카메라 높이 조정
-    AdjustCameraHeight();
 }
 
 void AFruitPlayerController::SetupInputComponent()
@@ -110,8 +100,8 @@ void AFruitPlayerController::AdjustAngle(float Value)
         float DeltaAngle = Value * AngleAdjustSpeed * GetWorld()->DeltaTimeSeconds;
         ThrowAngle += DeltaAngle;
         
-        // 각도 범위 제한 (30도에서 90도 사이로 제한)
-        ThrowAngle = FMath::Clamp(ThrowAngle, 30.0f, 90.0f);
+        // 각도 범위 제한
+        ThrowAngle = FMath::Clamp(ThrowAngle, 45.0f, 60.0f);
         
         // 모든 시스템에 동일한 각도 전파
         UFruitPhysicsHelper::SetGlobalThrowAngle(ThrowAngle);
@@ -189,7 +179,7 @@ void AFruitPlayerController::RotateCamera(float Value)
         CameraOrbitAngle += 360.0f;
     
     // 중요: 카메라 위치 업데이트
-    UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius, 30.f);
+    UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius);
     
     // 즉시 공 위치 업데이트 (재귀 호출 없이)
     UFruitThrowHelper::UpdatePreviewBall(this);
@@ -220,48 +210,6 @@ void AFruitPlayerController::UpdatePreviewBall()
             PreviewBallUpdateDelay,
             false // 반복 실행 안 함
         );
-    }
-}
-
-// 카메라 높이 조정 함수 추가
-void AFruitPlayerController::AdjustCameraHeight()
-{
-    APawn* ControlledPawn = GetPawn();
-    if (!ControlledPawn)
-        return;
-    
-    // 카메라 컴포넌트 찾기
-    UCameraComponent* CameraComp = Cast<UCameraComponent>(
-        ControlledPawn->GetComponentByClass(UCameraComponent::StaticClass()));
-    
-    if (CameraComp)
-    {
-        // 현재 카메라 상대 위치 가져오기
-        FVector CameraRelativeLocation = CameraComp->GetRelativeLocation();
-        
-        // Z축 높이 50 유닛 증가
-        CameraRelativeLocation.Z += CameraHeightOffset;
-        
-        // 새 위치 적용
-        CameraComp->SetRelativeLocation(CameraRelativeLocation);
-    }
-    else
-    {
-        // 스프링암 컴포넌트 찾기 (카메라가 스프링암에 부착된 경우)
-        USpringArmComponent* SpringArm = Cast<USpringArmComponent>(
-            ControlledPawn->GetComponentByClass(USpringArmComponent::StaticClass()));
-            
-        if (SpringArm)
-        {
-            // 스프링암 상대 위치 가져오기
-            FVector SpringArmRelativeLocation = SpringArm->GetRelativeLocation();
-            
-            // Z축 높이 50 유닛 증가
-            SpringArmRelativeLocation.Z += CameraHeightOffset;
-            
-            // 새 위치 적용
-            SpringArm->SetRelativeLocation(SpringArmRelativeLocation);
-        }
     }
 }
 

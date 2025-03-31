@@ -97,7 +97,7 @@ AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, const F
 }
 
 // 접시 가장자리 위치 계산 함수 구현
-FVector UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(UWorld* World, float HeightOffset, float CameraAngle)
+FVector UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(UWorld* World, float CameraAngle)
 {
     // 접시 위치 확인
     FVector PlateCenter = FVector::ZeroVector;
@@ -131,8 +131,8 @@ FVector UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(UWorld* World, float 
             // 카메라 방향의 반대쪽 접시 가장자리 지점 계산 (카메라에서 가장 먼 곳)
             FVector EdgePoint = PlateCenter + CameraDirection * PlateRadius;
             
-            // 높이 조정 - 접시 위로 HeightOffset만큼 더 높게
-            EdgePoint.Z = PlateCenter.Z + PlateHeight + HeightOffset;
+            // 높이 조정 - 접시 위로
+            EdgePoint.Z = PlateCenter.Z + PlateHeight + 25.0f;
                 
             return EdgePoint;
         }

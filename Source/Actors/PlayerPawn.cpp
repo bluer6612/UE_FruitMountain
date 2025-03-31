@@ -1,4 +1,5 @@
 #include "PlayerPawn.h"
+#include "Throw/FruitPlayerController.h"
 #include "Components/StaticMeshComponent.h"
 #include "Camera/CameraComponent.h"
 #include "UObject/ConstructorHelpers.h"
@@ -16,7 +17,15 @@ APlayerPawn::APlayerPawn()
     CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
     CameraComponent->SetupAttachment(RootComponent);
     CameraComponent->FieldOfView = 90.f;
-    // 카메라의 위치 및 회전은 PlayerController에서 조정
+
+    FVector CurrentLocation = CameraComponent->GetRelativeLocation();
+    CurrentLocation.Z += 100.f;
+    CameraComponent->SetRelativeLocation(CurrentLocation);
+
+    FRotator CurrentRotation = CameraComponent->GetRelativeRotation();
+    CurrentRotation.Pitch -= 25.f;
+    
+    CameraComponent->SetRelativeRotation(CurrentRotation);
 }
 
 void APlayerPawn::BeginPlay()
