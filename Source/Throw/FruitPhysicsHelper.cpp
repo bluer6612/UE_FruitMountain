@@ -37,44 +37,40 @@ void UFruitPhysicsHelper::CalculateThrowParameters(AFruitPlayerController* Contr
     float CosTheta = FMath::Cos(ThrowAngleRadians);
     float TanTheta = FMath::Tan(ThrowAngleRadians);
     
-    // 분모 계산 및 유효성 검사
-    float Denominator = 2.0f * (CosTheta * CosTheta) * (HorizontalDistance * TanTheta + HeightDifference);
+    // 각도에 따른 기본 속도값 설정 (질량 무관)
+    float BaseVelocity;
     
-    // 분모가 매우 작거나 음수가 되는 경우 처리 (높은 각도 문제)
-    if (Denominator <= 1.0f)
+    // 각도에 따라 속도 조정 (각도가 높을수록 속도 감소)
+    if (UseAngle <= 45.0f)
     {
-        // 대체 계산: 높은 각도에서도 작동하는 공식 사용
-        // v₀ = sqrt(g * d / sin(2θ)) 공식 적용 (최대 거리 계산법)
-        float Sin2Theta = FMath::Sin(2 * ThrowAngleRadians);
-        if (Sin2Theta > 0.1f)  // 0에 가까우면 계산 안정성 위해 제한
-        {
-            float InitialVelocity = FMath::Sqrt((Gravity * HorizontalDistance) / Sin2Theta);
-            OutAdjustedForce = BallMass * InitialVelocity;
-        }
-        else
-        {
-            // 안전 기본값
-            OutAdjustedForce = 8000.0f;
-        }
+        // 45도 이하: 강한 투척
+        BaseVelocity = 300.0f;
     }
     else
     {
-        // 원래 공식 계산
-        float InitialVelocity = FMath::Sqrt((Gravity * HorizontalDistance * HorizontalDistance) / Denominator);
-        OutAdjustedForce = BallMass * InitialVelocity;
+        // 45도 초과: 각도가 높을수록 속도 감소
+        float AngleRatio = FMath::GetMappedRangeValueClamped(
+            FVector2D(45.0f, 60.0f),
+            FVector2D(1.0f, 0.7f),
+            UseAngle
+        );
+        BaseVelocity = 300.0f * AngleRatio;
     }
     
-    // 힘 범위 제한 - 높은 각도에 맞게 상한선 증가
-    OutAdjustedForce = FMath::Clamp(OutAdjustedForce, 3000.0f, 12000.0f);
-    
-    // 발사 방향 벡터 계산
+    // 발사 방향 벡터 계산 (각도에 따라)
     FVector HorizontalDir = FVector(DirectionToTarget.X, DirectionToTarget.Y, 0.0f).GetSafeNormal();
     OutLaunchDirection = FVector(
-        HorizontalDir.X,
-        HorizontalDir.Y,
-        FMath::Tan(ThrowAngleRadians)
+        HorizontalDir.X * CosTheta,
+        HorizontalDir.Y * CosTheta,
+        FMath::Sin(ThrowAngleRadians)
     ).GetSafeNormal();
     
-    UE_LOG(LogTemp, Warning, TEXT("던지기 계산: 거리=%.1f, 높이차=%.1f, 각도=%.1f도, 힘=%.1f, 질량=%.1f"),
-        HorizontalDistance, HeightDifference, UseAngle, OutAdjustedForce, BallMass);
+    // 힘 = 질량 * 고정 속도
+    OutAdjustedForce = BallMass * BaseVelocity;
+    
+    // 힘 범위 제한 (안전장치)
+    OutAdjustedForce = FMath::Clamp(OutAdjustedForce, 3000.0f, 15000.0f);
+    
+    UE_LOG(LogTemp, Warning, TEXT("던지기 계산: 거리=%.1f, 높이차=%.1f, 각도=%.1f도, 기본속도=%.1f, 힘=%.1f, 질량=%.1f"),
+        HorizontalDistance, HeightDifference, UseAngle, BaseVelocity, OutAdjustedForce, BallMass);
 }
