@@ -101,12 +101,19 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
     );
 }
 
-// UpdatePreviewBall 함수 수정 - 문제 디버깅
+// UpdatePreviewBall 함수 수정 - 던지기 중인지 확인
 void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
 {
     if (!Controller)
     {
         UE_LOG(LogTemp, Warning, TEXT("UpdatePreviewBall: Controller가 유효하지 않습니다."));
+        return;
+    }
+
+    // 던지기 중이면 미리보기 공을 생성하지 않음
+    if (Controller->bIsThrowingInProgress)
+    {
+        UE_LOG(LogTemp, Verbose, TEXT("던지기 중이므로 미리보기 공 업데이트 건너뜀"));
         return;
     }
 

@@ -68,6 +68,10 @@ public:
     // 궤적 업데이트 함수 추가
     UFUNCTION(BlueprintCallable, Category="Trajectory")
     void UpdateTrajectory();
+
+    // 던지기 상태 추적을 위한 변수 (static 대신 멤버 변수로)
+    UPROPERTY()
+    bool bIsThrowingInProgress = false;
     
 protected:
     virtual void SetupInputComponent() override;

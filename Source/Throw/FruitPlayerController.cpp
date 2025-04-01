@@ -91,11 +91,10 @@ void AFruitPlayerController::SetupInputComponent()
     }
 }
 
-// 과일 던지기 함수 수정 - 던진 후 즉시 공이 보이도록 수정
+// 과일 던지기 함수 수정
 void AFruitPlayerController::ThrowFruit()
 {
-    // 이미 던지는 중이면 무시
-    static bool bIsThrowingInProgress = false;
+    // 이미 던지는 중이면 무시 - static 변수 대신 멤버 변수 사용
     if (bIsThrowingInProgress)
         return;
     
