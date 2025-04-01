@@ -22,6 +22,7 @@ APlateActor::APlateActor()
         
         // 테이블 위치, 회전, 크기 설정
         TableMesh->SetWorldScale3D(FVector(10.0f, 10.0f, 1.0f)); // 테이블 크기 조정
+        TableMesh->SetWorldLocation(FVector(0.0f, 0.0f, -10.0f));
         
         // 테이블 충돌 설정
         TableMesh->SetCollisionProfileName(TEXT("BlockAll"));

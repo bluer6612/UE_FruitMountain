@@ -21,5 +21,5 @@ public:
     FRotator PlateRotation = FRotator(0.f, 0.f, 0.f);
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Plate")
-    FVector PlateLocation = FVector(0.f, 0.f, 0.f);
+    FVector PlateLocation = FVector(0.f, 0.f, 30.f);
 };

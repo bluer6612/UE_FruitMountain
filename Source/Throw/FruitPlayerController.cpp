@@ -20,7 +20,7 @@ AFruitPlayerController::AFruitPlayerController()
     AngleStep = 5.f;
 
     // 오빗 기본 값 설정
-    CameraOrbitRadius = 130.f;
+    CameraOrbitRadius = 125.f;
 
     CurrentBallType = 1;
 }
