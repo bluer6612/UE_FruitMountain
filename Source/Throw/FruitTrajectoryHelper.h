@@ -35,4 +35,20 @@ public:
         const FVector& TargetLocation,
         bool bPersistent = true, 
         int32 CustomTrajectoryID = 9999);
+
+private:
+    // 베지어 곡선으로 포물선 포인트 계산
+    static TArray<FVector> CalculateBezierPoints(
+        const FVector& Start, 
+        const FVector& End, 
+        float PeakHeight, 
+        int32 PointCount);
+        
+    // 궤적 디버그 시각화
+    static void DrawTrajectoryLines(
+        UWorld* World, 
+        const TArray<FVector>& Points, 
+        int32 TrajectoryID, 
+        const FColor& LineColor, 
+        const FColor& MarkerColor);
 };

@@ -160,3 +160,64 @@ void UFruitPhysicsHelper::CalculateThrowParameters(AFruitPlayerController* Contr
     UE_LOG(LogTemp, Warning, TEXT("던지기 계산: 거리=%.1f, 높이차=%.1f, 각도=%.1f도, 초기속도=%.1f, 힘=%.1f, 질량=%.1f"),
         HorizontalDistance, HeightDifference, UseAngle, InitialSpeed, OutAdjustedForce, BallMass);
 }
+
+// 물리 헬퍼 클래스에 새 함수 구현 추가
+FVector UFruitPhysicsHelper::CalculateAdjustedTargetLocation(UWorld* World, const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, FVector& OutPlateCenter, float& OutPlateTopHeight)
+{
+    // 기본값 설정
+    OutPlateTopHeight = 20.0f;
+    OutPlateCenter = TargetLocation;
+    
+    // 각도 범위 가져오기
+    float MinAngle, MaxAngle;
+    GetThrowAngleRange(MinAngle, MaxAngle);
+    float UseAngle = FMath::Clamp(ThrowAngle, MinAngle, MaxAngle);
+    
+    // 접시 액터 찾기
+    TArray<AActor*> PlateActors;
+    UGameplayStatics::GetAllActorsWithTag(World, FName("Plate"), PlateActors);
+    
+    if (PlateActors.Num() <= 0)
+        return TargetLocation; // 접시가 없으면 기본 위치 반환
+    
+    // 접시 정보 가져오기
+    AActor* PlateActor = PlateActors[0];
+    FVector PlateOrigin;
+    FVector PlateExtent;
+    PlateActor->GetActorBounds(false, PlateOrigin, PlateExtent);
+    
+    // 접시 정보 저장
+    OutPlateCenter = PlateOrigin;
+    OutPlateTopHeight = PlateOrigin.Z + PlateExtent.Z + 5.0f;
+    
+    // 방향 벡터 계산
+    FVector DirectionToTarget = PlateOrigin - StartLocation;
+    float BaseDistance = DirectionToTarget.Size2D();
+    DirectionToTarget.Z = 0.0f;
+    DirectionToTarget.Normalize();
+    
+    // 각도에 따른 비율 계산 - 중간 각도에서 가장 멀리, 너무 높거나 낮으면 가까이 도착
+    float OptimalAngle = (MinAngle + MaxAngle) * 0.5f;
+    float AngleDeviation = FMath::Abs(UseAngle - OptimalAngle) / ((MaxAngle - MinAngle) * 0.5f);
+    float DistanceRatio = FMath::Clamp(1.0f - AngleDeviation * 0.7f, 0.3f, 1.0f);
+    
+    // 최종 도달 거리 계산
+    float AdjustedDistance = BaseDistance * DistanceRatio;
+    
+    // 최종 도착 위치 계산
+    FVector AdjustedTarget = StartLocation + DirectionToTarget * AdjustedDistance;
+    AdjustedTarget.Z = OutPlateTopHeight;
+    
+    return AdjustedTarget;
+}
+
+float UFruitPhysicsHelper::CalculateTrajectoryPeakHeight(float HorizontalDistance, float ThrowAngle, float MinAngle, float MaxAngle)
+{
+    // 각도에 따른 높이 비율 계산 (각도가 높을수록 더 높게)
+    float PeakHeightRatio = FMath::GetMappedRangeValueClamped(
+        FVector2D(MinAngle, MaxAngle), FVector2D(0.15f, 0.9f), ThrowAngle
+    );
+    
+    // 정점 높이 = 수평 거리 * 높이 비율
+    return HorizontalDistance * PeakHeightRatio;
+}
