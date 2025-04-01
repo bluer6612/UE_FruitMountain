@@ -80,37 +80,6 @@ TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(AFruitPlayerCo
     return TrajectoryPoints;
 }
 
-// 궤적 그리기 함수 - 단순화 및 명확하게 개선
-void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVector>& TrajectoryPoints, const FVector& TargetLocation, bool bPersistent, int32 TrajectoryID)
-{
-    if (!World || TrajectoryPoints.Num() < 2)
-        return;
-    
-    // 기존 궤적 비우기
-    FlushPersistentDebugLines(World);
-    
-    // 하늘색 + 투명도
-    FColor LineColor = FColor(135, 206, 235, 100);
-    FColor MarkerColor = FColor(135, 206, 235, 180);
-    
-    // 모든 포인트를 연결하는 선 그리기 (포물선 형태)
-    for (int32 i = 0; i < TrajectoryPoints.Num() - 1; i++)
-    {
-        DrawDebugLine(World, TrajectoryPoints[i], TrajectoryPoints[i + 1], LineColor, true, -1.0f, TrajectoryID, 0.5f);
-    }
-    
-    // 포물선 상의 주요 지점에만 마커 표시
-    const int32 MarkerCount = 5;
-    for (int32 i = 0; i < MarkerCount; i++)
-    {
-        int32 Index = (i * (TrajectoryPoints.Num() - 1)) / (MarkerCount - 1);
-        if (Index < TrajectoryPoints.Num())
-        {
-            DrawDebugBox(World, TrajectoryPoints[Index], FVector(0.01f), FQuat::Identity, MarkerColor, true, -1.0f, TrajectoryID);
-        }
-    }
-}
-
 void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Controller, const FVector& StartLocation, const FVector& TargetLocation, bool bPersistent, int32 CustomTrajectoryID)
 {
     if (!Controller || !Controller->GetWorld())
@@ -147,9 +116,7 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
         StartLocation, AdjustedTarget, PeakHeight, PointCount);
     
     // 6. 궤적 시각화
-    FColor LineColor = FColor(135, 206, 235, 180);
-    FColor MarkerColor = FColor(135, 206, 235, 220);
-    DrawTrajectoryLines(World, TrajectoryPoints, TrajectoryID, LineColor, MarkerColor);
+    DrawTrajectoryPath(World, TrajectoryPoints, TrajectoryID);
     
     // 로그 출력
     UE_LOG(LogTemp, Log, TEXT("궤적 계산: 각도=%.1f, 거리=%.1f, 높이=%.1f"), 
@@ -178,26 +145,38 @@ TArray<FVector> UFruitTrajectoryHelper::CalculateBezierPoints(const FVector& Sta
     return Points;
 }
 
-// 궤적 디버그 시각화
-void UFruitTrajectoryHelper::DrawTrajectoryLines(UWorld* World, const TArray<FVector>& Points, int32 TrajectoryID, const FColor& LineColor, const FColor& MarkerColor)
+// 궤적 시각화 - 통합된 버전
+void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVector>& Points, int32 TrajectoryID)
 {
     if (!World || Points.Num() < 2)
-        return;
-    
-    // 선 그리기
-    for (int32 i = 0; i < Points.Num() - 1; i++)
     {
-        DrawDebugLine(World, Points[i], Points[i + 1], LineColor, true, -1.0f, TrajectoryID, 1.2f);
+        return;
+    }
+        
+    FColor PathColor = FColor(135, 206, 235, 180);
+    bool bClearExisting = true;
+    int32 MarkerCount = 3;
+    float LineThickness = 1.2f;
+    
+    // 필요한 경우 기존 궤적 비우기
+    if (bClearExisting)
+    {
+        FlushPersistentDebugLines(World);
     }
     
-    // 마커는 시작, 중간, 끝 지점만
-    const int32 MarkerCount = 3;
+    // 모든 포인트를 연결하는 선 그리기
+    for (int32 i = 0; i < Points.Num() - 1; i++)
+    {
+        DrawDebugLine(World, Points[i], Points[i + 1], PathColor, true, -1.0f, TrajectoryID, LineThickness);
+    }
+    
+    // 포물선 상의 주요 지점에만 마커 표시
     if (Points.Num() >= MarkerCount)
     {
         for (int32 i = 0; i < MarkerCount; i++)
         {
             int32 Index = (i * (Points.Num() - 1)) / (MarkerCount - 1);
-            DrawDebugBox(World, Points[Index], FVector(0.01f), FQuat::Identity, MarkerColor, true, -1.0f, TrajectoryID);
+            DrawDebugBox(World, Points[Index], FVector(0.01f), FQuat::Identity, PathColor, true, -1.0f, TrajectoryID);
         }
     }
 }

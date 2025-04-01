@@ -18,15 +18,6 @@ public:
         const FVector& TargetLocation,
         float BallMass);
     
-    // 궤적 시각화 함수
-    UFUNCTION()
-    static void DrawTrajectoryPath(
-        UWorld* World,
-        const TArray<FVector>& TrajectoryPoints,
-        const FVector& TargetLocation,
-        bool bPersistent,
-        int32 TrajectoryID);
-    
     // 통합된 궤적 업데이트 함수 - 기본 매개변수 추가
     UFUNCTION(BlueprintCallable, Category="Trajectory")
     static void UpdateTrajectoryPath(
@@ -43,12 +34,8 @@ private:
         const FVector& End, 
         float PeakHeight, 
         int32 PointCount);
-        
-    // 궤적 디버그 시각화
-    static void DrawTrajectoryLines(
-        UWorld* World, 
-        const TArray<FVector>& Points, 
-        int32 TrajectoryID, 
-        const FColor& LineColor, 
-        const FColor& MarkerColor);
+
+    // 궤적 시각화 함수
+    UFUNCTION()
+    static void DrawTrajectoryPath(UWorld* World, const TArray<FVector>& Points, int32 TrajectoryID);
 };
