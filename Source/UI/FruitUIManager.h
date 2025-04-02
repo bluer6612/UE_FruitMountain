@@ -49,6 +49,20 @@ public:
     UFUNCTION(BlueprintCallable, Category = "UI")
     UTexture2D* LoadUITexture(const FString& ImageName);
     
+    // 위젯 개수 반환 함수
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    int32 GetWidgetCount() const { return UIWidgets.Num(); }
+    
+    // 월드 객체 반환 함수
+    UWorld* GetWorld() const override
+    {
+        if (PlayerController)
+        {
+            return PlayerController->GetWorld();
+        }
+        return nullptr;
+    }
+
 private:
     // 싱글톤 인스턴스
     static UFruitUIManager* Instance;

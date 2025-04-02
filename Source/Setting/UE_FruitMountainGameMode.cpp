@@ -30,25 +30,63 @@ void AUE_FruitMountainGameMode::BeginPlay()
 {
     Super::BeginPlay();
     
-    // UI 매니저 초기화
+    UE_LOG(LogTemp, Error, TEXT("==== 게임 모드 BeginPlay 시작 ===="));
+    
+    // UI 매니저 초기화 - 테스트 UI와 함께 Fruit UI도 표시
     APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
     if (PC)
     {
-        UFruitUIManager::GetInstance()->Initialize(PC);
-
-        // 지연 없이 즉시 테스트 UI 생성
-        // 게임 인스턴스 가져와서 테스트 함수 직접 호출
+        // 테스트 UI 먼저 생성 (이게 잘 작동함을 확인)
         UUE_FruitMountainGameInstance* GameInstance = 
             Cast<UUE_FruitMountainGameInstance>(GetGameInstance());
         if (GameInstance)
         {
+            UE_LOG(LogTemp, Error, TEXT("테스트 UI 생성 시작"));
             GameInstance->TestCreateSimpleUI();
+            UE_LOG(LogTemp, Error, TEXT("테스트 UI 생성 완료"));
         }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT("GameInstance를 찾을 수 없습니다."));
-        }
+        
+        // FruitUIManager 초기화를 명시적으로 수행
+        UE_LOG(LogTemp, Error, TEXT("FruitUIManager 초기화 시작"));
+        UFruitUIManager* UIManager = UFruitUIManager::GetInstance();
+        UIManager->Initialize(PC);
+        
+        // 초기화 후 추가 확인 및 위젯 표시 강제
+        FTimerHandle FruitUITimer;
+        GetWorld()->GetTimerManager().SetTimer(
+            FruitUITimer,
+            [UIManager]()
+            {
+                UE_LOG(LogTemp, Error, TEXT("FruitUI 위젯 상태 확인 타이머"));
+                
+                // 위젯이 제대로 생성되었는지 확인
+                if (UIManager->GetWidgetCount() > 0)
+                {
+                    UE_LOG(LogTemp, Error, TEXT("FruitUI 위젯 %d개 감지됨"), UIManager->GetWidgetCount());
+                    
+                    // 모든 위젯의 가시성 강제 설정
+                    UIManager->SetAllWidgetsVisibility(true);
+                    
+                    // 기본 이미지 다시 로드
+                    UIManager->LoadDefaultImages();
+                }
+                else
+                {
+                    UE_LOG(LogTemp, Error, TEXT("FruitUI 위젯이 없음 - 다시 생성"));
+                    // 위젯이 없으면 다시 생성
+                    APlayerController* PC = UGameplayStatics::GetPlayerController(UIManager->GetWorld(), 0);
+                    if (PC)
+                    {
+                        UIManager->Initialize(PC);
+                    }
+                }
+            },
+            2.0f,
+            false
+        );
     }
+    
+    UE_LOG(LogTemp, Error, TEXT("==== 게임 모드 BeginPlay 완료 ===="));
 }
 
 void AUE_FruitMountainGameMode::StartPlay()

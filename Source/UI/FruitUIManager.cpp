@@ -27,28 +27,77 @@ UFruitUIManager* UFruitUIManager::GetInstance()
 
 void UFruitUIManager::Initialize(APlayerController* InController)
 {
+    UE_LOG(LogTemp, Error, TEXT("FruitUIManager - Initialize 호출"));
+    
     // 컨트롤러 설정
     PlayerController = InController;
     
     // 기존 위젯 정리
+    for (UFruitUIWidget* Widget : UIWidgets)
+    {
+        if (Widget)
+        {
+            Widget->RemoveFromParent();
+        }
+    }
     UIWidgets.Empty();
+    
+    UE_LOG(LogTemp, Error, TEXT("FruitUIManager - 위젯 생성 시작"));
     
     // 위젯 자동 생성
     CreateUIWidgets();
     
-    // 기본 이미지 로드
-    LoadDefaultImages();
+    // 1초 후에 추가 체크 (대기 시간 늘림)
+    if (PlayerController && PlayerController->GetWorld())
+    {
+        FTimerHandle TimerHandle;
+        PlayerController->GetWorld()->GetTimerManager().SetTimer(
+            TimerHandle,
+            [this]()
+            {
+                UE_LOG(LogTemp, Error, TEXT("FruitUIManager - 타이머에서 상태 확인"));
+                
+                // 위젯 개수 확인
+                UE_LOG(LogTemp, Error, TEXT("FruitUIManager - 현재 위젯 개수: %d"), UIWidgets.Num());
+                
+                // 기본 이미지 로드 (다시 한번)
+                LoadDefaultImages();
+                
+                // 가시성 재설정
+                for (UFruitUIWidget* Widget : UIWidgets)
+                {
+                    if (Widget)
+                    {
+                        Widget->SetVisibility(ESlateVisibility::Visible);
+                        
+                        // 위젯 로그 확인
+                        if (Widget->IsInViewport())
+                        {
+                            UE_LOG(LogTemp, Error, TEXT("FruitUIManager - 위젯이 뷰포트에 있음"));
+                        }
+                        else
+                        {
+                            UE_LOG(LogTemp, Error, TEXT("FruitUIManager - 위젯이 뷰포트에 없음"));
+                            Widget->AddToViewport(9999); // 강제로 다시 추가
+                        }
+                    }
+                }
+            },
+            1.0f,
+            false
+        );
+    }
     
-    UE_LOG(LogTemp, Log, TEXT("FruitUIManager 초기화 완료"));
+    UE_LOG(LogTemp, Error, TEXT("FruitUIManager - Initialize 완료"));
 }
 
 void UFruitUIManager::CreateUIWidgets(TSubclassOf<UFruitUIWidget> InWidgetClass)
 {
-    UE_LOG(LogTemp, Log, TEXT("CreateUIWidgets 시작"));
+    UE_LOG(LogTemp, Warning, TEXT("FruitUIManager - CreateUIWidgets 시작"));
     
     if (!PlayerController)
     {
-        UE_LOG(LogTemp, Error, TEXT("CreateUIWidgets 실패: PlayerController가 NULL"));
+        UE_LOG(LogTemp, Error, TEXT("FruitUIManager - CreateUIWidgets 실패: PlayerController가 NULL"));
         return;
     }
     
@@ -62,9 +111,9 @@ void UFruitUIManager::CreateUIWidgets(TSubclassOf<UFruitUIWidget> InWidgetClass)
     }
     UIWidgets.Empty();
     
-    // 위젯 클래스 선택 - 명확하게 수정
+    // 위젯 클래스 선택 - 모호성 해결
     TSubclassOf<UFruitUIWidget> WidgetClass;
-    if (InWidgetClass)  // 단순화된 형태로 변경
+    if (InWidgetClass)  // 단순 불리언 체크로 변경 (내부적으로 UClass* 캐스팅 수행)
     {
         WidgetClass = InWidgetClass;
     }
@@ -72,6 +121,8 @@ void UFruitUIManager::CreateUIWidgets(TSubclassOf<UFruitUIWidget> InWidgetClass)
     {
         WidgetClass = UFruitUIWidget::StaticClass();
     }
+    
+    UE_LOG(LogTemp, Warning, TEXT("FruitUIManager - 위젯 클래스 선택 완료, 위젯 생성 시작"));
     
     // 3개의 위젯 생성
     EWidgetPosition Positions[] = {
@@ -97,55 +148,40 @@ void UFruitUIManager::CreateUIWidgets(TSubclassOf<UFruitUIWidget> InWidgetClass)
             // 배열에 저장
             UIWidgets.Add(NewWidget);
             
-            UE_LOG(LogTemp, Log, TEXT("위젯 생성 완료"));
+            UE_LOG(LogTemp, Warning, TEXT("FruitUIManager - 위젯 %d 생성 및 설정 완료"), i);
         }
-    }
-    
-    // 모든 위젯을 화면 상단에 강제 배치 (테스트)
-    for (int32 i = 0; i < UIWidgets.Num(); ++i)
-    {
-        if (UIWidgets[i])
+        else
         {
-            if (UCanvasPanelSlot* ParentSlot = Cast<UCanvasPanelSlot>(UIWidgets[i]->Slot))
-            {
-                FVector2D ViewportSize = UWidgetLayoutLibrary::GetViewportSize(PlayerController);
-                ParentSlot->SetPosition(FVector2D(i * 300.0f + 100.0f, 100.0f));
-                ParentSlot->SetSize(FVector2D(256.0f, 256.0f));
-                ParentSlot->SetZOrder(9999);
-                
-                UE_LOG(LogTemp, Log, TEXT("위젯 강제 배치 설정 (테스트)"));
-            }
+            UE_LOG(LogTemp, Error, TEXT("FruitUIManager - 위젯 %d 생성 실패"), i);
         }
     }
     
-    UE_LOG(LogTemp, Log, TEXT("위젯 생성 완료"));
+    UE_LOG(LogTemp, Warning, TEXT("FruitUIManager - 위젯 생성 완료, 로드 타이머 설정"));
     
     // 지연 로드 설정 (0.5초로 늘림)
     if (PlayerController && PlayerController->GetWorld())
     {
-        UE_LOG(LogTemp, Log, TEXT("이미지 로드 지연 타이머 설정"));
-        
         FTimerHandle TimerHandle;
         PlayerController->GetWorld()->GetTimerManager().SetTimer(
             TimerHandle,
             [this]()
             {
-                UE_LOG(LogTemp, Log, TEXT("지연된 이미지 로드 시작"));
+                UE_LOG(LogTemp, Warning, TEXT("FruitUIManager - 지연된 이미지 로드 시작"));
                 LoadDefaultImages();
+                
+                // 이미지 로드 후 다시 한번 가시성 확인
+                for (UFruitUIWidget* Widget : UIWidgets)
+                {
+                    if (Widget)
+                    {
+                        Widget->SetVisibility(ESlateVisibility::Visible);
+                        Widget->UpdateWidgetPosition();
+                    }
+                }
             },
             0.5f,
             false
         );
-    }
-    
-    // 테스트: 모든 위젯에 빨간색 블록 표시 시도
-    for (UFruitUIWidget* Widget : UIWidgets)
-    {
-        if (Widget)
-        {
-            Widget->ShowRedBlock();
-            UE_LOG(LogTemp, Warning, TEXT("위젯에 빨간색 블록 표시 요청"));
-        }
     }
 }
 
@@ -216,7 +252,7 @@ void UFruitUIManager::LoadDefaultImages()
 
 UTexture2D* UFruitUIManager::LoadUITexture(const FString& ImageName)
 {
-    UE_LOG(LogTemp, Log, TEXT("이미지 로드 시도"));
+    UE_LOG(LogTemp, Warning, TEXT("FruitUIManager - LoadUITexture 시작: %s"), *ImageName);
     
     // 여러 가능한 경로 시도
     TArray<FString> PathsToTry;
@@ -233,21 +269,19 @@ UTexture2D* UFruitUIManager::LoadUITexture(const FString& ImageName)
         LoadedTexture = LoadObject<UTexture2D>(nullptr, *Path);
         if (LoadedTexture)
         {
-            // 이미지 로드 성공 - 경로와 함께 로그 출력
-            FString LogMessage = FString::Printf(TEXT("이미지 로드 성공: %s"), *Path);
-            UE_LOG(LogTemp, Log, TEXT("%s"), *LogMessage);
+            UE_LOG(LogTemp, Warning, TEXT("FruitUIManager - 이미지 로드 성공: %s"), *Path);
             break;
         }
     }
     
     if (!LoadedTexture)
     {
-        UE_LOG(LogTemp, Warning, TEXT("모든 경로에서 이미지 로드 실패"));
+        UE_LOG(LogTemp, Warning, TEXT("FruitUIManager - 모든 경로에서 이미지 로드 실패"));
         // 기본 텍스처 사용
         LoadedTexture = LoadObject<UTexture2D>(nullptr, TEXT("/Engine/EngineResources/DefaultTexture.DefaultTexture"));
         if (LoadedTexture)
         {
-            UE_LOG(LogTemp, Log, TEXT("기본 엔진 텍스처 사용"));
+            UE_LOG(LogTemp, Warning, TEXT("FruitUIManager - 기본 엔진 텍스처 사용"));
         }
     }
     
