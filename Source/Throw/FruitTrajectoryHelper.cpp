@@ -119,8 +119,8 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     DrawTrajectoryPath(World, TrajectoryPoints, TrajectoryID);
     
     // 로그 출력
-    UE_LOG(LogTemp, Log, TEXT("궤적 계산: 각도=%.1f, 거리=%.1f, 높이=%.1f"), 
-        UseAngle, HorizontalDistance, PeakHeight);
+    //UE_LOG(LogTemp, Log, TEXT("궤적 계산: 각도=%.1f, 거리=%.1f, 높이=%.1f"), 
+    //    UseAngle, HorizontalDistance, PeakHeight);
 }
 
 // 베지어 곡선으로 포물선 포인트 계산

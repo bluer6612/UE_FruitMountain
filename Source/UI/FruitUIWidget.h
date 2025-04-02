@@ -34,6 +34,14 @@ public:
     UFUNCTION(BlueprintCallable, Category = "UI")
     void SetWidgetPosition(EWidgetPosition Position);
     
+    // 테스트용 - 빨간색 블록 표시
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    void ShowRedBlock();
+    
+    // 아이콘 이미지 접근자
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    UImage* GetIconImage() const { return IconImage; }
+    
 protected:
     virtual void NativeConstruct() override;
     
@@ -49,7 +57,6 @@ private:
     UPROPERTY()
     EWidgetPosition WidgetPosition;
     
-    // 패딩 값 - 클래스 멤버로 선언하여 충돌 방지
-    UPROPERTY()
-    float EdgePadding = 50.0f;
+    // 패딩 값
+    const float EdgePadding = 50.0f;
 };

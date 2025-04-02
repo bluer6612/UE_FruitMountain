@@ -148,7 +148,7 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
             
         if (Controller->PreviewBall)
         {
-            UE_LOG(LogTemp, Warning, TEXT("미리보기 공 생성 성공: 위치=%s"), *PreviewLocation.ToString());
+            //UE_LOG(LogTemp, Warning, TEXT("미리보기 공 생성 성공: 위치=%s"), *PreviewLocation.ToString());
             
             // 접시 위치 찾기
             FVector PlateCenter = FVector::ZeroVector;
@@ -185,8 +185,8 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
             float BallMass = UFruitSpawnHelper::CalculateBallMass(Controller->CurrentBallType);
             MeshComp->SetMassOverrideInKg(NAME_None, BallMass);
             
-            UE_LOG(LogTemp, Warning, TEXT("미리보기 공 업데이트: 위치=%s, 크기=%f, 질량=%f"), 
-                *PreviewLocation.ToString(), BallSize, BallMass);
+            //UE_LOG(LogTemp, Warning, TEXT("미리보기 공 업데이트: 위치=%s, 크기=%f, 질량=%f"), 
+            //    *PreviewLocation.ToString(), BallSize, BallMass);
             
             // 접시 위치 찾기
             FVector PlateCenter = FVector::ZeroVector;

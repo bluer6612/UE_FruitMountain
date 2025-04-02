@@ -8,6 +8,7 @@
 #include "Actors/PlayerPawn.h"
 #include "Actors/FruitBall.h"
 #include "UI/FruitUIManager.h"
+#include "UE_FruitMountainGameInstance.h"
 
 AUE_FruitMountainGameMode::AUE_FruitMountainGameMode()
 {
@@ -34,6 +35,19 @@ void AUE_FruitMountainGameMode::BeginPlay()
     if (PC)
     {
         UFruitUIManager::GetInstance()->Initialize(PC);
+
+        // 지연 없이 즉시 테스트 UI 생성
+        // 게임 인스턴스 가져와서 테스트 함수 직접 호출
+        UUE_FruitMountainGameInstance* GameInstance = 
+            Cast<UUE_FruitMountainGameInstance>(GetGameInstance());
+        if (GameInstance)
+        {
+            GameInstance->TestCreateSimpleUI();
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("GameInstance를 찾을 수 없습니다."));
+        }
     }
 }
 
