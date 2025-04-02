@@ -15,6 +15,9 @@ public:
     virtual void StartPlay() override;
     virtual void Tick(float DeltaTime) override;
 
+    // BeginPlay 함수 선언 추가
+    virtual void BeginPlay() override;
+
     // 공(FruitBall) 액터를 스폰하기 위한 클래스
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Gameplay")
     TSubclassOf<AActor> FruitBallClass;

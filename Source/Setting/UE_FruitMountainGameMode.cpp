@@ -31,7 +31,10 @@ void AUE_FruitMountainGameMode::BeginPlay()
     
     // UI 매니저 초기화
     APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-    UFruitUIManager::GetInstance()->Initialize(PC);
+    if (PC)
+    {
+        UFruitUIManager::GetInstance()->Initialize(PC);
+    }
 }
 
 void AUE_FruitMountainGameMode::StartPlay()

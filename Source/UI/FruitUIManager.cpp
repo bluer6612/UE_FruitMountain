@@ -143,7 +143,7 @@ void UFruitUIManager::LoadDefaultImages()
 UTexture2D* UFruitUIManager::LoadUITexture(const FString& ImageName)
 {
     // 전체 경로 구성 - 제공된 UI 경로 사용
-    FString FullPath = FString::Printf(TEXT("/Game/Content/Asset/UI/%s.%s"), *ImageName, *ImageName);
+    FString FullPath = FString::Printf(TEXT("/Game/Asset/UI/%s.%s"), *ImageName, *ImageName);
     
     // 텍스처 로드
     UTexture2D* LoadedTexture = LoadObject<UTexture2D>(nullptr, *FullPath);
