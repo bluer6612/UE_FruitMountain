@@ -7,6 +7,7 @@
 #include "Actors/PlateActor.h"
 #include "Actors/PlayerPawn.h"
 #include "Actors/FruitBall.h"
+#include "UI/FruitUIManager.h"
 
 AUE_FruitMountainGameMode::AUE_FruitMountainGameMode()
 {
@@ -22,6 +23,15 @@ AUE_FruitMountainGameMode::AUE_FruitMountainGameMode()
     FruitBallClass = AFruitBall::StaticClass();
 
     UE_LOG(LogTemp, Log, TEXT("AUE_FruitMountainGameMode 생성자 호출됨 - 기본 컨트롤러가 명시적으로 설정되었습니다."));
+}
+
+void AUE_FruitMountainGameMode::BeginPlay()
+{
+    Super::BeginPlay();
+    
+    // UI 매니저 초기화
+    APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+    UFruitUIManager::GetInstance()->Initialize(PC);
 }
 
 void AUE_FruitMountainGameMode::StartPlay()
