@@ -25,42 +25,62 @@ void UTestUIWidget::NativeConstruct()
 {
     Super::NativeConstruct();
     
-    UE_LOG(LogTemp, Error, TEXT("테스트 위젯 NativeConstruct 호출!"));
+    UE_LOG(LogTemp, Error, TEXT(">>> TestUIWidget NativeConstruct 시작"));
     
-    // 단순한 캔버스 패널 생성
-    UCanvasPanel* RootCanvas = NewObject<UCanvasPanel>(this, TEXT("RootCanvas"));
-    TestImage = NewObject<UImage>(this, TEXT("TestImage"));
-    
-    // 캔버스를 루트로 설정 - RootWidget 직접 접근 대신 WidgetTree 사용
-    if (!GetRootWidget() && WidgetTree)
+    try
     {
-        WidgetTree->RootWidget = RootCanvas;
+        // 캔버스 패널 루트 확인
+        UCanvasPanel* RootCanvas = Cast<UCanvasPanel>(GetRootWidget());
+        if (!RootCanvas)
+        {
+            UE_LOG(LogTemp, Error, TEXT("루트 캔버스 없음 - 생성 시도"));
+            
+            // 새 캔버스 생성 및 설정
+            RootCanvas = NewObject<UCanvasPanel>(this, TEXT("RootCanvas"));
+            if (WidgetTree)
+            {
+                WidgetTree->RootWidget = RootCanvas;
+                UE_LOG(LogTemp, Error, TEXT("새 루트 캔버스 설정 완료"));
+            }
+            else
+            {
+                UE_LOG(LogTemp, Error, TEXT("위젯 트리가 NULL!"));
+            }
+        }
+        
+        // 간단한 빨간색 이미지 생성
+        TestImage = NewObject<UImage>(this, TEXT("TestImage"));
+        if (TestImage && RootCanvas)
+        {
+            UCanvasPanelSlot* ImageSlot = RootCanvas->AddChildToCanvas(TestImage);
+            
+            // 큰 빨간색 상자
+            FSlateBrush RedBrush;
+            RedBrush.DrawAs = ESlateBrushDrawType::Box;
+            RedBrush.TintColor = FLinearColor(1.0f, 0.0f, 0.0f, 1.0f);
+            TestImage->SetBrush(RedBrush);
+            
+            ImageSlot->SetPosition(FVector2D(200, 200));
+            ImageSlot->SetSize(FVector2D(400, 400));
+            ImageSlot->SetZOrder(9999);
+            
+            UE_LOG(LogTemp, Error, TEXT("빨간색 이미지 설정 완료"));
+        }
+        
+        // 가시성 설정
+        SetVisibility(ESlateVisibility::Visible);
+        UE_LOG(LogTemp, Error, TEXT("가시성 설정 완료"));
+    }
+    catch (const std::exception& e)
+    {
+        UE_LOG(LogTemp, Error, TEXT("위젯 초기화 중 예외 발생: %s"), UTF8_TO_TCHAR(e.what()));
+    }
+    catch (...)
+    {
+        UE_LOG(LogTemp, Error, TEXT("위젯 초기화 중 알 수 없는 예외 발생"));
     }
     
-    // 이미지를 캔버스에 추가
-    if (RootCanvas && TestImage)
-    {
-        UCanvasPanelSlot* ImageSlot = RootCanvas->AddChildToCanvas(TestImage);
-        
-        // 큰 빨간색 상자 설정
-        FSlateBrush RedBrush;
-        RedBrush.DrawAs = ESlateBrushDrawType::Box;
-        RedBrush.TintColor = FLinearColor(1.0f, 0.0f, 0.0f, 1.0f);
-        TestImage->SetBrush(RedBrush);
-        TestImage->SetColorAndOpacity(FLinearColor(1.0f, 0.0f, 0.0f, 1.0f));
-        
-        // 전체 화면 크기로 설정
-        ImageSlot->SetPosition(FVector2D(400, 300));
-        ImageSlot->SetSize(FVector2D(800, 600));
-        ImageSlot->SetZOrder(9999);
-        
-        UE_LOG(LogTemp, Error, TEXT("큰 빨간색 이미지 생성 완료!"));
-    }
-    
-    // 명시적 가시성 설정
-    SetVisibility(ESlateVisibility::Visible);
-    
-    UE_LOG(LogTemp, Error, TEXT("테스트 위젯 초기화 완료!"));
+    UE_LOG(LogTemp, Error, TEXT(">>> TestUIWidget NativeConstruct 완료"));
 }
 
 void UTestUIWidget::NativeDestruct()
