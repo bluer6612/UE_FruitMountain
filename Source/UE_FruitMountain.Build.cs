@@ -13,10 +13,10 @@ public class UE_FruitMountain : ModuleRules
 			"CoreUObject", 
 			"Engine", 
 			"InputCore",
-			"EnhancedInput",
-			"UMG",          // UMG 모듈 추가
-			"Slate",        // Slate 모듈 추가
-			"SlateCore"     // SlateCore 모듈 추가
+			"UMG", 
+			"Slate", 
+			"SlateCore", 
+			"AssetRegistry" // AssetRegistry 추가
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
