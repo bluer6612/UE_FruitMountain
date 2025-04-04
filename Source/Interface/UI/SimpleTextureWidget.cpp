@@ -21,17 +21,6 @@ USimpleTextureWidget* USimpleTextureWidget::CreateSimpleUI(UObject* WorldContext
         UE_LOG(LogTemp, Warning, TEXT("SimpleTextureWidget: 현재 레벨(%s)은 PlayLevel이 아님"), *CurrentLevel);
         return nullptr;
     }
-    
-    // 이미 인스턴스가 있으면 반환
-    if (IsValid(Instance))
-    {
-        UE_LOG(LogTemp, Warning, TEXT("SimpleTextureWidget: 기존 인스턴스 재사용"));
-        if (!Instance->IsInViewport())
-        {
-            Instance->AddToViewport();
-        }
-        return Instance;
-    }
 
     // 새 인스턴스 생성
     APlayerController* PC = World->GetFirstPlayerController();
@@ -143,22 +132,6 @@ void USimpleTextureWidget::SetupImage(UImage*& ImagePtr, const FVector2D& Positi
             DefaultBrush.TintColor = FLinearColor(1.0f, 0.0f, 0.0f, 0.5f);
             DefaultBrush.DrawAs = ESlateBrushDrawType::Box;
             ImagePtr->SetBrush(DefaultBrush);
-        }
-
-        // 이미지 위젯 스타일도 추가로 설정
-        if (ImagePtr)
-        {
-            // 강제 가시성 설정
-            ImagePtr->SetRenderOpacity(1.0f);
-            ImagePtr->SetColorAndOpacity(FLinearColor::White);
-            
-            // 자동 크기 비활성화, 명시적 크기 설정
-            ImageSlot->SetAutoSize(false);
-            
-            // 중요: 정렬 설정
-            ImageSlot->SetAlignment(FVector2D(0.5f, 0.5f));
-            
-            UE_LOG(LogTemp, Warning, TEXT("이미지 %s의 가시성 및 스타일 강제 설정됨"), *TextureName);
         }
     }
 }

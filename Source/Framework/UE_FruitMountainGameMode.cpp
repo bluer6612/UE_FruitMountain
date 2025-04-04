@@ -8,7 +8,6 @@
 #include "Actors/PlayerPawn.h"
 #include "Actors/FruitBall.h"
 #include "Interface/UI/SimpleTextureWidget.h"
-#include "Interface/UI/TestWidget.h"
 #include "Interface/HUD/FruitHUD.h"
 #include "UE_FruitMountainGameInstance.h"
 #include "Components/WidgetComponent.h"
@@ -16,7 +15,7 @@
 AUE_FruitMountainGameMode::AUE_FruitMountainGameMode()
 {
     // 반드시 HUD를 FruitHUD로 지정
-    // HUDClass = AFruitHUD::StaticClass(); // 이 부분 주석 처리
+    HUDClass = AFruitHUD::StaticClass(); // 이 부분 주석 처리
     
     // 기본 플레이어 컨트롤러를 AFruitPlayerController로 명시적으로 설정
     PlayerControllerClass = AFruitPlayerController::StaticClass();
@@ -37,67 +36,7 @@ void AUE_FruitMountainGameMode::BeginPlay()
     Super::BeginPlay();
     
     UE_LOG(LogTemp, Warning, TEXT("==== 게임 모드 BeginPlay 시작 - UI 생성 시도 ===="));
-    
-    // UI 생성 - SimpleTextureWidget 직접 생성
     USimpleTextureWidget::CreateSimpleUI(this);
-    
-    // 딜레이 후 UI 생성 다시 시도 (만약의 경우를 위해)
-    FTimerHandle UITimer;
-    GetWorldTimerManager().SetTimer(
-        UITimer,
-        [this]()
-        {
-            UE_LOG(LogTemp, Warning, TEXT("UI 생성 타이머 실행됨"));
-            USimpleTextureWidget::CreateSimpleUI(this);
-        },
-        1.0f,
-        false
-    );
-
-    // GameMode BeginPlay에 추가
-    GetWorld()->GetGameViewport()->SetForceDisableSplitscreen(true);
-
-    if (GEngine)
-    {
-        GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, TEXT("화면 디버그 메시지 테스트"));
-    }
-
-    // 사용: GameMode.cpp의 BeginPlay에서
-    APlayerController* PC = GetWorld()->GetFirstPlayerController();
-    if (PC)
-    {
-        UTestWidget* TestWidget = CreateWidget<UTestWidget>(PC, UTestWidget::StaticClass());
-        TestWidget->AddToViewport(99999);
-        PC->SetInputMode(FInputModeGameAndUI());
-        PC->SetShowMouseCursor(true);
-    }
-
-    // 3D 위젯 생성 (화면에 UI가 안 보이는 경우 대체 방법)
-    CreateWorldUI();
-}
-
-void AUE_FruitMountainGameMode::CreateWorldUI()
-{
-    UWorld* World = GetWorld();
-    if (!World) return;
-    
-    // 3D 위젯 컴포넌트 생성
-    UWidgetComponent* WidgetComp = NewObject<UWidgetComponent>(this);
-    WidgetComp->RegisterComponent();
-    WidgetComp->SetWidgetClass(USimpleTextureWidget::StaticClass());
-    WidgetComp->SetDrawSize(FVector2D(500, 500));
-    WidgetComp->SetWidgetSpace(EWidgetSpace::Screen); // 화면에 고정
-    WidgetComp->SetRelativeLocation(FVector(300, 0, 200)); // 카메라 앞에 위치
-    
-    // 위젯 생성 및 UI 설정
-    WidgetComp->InitWidget();
-    USimpleTextureWidget* WorldUI = Cast<USimpleTextureWidget>(WidgetComp->GetUserWidgetObject());
-    if (WorldUI)
-    {
-        WorldUI->SetupAllImages();
-    }
-    
-    UE_LOG(LogTemp, Warning, TEXT("3D 월드 위젯이 생성됨"));
 }
 
 void AUE_FruitMountainGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -143,10 +82,4 @@ void AUE_FruitMountainGameMode::StartPlay()
     {
         UE_LOG(LogTemp, Log, TEXT("이미 접시 액터가 존재합니다."));
     }
-}
-
-void AUE_FruitMountainGameMode::Tick(float DeltaTime)
-{
-    Super::Tick(DeltaTime);
-    // 매 프레임마다 업데이트되어야 하는 게임 로직을 구현합니다.
 }
