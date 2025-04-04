@@ -15,7 +15,8 @@
 AUE_FruitMountainGameMode::AUE_FruitMountainGameMode()
 {
     // 반드시 HUD를 FruitHUD로 지정
-    HUDClass = AFruitHUD::StaticClass(); // 이 부분 주석 처리
+    HUDClass = AFruitHUD::StaticClass();
+    HUDClass = nullptr;
     
     // 기본 플레이어 컨트롤러를 AFruitPlayerController로 명시적으로 설정
     PlayerControllerClass = AFruitPlayerController::StaticClass();
@@ -35,8 +36,35 @@ void AUE_FruitMountainGameMode::BeginPlay()
 {
     Super::BeginPlay();
     
-    UE_LOG(LogTemp, Warning, TEXT("==== 게임 모드 BeginPlay 시작 - UI 생성 시도 ===="));
-    USimpleTextureWidget::CreateSimpleUI(this);
+    UE_LOG(LogTemp, Warning, TEXT("==== 게임 모드 BeginPlay 시작 ===="));
+    
+    // UI 생성 코드 제거 (타이머로 이동)
+    
+    // // 지연 후 UI 생성 (플레이어 컨트롤러 및 다른 설정이 완료된 후)
+    // FTimerHandle DelayedUITimer;
+    // GetWorldTimerManager().SetTimer(
+    //     DelayedUITimer,
+    //     [this]()
+    //     {
+    //         UE_LOG(LogTemp, Warning, TEXT("지연된 UI 생성 시작"));
+            
+    //         // 플레이어 컨트롤러 재설정 (마우스 모드가 변경되었을 수 있음)
+    //         APlayerController* PC = GetWorld()->GetFirstPlayerController();
+    //         if (PC)
+    //         {
+    //             // 명시적으로 UI 모드 설정 (기존 설정 덮어쓰기)
+    //             PC->SetInputMode(FInputModeGameAndUI());
+    //             PC->SetShowMouseCursor(true);
+                
+    //             // UI 요소 만들기
+    //             USimpleTextureWidget::CreateSimpleUI(this);
+                
+    //             UE_LOG(LogTemp, Warning, TEXT("UI 생성 완료 (지연 후)"));
+    //         }
+    //     },
+    //     1.0f,  // 1초 지연
+    //     false
+    // );
 }
 
 void AUE_FruitMountainGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)

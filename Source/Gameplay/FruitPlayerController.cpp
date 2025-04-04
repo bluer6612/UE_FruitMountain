@@ -12,6 +12,7 @@
 #include "Gameplay/FruitTrajectoryHelper.h"
 #include "System/Physics/FruitPhysicsHelper.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Interface/UI/SimpleTextureWidget.h"
 
 AFruitPlayerController::AFruitPlayerController()
 {
@@ -77,6 +78,13 @@ void AFruitPlayerController::BeginPlay()
     // 미리보기 공 생성
     CurrentBallType = FMath::RandRange(1, 11);
     UpdatePreviewBall();
+
+    // 모든 초기화가 끝난 후 마지막에 UI 생성
+    SetInputMode(FInputModeGameAndUI());
+    SetShowMouseCursor(true);
+    USimpleTextureWidget::CreateSimpleUI(this);
+    
+    UE_LOG(LogTemp, Warning, TEXT("컨트롤러 BeginPlay 마지막에 UI 생성 완료"));
 }
 
 void AFruitPlayerController::SetupInputComponent()

@@ -14,13 +14,13 @@ USimpleTextureWidget* USimpleTextureWidget::CreateSimpleUI(UObject* WorldContext
     UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
     if (!World) return nullptr;
     
-    // 현재 레벨 확인
-    FString CurrentLevel = UGameplayStatics::GetCurrentLevelName(World);
-    if (CurrentLevel != TEXT("PlayLevel"))
-    {
-        UE_LOG(LogTemp, Warning, TEXT("SimpleTextureWidget: 현재 레벨(%s)은 PlayLevel이 아님"), *CurrentLevel);
-        return nullptr;
-    }
+    // // 현재 레벨 확인
+    // FString CurrentLevel = UGameplayStatics::GetCurrentLevelName(World);
+    // if (CurrentLevel != TEXT("PlayLevel"))
+    // {
+    //     UE_LOG(LogTemp, Warning, TEXT("SimpleTextureWidget: 현재 레벨(%s)은 PlayLevel이 아님"), *CurrentLevel);
+    //     return nullptr;
+    // }
 
     // 새 인스턴스 생성
     APlayerController* PC = World->GetFirstPlayerController();
