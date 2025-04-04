@@ -4,16 +4,8 @@
 #include "Blueprint/UserWidget.h"
 #include "Components/Image.h"
 #include "Components/CanvasPanel.h"
+#include "Framework/UE_FruitMountainGameInstance.h"
 #include "FruitUIWidget.generated.h"
-
-// 위젯 위치 열거형
-UENUM(BlueprintType)
-enum class EWidgetPosition : uint8
-{
-    LeftTop UMETA(DisplayName = "Left Top"),
-    LeftMiddle UMETA(DisplayName = "Left Middle"),
-    RightTop UMETA(DisplayName = "Right Top")
-};
 
 UCLASS()
 class UE_FRUITMOUNTAIN_API UFruitUIWidget : public UUserWidget

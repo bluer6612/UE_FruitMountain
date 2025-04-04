@@ -53,6 +53,14 @@ public:
     UFUNCTION(BlueprintCallable, Category = "UI")
     int32 GetWidgetCount() const { return UIWidgets.Num(); }
     
+    // UI 테스트용 토글 함수
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    void TestUIToggle();
+
+    // 이 함수로 엔진 기본 이미지를 특정 슬롯에 설정
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    void SetDebugTexture(int32 WidgetIndex, int32 TextureType);
+    
     // 월드 객체 반환 함수
     UWorld* GetWorld() const override
     {

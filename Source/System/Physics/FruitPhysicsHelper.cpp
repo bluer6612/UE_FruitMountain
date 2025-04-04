@@ -1,5 +1,5 @@
 #include "FruitPhysicsHelper.h"
-#include "Throw/FruitPlayerController.h"
+#include "Gameplay/FruitPlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/Actor.h"

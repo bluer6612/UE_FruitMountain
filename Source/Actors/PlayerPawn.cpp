@@ -1,5 +1,5 @@
 #include "PlayerPawn.h"
-#include "Throw/FruitPlayerController.h"
+#include "Gameplay/FruitPlayerController.h"
 #include "Components/StaticMeshComponent.h"
 #include "Camera/CameraComponent.h"
 #include "UObject/ConstructorHelpers.h"

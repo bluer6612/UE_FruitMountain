@@ -1,6 +1,6 @@
 #include "UE_FruitMountainGameMode.h"
 #include "Kismet/GameplayStatics.h"
-#include "Throw/FruitPlayerController.h"
+#include "Gameplay/FruitPlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
@@ -8,13 +8,15 @@
 #include "Actors/PlateActor.h"
 #include "Actors/PlayerPawn.h"
 #include "Actors/FruitBall.h"
-#include "UI/FruitUIManager.h"
+#include "Interface/UI/FruitUIManager.h"
 #include "UE_FruitMountainGameInstance.h"
-#include "UI/TestUIWidget.h"
-#include "UI/FruitHUD.h"
+#include "FruitHUD.h"
 
 AUE_FruitMountainGameMode::AUE_FruitMountainGameMode()
 {
+    // 반드시 HUD를 FruitHUD로 지정
+    HUDClass = AFruitHUD::StaticClass();
+    
     // 기본 플레이어 컨트롤러를 AFruitPlayerController로 명시적으로 설정
     PlayerControllerClass = AFruitPlayerController::StaticClass();
 
@@ -26,9 +28,6 @@ AUE_FruitMountainGameMode::AUE_FruitMountainGameMode()
 
     FruitBallClass = AFruitBall::StaticClass();
 
-    // HUD 클래스 설정
-    HUDClass = AFruitHUD::StaticClass();
-
     UE_LOG(LogTemp, Log, TEXT("AUE_FruitMountainGameMode 생성자 호출됨 - 기본 컨트롤러와 HUD가 설정되었습니다."));
 }
 
@@ -36,17 +35,26 @@ void AUE_FruitMountainGameMode::BeginPlay()
 {
     Super::BeginPlay();
     
-    UE_LOG(LogTemp, Error, TEXT("==== 게임 모드 BeginPlay 시작 - 위젯 유지 확인 ===="));
+    UE_LOG(LogTemp, Error, TEXT("==== 게임 모드 BeginPlay 시작 ===="));
     
-    // 게임 인스턴스를 통해 UI 상태 확인
+    // 게임 인스턴스를 통해 UI 생성 (먼저 실행)
     UUE_FruitMountainGameInstance* GameInstance = Cast<UUE_FruitMountainGameInstance>(GetGameInstance());
     if (GameInstance)
     {
-        // 위젯 표시 (또는 기존 위젯 확인)
-        GameInstance->ShowPersistentUI();
+        // UI 위젯 먼저 생성
+        GameInstance->ShowFruitUIWidget();
         
-        // 위젯 상태 주기적 확인 시작
-        GameInstance->CheckPersistentUI();
+        // 약간의 딜레이 후 확인 타이머 시작
+        FTimerHandle UICheckTimer;
+        GetWorldTimerManager().SetTimer(
+            UICheckTimer,
+            [GameInstance]()
+            {
+                GameInstance->CheckPersistentUI();
+            },
+            1.0f,  // 1초 후 시작
+            false
+        );
     }
 }
 

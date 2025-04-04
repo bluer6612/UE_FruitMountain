@@ -1,9 +1,9 @@
 #include "FruitUIManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
-#include "Blueprint/WidgetLayoutLibrary.h" // 추가: 뷰포트 크기 관련 기능
-#include "Components/CanvasPanelSlot.h" // 추가: 캔버스 패널 슬롯 접근
-#include "Components/Image.h" // 추가: 이미지 관련 기능
+#include "Blueprint/WidgetLayoutLibrary.h"
+#include "Components/CanvasPanelSlot.h"
+#include "Components/Image.h"
 
 // 정적 인스턴스 초기화
 UFruitUIManager* UFruitUIManager::Instance = nullptr;
@@ -252,38 +252,129 @@ void UFruitUIManager::LoadDefaultImages()
 
 UTexture2D* UFruitUIManager::LoadUITexture(const FString& ImageName)
 {
-    UE_LOG(LogTemp, Warning, TEXT("FruitUIManager - LoadUITexture 시작: %s"), *ImageName);
+    UE_LOG(LogTemp, Error, TEXT("FruitUIManager - LoadUITexture 시작: %s"), *ImageName);
     
-    // 여러 가능한 경로 시도
+    // 실제 존재하는 경로로 추가 테스트
     TArray<FString> PathsToTry;
+    
+    // Content 폴더 내 다양한 경로 시도
     PathsToTry.Add(FString::Printf(TEXT("/Game/Asset/UI/%s.%s"), *ImageName, *ImageName));
-    PathsToTry.Add(FString::Printf(TEXT("/Game/UE_FruitMountain/Asset/UI/%s.%s"), *ImageName, *ImageName));
     PathsToTry.Add(FString::Printf(TEXT("/Game/UI/%s.%s"), *ImageName, *ImageName));
-    PathsToTry.Add(TEXT("/Engine/EditorResources/S_Actor.S_Actor")); // 항상 있는 엔진 대체 이미지
+    PathsToTry.Add(FString::Printf(TEXT("/Game/UI/Images/%s.%s"), *ImageName, *ImageName));
+    PathsToTry.Add(FString::Printf(TEXT("/Game/Textures/UI/%s.%s"), *ImageName, *ImageName));
+    
+    // 엔진에서 확실히 찾을 수 있는 텍스처 (디버깅용)
+    PathsToTry.Add(TEXT("/Engine/EditorResources/SequenceRecorder.SequenceRecorder"));
+    PathsToTry.Add(TEXT("/Engine/EditorResources/S_Actor.S_Actor"));
     
     UTexture2D* LoadedTexture = nullptr;
     
-    // 모든 경로 시도
+    // 모든 경로 시도하며 상세 로그 출력
     for (const FString& Path : PathsToTry)
     {
+        UE_LOG(LogTemp, Error, TEXT("경로 시도: %s"), *Path);
         LoadedTexture = LoadObject<UTexture2D>(nullptr, *Path);
+        
         if (LoadedTexture)
         {
-            UE_LOG(LogTemp, Warning, TEXT("FruitUIManager - 이미지 로드 성공: %s"), *Path);
+            UE_LOG(LogTemp, Error, TEXT("이미지 로드 성공: %s"), *Path);
             break;
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("경로에서 이미지 찾지 못함: %s"), *Path);
         }
     }
     
+    // 테스트: 프로젝트에 포함된 다른 이미지를 직접 불러오기
     if (!LoadedTexture)
     {
-        UE_LOG(LogTemp, Warning, TEXT("FruitUIManager - 모든 경로에서 이미지 로드 실패"));
-        // 기본 텍스처 사용
-        LoadedTexture = LoadObject<UTexture2D>(nullptr, TEXT("/Engine/EngineResources/DefaultTexture.DefaultTexture"));
+        // "/Engine/EngineResources/DefaultTexture.DefaultTexture"는 매우 작고 보이지 않을 수 있음
+        // 대신 눈에 띄는 텍스처 사용
+        LoadedTexture = LoadObject<UTexture2D>(nullptr, TEXT("/Engine/EngineResources/WhiteSquareTexture"));
         if (LoadedTexture)
         {
-            UE_LOG(LogTemp, Warning, TEXT("FruitUIManager - 기본 엔진 텍스처 사용"));
+            UE_LOG(LogTemp, Error, TEXT("기본 엔진 하얀색 텍스처 사용 (확실히 보이는 텍스처)"));
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("하얀색 텍스처도 로드 실패 - 엔진/경로 문제"));
         }
     }
     
     return LoadedTexture;
+}
+
+void UFruitUIManager::TestUIToggle()
+{
+    static bool bShowWhite = false;
+    bShowWhite = !bShowWhite;
+    
+    UE_LOG(LogTemp, Error, TEXT("UI 토글 - 모드: %s"), bShowWhite ? TEXT("흰색") : TEXT("아이콘"));
+    
+    for (int32 i = 0; i < UIWidgets.Num(); ++i)
+    {
+        UTexture2D* TestTexture = nullptr;
+        if (bShowWhite)
+        {
+            // 하얀색 텍스처
+            TestTexture = LoadObject<UTexture2D>(nullptr, TEXT("/Engine/EngineResources/WhiteSquareTexture"));
+        }
+        else
+        {
+            // 색상이 다른 텍스처 3개
+            if (i == 0) 
+                TestTexture = LoadObject<UTexture2D>(nullptr, TEXT("/Engine/EditorResources/S_Actor"));
+            else if (i == 1)
+                TestTexture = LoadObject<UTexture2D>(nullptr, TEXT("/Engine/EditorResources/ActorIcons/LightActor_16x"));
+            else
+                TestTexture = LoadObject<UTexture2D>(nullptr, TEXT("/Engine/EditorResources/ActorIcons/Camera_16x"));
+        }
+        
+        if (TestTexture)
+        {
+            SetWidgetImage(i, TestTexture);
+        }
+    }
+}
+
+void UFruitUIManager::SetDebugTexture(int32 WidgetIndex, int32 TextureType)
+{
+    if (!UIWidgets.IsValidIndex(WidgetIndex))
+    {
+        UE_LOG(LogTemp, Error, TEXT("SetDebugTexture: 유효하지 않은 위젯 인덱스 %d"), WidgetIndex);
+        return;
+    }
+    
+    UTexture2D* TestTexture = nullptr;
+    
+    // 텍스처 타입에 따라 다른 엔진 기본 텍스처 사용
+    switch (TextureType)
+    {
+        case 0: // 흰색
+            TestTexture = LoadObject<UTexture2D>(nullptr, TEXT("/Engine/EngineResources/WhiteSquareTexture"));
+            break;
+        case 1: // 아이콘
+            TestTexture = LoadObject<UTexture2D>(nullptr, TEXT("/Engine/EditorResources/S_Actor"));
+            break;
+        case 2: // 라이트 아이콘
+            TestTexture = LoadObject<UTexture2D>(nullptr, TEXT("/Engine/EditorResources/ActorIcons/LightActor_16x"));
+            break;
+        case 3: // 카메라 아이콘
+            TestTexture = LoadObject<UTexture2D>(nullptr, TEXT("/Engine/EditorResources/ActorIcons/Camera_16x"));
+            break;
+        default:
+            TestTexture = LoadObject<UTexture2D>(nullptr, TEXT("/Engine/EditorResources/S_Actor"));
+            break;
+    }
+    
+    if (TestTexture)
+    {
+        SetWidgetImage(WidgetIndex, TestTexture);
+        UE_LOG(LogTemp, Error, TEXT("위젯 %d에 디버그 텍스처 타입 %d 설정됨"), WidgetIndex, TextureType);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("디버그 텍스처 로드 실패"));
+    }
 }
