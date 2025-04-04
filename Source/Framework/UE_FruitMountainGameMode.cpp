@@ -7,8 +7,8 @@
 #include "Actors/PlateActor.h"
 #include "Actors/PlayerPawn.h"
 #include "Actors/FruitBall.h"
-#include "Interface/UI/SimpleTextureWidget.h"
 #include "Interface/HUD/FruitHUD.h"
+#include "Interface/UI/TextureDisplayWidget.h"
 #include "UE_FruitMountainGameInstance.h"
 #include "Components/WidgetComponent.h"
 
@@ -42,7 +42,7 @@ void AUE_FruitMountainGameMode::BeginPlay()
         GEngine->AddOnScreenDebugMessage(-1, 60.0f, FColor::Red, TEXT("화면 상단 디버그 메시지"));
     }
         
-    USimpleTextureWidget::CreateSimpleUI(this);
+    USimpleTextureWidget::CreateDisplayWidget(this);
 }
 
 void AUE_FruitMountainGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)

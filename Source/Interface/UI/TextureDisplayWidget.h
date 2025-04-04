@@ -2,29 +2,25 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "SimpleTextureWidget.generated.h"
+#include "UIHelper.h"
+#include "TextureDisplayWidget.generated.h"
 
-// 위젯 위치 열거형
-UENUM(BlueprintType)
-enum class EWidgetImageType : uint8
-{
-    LeftTop,
-    LeftMiddle,
-    RightTop
-};
+class UImage;
+class UCanvasPanel;
+class UCanvasPanelSlot;
 
 UCLASS()
-class UE_FRUITMOUNTAIN_API USimpleTextureWidget : public UUserWidget
+class UE_FRUITMOUNTAIN_API UTextureDisplayWidget : public UUserWidget
 {
     GENERATED_BODY()
 
 public:
     // 정적 인스턴스
-    static USimpleTextureWidget* Instance;
+    static UTextureDisplayWidget* Instance;
     
     // 생성 함수
     UFUNCTION(BlueprintCallable, Category="UI")
-    static USimpleTextureWidget* CreateSimpleUI(UObject* WorldContextObject);
+    static UTextureDisplayWidget* CreateDisplayWidget(UObject* WorldContextObject);
     
     // 초기화 시 호출
     virtual void NativeConstruct() override;
@@ -39,15 +35,21 @@ public:
 protected:
     // 이미지 컴포넌트
     UPROPERTY()
-    class UImage* LeftTopImage;
+    UImage* LeftTopImage;
     
     UPROPERTY()
-    class UImage* LeftMiddleImage;
+    UImage* LeftMiddleImage;
     
     UPROPERTY()
-    class UImage* RightTopImage;
+    UImage* RightTopImage;
+    
+    // 캔버스 패널 참조
+    UPROPERTY()
+    UCanvasPanel* Canvas;
     
     // 헬퍼 함수
     UImage* GetImageForType(EWidgetImageType Type);
-    void SetupImageWithTexture(UImage* ImageWidget, const FVector2D& Position, const FString& TexturePath);
+    
+    // 이미지 설정 함수 (UI 헬퍼 클래스로 기능 분리)
+    void SetupImageWithTexture(UImage*& ImageWidget, EWidgetAnchor Anchor, const FString& TexturePath);
 };

@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
-#include "Interface/UI/SimpleTextureWidget.h"
+#include "Interface/UI/TextureDisplayWidget.h"
 #include "FruitHUD.generated.h"
 
 UCLASS()
@@ -18,7 +18,7 @@ public:
 protected:
     // UMG 위젯 참조
     UPROPERTY()
-    USimpleTextureWidget* TextureWidget;
+    UTextureDisplayWidget* TextureWidget;
     
     // 위젯 생성 함수
     void CreateAndAddWidgets();

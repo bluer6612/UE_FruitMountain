@@ -10,7 +10,7 @@
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Text/STextBlock.h"
 #include "TimerManager.h"
-#include "Interface/UI/SimpleTextureWidget.h"
+#include "Interface/UI/TextureDisplayWidget.h"
 
 UUE_FruitMountainGameInstance::UUE_FruitMountainGameInstance()
 {
@@ -26,12 +26,11 @@ void UUE_FruitMountainGameInstance::Init()
 void UUE_FruitMountainGameInstance::CheckPersistentUI()
 {
     // GetWorld()를 사용해 WorldContextObject 전달
-    USimpleTextureWidget::CreateSimpleUI(GetWorld());
+    UTextureDisplayWidget::CreateDisplayWidget(GetWorld());
 }
 
 void UUE_FruitMountainGameInstance::ShowFruitUIWidget()
 {
     // GetWorld()를 사용해 WorldContextObject 전달
-    USimpleTextureWidget::CreateSimpleUI(GetWorld());
-    UE_LOG(LogTemp, Warning, TEXT("ShowFruitUIWidget: SimpleTextureWidget 생성 완료"));
+    UTextureDisplayWidget::CreateDisplayWidget(GetWorld());
 }
