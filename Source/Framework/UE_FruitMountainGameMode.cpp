@@ -10,7 +10,7 @@
 #include "Actors/FruitBall.h"
 #include "Interface/UI/FruitUIManager.h"
 #include "UE_FruitMountainGameInstance.h"
-#include "FruitHUD.h"
+#include "Interface/HUD/FruitHUD.h"
 
 AUE_FruitMountainGameMode::AUE_FruitMountainGameMode()
 {
@@ -56,6 +56,7 @@ void AUE_FruitMountainGameMode::BeginPlay()
             false
         );
     }
+
 }
 
 void AUE_FruitMountainGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
