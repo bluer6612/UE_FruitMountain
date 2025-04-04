@@ -9,18 +9,15 @@
 #include "Actors/FruitBall.h"
 #include "Interface/UI/SimpleTextureWidget.h"
 #include "Interface/HUD/FruitHUD.h"
-#include "Interface/HUD/BasicHUD.h"
 #include "UE_FruitMountainGameInstance.h"
 #include "Components/WidgetComponent.h"
 
 AUE_FruitMountainGameMode::AUE_FruitMountainGameMode()
 {
-    // 반드시 HUD를 FruitHUD로 지정
+    // FruitHUD 명시적 설정
     HUDClass = AFruitHUD::StaticClass();
-    //HUDClass = nullptr;
-    //HUDClass = ABasicHUD::StaticClass();
     
-    // 기본 플레이어 컨트롤러를 AFruitPlayerController로 명시적으로 설정
+    // PlayerController 설정 확인
     PlayerControllerClass = AFruitPlayerController::StaticClass();
 
     // DefaultPawnClass 지정 (적절한 Pawn 클래스로 교체)
@@ -43,20 +40,9 @@ void AUE_FruitMountainGameMode::BeginPlay()
     {
         // 여러 위치에 메시지 표시
         GEngine->AddOnScreenDebugMessage(-1, 60.0f, FColor::Red, TEXT("화면 상단 디버그 메시지"));
+    }
         
-        for (int32 i = 0; i < 5; ++i)
-        {
-            FString Msg = FString::Printf(TEXT("디버그 메시지 %d"), i);
-            GEngine->AddOnScreenDebugMessage(-1, 60.0f, FColor::Green, Msg);
-        }
-    }
-    
-    // 콘솔 명령어 실행 - UI 강제 표시
-    if (GEngine && GetWorld())
-    {
-        GEngine->Exec(GetWorld(), TEXT("showdebug ui"));
-        GEngine->Exec(GetWorld(), TEXT("r.PostProcessing.PropagateAlpha 1"));
-    }
+    USimpleTextureWidget::CreateSimpleUI(this);
 }
 
 void AUE_FruitMountainGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)

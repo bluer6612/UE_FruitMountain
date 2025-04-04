@@ -61,15 +61,10 @@ void USimpleTextureWidget::NativeConstruct()
 
 void USimpleTextureWidget::SetupAllImages()
 {
-    UE_LOG(LogTemp, Warning, TEXT("SimpleTextureWidget: 이미지 설정 시작"));
-    
-    // 각 위치에 이미지 설정// 엔진 기본 텍스처 사용 (테스트용)
+    // 각 위치에 이미지 설정
     SetupImageWithTexture(LeftTopImage, FVector2D(50.0f, 50.0f), TEXT("/Game/Asset/UI/UI_Play_Score"));
     SetupImageWithTexture(LeftMiddleImage, FVector2D(50.0f, 300.0f), TEXT("/Game/Asset/UI/UI_Play_FruitList"));
     SetupImageWithTexture(RightTopImage, FVector2D(800.0f, 50.0f), TEXT("/Game/Asset/UI/UI_Play_NextFruit"));
-    
-    // 엔진 내장 텍스처도 추가 (비교용)
-    SetupImageWithTexture(nullptr, FVector2D(400.0f, 400.0f), TEXT("/Engine/EditorResources/S_Actor"));
 
     UE_LOG(LogTemp, Warning, TEXT("SimpleTextureWidget: 이미지 설정 완료"));
 }

@@ -14,7 +14,6 @@ public:
     AFruitHUD();
     
     virtual void BeginPlay() override;
-    virtual void DrawHUD() override;
     
 protected:
     // UMG 위젯 참조
