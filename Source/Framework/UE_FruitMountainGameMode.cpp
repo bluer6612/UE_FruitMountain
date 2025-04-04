@@ -1,21 +1,22 @@
 #include "UE_FruitMountainGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Gameplay/FruitPlayerController.h"
-#include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Actors/PlateActor.h"
 #include "Actors/PlayerPawn.h"
 #include "Actors/FruitBall.h"
-#include "Interface/UI/FruitUIManager.h"
-#include "UE_FruitMountainGameInstance.h"
+#include "Interface/UI/SimpleTextureWidget.h"
+#include "Interface/UI/TestWidget.h"
 #include "Interface/HUD/FruitHUD.h"
+#include "UE_FruitMountainGameInstance.h"
+#include "Components/WidgetComponent.h"
 
 AUE_FruitMountainGameMode::AUE_FruitMountainGameMode()
 {
     // 반드시 HUD를 FruitHUD로 지정
-    HUDClass = AFruitHUD::StaticClass();
+    // HUDClass = AFruitHUD::StaticClass(); // 이 부분 주석 처리
     
     // 기본 플레이어 컨트롤러를 AFruitPlayerController로 명시적으로 설정
     PlayerControllerClass = AFruitPlayerController::StaticClass();
@@ -35,47 +36,74 @@ void AUE_FruitMountainGameMode::BeginPlay()
 {
     Super::BeginPlay();
     
-    UE_LOG(LogTemp, Error, TEXT("==== 게임 모드 BeginPlay 시작 ===="));
+    UE_LOG(LogTemp, Warning, TEXT("==== 게임 모드 BeginPlay 시작 - UI 생성 시도 ===="));
     
-    // 게임 인스턴스를 통해 UI 생성 (먼저 실행)
-    UUE_FruitMountainGameInstance* GameInstance = Cast<UUE_FruitMountainGameInstance>(GetGameInstance());
-    if (GameInstance)
+    // UI 생성 - SimpleTextureWidget 직접 생성
+    USimpleTextureWidget::CreateSimpleUI(this);
+    
+    // 딜레이 후 UI 생성 다시 시도 (만약의 경우를 위해)
+    FTimerHandle UITimer;
+    GetWorldTimerManager().SetTimer(
+        UITimer,
+        [this]()
+        {
+            UE_LOG(LogTemp, Warning, TEXT("UI 생성 타이머 실행됨"));
+            USimpleTextureWidget::CreateSimpleUI(this);
+        },
+        1.0f,
+        false
+    );
+
+    // GameMode BeginPlay에 추가
+    GetWorld()->GetGameViewport()->SetForceDisableSplitscreen(true);
+
+    if (GEngine)
     {
-        // UI 위젯 먼저 생성
-        GameInstance->ShowFruitUIWidget();
-        
-        // 약간의 딜레이 후 확인 타이머 시작
-        FTimerHandle UICheckTimer;
-        GetWorldTimerManager().SetTimer(
-            UICheckTimer,
-            [GameInstance]()
-            {
-                GameInstance->CheckPersistentUI();
-            },
-            1.0f,  // 1초 후 시작
-            false
-        );
+        GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, TEXT("화면 디버그 메시지 테스트"));
     }
 
+    // 사용: GameMode.cpp의 BeginPlay에서
+    APlayerController* PC = GetWorld()->GetFirstPlayerController();
+    if (PC)
+    {
+        UTestWidget* TestWidget = CreateWidget<UTestWidget>(PC, UTestWidget::StaticClass());
+        TestWidget->AddToViewport(99999);
+        PC->SetInputMode(FInputModeGameAndUI());
+        PC->SetShowMouseCursor(true);
+    }
+
+    // 3D 위젯 생성 (화면에 UI가 안 보이는 경우 대체 방법)
+    CreateWorldUI();
+}
+
+void AUE_FruitMountainGameMode::CreateWorldUI()
+{
+    UWorld* World = GetWorld();
+    if (!World) return;
+    
+    // 3D 위젯 컴포넌트 생성
+    UWidgetComponent* WidgetComp = NewObject<UWidgetComponent>(this);
+    WidgetComp->RegisterComponent();
+    WidgetComp->SetWidgetClass(USimpleTextureWidget::StaticClass());
+    WidgetComp->SetDrawSize(FVector2D(500, 500));
+    WidgetComp->SetWidgetSpace(EWidgetSpace::Screen); // 화면에 고정
+    WidgetComp->SetRelativeLocation(FVector(300, 0, 200)); // 카메라 앞에 위치
+    
+    // 위젯 생성 및 UI 설정
+    WidgetComp->InitWidget();
+    USimpleTextureWidget* WorldUI = Cast<USimpleTextureWidget>(WidgetComp->GetUserWidgetObject());
+    if (WorldUI)
+    {
+        WorldUI->SetupAllImages();
+    }
+    
+    UE_LOG(LogTemp, Warning, TEXT("3D 월드 위젯이 생성됨"));
 }
 
 void AUE_FruitMountainGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     Super::EndPlay(EndPlayReason);
-    
-    UE_LOG(LogTemp, Error, TEXT("==== 게임 모드 EndPlay - 위젯 메모리 정리 ===="));
-    
-    // 게임 종료 시 위젯 정리
-    UUE_FruitMountainGameInstance* GameInstance = Cast<UUE_FruitMountainGameInstance>(GetGameInstance());
-    if (GameInstance && GameInstance->PersistentUIWidget)
-    {
-        // 루트 세트에서 제거
-        if (GameInstance->PersistentUIWidget->IsRooted())
-        {
-            GameInstance->PersistentUIWidget->RemoveFromRoot();
-            UE_LOG(LogTemp, Error, TEXT("위젯을 루트 세트에서 제거함"));
-        }
-    }
+    UE_LOG(LogTemp, Error, TEXT("==== 게임 모드 EndPlay ===="));
 }
 
 void AUE_FruitMountainGameMode::StartPlay()
@@ -114,17 +142,6 @@ void AUE_FruitMountainGameMode::StartPlay()
     else
     {
         UE_LOG(LogTemp, Log, TEXT("이미 접시 액터가 존재합니다."));
-    }
-
-    // 게임 시작 시점에 UI가 여전히 존재하는지 확인
-    UUE_FruitMountainGameInstance* GameInstance = Cast<UUE_FruitMountainGameInstance>(GetGameInstance());
-    if (GameInstance && GameInstance->PersistentUIWidget)
-    {
-        if (!GameInstance->PersistentUIWidget->IsInViewport())
-        {
-            UE_LOG(LogTemp, Error, TEXT("StartPlay에서 UI가 사라짐을 감지 - 다시 표시"));
-            GameInstance->PersistentUIWidget->AddToViewport(10000);
-        }
     }
 }
 

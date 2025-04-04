@@ -19,9 +19,10 @@ public:
     virtual void BeginPlay() override;
     virtual void StartPlay() override;
     virtual void Tick(float DeltaTime) override;
-    
-    // EndPlay 함수 선언 추가
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+    // 3D 위젯 생성 함수 선언 추가
+    void CreateWorldUI();
 
     // 접시 클래스 지정 변수
     UPROPERTY(EditDefaultsOnly, Category = "Game")
@@ -29,5 +30,5 @@ public:
     
     // 과일 볼 클래스 지정 변수
     UPROPERTY(EditDefaultsOnly, Category = "Game")
-    TSubclassOf<AActor> FruitBallClass;
+    TSubclassOf<AFruitBall> FruitBallClass;
 };
