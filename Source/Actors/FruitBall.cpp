@@ -73,6 +73,9 @@ bool AFruitBall::TryMergeWithOtherFruit(AFruitBall* OtherFruit)
         // 병합 함수 호출
         UFruitMergeHelper::MergeFruits(this, OtherFruit, MergeLocation);
         
+        // 디버그 정보 표시
+        DisplayDebugInfo();
+        
         return true;
     }
     

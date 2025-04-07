@@ -13,6 +13,7 @@
 #include "Gameplay/Physics/FruitPhysicsHelper.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Interface/UI/TextureDisplayWidget.h"
+#include "Actors/FruitBall.h"
 
 AFruitPlayerController::AFruitPlayerController()
 {
@@ -76,7 +77,7 @@ void AFruitPlayerController::BeginPlay()
     });
 
     // 미리보기 공 생성
-    CurrentBallType = FMath::RandRange(1, 5);
+    CurrentBallType = FMath::RandRange(1, MaxBallType);
     UpdatePreviewBall();
         
     SetInputMode(FInputModeGameAndUI());
@@ -131,7 +132,7 @@ void AFruitPlayerController::ThrowFruit()
             EnableInput(this);
             
             // 새로운 미리보기 공 업데이트 (공 타입 바꾸기)
-            CurrentBallType = FMath::RandRange(1, 11); // 다음에 던질 공 타입 랜덤 변경
+            CurrentBallType = FMath::RandRange(1, MaxBallType); // 다음에 던질 공 타입 랜덤 변경
             UpdatePreviewBall();
         },
         BallThrowDelay,

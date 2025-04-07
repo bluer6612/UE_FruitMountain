@@ -5,7 +5,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Components/PrimitiveComponent.h"
 #include "Actors/PlateActor.h"
-#include "Actors/FruitBall.h" // 전체 헤더 포함
+#include "Actors/FruitBall.h"
 
 // 크기 계산 함수 - FruitBall 클래스 함수 사용
 float UFruitSpawnHelper::CalculateBallSize(int32 BallType)
@@ -44,7 +44,7 @@ AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, const F
     
     AActor* SpawnedBall = Controller->GetWorld()->SpawnActor<AActor>(
         Controller->FruitBallClass, Location, FRotator::ZeroRotator, SpawnParams);
-        
+
     if (SpawnedBall)
     {
         // 크기 설정 - 모든 축에 동일한 스케일 적용
@@ -56,6 +56,8 @@ AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, const F
         {
             FruitBall->BallType = BallType;
         }
+            
+        FruitBall->DisplayDebugInfo();
         
         // 디버그 로그로 크기 확인
         UE_LOG(LogTemp, Verbose, TEXT("공 생성: 타입=%d, 크기(스케일)=%f, 실제 크기(cm)=%f"),
