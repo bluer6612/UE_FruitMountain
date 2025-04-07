@@ -25,6 +25,10 @@ AFruitBall::AFruitBall()
         MeshComponent->SetStaticMesh(MeshAsset.Object);
     }
 
+    // 물리적 감쇠 설정
+    MeshComponent->SetLinearDamping(0.0f);
+    MeshComponent->SetAngularDamping(0.0f);
+
     // 충돌 이벤트 등록
     MeshComponent->OnComponentHit.AddDynamic(this, &AFruitBall::OnBallHit);
 }
