@@ -30,24 +30,23 @@ public:
     
     // 특정 위치에 이미지 설정 (블루프린트에서도 호출 가능)
     UFUNCTION(BlueprintCallable, Category="UI")
-    void SetImageTexture(EWidgetImageType Position, const FString& TexturePath, 
-                        const FVector2D& CustomSize = FVector2D(0, 0));
+    void SetImageTexture(EWidgetImageType Position, const FString& TexturePath, const FVector2D& CustomSize = FVector2D(0, 0), float PaddingX = 20.0f, float PaddingY = 20.0f);
     
 protected:
     // 이미지 컴포넌트
     UPROPERTY()
-    UImage* LeftTopImage;
+    UImage* UI_Play_Score;
     
     UPROPERTY()
-    UImage* LeftMiddleImage;
+    UImage* UI_Play_FruitList;
     
     UPROPERTY()
-    UImage* RightTopImage;
+    UImage* UI_Play_NextFruit;
     
     // 캔버스 패널 참조
     UPROPERTY()
     UCanvasPanel* Canvas;
     
     // 앵커 기반 이미지 설정 - 크기 직접 지정 가능
-    void SetupImageWithTexture(UImage*& ImageWidget, EWidgetAnchor Anchor, const FString& TexturePath, const FVector2D& CustomSize = FVector2D(0, 0));
+    void SetupImageWithTexture(UImage*& ImageWidget, EWidgetAnchor Anchor, const FString& TexturePath, const FVector2D& CustomSize = FVector2D(0, 0), float PaddingX = 20.0f, float PaddingY = 20.0f);
 };

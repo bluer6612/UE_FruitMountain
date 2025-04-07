@@ -60,23 +60,26 @@ void UTextureDisplayWidget::SetupAllImages()
 {
     UE_LOG(LogTemp, Warning, TEXT("TextureDisplayWidget: 이미지 설정 시작"));
     
-    // 화면 크기를 고려한 앵커 기반 위치 설정 + 직접 크기 지정
-    SetupImageWithTexture(LeftTopImage, EWidgetAnchor::TopLeft, 
+    // 화면 크기를 고려한 앵커 기반 위치 설정 + 개별 패딩값 적용
+    SetupImageWithTexture(UI_Play_Score, EWidgetAnchor::TopLeft, 
                          TEXT("/Game/Asset/UI/UI_Play_Score"), 
-                         FVector2D(504, 253)); // 왼쪽 상단 점수판
+                         FVector2D(504, 253),
+                         40.0f, 40.0f); // 왼쪽 상단 점수판
                          
-    SetupImageWithTexture(LeftMiddleImage, EWidgetAnchor::MiddleLeft, 
+    SetupImageWithTexture(UI_Play_FruitList, EWidgetAnchor::BottomLeft, 
                          TEXT("/Game/Asset/UI/UI_Play_FruitList"), 
-                         FVector2D(101, 762)); // 왼쪽 중간 과일 목록
+                         FVector2D(101, 762),
+                         60.0f, 20.0f); // 왼쪽 하단 과일 목록
                          
-    SetupImageWithTexture(RightTopImage, EWidgetAnchor::TopRight, 
+    SetupImageWithTexture(UI_Play_NextFruit, EWidgetAnchor::TopRight, 
                          TEXT("/Game/Asset/UI/UI_Play_NextFruit"), 
-                         FVector2D(301, 339)); // 오른쪽 상단 다음 과일
+                         FVector2D(301, 339),
+                         120.0f, 60.0f); // 오른쪽 상단 다음 과일
 
     UE_LOG(LogTemp, Warning, TEXT("TextureDisplayWidget: 이미지 설정 완료"));
 }
 
-void UTextureDisplayWidget::SetImageTexture(EWidgetImageType Position, const FString& TexturePath, const FVector2D& CustomSize)
+void UTextureDisplayWidget::SetImageTexture(EWidgetImageType Position, const FString& TexturePath, const FVector2D& CustomSize, float PaddingX, float PaddingY)
 {
     // 이미지 참조와 앵커 정보를 한 번에 결정
     UImage** TargetImagePtr = nullptr;
@@ -85,18 +88,18 @@ void UTextureDisplayWidget::SetImageTexture(EWidgetImageType Position, const FSt
     // 단일 switch 문으로 해당 위치의 이미지 참조와 앵커 타입을 함께 결정
     switch (Position)
     {
-        case EWidgetImageType::LeftTop:
-            TargetImagePtr = &LeftTopImage;
+        case EWidgetImageType::UI_Play_Score:
+            TargetImagePtr = &UI_Play_Score;
             Anchor = EWidgetAnchor::TopLeft;
             break;
             
-        case EWidgetImageType::LeftMiddle:
-            TargetImagePtr = &LeftMiddleImage;
-            Anchor = EWidgetAnchor::MiddleLeft;
+        case EWidgetImageType::UI_Play_FruitList:
+            TargetImagePtr = &UI_Play_FruitList;
+            Anchor = EWidgetAnchor::BottomLeft;
             break;
             
-        case EWidgetImageType::RightTop:
-            TargetImagePtr = &RightTopImage;
+        case EWidgetImageType::UI_Play_NextFruit:
+            TargetImagePtr = &UI_Play_NextFruit;
             Anchor = EWidgetAnchor::TopRight;
             break;
             
@@ -113,11 +116,11 @@ void UTextureDisplayWidget::SetImageTexture(EWidgetImageType Position, const FSt
     }
     
     // 이미지 설정 함수 호출 (참조로 전달)
-    SetupImageWithTexture(*TargetImagePtr, Anchor, TexturePath, CustomSize);
+    SetupImageWithTexture(*TargetImagePtr, Anchor, TexturePath, CustomSize, PaddingX, PaddingY);
 }
 
-// 앵커 기반 이미지 설정 함수 - 크기 직접 지정 추가
-void UTextureDisplayWidget::SetupImageWithTexture(UImage*& ImageWidget, EWidgetAnchor Anchor, const FString& TexturePath, const FVector2D& CustomSize)
+// 앵커 기반 이미지 설정 함수 - 패딩 매개변수 추가
+void UTextureDisplayWidget::SetupImageWithTexture(UImage*& ImageWidget, EWidgetAnchor Anchor, const FString& TexturePath, const FVector2D& CustomSize, float PaddingX, float PaddingY)
 {
     if (!Canvas)
     {
@@ -169,11 +172,16 @@ void UTextureDisplayWidget::SetupImageWithTexture(UImage*& ImageWidget, EWidgetA
         // 슬롯 크기 설정
         ImageSlot->SetSize(FinalSize);
         
-        // 앵커 기반 위치 설정
-        UUIHelper::SetAnchorForSlot(ImageSlot, Anchor);
+        // 앵커 기반 위치 설정 (패딩 값 전달)
+        UUIHelper::SetAnchorForSlot(ImageSlot, Anchor, PaddingX, PaddingY);
+        
+        UE_LOG(LogTemp, Warning, TEXT("위젯 패딩 적용: X=%.1f, Y=%.1f"), PaddingX, PaddingY);
     }
     else
     {
         UE_LOG(LogTemp, Error, TEXT("TextureDisplayWidget: 텍스처 로드 및 적용 실패!"));
+        
+        // 패딩 값 로그 출력
+        UE_LOG(LogTemp, Warning, TEXT("텍스처 로드 실패, 패딩 적용: X=%.1f, Y=%.1f"), PaddingX, PaddingY);
     }
 }
