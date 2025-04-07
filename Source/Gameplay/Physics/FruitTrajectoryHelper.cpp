@@ -74,42 +74,30 @@ TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(AFruitPlayerCo
             break;
     }
     
-    // UE_LOG(LogTemp, Log, TEXT("포물선 계산: 각도=%.1f, 속도=%.1f, 포인트=%d개"),
-    //     UseAngle, LaunchVelocity.Size(), TrajectoryPoints.Num());
+    UE_LOG(LogTemp, Log, TEXT("포물선 계산: 각도=%.1f, 속도=%.1f, 포인트=%d개"),
+        UseAngle, LaunchVelocity.Size(), TrajectoryPoints.Num());
     
     return TrajectoryPoints;
 }
 
-void UFruitTrajectoryHelper::UpdateTrajectoryPath(
-    AFruitPlayerController* Controller, 
-    const FVector& StartLocation, 
-    const FVector& TargetLocation, 
-    bool bPersistent, 
-    int32 CustomTrajectoryID)
+void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Controller, const FVector& StartLocation, const FVector& TargetLocation, bool bPersistent, int32 CustomTrajectoryID)
 {
     if (!Controller || !Controller->GetWorld())
         return;
-
+    
     UWorld* World = Controller->GetWorld();
     const int32 TrajectoryID = (CustomTrajectoryID != 0) ? CustomTrajectoryID : 9999;
-
+    
     // 기존 궤적 비우기
     FlushPersistentDebugLines(World);
-
-    // 1. 현재 각도 가져오기
-    float MinAngle, MaxAngle;
-    UFruitPhysicsHelper::GetThrowAngleRange(MinAngle, MaxAngle);
-    float UseAngle = FMath::Clamp(Controller->ThrowAngle, MinAngle, MaxAngle);
-
-    // 2. 물리 헬퍼를 통해 조정된 타겟 위치 계산
-    FVector PlateCenter;
-    float PlateTopHeight;
-    FVector AdjustedTarget = UFruitPhysicsHelper::CalculateAdjustedTargetLocation(
-        World, StartLocation, TargetLocation, UseAngle, PlateCenter, PlateTopHeight);
-
-    // 3. 궤적 계산 및 시각화
+    
+    // 공의 질량 계산
     float BallMass = AFruitBall::CalculateBallMass(Controller->CurrentBallType);
-    TArray<FVector> TrajectoryPoints = CalculateTrajectoryPoints(Controller, StartLocation, AdjustedTarget, BallMass);
+    
+    // 물리적 포물선 계산 사용
+    TArray<FVector> TrajectoryPoints = CalculateTrajectoryPoints(Controller, StartLocation, TargetLocation, BallMass);
+    
+    // 궤적 시각화
     DrawTrajectoryPath(World, TrajectoryPoints, TrajectoryID);
 }
 

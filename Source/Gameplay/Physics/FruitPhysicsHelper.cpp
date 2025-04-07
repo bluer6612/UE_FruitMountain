@@ -86,22 +86,19 @@ bool UFruitPhysicsHelper::CalculateThrowVelocity(const FVector& StartLocation, c
     // 초기 속도 계산
     float InitialSpeed;
     bool bSuccess = CalculateInitialSpeed(StartLocation, TargetLocation, ThrowAngle, InitialSpeed);
-
+    
     if (!bSuccess)
     {
-        UE_LOG(LogTemp, Warning, TEXT("초기 속도 계산 실패: 타겟=%s"), *TargetLocation.ToString());
         return false;
     }
-
+    
     // 발사 방향 계산
     float ThrowAngleRad = FMath::DegreesToRadians(ThrowAngle);
     FVector LaunchDirection = CalculateLaunchDirection(StartLocation, TargetLocation, ThrowAngleRad);
-
+    
     // 초기 속도 벡터 계산
     OutLaunchVelocity = LaunchDirection * InitialSpeed;
-
-    UE_LOG(LogTemp, Log, TEXT("발사 속도 계산: 방향=%s, 속도=%.2f"), *LaunchDirection.ToString(), InitialSpeed);
-
+    
     return true;
 }
 
@@ -167,51 +164,56 @@ void UFruitPhysicsHelper::CalculateThrowParameters(AFruitPlayerController* Contr
 }
 
 // 물리 헬퍼 클래스에 새 함수 구현 추가
-FVector UFruitPhysicsHelper::CalculateAdjustedTargetLocation(
-    UWorld* World, 
-    const FVector& StartLocation, 
-    const FVector& TargetLocation, 
-    float ThrowAngle, 
-    FVector& OutPlateCenter, 
-    float& OutPlateTopHeight)
+FVector UFruitPhysicsHelper::CalculateAdjustedTargetLocation(UWorld* World, const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, FVector& OutPlateCenter, float& OutPlateTopHeight)
 {
     // 접시 중심 찾기
     OutPlateCenter = FVector::ZeroVector;
     OutPlateTopHeight = 0.0f;
-
+    
     TArray<AActor*> PlateActors;
     UGameplayStatics::GetAllActorsWithTag(World, FName("Plate"), PlateActors);
-
+    
     if (PlateActors.Num() > 0)
     {
         AActor* PlateActor = PlateActors[0];
         OutPlateCenter = PlateActor->GetActorLocation();
-
+        
         // 접시 상단 높이 계산
         FBox Bounds = PlateActor->GetComponentsBoundingBox();
         OutPlateTopHeight = Bounds.Max.Z;
-
+        
         // 던지기 각도에 따라 타겟 위치 조정
         float ThrowAngleRad = FMath::DegreesToRadians(ThrowAngle);
-
+        float HorizontalCoefficient = 0.0f;
+        
+        // 각도에 따른 수평 거리 계수 조정 (수정: 계수를 더 작게하여 접시 가까이에 착지하도록)
+        if (ThrowAngle < 20.0f)
+            HorizontalCoefficient = 0.4f; // 낮은 각도 (이전: 0.8f)
+        else if (ThrowAngle < 40.0f)
+            HorizontalCoefficient = 0.3f; // 중간 각도 (이전: 0.6f)
+        else
+            HorizontalCoefficient = 0.2f; // 높은 각도 (이전: 0.4f)
+        
         // 타겟 방향 벡터 계산
         FVector DirectionToTarget = TargetLocation - StartLocation;
         FVector HorizontalDirection = FVector(DirectionToTarget.X, DirectionToTarget.Y, 0.0f).GetSafeNormal();
-
+        
         // 접시 중심점에서 조정된 위치 계산
         FVector AdjustedTarget = OutPlateCenter;
-
-        // 수평 거리와 높이 조정
-        float HorizontalDistance = FVector::Dist2D(OutPlateCenter, StartLocation);
-        float AdjustedHorizontalDistance = HorizontalDistance * 0.9f; // 거리 계수 조정
-        AdjustedTarget = OutPlateCenter - (HorizontalDirection * AdjustedHorizontalDistance);
-
-        // 약간의 높이 마진 추가
-        AdjustedTarget.Z = OutPlateTopHeight + 10.0f; // 마진을 10.0f로 증가
-
+        
+        // 조정: 항상 접시 중심을 향하되, 접시 크기에 맞게 거리 조정
+        float AdjustedHorizontalDistance = FVector::Dist2D(OutPlateCenter, StartLocation) * HorizontalCoefficient;
+        FVector AdjustedHorizontalDirection = (OutPlateCenter - StartLocation);
+        AdjustedHorizontalDirection.Z = 0;
+        AdjustedHorizontalDirection.Normalize();
+        
+        // 최종 위치 계산 (수정: 0.2f → 0.05f로 변경하여 접시 중심에 더 가깝게)
+        AdjustedTarget = OutPlateCenter - (AdjustedHorizontalDirection * AdjustedHorizontalDistance * 0.05f);
+        AdjustedTarget.Z = OutPlateTopHeight + 5.0f; // 약간의 마진 추가
+        
         return AdjustedTarget;
     }
-
+    
     // 접시를 찾지 못한 경우 원래 타겟 사용
     return TargetLocation;
 }
