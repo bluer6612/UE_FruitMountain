@@ -19,27 +19,22 @@ AFruitBall::AFruitBall()
     MeshComponent->SetCollisionProfileName(TEXT("PhysicsActor"));
 
     // 기본 공 메시로 언리얼 기본 20면체 메시 사용
-    static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset(TEXT("/Game/StarterContent/Shapes/Shape_Dodecahedron"));
+    static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset(TEXT("/Engine/BasicShapes/Sphere"));
     if (MeshAsset.Succeeded())
     {
         MeshComponent->SetStaticMesh(MeshAsset.Object);
-        
-        // 기본 크기 15.0f (월드 스케일) 적용
-        // 언리얼에서는 100배 축소된 값 사용 - 15.0f → 0.15f
-        float ActorScale = BaseBallSize / 100.0f;
-        MeshComponent->SetRelativeScale3D(FVector(ActorScale));
     }
 
     // 충돌 이벤트 등록
     MeshComponent->OnComponentHit.AddDynamic(this, &AFruitBall::OnBallHit);
 }
 
-// 공 크기 계산 함수 구현
+// 공 크기 계산 함수 구현 - 이미 언리얼 스케일로 반환
 float AFruitBall::CalculateBallSize(int32 BallType)
 {
-    // 과일 레벨에 따른 크기 증가 (예시 공식)
-    // 레벨 1: 100cm, 레벨 2: 120cm, 레벨 3: 140cm, ...
-    return 100.0f + ((BallType - 1) * 10.0f);
+    // 과일 레벨에 따른 크기 증가 (UE 단위로 직접 반환)
+    // 레벨 1: 15cm, 레벨 2: 16.5cm, ...
+    return BaseBallSize + ((BallType - 1) * BaseBallSize * 0.1f);
 }
 
 // 공 질량 계산 함수 구현
@@ -77,10 +72,6 @@ bool AFruitBall::TryMergeWithOtherFruit(AFruitBall* OtherFruit)
         
         // 병합 함수 호출
         UFruitMergeHelper::MergeFruits(this, OtherFruit, MergeLocation);
-        
-        // 이미 언리얼 스케일로 변환된 값
-        float BallSize = CalculateBallSize(BallType);
-        OtherFruit->SetActorScale3D(FVector(BallSize));
         
         return true;
     }

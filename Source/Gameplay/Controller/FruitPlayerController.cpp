@@ -76,7 +76,7 @@ void AFruitPlayerController::BeginPlay()
     });
 
     // 미리보기 공 생성
-    CurrentBallType = FMath::RandRange(1, 11);
+    CurrentBallType = FMath::RandRange(1, 5);
     UpdatePreviewBall();
         
     SetInputMode(FInputModeGameAndUI());

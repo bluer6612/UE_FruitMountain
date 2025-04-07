@@ -17,8 +17,7 @@ public:
     class UStaticMeshComponent* MeshComponent;
     
     // 기본 공 크기 (월드 스케일)
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Ball Properties")
-    float BaseBallSize = 15.0f;
+    static constexpr float BaseBallSize = 15.0f;
     
     // 밀도 계수 - 다른 클래스에서 참조할 수 있도록 상수로 정의
     static constexpr float DensityFactor = 7.5f; // 추가로 5배 증가된 밀도 (1.5f에서 7.5f로)
