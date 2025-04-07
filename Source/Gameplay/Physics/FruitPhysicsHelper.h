@@ -34,21 +34,11 @@ public:
     
     // 접시 정보를 고려한 조정된 타겟 위치 계산
     UFUNCTION(BlueprintCallable, Category = "Physics")
-    static FVector CalculateAdjustedTargetLocation(
-        UWorld* World, 
-        const FVector& StartLocation, 
-        const FVector& TargetLocation, 
-        float ThrowAngle,
-        FVector& OutPlateCenter,
-        float& OutPlateTopHeight);
+    static FVector CalculateAdjustedTargetLocation(UWorld* World, const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, FVector& OutPlateCenter, float& OutPlateTopHeight);
         
     // 포물선 궤적의 피크 높이 계산
     UFUNCTION(BlueprintCallable, Category = "Physics")
-    static float CalculateTrajectoryPeakHeight(
-        float HorizontalDistance, 
-        float ThrowAngle, 
-        float MinAngle, 
-        float MaxAngle);
+    static float CalculateTrajectoryPeakHeight(float HorizontalDistance, float ThrowAngle, float MinAngle, float MaxAngle);
 
 private:
     // 내부 헬퍼 함수 - 초기 속도 계산
