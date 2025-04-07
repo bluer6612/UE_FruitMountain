@@ -1,5 +1,5 @@
 #include "FruitSpawnHelper.h"
-#include "FruitPlayerController.h"
+#include "Gameplay/Controller/FruitPlayerController.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
@@ -49,6 +49,13 @@ AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, const F
     {
         // 크기 설정 - 모든 축에 동일한 스케일 적용
         SpawnedBall->SetActorScale3D(FVector(BallSize));
+        
+        // BallType 설정
+        AFruitBall* FruitBall = Cast<AFruitBall>(SpawnedBall);
+        if (FruitBall)
+        {
+            FruitBall->BallType = BallType;
+        }
         
         // 디버그 로그로 크기 확인
         UE_LOG(LogTemp, Verbose, TEXT("공 생성: 타입=%d, 크기(스케일)=%f, 실제 크기(cm)=%f"),

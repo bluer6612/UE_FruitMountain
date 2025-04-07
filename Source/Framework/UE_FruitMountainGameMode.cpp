@@ -1,6 +1,6 @@
 #include "UE_FruitMountainGameMode.h"
 #include "Kismet/GameplayStatics.h"
-#include "Gameplay/FruitPlayerController.h"
+#include "Gameplay/Controller/FruitPlayerController.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "UObject/ConstructorHelpers.h"

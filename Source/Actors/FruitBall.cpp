@@ -25,6 +25,16 @@ AFruitBall::AFruitBall()
         float ActorScale = BaseBallSize / 100.0f;
         MeshComponent->SetRelativeScale3D(FVector(ActorScale));
     }
+
+    // 충돌 이벤트 등록
+    UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(GetComponentByClass(UStaticMeshComponent::StaticClass()));
+    if (MeshComp)
+    {
+        MeshComp->OnComponentHit.AddDynamic(this, &AFruitBall::OnBallHit);
+    }
+    
+    // 병합 상태 초기화
+    bIsBeingMerged = false;
 }
 
 // 공 타입에 따른 크기 계산 함수 (정적 함수)
@@ -56,4 +66,52 @@ float AFruitBall::CalculateBallMass(int32 BallType, float BaseBallScale)
     
     // 최소 질량 보장 (이것도 5배 증가)
     return FMath::Max(BallMass, 12.5f); // 이전 2.5f에서 5배 증가
+}
+
+// 충돌 이벤트 핸들러 구현
+void AFruitBall::OnBallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, 
+                          UPrimitiveComponent* OtherComp, FVector NormalImpulse, 
+                          const FHitResult& Hit)
+{
+    // 이미 병합 중이면 무시
+    if (bIsBeingMerged) return;
+    
+    // 충돌한 상대방이 과일인지 확인
+    AFruitBall* OtherFruit = Cast<AFruitBall>(OtherActor);
+    if (OtherFruit && !OtherFruit->bIsBeingMerged)
+    {
+        TryMergeWithOtherFruit(OtherFruit);
+    }
+}
+
+// 과일 합치기 시도 함수
+bool AFruitBall::TryMergeWithOtherFruit(AFruitBall* OtherFruit)
+{
+    // 두 과일의 레벨이 같은지 확인
+    if (BallType == OtherFruit->BallType)
+    {
+        // 병합 중 표시하여 중복 처리 방지
+        bIsBeingMerged = true;
+        OtherFruit->bIsBeingMerged = true;
+        
+        // 충돌 위치 계산 (두 과일의 중간점)
+        FVector MergeLocation = (GetActorLocation() + OtherFruit->GetActorLocation()) * 0.5f;
+        
+        // 새 과일 스폰 - UFruitMergeHelper 사용
+        UFruitMergeHelper::MergeFruits(this, OtherFruit, MergeLocation);
+        
+        return true;
+    }
+    
+    return false;
+}
+
+// 과일 정보 디버그 표시 함수 (FruitBall.cpp에 추가)
+void AFruitBall::DisplayDebugInfo()
+{
+    if (GEngine)
+    {
+        FString DebugMsg = FString::Printf(TEXT("과일 ID: %s, 레벨: %d"), *GetName(), BallType);
+        GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, DebugMsg);
+    }
 }

@@ -69,12 +69,12 @@ void UTextureDisplayWidget::SetupAllImages()
     SetupImageWithTexture(UI_Play_FruitList, EWidgetAnchor::BottomLeft, 
                          TEXT("/Game/Asset/UI/UI_Play_FruitList"), 
                          FVector2D(101, 762),
-                         60.0f, 30.0f); // 왼쪽 하단 과일 목록
+                         60.0f, 20.0f); // 왼쪽 하단 과일 목록
                          
     SetupImageWithTexture(UI_Play_NextFruit, EWidgetAnchor::TopRight, 
                          TEXT("/Game/Asset/UI/UI_Play_NextFruit"), 
                          FVector2D(301, 339),
-                         100.0f, 60.0f); // 오른쪽 상단 다음 과일
+                         120.0f, 60.0f); // 오른쪽 상단 다음 과일
 
     UE_LOG(LogTemp, Warning, TEXT("TextureDisplayWidget: 이미지 설정 완료"));
 }

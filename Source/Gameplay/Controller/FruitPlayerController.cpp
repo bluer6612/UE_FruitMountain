@@ -8,9 +8,9 @@
 #include "System/Camera/CameraOrbitFunctionLibrary.h"
 #include "Framework/UE_FruitMountainGameMode.h"
 #include "Camera/CameraComponent.h"
-#include "Gameplay/FruitThrowHelper.h"
-#include "Gameplay/FruitTrajectoryHelper.h"
-#include "System/Physics/FruitPhysicsHelper.h"
+#include "Gameplay/Physics/FruitThrowHelper.h"
+#include "Gameplay/Physics/FruitTrajectoryHelper.h"
+#include "Gameplay/Physics/FruitPhysicsHelper.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Interface/UI/TextureDisplayWidget.h"
 

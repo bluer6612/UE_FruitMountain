@@ -1,8 +1,8 @@
 #include "FruitThrowHelper.h"
-#include "FruitPlayerController.h"
 #include "FruitTrajectoryHelper.h"
-#include "System/Physics/FruitPhysicsHelper.h"
-#include "FruitSpawnHelper.h" // 새로운 헬퍼 클래스 추가
+#include "FruitPhysicsHelper.h"
+#include "Gameplay/Controller/FruitPlayerController.h"
+#include "Gameplay/Create/FruitSpawnHelper.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
@@ -28,8 +28,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
     }
     
     // 공 스폰 위치 계산
-    FVector SpawnLocation = UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(
-                            Controller->GetWorld(), Controller->CameraOrbitAngle);
+    FVector SpawnLocation = UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(Controller->GetWorld(), Controller->CameraOrbitAngle);
     
     if (SpawnLocation == FVector::ZeroVector)
     {
