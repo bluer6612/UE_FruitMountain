@@ -5,6 +5,9 @@
 #include "Particles/ParticleSystem.h"
 #include "Components/AudioComponent.h"
 #include "Interface/UI/TextureDisplayWidget.h"
+#include "Gameplay/Controller/FruitPlayerController.h"
+#include "Framework/UE_FruitMountainGameMode.h"
+#include "Components/StaticMeshComponent.h"
 
 void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& MergeLocation)
 {
@@ -84,7 +87,7 @@ void UFruitMergeHelper::AddScore(int32 BallType)
         AUE_FruitMountainGameMode* FruitGameMode = Cast<AUE_FruitMountainGameMode>(GameMode);
         if (FruitGameMode)
         {
-            // 게임 모드에 점수 추가 함수 호출
+            // 게임 모드에 점수 추가 함수 호출 (구현 필요)
             // FruitGameMode->AddScore(ScoreToAdd);
             
             // UI 업데이트

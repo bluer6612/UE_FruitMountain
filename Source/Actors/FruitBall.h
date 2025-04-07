@@ -5,7 +5,7 @@
 #include "FruitBall.generated.h"
 
 UCLASS()
-class AFruitBall : public AActor
+class UE_FRUITMOUNTAIN_API AFruitBall : public AActor
 {
     GENERATED_BODY()
     
@@ -27,20 +27,17 @@ public:
     UFUNCTION(BlueprintCallable, Category="Ball Properties")
     float GetBaseBallSize() const { return BaseBallSize; }
     
-    // 공 타입에 따른 크기 계산 (10%씩 증가)
-    UFUNCTION(BlueprintCallable, Category="Ball Properties")
-    static float CalculateBallSize(int32 BallType, float BaseBallScale = 15.0f);
+    // 공 크기 계산 (정적 함수로 구현)
+    UFUNCTION(BlueprintCallable, Category="Fruit")
+    static float CalculateBallSize(int32 BallType);
     
-    // 공 타입과 크기에 따른 질량 계산
-    UFUNCTION(BlueprintCallable, Category="Ball Properties")
-    static float CalculateBallMass(int32 BallType, float BaseBallScale = 15.0f);
+    // 공 질량 계산 (정적 함수로 구현)
+    UFUNCTION(BlueprintCallable, Category="Fruit")
+    static float CalculateBallMass(int32 BallType);
 
-public:
     // 충돌 이벤트 핸들러
     UFUNCTION()
-    void OnBallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, 
-                  UPrimitiveComponent* OtherComp, FVector NormalImpulse, 
-                  const FHitResult& Hit);
+    void OnBallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
     
     // 과일 합치기 시도
     bool TryMergeWithOtherFruit(AFruitBall* OtherFruit);
@@ -48,6 +45,10 @@ public:
     // 현재 과일 레벨 (BallType) 반환
     UFUNCTION(BlueprintPure, Category="Fruit")
     int32 GetBallType() const { return BallType; }
+    
+    // 디버그 정보 표시 함수 (선언 추가)
+    UFUNCTION(BlueprintCallable, Category="Debug")
+    void DisplayDebugInfo();
     
     // 병합 중인지 여부
     UPROPERTY()
