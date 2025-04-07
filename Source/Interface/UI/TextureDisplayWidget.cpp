@@ -60,15 +60,23 @@ void UTextureDisplayWidget::SetupAllImages()
 {
     UE_LOG(LogTemp, Warning, TEXT("TextureDisplayWidget: 이미지 설정 시작"));
     
-    // 화면 크기를 고려한 앵커 기반 위치 설정
-    SetupImageWithTexture(LeftTopImage, EWidgetAnchor::TopLeft, TEXT("/Game/Asset/UI/UI_Play_Score"));
-    SetupImageWithTexture(LeftMiddleImage, EWidgetAnchor::MiddleLeft, TEXT("/Game/Asset/UI/UI_Play_FruitList"));
-    SetupImageWithTexture(RightTopImage, EWidgetAnchor::TopRight, TEXT("/Game/Asset/UI/UI_Play_NextFruit"));
+    // 화면 크기를 고려한 앵커 기반 위치 설정 + 직접 크기 지정
+    SetupImageWithTexture(LeftTopImage, EWidgetAnchor::TopLeft, 
+                         TEXT("/Game/Asset/UI/UI_Play_Score"), 
+                         FVector2D(504, 253)); // 왼쪽 상단 점수판
+                         
+    SetupImageWithTexture(LeftMiddleImage, EWidgetAnchor::MiddleLeft, 
+                         TEXT("/Game/Asset/UI/UI_Play_FruitList"), 
+                         FVector2D(101, 762)); // 왼쪽 중간 과일 목록
+                         
+    SetupImageWithTexture(RightTopImage, EWidgetAnchor::TopRight, 
+                         TEXT("/Game/Asset/UI/UI_Play_NextFruit"), 
+                         FVector2D(301, 339)); // 오른쪽 상단 다음 과일
 
     UE_LOG(LogTemp, Warning, TEXT("TextureDisplayWidget: 이미지 설정 완료"));
 }
 
-void UTextureDisplayWidget::SetImageTexture(EWidgetImageType Position, const FString& TexturePath)
+void UTextureDisplayWidget::SetImageTexture(EWidgetImageType Position, const FString& TexturePath, const FVector2D& CustomSize)
 {
     // 이미지 참조와 앵커 정보를 한 번에 결정
     UImage** TargetImagePtr = nullptr;
@@ -105,11 +113,11 @@ void UTextureDisplayWidget::SetImageTexture(EWidgetImageType Position, const FSt
     }
     
     // 이미지 설정 함수 호출 (참조로 전달)
-    SetupImageWithTexture(*TargetImagePtr, Anchor, TexturePath);
+    SetupImageWithTexture(*TargetImagePtr, Anchor, TexturePath, CustomSize);
 }
 
-// 앵커 기반 이미지 설정 함수
-void UTextureDisplayWidget::SetupImageWithTexture(UImage*& ImageWidget, EWidgetAnchor Anchor, const FString& TexturePath)
+// 앵커 기반 이미지 설정 함수 - 크기 직접 지정 추가
+void UTextureDisplayWidget::SetupImageWithTexture(UImage*& ImageWidget, EWidgetAnchor Anchor, const FString& TexturePath, const FVector2D& CustomSize)
 {
     if (!Canvas)
     {
@@ -145,10 +153,23 @@ void UTextureDisplayWidget::SetupImageWithTexture(UImage*& ImageWidget, EWidgetA
 
     if (LoadedTexture)
     {
-        // 실제 텍스처 크기를 슬롯에 적용
-        ImageSlot->SetSize(FVector2D(LoadedTexture->GetSizeX(), LoadedTexture->GetSizeY()));
+        // 자세한 텍스처 정보 로그 추가
+        UE_LOG(LogTemp, Warning, TEXT("========= 텍스처 경로: %s ========="), *TexturePath);
         
-        // 앵커 기반 위치 설정 (UIHelper 사용)
+        // 사용자 지정 크기 또는 원본 크기 사용
+        FVector2D FinalSize = CustomSize;
+        
+        // FSlateBrush에도 사용자 지정 크기 적용 (UIHelper 수정 필요)
+        FSlateBrush Brush;
+        Brush.SetResourceObject(LoadedTexture);
+        Brush.DrawAs = ESlateBrushDrawType::Image;
+        Brush.ImageSize = FinalSize;
+        ImageWidget->SetBrush(Brush);
+        
+        // 슬롯 크기 설정
+        ImageSlot->SetSize(FinalSize);
+        
+        // 앵커 기반 위치 설정
         UUIHelper::SetAnchorForSlot(ImageSlot, Anchor);
     }
     else
