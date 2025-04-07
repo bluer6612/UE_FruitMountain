@@ -4,6 +4,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/Actor.h"
 #include "DrawDebugHelpers.h"
+#include "PhysicsEngine/PhysicsSettings.h"
 
 // const 정적 변수 초기화
 const float UFruitPhysicsHelper::MinThrowAngle = 5.0f;
@@ -27,7 +28,8 @@ bool UFruitPhysicsHelper::CalculateInitialSpeed(const FVector& StartLocation, co
 {
     // 1. 기본 파라미터 설정
     float ThrowAngleRad = FMath::DegreesToRadians(ThrowAngle);
-    float Gravity = 980.0f; // 중력 가속도 (양수로 설정)
+    //float Gravity = 980.f;
+    float Gravity = GetDefault<UPhysicsSettings>()->DefaultGravityZ * -1.0f; // 음수로 변환
     
     // 2. 수평 거리와 높이 차이 계산
     FVector HorizontalDelta = TargetLocation - StartLocation;

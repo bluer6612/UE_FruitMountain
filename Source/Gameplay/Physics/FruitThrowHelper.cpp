@@ -65,23 +65,17 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
             float ActualMass = MeshComp->GetMass();
             
             // 던지기 파라미터 계산시 조정된 타겟 위치 사용
-            float AdjustedForce;
-            FVector LaunchDirection;
-            UFruitPhysicsHelper::CalculateThrowParameters(
-                Controller, SpawnLocation, AdjustedTarget, 
-                AdjustedForce, LaunchDirection, ActualMass);
+            FVector LaunchVelocity;
+            bool bSuccess = UFruitPhysicsHelper::CalculateThrowVelocity(
+                SpawnLocation, AdjustedTarget, Controller->ThrowAngle, ActualMass, LaunchVelocity);
 
-            // 접시 크기에 맞게 힘 추가 조정 (10% 증가)
-            AdjustedForce *= 1.1f;
+            if (bSuccess)
+            {
+                MeshComp->SetPhysicsLinearVelocity(LaunchVelocity);
+            }
             
-            // 충격량 직접 적용
-            FVector FinalImpulse = LaunchDirection * AdjustedForce;
-            
-            // 즉시 충격량 적용하여 공이 날아가도록 함
-            MeshComp->AddImpulse(FinalImpulse);
-            
-            UE_LOG(LogTemp, Warning, TEXT("공 던지기: 힘=%f, 방향=%s, 질량=%f, 타겟=%s"),
-                AdjustedForce, *LaunchDirection.ToString(), ActualMass, *AdjustedTarget.ToString());
+            UE_LOG(LogTemp, Warning, TEXT("공 던지기: 방향=%s, 질량=%f, 타겟=%s"),
+                *LaunchVelocity.ToString(), ActualMass, *AdjustedTarget.ToString());
         }
     }
     
