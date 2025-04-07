@@ -47,9 +47,6 @@ protected:
     UPROPERTY()
     UCanvasPanel* Canvas;
     
-    // 헬퍼 함수
-    UImage* GetImageForType(EWidgetImageType Type);
-    
     // 이미지 설정 함수 (UI 헬퍼 클래스로 기능 분리)
     void SetupImageWithTexture(UImage*& ImageWidget, EWidgetAnchor Anchor, const FString& TexturePath);
 };

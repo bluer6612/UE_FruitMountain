@@ -71,45 +71,44 @@ void UTextureDisplayWidget::SetupAllImages()
     UE_LOG(LogTemp, Warning, TEXT("TextureDisplayWidget: 이미지 설정 완료"));
 }
 
-UImage* UTextureDisplayWidget::GetImageForType(EWidgetImageType Type)
-{
-    switch (Type)
-    {
-        case EWidgetImageType::LeftTop:
-            return LeftTopImage;
-        case EWidgetImageType::LeftMiddle:
-            return LeftMiddleImage;
-        case EWidgetImageType::RightTop:
-            return RightTopImage;
-        default:
-            return nullptr;
-    }
-}
-
 void UTextureDisplayWidget::SetImageTexture(EWidgetImageType Position, const FString& TexturePath)
 {
-    UImage* TargetImage = GetImageForType(Position);
+    // 이미지 참조와 앵커 정보를 한 번에 결정
+    UImage** TargetImagePtr = nullptr;
+    EWidgetAnchor Anchor = EWidgetAnchor::Center;
     
-    // 앵커 타입 매핑
-    EWidgetAnchor Anchor;
+    // 단일 switch 문으로 해당 위치의 이미지 참조와 앵커 타입을 함께 결정
     switch (Position)
     {
         case EWidgetImageType::LeftTop:
+            TargetImagePtr = &LeftTopImage;
             Anchor = EWidgetAnchor::TopLeft;
             break;
+            
         case EWidgetImageType::LeftMiddle:
+            TargetImagePtr = &LeftMiddleImage;
             Anchor = EWidgetAnchor::MiddleLeft;
             break;
+            
         case EWidgetImageType::RightTop:
+            TargetImagePtr = &RightTopImage;
             Anchor = EWidgetAnchor::TopRight;
             break;
+            
         default:
-            Anchor = EWidgetAnchor::Center;
-            break;
+            UE_LOG(LogTemp, Error, TEXT("알 수 없는 이미지 위치 유형: %d"), static_cast<int32>(Position));
+            return;
     }
     
-    // 새 함수 호출
-    SetupImageWithTexture(TargetImage, Anchor, TexturePath);
+    // 유효한 이미지 참조가 있는지 확인
+    if (!TargetImagePtr)
+    {
+        UE_LOG(LogTemp, Error, TEXT("이미지 참조를 찾을 수 없음"));
+        return;
+    }
+    
+    // 이미지 설정 함수 호출 (참조로 전달)
+    SetupImageWithTexture(*TargetImagePtr, Anchor, TexturePath);
 }
 
 // 앵커 기반 이미지 설정 함수
@@ -146,9 +145,21 @@ void UTextureDisplayWidget::SetupImageWithTexture(UImage*& ImageWidget, EWidgetA
     
     // 텍스처 로드 및 적용 (UIHelper 클래스 사용)
     UTexture2D* LoadedTexture = UUIHelper::LoadAndApplyTexture(ImageWidget, TexturePath);
-    
+
     if (LoadedTexture)
     {
+        // 자세한 텍스처 정보 로그 추가
+        UE_LOG(LogTemp, Warning, TEXT("========= 텍스처 상세 정보 ========="));
+        UE_LOG(LogTemp, Warning, TEXT("경로: %s"), *TexturePath);
+        UE_LOG(LogTemp, Warning, TEXT("크기: %d x %d"), LoadedTexture->GetSizeX(), LoadedTexture->GetSizeY());
+        UE_LOG(LogTemp, Warning, TEXT("텍스처 그룹: %d"), static_cast<int32>(LoadedTexture->LODGroup));
+        UE_LOG(LogTemp, Warning, TEXT("Mip 수: %d"), LoadedTexture->GetNumMips());
+        UE_LOG(LogTemp, Warning, TEXT("압축 설정: %d"), static_cast<int32>(LoadedTexture->CompressionSettings));
+        UE_LOG(LogTemp, Warning, TEXT("필터 모드: %d"), static_cast<int32>(LoadedTexture->Filter));
+        UE_LOG(LogTemp, Warning, TEXT("텍스처 메모리 크기: %d 바이트"), LoadedTexture->GetResourceSize(EResourceSizeMode::Exclusive));
+        UE_LOG(LogTemp, Warning, TEXT("텍스처 포맷: %s"), *LoadedTexture->GetDesc());
+        UE_LOG(LogTemp, Warning, TEXT("==============================="));
+        
         // 실제 텍스처 크기를 슬롯에 적용
         ImageSlot->SetSize(FVector2D(LoadedTexture->GetSizeX(), LoadedTexture->GetSizeY()));
         

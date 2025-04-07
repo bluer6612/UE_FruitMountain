@@ -39,10 +39,11 @@ void AUE_FruitMountainGameMode::BeginPlay()
     if (GEngine)
     {
         // 여러 위치에 메시지 표시
-        GEngine->AddOnScreenDebugMessage(-1, 60.0f, FColor::Red, TEXT("화면 상단 디버그 메시지"));
+        //GEngine->AddOnScreenDebugMessage(-1, 60.0f, FColor::Red, TEXT("화면 상단 디버그 메시지"));
     }
         
-    USimpleTextureWidget::CreateDisplayWidget(this);
+    // 함수 호출 수정: SimpleTextureWidget → TextureDisplayWidget
+    UTextureDisplayWidget::CreateDisplayWidget(this);
 }
 
 void AUE_FruitMountainGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)

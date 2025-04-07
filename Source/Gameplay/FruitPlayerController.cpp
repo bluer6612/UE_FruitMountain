@@ -12,7 +12,7 @@
 #include "Gameplay/FruitTrajectoryHelper.h"
 #include "System/Physics/FruitPhysicsHelper.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "Interface/UI/SimpleTextureWidget.h"
+#include "Interface/UI/TextureDisplayWidget.h"
 
 AFruitPlayerController::AFruitPlayerController()
 {
