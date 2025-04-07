@@ -9,6 +9,7 @@
 #include "Components/PrimitiveComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Actors/PlateActor.h"
+#include "Actors/FruitBall.h"
 
 // ThrowFruit 함수 - FruitPhysicsHelper 활용
 void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
@@ -85,7 +86,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
     }
     
     // 다음 공 타입 랜덤 설정
-    Controller->CurrentBallType = FMath::RandRange(1, MaxBallType);
+    Controller->CurrentBallType = FMath::RandRange(1, AFruitBall::MaxBallType);
     
     // 약간의 딜레이 후 새 미리보기 공 업데이트 - 하드코딩된 값 대신 BallThrowDelay 사용
     FTimerHandle UpdatePreviewTimerHandle;
