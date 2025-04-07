@@ -41,7 +41,7 @@ void AFruitHUD::CreateAndAddWidgets()
             // 이미지 설정 함수 호출
             TextureWidget->SetupAllImages();
             
-            // 추가: UMG 렌더링 강제 설정
+            // UMG 렌더링 강제 설정 (아래 함수가 UI 그리는 공간 만드는 핵심)
             if (GEngine && GEngine->GameViewport)
             {
                 // 뷰포트 설정 강제 적용

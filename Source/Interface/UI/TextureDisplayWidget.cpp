@@ -54,9 +54,6 @@ void UTextureDisplayWidget::NativeConstruct()
     
     // 정적 참조 업데이트
     Instance = this;
-    
-    // 이미지 설정
-    SetupAllImages();
 }
 
 void UTextureDisplayWidget::SetupAllImages()
@@ -148,18 +145,6 @@ void UTextureDisplayWidget::SetupImageWithTexture(UImage*& ImageWidget, EWidgetA
 
     if (LoadedTexture)
     {
-        // 자세한 텍스처 정보 로그 추가
-        UE_LOG(LogTemp, Warning, TEXT("========= 텍스처 상세 정보 ========="));
-        UE_LOG(LogTemp, Warning, TEXT("경로: %s"), *TexturePath);
-        UE_LOG(LogTemp, Warning, TEXT("크기: %d x %d"), LoadedTexture->GetSizeX(), LoadedTexture->GetSizeY());
-        UE_LOG(LogTemp, Warning, TEXT("텍스처 그룹: %d"), static_cast<int32>(LoadedTexture->LODGroup));
-        UE_LOG(LogTemp, Warning, TEXT("Mip 수: %d"), LoadedTexture->GetNumMips());
-        UE_LOG(LogTemp, Warning, TEXT("압축 설정: %d"), static_cast<int32>(LoadedTexture->CompressionSettings));
-        UE_LOG(LogTemp, Warning, TEXT("필터 모드: %d"), static_cast<int32>(LoadedTexture->Filter));
-        UE_LOG(LogTemp, Warning, TEXT("텍스처 메모리 크기: %d 바이트"), LoadedTexture->GetResourceSize(EResourceSizeMode::Exclusive));
-        UE_LOG(LogTemp, Warning, TEXT("텍스처 포맷: %s"), *LoadedTexture->GetDesc());
-        UE_LOG(LogTemp, Warning, TEXT("==============================="));
-        
         // 실제 텍스처 크기를 슬롯에 적용
         ImageSlot->SetSize(FVector2D(LoadedTexture->GetSizeX(), LoadedTexture->GetSizeY()));
         
@@ -168,10 +153,6 @@ void UTextureDisplayWidget::SetupImageWithTexture(UImage*& ImageWidget, EWidgetA
     }
     else
     {
-        // 텍스처 로드 실패 시 기본 크기 설정
-        ImageSlot->SetSize(FVector2D(200.0f, 200.0f));
-        
-        // 앵커 기반 위치 설정 (에러 표시용)
-        UUIHelper::SetAnchorForSlot(ImageSlot, Anchor);
+        UE_LOG(LogTemp, Error, TEXT("TextureDisplayWidget: 텍스처 로드 및 적용 실패!"));
     }
 }
