@@ -129,10 +129,13 @@ TArray<FVector> UFruitTrajectoryHelper::CalculateBezierPoints(const FVector& Sta
     TArray<FVector> Points;
     Points.Reserve(PointCount);
     
-    // 정점 위치 계산
+    // 정점 위치 계산 - 접시 크기 변화에 맞게 조정
     FVector HorizontalDelta = End - Start;
-    FVector Peak = Start + HorizontalDelta * 0.5f;
-    Peak.Z = FMath::Max(Start.Z, End.Z) + PeakHeight;
+    // 더 높은 정밀도를 위해 비율 조정: 0.5f → 0.45f
+    FVector Peak = Start + HorizontalDelta * 0.45f;
+    
+    // 피크 높이를 약간 높게 조정 (20% 증가)
+    Peak.Z = FMath::Max(Start.Z, End.Z) + PeakHeight * 1.2f;
     
     // 베지어 곡선 포인트 생성
     for (int32 i = 0; i < PointCount; i++)

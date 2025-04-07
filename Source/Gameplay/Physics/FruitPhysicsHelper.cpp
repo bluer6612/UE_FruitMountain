@@ -164,51 +164,56 @@ void UFruitPhysicsHelper::CalculateThrowParameters(AFruitPlayerController* Contr
 // 물리 헬퍼 클래스에 새 함수 구현 추가
 FVector UFruitPhysicsHelper::CalculateAdjustedTargetLocation(UWorld* World, const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, FVector& OutPlateCenter, float& OutPlateTopHeight)
 {
-    // 기본값 설정
-    OutPlateTopHeight = 20.0f;
-    OutPlateCenter = TargetLocation;
+    // 접시 중심 찾기
+    OutPlateCenter = FVector::ZeroVector;
+    OutPlateTopHeight = 0.0f;
     
-    // 각도 범위 가져오기
-    float MinAngle, MaxAngle;
-    GetThrowAngleRange(MinAngle, MaxAngle);
-    float UseAngle = FMath::Clamp(ThrowAngle, MinAngle, MaxAngle);
-    
-    // 접시 액터 찾기
     TArray<AActor*> PlateActors;
     UGameplayStatics::GetAllActorsWithTag(World, FName("Plate"), PlateActors);
     
-    if (PlateActors.Num() <= 0)
-        return TargetLocation; // 접시가 없으면 기본 위치 반환
+    if (PlateActors.Num() > 0)
+    {
+        AActor* PlateActor = PlateActors[0];
+        OutPlateCenter = PlateActor->GetActorLocation();
+        
+        // 접시 상단 높이 계산
+        FBox Bounds = PlateActor->GetComponentsBoundingBox();
+        OutPlateTopHeight = Bounds.Max.Z;
+        
+        // 던지기 각도에 따라 타겟 위치 조정
+        float ThrowAngleRad = FMath::DegreesToRadians(ThrowAngle);
+        float HorizontalCoefficient = 0.0f;
+        
+        // 각도에 따른 수평 거리 계수 조정 (접시 크기에 맞게)
+        if (ThrowAngle < 20.0f)
+            HorizontalCoefficient = 0.8f; // 낮은 각도는 더 멀리
+        else if (ThrowAngle < 40.0f)
+            HorizontalCoefficient = 0.6f; // 중간 각도
+        else
+            HorizontalCoefficient = 0.4f; // 높은 각도는 더 가깝게
+        
+        // 타겟 방향 벡터 계산
+        FVector DirectionToTarget = TargetLocation - StartLocation;
+        FVector HorizontalDirection = FVector(DirectionToTarget.X, DirectionToTarget.Y, 0.0f).GetSafeNormal();
+        
+        // 접시 중심점에서 조정된 위치 계산 - 접시 크기에 맞게 오프셋 조정
+        FVector AdjustedTarget = OutPlateCenter;
+        
+        // 조정: 항상 접시 중심을 향하되, 접시 크기에 맞게 거리 조정
+        float AdjustedHorizontalDistance = FVector::Dist2D(OutPlateCenter, StartLocation) * HorizontalCoefficient;
+        FVector AdjustedHorizontalDirection = (OutPlateCenter - StartLocation);
+        AdjustedHorizontalDirection.Z = 0;
+        AdjustedHorizontalDirection.Normalize();
+        
+        // 최종 위치 계산
+        AdjustedTarget = OutPlateCenter - (AdjustedHorizontalDirection * AdjustedHorizontalDistance * 0.2f);
+        AdjustedTarget.Z = OutPlateTopHeight + 5.0f; // 약간의 마진 추가
+        
+        return AdjustedTarget;
+    }
     
-    // 접시 정보 가져오기
-    AActor* PlateActor = PlateActors[0];
-    FVector PlateOrigin;
-    FVector PlateExtent;
-    PlateActor->GetActorBounds(false, PlateOrigin, PlateExtent);
-    
-    // 접시 정보 저장
-    OutPlateCenter = PlateOrigin;
-    OutPlateTopHeight = PlateOrigin.Z + PlateExtent.Z + 5.0f;
-    
-    // 방향 벡터 계산
-    FVector DirectionToTarget = PlateOrigin - StartLocation;
-    float BaseDistance = DirectionToTarget.Size2D();
-    DirectionToTarget.Z = 0.0f;
-    DirectionToTarget.Normalize();
-    
-    // 각도에 따른 비율 계산 - 중간 각도에서 가장 멀리, 너무 높거나 낮으면 가까이 도착
-    float OptimalAngle = (MinAngle + MaxAngle) * 0.5f;
-    float AngleDeviation = FMath::Abs(UseAngle - OptimalAngle) / ((MaxAngle - MinAngle) * 0.5f);
-    float DistanceRatio = FMath::Clamp(1.0f - AngleDeviation * 0.7f, 0.3f, 1.0f);
-    
-    // 최종 도달 거리 계산
-    float AdjustedDistance = BaseDistance * DistanceRatio;
-    
-    // 최종 도착 위치 계산
-    FVector AdjustedTarget = StartLocation + DirectionToTarget * AdjustedDistance;
-    AdjustedTarget.Z = OutPlateTopHeight;
-    
-    return AdjustedTarget;
+    // 접시를 찾지 못한 경우 원래 타겟 사용
+    return TargetLocation;
 }
 
 float UFruitPhysicsHelper::CalculateTrajectoryPeakHeight(float HorizontalDistance, float ThrowAngle, float MinAngle, float MaxAngle)
