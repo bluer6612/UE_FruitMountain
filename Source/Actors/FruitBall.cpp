@@ -36,7 +36,7 @@ AFruitBall::AFruitBall()
 // 공 크기 계산 함수 구현 - 이미 언리얼 스케일로 반환
 float AFruitBall::CalculateBallSize(int32 BallType)
 {
-    // 과일 레벨에 따른 크기 증가 (UE 단위로 직접 반환)
+    // 과일 레벨에 따른 크기 선형 상수수 증가 (UE 단위로 직접 반환)
     // 레벨 1: 15cm, 레벨 2: 16.5cm, ...
     return BaseBallSize + ((BallType - 1) * BaseBallSize * 0.2f);
 }
@@ -44,9 +44,9 @@ float AFruitBall::CalculateBallSize(int32 BallType)
 // 공 질량 계산 함수 구현
 float AFruitBall::CalculateBallMass(int32 BallType)
 {
-    // 과일 레벨에 따른 질량 증가 (예시 공식)
-    // 레벨 1: 10kg, 레벨 2: 15kg, 레벨 3: 21kg, ...
-    return DensityFactor * FMath::Pow(1.05f, BallType - 1);
+    // 과일 레벨에 따른 질량 지수 증가 (예시 공식)
+    // 레벨 1: 100kg, 레벨 2: 102.5kg, ...
+    return DensityFactor * FMath::Pow(1.025f, BallType - 1);
 }
 
 void AFruitBall::OnBallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)

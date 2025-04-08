@@ -165,11 +165,11 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     if (InitialSpeedSquared <= 0.0f || FMath::IsNaN(InitialSpeedSquared))
     {
         // 연속적인 속도 곡선을 위한 일관된 대체 공식
-        float SinTwoTheta = FMath::Sin(2.0f * ThrowAngleRad);
-        SinTwoTheta = FMath::Max(SinTwoTheta, 0.1f); // 안정성 보장
+        float SpeedSinTwoTheta = FMath::Sin(2.0f * ThrowAngleRad);
+        SpeedSinTwoTheta = FMath::Max(SpeedSinTwoTheta, 0.1f); // 안정성 보장
         
         // 속도 계산 (기본 물리 공식 + 부드러운 보정 계수)
-        Result.InitialSpeed = FMath::Sqrt((Gravity * AdjustedDistance) / SinTwoTheta);
+        Result.InitialSpeed = FMath::Sqrt((Gravity * AdjustedDistance) / SpeedSinTwoTheta);
         
         // 자연스러운 속도 곡선을 위한 부드러운 보정
         float AngleNormalized = (UseAngle - MinThrowAngle) / (MaxThrowAngle - MinThrowAngle);
