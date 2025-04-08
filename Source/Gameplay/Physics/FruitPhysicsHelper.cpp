@@ -10,149 +10,6 @@
 const float UFruitPhysicsHelper::MinThrowAngle = 10.0f;
 const float UFruitPhysicsHelper::MaxThrowAngle = 60.0f;
 
-// 기본 물리 계산 헬퍼 함수 (내부용)
-bool UFruitPhysicsHelper::CalculateInitialSpeed(const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, float& OutInitialSpeed)
-{
-    // 1. 기본 파라미터 설정
-    float ThrowAngleRad = FMath::DegreesToRadians(ThrowAngle);
-    float Gravity = FMath::Abs(GetDefault<UPhysicsSettings>()->DefaultGravityZ); // 언리얼 엔진의 물리 설정에서 중력값 가져오기
-    
-    // 2. 수평 거리와 높이 차이 계산
-    FVector HorizontalDelta = TargetLocation - StartLocation;
-    float HorizontalDistance = FVector(HorizontalDelta.X, HorizontalDelta.Y, 0.0f).Size();
-    float HeightDifference = TargetLocation.Z - StartLocation.Z;
-    
-    // 3. 초기 속도 계산 (단순 물리 공식 사용)
-    float Numerator = Gravity * HorizontalDistance * HorizontalDistance;
-    float Denominator = 2.0f * FMath::Cos(ThrowAngleRad) * FMath::Cos(ThrowAngleRad) * 
-                       (HorizontalDistance * FMath::Tan(ThrowAngleRad) - HeightDifference);
-    
-    // 분모가 0이 되지 않도록 보호
-    if (FMath::Abs(Denominator) < 0.001f)
-    {
-        Denominator = 0.001f;
-    }
-    
-    float InitialSpeedSquared = Numerator / Denominator;
-    
-    // 속도가 음수가 나오면 포물선이 도달할 수 없는 것이므로 실패 반환
-    if (InitialSpeedSquared <= 0.0f)
-    {
-        return false;
-    }
-    
-    OutInitialSpeed = FMath::Sqrt(InitialSpeedSquared);
-    
-    // 안전 범위 제한
-    OutInitialSpeed = FMath::Clamp(OutInitialSpeed, 100.0f, 500.0f);
-    
-    // 각도에 따른 초기 속도 조정 (각도가 높을수록 속도 감소)
-    if (ThrowAngle > 45.0f)
-    {
-        float AngleRatio = FMath::GetMappedRangeValueClamped(FVector2D(45.0f, 60.0f), FVector2D(1.0f, 0.7f), ThrowAngle);
-        OutInitialSpeed *= AngleRatio;
-    }
-    
-    return true;
-}
-
-// 발사 방향 계산 함수 분리 (내부용)
-FVector UFruitPhysicsHelper::CalculateLaunchDirection(const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngleRad)
-{
-    FVector DirectionToTarget = TargetLocation - StartLocation;
-    FVector HorizontalDir = FVector(DirectionToTarget.X, DirectionToTarget.Y, 0.0f).GetSafeNormal();
-    
-    // ThrowAngleRadians를 ThrowAngleRad로 수정
-    return FVector(HorizontalDir.X * FMath::Cos(ThrowAngleRad), HorizontalDir.Y * FMath::Cos(ThrowAngleRad), FMath::Sin(ThrowAngleRad)).GetSafeNormal();
-}
-
-// 던지기 속도 계산 함수 - 통합 코드 사용
-bool UFruitPhysicsHelper::CalculateThrowVelocity(const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, float BallMass, FVector& OutLaunchVelocity)
-{
-    // 물리 계산 결과 사용
-    FThrowPhysicsResult PhysicsResult = CalculateThrowPhysics(nullptr, StartLocation, TargetLocation, ThrowAngle, BallMass);
-    
-    if (PhysicsResult.bSuccess)
-    {
-        OutLaunchVelocity = PhysicsResult.LaunchVelocity;
-        return true;
-    }
-    
-    // 실패 시 기본값
-    float ThrowAngleRad = FMath::DegreesToRadians(ThrowAngle);
-    FVector LaunchDirection = CalculateLaunchDirection(StartLocation, TargetLocation, ThrowAngleRad);
-    OutLaunchVelocity = LaunchDirection * 200.0f;
-    
-    return false;
-}
-
-// 던지기 파라미터 계산 함수 - 단일 오류 수정
-void UFruitPhysicsHelper::CalculateThrowParameters(AFruitPlayerController* Controller, const FVector& StartLocation, const FVector& TargetLocation, float& OutAdjustedForce, FVector& OutLaunchDirection, float BallMass)
-{
-    if (!Controller) return;
-    
-    float UseAngle = FMath::Clamp(Controller->ThrowAngle, MinThrowAngle, MaxThrowAngle);
-    
-    // 물리 계산 결과 사용
-    FThrowPhysicsResult PhysicsResult = CalculateThrowPhysics(
-        Controller->GetWorld(), StartLocation, TargetLocation, UseAngle, BallMass);
-    
-    // 결과 반환
-    OutLaunchDirection = PhysicsResult.LaunchDirection;
-    OutAdjustedForce = PhysicsResult.AdjustedForce;
-    
-    UE_LOG(LogTemp, Warning, TEXT("던지기 파라미터: 각도=%.1f, 속도=%.1f, 힘=%.1f, 질량=%.1f"),
-        UseAngle, PhysicsResult.InitialSpeed, OutAdjustedForce, BallMass);
-}
-
-// 물리 헬퍼 클래스에 새 함수 구현 추가
-FVector UFruitPhysicsHelper::CalculateAdjustedTargetLocation(UWorld* World, const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, FVector& OutPlateCenter, float& OutPlateTopHeight)
-{
-    // 기본 물리 계산 결과 가져오기
-    FThrowPhysicsResult PhysicsResult = CalculateThrowPhysics(World, StartLocation, TargetLocation, ThrowAngle, 30.0f);
-    
-    // 접시 정보 찾기 (플레이트 액터 검색)
-    if (World)
-    {
-        TArray<AActor*> PlateActors;
-        UGameplayStatics::GetAllActorsWithTag(World, FName("Plate"), PlateActors);
-        
-        if (PlateActors.Num() > 0)
-        {
-            AActor* PlateActor = PlateActors[0];
-            FVector PlateOrigin;
-            FVector PlateExtent;
-            PlateActor->GetActorBounds(false, PlateOrigin, PlateExtent);
-            
-            OutPlateCenter = PlateOrigin;
-            OutPlateTopHeight = PlateOrigin.Z + PlateExtent.Z + 5.0f;
-        }
-        else
-        {
-            OutPlateCenter = TargetLocation;
-            OutPlateTopHeight = TargetLocation.Z;
-        }
-    }
-    else
-    {
-        OutPlateCenter = TargetLocation;
-        OutPlateTopHeight = TargetLocation.Z;
-    }
-    
-    return PhysicsResult.AdjustedTarget;
-}
-
-float UFruitPhysicsHelper::CalculateTrajectoryPeakHeight(float HorizontalDistance, float ThrowAngle)
-{
-    // 각도에 따른 높이 비율 계산 (각도가 높을수록 더 높게)
-    float PeakHeightRatio = FMath::GetMappedRangeValueClamped(
-        FVector2D(MinThrowAngle, MaxThrowAngle), FVector2D(0.15f, 0.9f), ThrowAngle
-    );
-    
-    // 정점 높이 = 수평 거리 * 높이 비율
-    return HorizontalDistance * PeakHeightRatio;
-}
-
 // CalculateTrajectoryPoints 함수 수정
 TArray<FVector> UFruitPhysicsHelper::CalculateTrajectoryPoints(UWorld* World, const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, float BallMass)
 {
@@ -186,19 +43,14 @@ TArray<FVector> UFruitPhysicsHelper::CalculateTrajectoryPoints(UWorld* World, co
         TrajectoryPoints.Add(PointData.Location);
     }
     
-    UE_LOG(LogTemp, Log, TEXT("예측 궤적: %d개 포인트, 충돌=%s"), 
-        TrajectoryPoints.Num(), bHit ? TEXT("True") : TEXT("False"));
+    //UE_LOG(LogTemp, Log, TEXT("예측 궤적: %d개 포인트, 충돌=%s"), 
+    //    TrajectoryPoints.Num(), bHit ? TEXT("True") : TEXT("False"));
     
     return TrajectoryPoints;
 }
 
 // 통합 물리 계산 함수 구현
-FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(
-    UWorld* World, 
-    const FVector& StartLocation, 
-    const FVector& TargetLocation, 
-    float ThrowAngle, 
-    float BallMass)
+FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, float BallMass)
 {
     // 정적 캐시 변수 (중복 호출 시 안정성 보장)
     static FThrowPhysicsResult CachedResult;
@@ -261,83 +113,99 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(
         }
     }
     
-    // 3. 방향 벡터 계산
+    // 3. 방향 벡터 계산 부분 수정
     FVector DirectionToTarget = PlateCenter - StartLocation;
     float HorizontalDistance = FVector(DirectionToTarget.X, DirectionToTarget.Y, 0.0f).Size();
     float HeightDifference = PlateTopHeight - StartLocation.Z;
     DirectionToTarget.Z = 0.0f;
     DirectionToTarget.Normalize();
-    
-    // 4. 각도에 따른 비율 계산
-    float OptimalAngle = (MinThrowAngle + MaxThrowAngle) * 0.5f;
-    float AngleDeviation = FMath::Abs(UseAngle - OptimalAngle) / ((MaxThrowAngle - MinThrowAngle) * 0.5f);
-    float DistanceRatio = FMath::Clamp(1.0f - AngleDeviation * 0.7f, 0.3f, 1.0f);
-    
-    // 5. 조정된 타겟 위치 계산
-    float AdjustedDistance = HorizontalDistance * DistanceRatio;
+
+    // 4. 중력 값 가져오기 (추가)
+    float Gravity = FMath::Abs(GetDefault<UPhysicsSettings>()->DefaultGravityZ);
+
+    // 5. 각도에 따른 거리 계산 부분 수정 - 인위적인 조정 제거
+    // 새로운 코드 - 물리학적으로 자연스러운 계산
+    float BaseInitialSpeed = 250.0f; // 기본 초기 속도 (모든 각도에서 일정)
+    float DistanceRatio = 1.0f;
+
+    // 포물선 궤적의 타겟 위치 계산
+    float AdjustedDistance = HorizontalDistance;
     Result.AdjustedTarget = StartLocation + DirectionToTarget * AdjustedDistance;
     Result.AdjustedTarget.Z = PlateTopHeight;
-    
+
     // 6. 발사 방향 계산
     FVector HorizontalDir = FVector(DirectionToTarget.X, DirectionToTarget.Y, 0.0f).GetSafeNormal();
-    Result.LaunchDirection = FVector(
-        HorizontalDir.X * FMath::Cos(ThrowAngleRad),
-        HorizontalDir.Y * FMath::Cos(ThrowAngleRad),
-        FMath::Sin(ThrowAngleRad)
+    Result.LaunchDirection = FVector(HorizontalDir.X * FMath::Cos(ThrowAngleRad), HorizontalDir.Y * FMath::Cos(ThrowAngleRad), FMath::Sin(ThrowAngleRad)
     ).GetSafeNormal();
-    
-    // 7. 초기 속도 계산 (포물선 공식)
-    float Gravity = FMath::Abs(GetDefault<UPhysicsSettings>()->DefaultGravityZ); // 언리얼 엔진의 물리 설정에서 중력값 가져오기
-    FVector Gravity3D = FVector(0, 0, -Gravity); // FThrowPhysicsResult 계산 시 동일한 중력값 사용
-    float AdjustedHorizontalDistance = AdjustedDistance;
-    float AdjustedHeightDifference = Result.AdjustedTarget.Z - StartLocation.Z;
-    
-    // 포물선 방정식 사용 - v²cos²(θ) = g*x²/(2*(x*tan(θ) - h))
-    float InitialSpeedSquared = (Gravity * AdjustedHorizontalDistance * AdjustedHorizontalDistance) / 
-                               (2.0f * FMath::Cos(ThrowAngleRad) * FMath::Cos(ThrowAngleRad) * 
-                               (AdjustedHorizontalDistance * FMath::Tan(ThrowAngleRad) - AdjustedHeightDifference));
-    
-    // 음수 체크 및 안전장치
-    if (InitialSpeedSquared <= 0.0f)
+
+    // 7. 초기 속도 계산 수정 (자연스러운 포물선 물리)
+    // 투사체 도달에 필요한 속도 계산 (표준 포물선 방정식 사용)
+    float InitialSpeedSquared = (Gravity * HorizontalDistance * HorizontalDistance) / 
+                              (2.0f * FMath::Cos(ThrowAngleRad) * FMath::Cos(ThrowAngleRad) * 
+                              (HorizontalDistance * FMath::Tan(ThrowAngleRad) - HeightDifference));
+
+    // 속도가 유효하지 않으면 근사치 사용
+    if (InitialSpeedSquared <= 0.0f || FMath::IsNaN(InitialSpeedSquared))
     {
-        // 각도에 따른 기본 속도 사용
-        if (UseAngle <= 45.0f)
-        {
-            Result.InitialSpeed = 200.0f;
-        }
-        else
-        {
-            float AngleRatio = FMath::GetMappedRangeValueClamped(FVector2D(45.0f, 60.0f), FVector2D(1.0f, 0.7f), UseAngle);
-            Result.InitialSpeed = 200.0f * AngleRatio;
-        }
+        // 물리적으로 더 정확한 대체 공식:
+        // v = sqrt((g*x) / sin(2θ))  (평지에서의 투사체 속도 공식)
+        
+        // 2θ 값 계산 (각도의 2배)
+        float TwoTheta = 2.0f * ThrowAngleRad;
+        float SinTwoTheta = FMath::Sin(TwoTheta);
+        
+        // 0에 가까운 값은 오류 방지
+        SinTwoTheta = FMath::Max(SinTwoTheta, 0.1f);
+        
+        // 대체 속도 계산
+        Result.InitialSpeed = FMath::Sqrt((Gravity * HorizontalDistance) / SinTwoTheta);
     }
     else
     {
         Result.InitialSpeed = FMath::Sqrt(InitialSpeedSquared);
-        Result.InitialSpeed = FMath::Clamp(Result.InitialSpeed, 100.0f, 500.0f);
+    }
+
+    // 물리적으로 합리적인 범위로 제한
+    Result.InitialSpeed = FMath::Clamp(Result.InitialSpeed, 150.0f, 350.0f);
+
+    // 극단적인 각도에서 안정성 확보를 위한 미세 조정
+    // 각도가 너무 낮거나 높을 때 약간의 속도 보정 (강한 각도 종속성 제거)
+    if (UseAngle < 15.0f || UseAngle > 55.0f)
+    {
+        float AngleAdjustment = FMath::GetMappedRangeValueClamped(
+            FVector2D(10.0f, 15.0f), 
+            FVector2D(0.85f, 1.0f),
+            FMath::Clamp(UseAngle, 10.0f, 15.0f)
+        );
         
-        // 각도에 따른 초기 속도 조정
-        if (UseAngle > 45.0f)
+        if (UseAngle > 55.0f)
         {
-            float AngleRatio = FMath::GetMappedRangeValueClamped(FVector2D(45.0f, 60.0f), FVector2D(1.0f, 0.7f), UseAngle);
-            Result.InitialSpeed *= AngleRatio;
+            AngleAdjustment = FMath::GetMappedRangeValueClamped(
+                FVector2D(55.0f, 60.0f), 
+                FVector2D(1.0f, 0.9f),
+                UseAngle
+            );
         }
+        
+        Result.InitialSpeed *= AngleAdjustment;
     }
     
     // 8. 발사 속도 벡터 계산
     Result.LaunchVelocity = Result.LaunchDirection * Result.InitialSpeed;
-    
-    // 9. 적용할 힘 계산 (질량 고려) - 힘 조정 계수 증가
-    float ForceAdjustment = 1.5f; // 0.6f에서 1.5f로 증가
-    Result.AdjustedForce = BallMass * Result.InitialSpeed * ForceAdjustment;
-    
-    // 10. 힘 범위 제한 - 힘 범위 확장
-    float MinForce = 2000.0f; // 1500.0f에서 2000.0f로 증가
-    float MaxForce = 10000.0f; // 7500.0f에서 10000.0f로 증가
-    float AdjustedMinForce = MinForce * (BallMass / 30.0f);
-    float AdjustedMaxForce = MaxForce * (BallMass / 30.0f);
-    
-    Result.AdjustedForce = FMath::Clamp(Result.AdjustedForce, AdjustedMinForce, AdjustedMaxForce);
+
+    // 9. 적용할 힘 계산 - 충격량 직접 계산
+    // 충격량 = 질량 * 속도변화
+    Result.AdjustedForce = BallMass * Result.InitialSpeed;
+
+    // 10. 힘 범위 제한 (극단적인 값 방지)
+    float MinForce = 1800.0f;
+    float MaxForce = 9000.0f;
+    // 질량에 따른 힘 조정
+    float MassRatio = BallMass / 30.0f; // 30kg을 기준으로 비율 계산
+    MinForce *= MassRatio;
+    MaxForce *= MassRatio;
+
+    Result.AdjustedForce = FMath::Clamp(Result.AdjustedForce, MinForce, MaxForce);
     
     // 11. 궤적 최고점 높이 계산
     float PeakHeightRatio = FMath::GetMappedRangeValueClamped(
@@ -355,40 +223,8 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(
     CachedResult = Result;
     CacheTimeout = CurrentTime;
     
-    UE_LOG(LogTemp, Log, TEXT("물리 계산: 각도=%.1f°, 속도=%.1f, 힘=%.1f, 질량=%.1f"),
-        UseAngle, Result.InitialSpeed, Result.AdjustedForce, BallMass);
+    //UE_LOG(LogTemp, Log, TEXT("물리 계산: 각도=%.1f°, 속도=%.1f, 힘=%.1f, 질량=%.1f"),
+    //    UseAngle, Result.InitialSpeed, Result.AdjustedForce, BallMass);
     
     return Result;
-}
-
-// 주요 방정식 단순화 - 동일한 공식으로 속도와 궤적 계산
-FVector UFruitPhysicsHelper::CalculateLaunchVelocity(const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle)
-{
-    float ThrowAngleRad = FMath::DegreesToRadians(ThrowAngle);
-    
-    // 중력 가져오기 (언리얼 물리와 동일한 값 사용)
-    float Gravity = FMath::Abs(GetDefault<UPhysicsSettings>()->DefaultGravityZ);
-    
-    // 수평 거리 계산
-    FVector Delta = TargetLocation - StartLocation;
-    float HorizontalDistance = FVector(Delta.X, Delta.Y, 0.0f).Size();
-    float HeightDifference = TargetLocation.Z - StartLocation.Z;
-    
-    // 발사 방향 단위 벡터
-    FVector HorizontalDir = FVector(Delta.X, Delta.Y, 0.0f).GetSafeNormal();
-    FVector LaunchDirection = FVector(
-        HorizontalDir.X * FMath::Cos(ThrowAngleRad),
-        HorizontalDir.Y * FMath::Cos(ThrowAngleRad),
-        FMath::Sin(ThrowAngleRad)
-    ).GetSafeNormal();
-    
-    // 속도 크기 계산 (포물선 공식)
-    float SpeedSquared = (Gravity * HorizontalDistance * HorizontalDistance) /
-                        (2.0f * FMath::Cos(ThrowAngleRad) * FMath::Cos(ThrowAngleRad) *
-                        (HorizontalDistance * FMath::Tan(ThrowAngleRad) - HeightDifference));
-    
-    float Speed = FMath::Sqrt(FMath::Max(100.0f, SpeedSquared));
-    
-    // 속도 벡터 반환
-    return LaunchDirection * Speed;
 }
