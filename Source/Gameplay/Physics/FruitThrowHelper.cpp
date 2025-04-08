@@ -11,6 +11,43 @@
 #include "Actors/PlateActor.h"
 #include "Actors/FruitBall.h"
 
+// 접시 위치 캐시 변수 초기화 (정적 변수를 클래스 외부에 정의)
+FVector UFruitThrowHelper::CachedPlateCenter = FVector::ZeroVector;
+bool UFruitThrowHelper::bPlateCached = false;
+
+// 접시 위치 초기화 함수 - 게임 시작 시 한 번만 호출
+void UFruitThrowHelper::InitializePlatePosition(UWorld* World)
+{
+    // 이미 초기화되었으면 스킵
+    if (bPlateCached)
+        return;
+        
+    if (!World)
+        return;
+        
+    TArray<AActor*> PlateActors;
+    UGameplayStatics::GetAllActorsWithTag(World, FName("Plate"), PlateActors);
+    
+    if (PlateActors.Num() > 0)
+    {
+        // 접시 경계 구하기 (중심점 정확히 계산)
+        FVector PlateOrigin;
+        FVector PlateExtent;
+        PlateActors[0]->GetActorBounds(false, PlateOrigin, PlateExtent);
+        
+        CachedPlateCenter = PlateOrigin;
+        bPlateCached = true;
+        
+        UE_LOG(LogTemp, Warning, TEXT("접시 위치 최초 캐싱 완료: %s"), *CachedPlateCenter.ToString());
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("접시를 찾을 수 없습니다. 기본 위치 사용"));
+        CachedPlateCenter = FVector(0, 0, 30); // 기본 접시 위치
+        bPlateCached = true;
+    }
+}
+
 // ThrowFruit 함수 - FruitPhysicsHelper 활용
 void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
 {
@@ -53,27 +90,19 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
                 MeshComp->SetSimulatePhysics(true);
             }
             
-            // 접시 위치 찾기 - 한 번만 계산
-            static FVector CachedPlateCenter = FVector::ZeroVector;
-            static bool bPlateCached = false;
-            FVector PlateCenter;
-            
-            if (!bPlateCached)
+            // 접시 위치 초기화 - 아직 초기화되지 않았다면
+            if (!bPlateCached && Controller && Controller->GetWorld())
             {
-                TArray<AActor*> PlateActors;
-                UGameplayStatics::GetAllActorsWithTag(Controller->GetWorld(), FName("Plate"), PlateActors);
-                if (PlateActors.Num() > 0)
-                {
-                    CachedPlateCenter = PlateActors[0]->GetActorLocation();
-                    bPlateCached = true;
-                }
+                InitializePlatePosition(Controller->GetWorld());
             }
             
-            PlateCenter = CachedPlateCenter;
+            // 항상 캐시된 접시 위치 사용
+            FVector PlateCenter = CachedPlateCenter;
             if (PlateCenter == FVector::ZeroVector)
             {
-                // 캐시된 값이 없으면 기본값 설정
-                PlateCenter = FVector(0, 0, 100); // 기본 접시 위치
+                // 캐시된 값이 없으면 기본값 설정 (이 코드는 실행되면 안 됨)
+                PlateCenter = FVector(0, 0, 100);
+                UE_LOG(LogTemp, Error, TEXT("접시 위치 캐싱 실패: 기본 위치 사용"));
             }
             
             // 접시 약간 위를 목표로 설정
@@ -173,16 +202,13 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
         }
     }
     
-    // 접시 위치 찾기
-    FVector PlateCenter = FVector::ZeroVector;
-    TArray<AActor*> PlateActors;
-    UGameplayStatics::GetAllActorsWithTag(Controller->GetWorld(), FName("Plate"), PlateActors);
-    
-    if (PlateActors.Num() > 0)
+    // 접시 위치 사용 (더 이상 직접 검색 안 함)
+    if (!bPlateCached && Controller && Controller->GetWorld())
     {
-        PlateCenter = PlateActors[0]->GetActorLocation();
-        
-        // 예상 경로 업데이트 (물리 헬퍼를 직접 사용하지 않고 래퍼 함수 호출)
-        UFruitTrajectoryHelper::UpdateTrajectoryPath(Controller, PreviewLocation, PlateCenter);
+        InitializePlatePosition(Controller->GetWorld());
     }
+    
+    // 추후 궤적 계산에 접시 위치 전달
+    FVector PlateCenter = CachedPlateCenter;
+    UFruitTrajectoryHelper::UpdateTrajectoryPath(Controller, PreviewLocation, PlateCenter);
 }

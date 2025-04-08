@@ -7,6 +7,7 @@
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/PrimitiveComponent.h"
+#include "Components/LineBatchComponent.h"
 #include "DrawDebugHelpers.h"
 #include "PhysicsEngine/PhysicsSettings.h"
 #include "Actors/FruitBall.h"
@@ -25,8 +26,19 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     
     // 1. 입력값 안정화 - 입력 좌표를 소수점 아래 1자리까지만 사용
     FVector StableStartLocation = RoundVector(StartLocation, 1);
-    FVector StableTargetLocation = RoundVector(TargetLocation, 1);
     float StableAngle = FMath::RoundToFloat(Controller->ThrowAngle * 10.0f) / 10.0f; // 소수점 첫째자리까지
+    
+    // 접시 위치 초기화 - 아직 초기화되지 않았다면
+    if (!UFruitThrowHelper::bPlateCached)
+    {
+        UFruitThrowHelper::InitializePlatePosition(World);
+    }
+    
+    // 항상 캐시된 접시 위치 사용 (더 이상 직접 찾지 않음)
+    FVector PlateCenter = UFruitThrowHelper::CachedPlateCenter;
+    
+    // 안정화된 타겟 위치를 접시 중심으로 설정
+    FVector StableTargetLocation = PlateCenter;
     
     // 2. 공의 질량 계산
     float BallMass = UFruitSpawnHelper::CalculateBallMass(Controller->CurrentBallType);
@@ -52,22 +64,11 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     
     // 5. 궤적 계산
     TArray<FVector> TrajectoryPoints;
+
+    // 물리 기반 궤적 (FruitPhysicsHelper로 직접 호출), (bezier 궤적은 사용하지 않음)
+    TrajectoryPoints = UFruitPhysicsHelper::CalculateTrajectoryPoints(World, StableStartLocation, StableTargetLocation, StableAngle, BallMass);
     
-    bool useBezier = false;
-    if (useBezier)
-    {
-        // 베지어 곡선 방식
-        TrajectoryPoints = UFruitPhysicsHelper::CalculateBezierPoints(
-            StableStartLocation, PhysicsResult.AdjustedTarget, PhysicsResult.PeakHeight, 19);
-    }
-    else
-    {
-        // 물리 기반 궤적 (FruitPhysicsHelper로 직접 호출)
-        TrajectoryPoints = UFruitPhysicsHelper::CalculateTrajectoryPoints(
-            World, StableStartLocation, StableTargetLocation, StableAngle, BallMass);
-    }
-    
-    // 6. 궤적 시각화
+        // 6. 궤적 시각화
     DrawTrajectoryPath(World, TrajectoryPoints, TrajectoryID);
 }
 
@@ -84,7 +85,7 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVec
     
     FColor PathColor = FColor(135, 206, 235, 180);
     int32 MarkerCount = 3;
-    float LineThickness = 1.2f;
+    float LineThickness = 0.8f;
     
     // 포인트 간 거리가 최소값 이상일 때만 그리기 (너무 조밀한 점은 건너뜀)
     float MinDistance = 5.0f;
@@ -100,21 +101,41 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVec
         }
     }
     
-    // 필터링된 포인트로 선 그리기
-    for (int32 i = 0; i < FilteredPoints.Num() - 1; i++)
+    // LineBatcher를 사용하여 깊이 테스트를 활성화한 선 그리기
+    if (World->PersistentLineBatcher)
     {
-        DrawDebugLine(World, FilteredPoints[i], FilteredPoints[i + 1], 
-            PathColor, true, -1.0f, TrajectoryID, LineThickness);
-    }
-    
-    // 주요 지점에만 마커 표시
-    if (FilteredPoints.Num() >= MarkerCount)
-    {
-        for (int32 i = 0; i < MarkerCount; i++)
+        for (int32 i = 0; i < FilteredPoints.Num() - 1; i++)
         {
-            int32 Index = (i * (FilteredPoints.Num() - 1)) / (MarkerCount - 1);
-            DrawDebugBox(World, FilteredPoints[Index], FVector(0.01f), 
-                FQuat::Identity, PathColor, true, -1.0f, TrajectoryID);
+            // DepthPriority를 SDPG_World로 설정하여 일반 물체와 동일한 깊이 테스트 적용
+            World->PersistentLineBatcher->DrawLine(
+                FilteredPoints[i], 
+                FilteredPoints[i + 1], 
+                PathColor, 
+                SDPG_World, // 깊이 테스트 활성화 (물체에 가려짐)
+                LineThickness, 
+                -1.0f // 영구적
+            );
+        }
+    }
+    else
+    {
+        // 폴백: PersistentLineBatcher를 사용할 수 없는 경우
+        for (int32 i = 0; i < FilteredPoints.Num() - 1; i++)
+        {
+            // 일반 DrawDebugLine은 깊이 테스트를 지원하지 않음
+            DrawDebugLine(World, FilteredPoints[i], FilteredPoints[i + 1], 
+                PathColor, true, -1.0f, TrajectoryID, LineThickness);
+        }
+        
+        // 주요 지점에만 마커 표시
+        if (FilteredPoints.Num() >= MarkerCount)
+        {
+            for (int32 i = 0; i < MarkerCount; i++)
+            {
+                int32 Index = (i * (FilteredPoints.Num() - 1)) / (MarkerCount - 1);
+                DrawDebugBox(World, FilteredPoints[Index], FVector(0.01f), 
+                    FQuat::Identity, PathColor, true, -1.0f, TrajectoryID);
+            }
         }
     }
 }

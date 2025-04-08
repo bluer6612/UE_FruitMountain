@@ -174,7 +174,7 @@ FVector UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(UWorld* World, float 
             FVector EdgePoint = PlateCenter + CameraDirection * PlateRadius;
             
             // 높이 조정 - 전체 구조물(테이블+접시) 위로, 공 크기를 고려한 오프셋 적용
-            float BallTypeOffset = 10.0f; // 추가 여유 높이
+            float BallTypeOffset = 2.5f; // 추가 여유 높이
             EdgePoint.Z = TotalBounds.Max.Z + BallTypeOffset;
             
             // 디버그 로그

@@ -82,6 +82,9 @@ void AFruitPlayerController::BeginPlay()
         
     SetInputMode(FInputModeGameAndUI());
     SetShowMouseCursor(true);
+    
+    // 접시 위치 한 번만 초기화
+    UFruitThrowHelper::InitializePlatePosition(GetWorld());
 }
 
 void AFruitPlayerController::SetupInputComponent()

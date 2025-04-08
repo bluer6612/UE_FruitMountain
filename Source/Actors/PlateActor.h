@@ -18,8 +18,5 @@ public:
     FVector PlateScale = FVector(10.f, 10.f, 7.5f);
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Plate")
-    FRotator PlateRotation = FRotator(0.f, 0.f, 0.f);
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Plate")
-    FVector PlateLocation = FVector(0.f, 0.f, 30.f);
+    FVector PlateLocation = FVector(0.f, -10.f, 30.f);
 };

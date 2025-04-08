@@ -10,19 +10,6 @@
 const float UFruitPhysicsHelper::MinThrowAngle = 10.0f;
 const float UFruitPhysicsHelper::MaxThrowAngle = 60.0f;
 
-// 각도 범위 가져오기
-void UFruitPhysicsHelper::GetThrowAngleRange(float& OutMinAngle, float& OutMaxAngle)
-{
-    OutMinAngle = MinThrowAngle;
-    OutMaxAngle = MaxThrowAngle;
-}
-
-// 각도 제한 확인 함수
-bool UFruitPhysicsHelper::IsAngleInValidRange(float Angle)
-{
-    return (Angle >= MinThrowAngle && Angle <= MaxThrowAngle);
-}
-
 // 기본 물리 계산 헬퍼 함수 (내부용)
 bool UFruitPhysicsHelper::CalculateInitialSpeed(const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, float& OutInitialSpeed)
 {
@@ -155,11 +142,11 @@ FVector UFruitPhysicsHelper::CalculateAdjustedTargetLocation(UWorld* World, cons
     return PhysicsResult.AdjustedTarget;
 }
 
-float UFruitPhysicsHelper::CalculateTrajectoryPeakHeight(float HorizontalDistance, float ThrowAngle, float MinAngle, float MaxAngle)
+float UFruitPhysicsHelper::CalculateTrajectoryPeakHeight(float HorizontalDistance, float ThrowAngle)
 {
     // 각도에 따른 높이 비율 계산 (각도가 높을수록 더 높게)
     float PeakHeightRatio = FMath::GetMappedRangeValueClamped(
-        FVector2D(MinAngle, MaxAngle), FVector2D(0.15f, 0.9f), ThrowAngle
+        FVector2D(MinThrowAngle, MaxThrowAngle), FVector2D(0.15f, 0.9f), ThrowAngle
     );
     
     // 정점 높이 = 수평 거리 * 높이 비율
@@ -205,28 +192,6 @@ TArray<FVector> UFruitPhysicsHelper::CalculateTrajectoryPoints(UWorld* World, co
     return TrajectoryPoints;
 }
 
-// CalculateBezierPoints 함수를 FruitTrajectoryHelper에서 이동
-TArray<FVector> UFruitPhysicsHelper::CalculateBezierPoints(const FVector& Start, const FVector& End, float PeakHeight, int32 PointCount)
-{
-    TArray<FVector> Points;
-    Points.Reserve(PointCount);
-    
-    // 정점 위치 계산
-    FVector HorizontalDelta = End - Start;
-    FVector Peak = Start + HorizontalDelta * 0.5f;
-    Peak.Z = FMath::Max(Start.Z, End.Z) + PeakHeight;
-    
-    // 베지어 곡선 포인트 생성
-    for (int32 i = 0; i < PointCount; i++)
-    {
-        float t = (float)i / (PointCount - 1);
-        FVector Point = FMath::Pow(1.0f - t, 2) * Start + 2 * t * (1.0f - t) * Peak + t * t * End;
-        Points.Add(Point);
-    }
-    
-    return Points;
-}
-
 // 통합 물리 계산 함수 구현
 FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(
     UWorld* World, 
@@ -261,29 +226,38 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(
     FThrowPhysicsResult Result;
     
     // 1. 각도 범위 가져오기 & 조정
-    float MinAngle, MaxAngle;
-    GetThrowAngleRange(MinAngle, MaxAngle);
-    float UseAngle = FMath::Clamp(ThrowAngle, MinAngle, MaxAngle);
+    float UseAngle = FMath::Clamp(ThrowAngle, MinThrowAngle, MaxThrowAngle);
     float ThrowAngleRad = FMath::DegreesToRadians(UseAngle);
     
-    // 2. 접시 정보 찾기
-    FVector PlateCenter = TargetLocation;
+    // 2. 접시 정보 찾기 - 공유된 캐시 사용
+    FVector PlateCenter = TargetLocation; // 기본값
     float PlateTopHeight = 20.0f;
     
-    if (World)
+    // 접시 위치 초기화 - 아직 초기화되지 않았다면
+    if (!UFruitThrowHelper::bPlateCached && World)
     {
-        TArray<AActor*> PlateActors;
-        UGameplayStatics::GetAllActorsWithTag(World, FName("Plate"), PlateActors);
+        UFruitThrowHelper::InitializePlatePosition(World);
+    }
+    
+    // 항상 캐시된 접시 위치 사용
+    if (UFruitThrowHelper::bPlateCached)
+    {
+        PlateCenter = UFruitThrowHelper::CachedPlateCenter;
         
-        if (PlateActors.Num() > 0)
+        // 접시 높이 정보 계산 - 이 부분은 유지 (매번 계산해도 큰 오버헤드 없음)
+        if (World)
         {
-            AActor* PlateActor = PlateActors[0];
-            FVector PlateOrigin;
-            FVector PlateExtent;
-            PlateActor->GetActorBounds(false, PlateOrigin, PlateExtent);
+            TArray<AActor*> PlateActors;
+            UGameplayStatics::GetAllActorsWithTag(World, FName("Plate"), PlateActors);
             
-            PlateCenter = PlateOrigin;
-            PlateTopHeight = PlateOrigin.Z + PlateExtent.Z + 5.0f;
+            if (PlateActors.Num() > 0)
+            {
+                FVector PlateOrigin;
+                FVector PlateExtent;
+                PlateActors[0]->GetActorBounds(false, PlateOrigin, PlateExtent);
+                
+                PlateTopHeight = PlateOrigin.Z + PlateExtent.Z + 5.0f;
+            }
         }
     }
     
@@ -295,8 +269,8 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(
     DirectionToTarget.Normalize();
     
     // 4. 각도에 따른 비율 계산
-    float OptimalAngle = (MinAngle + MaxAngle) * 0.5f;
-    float AngleDeviation = FMath::Abs(UseAngle - OptimalAngle) / ((MaxAngle - MinAngle) * 0.5f);
+    float OptimalAngle = (MinThrowAngle + MaxThrowAngle) * 0.5f;
+    float AngleDeviation = FMath::Abs(UseAngle - OptimalAngle) / ((MaxThrowAngle - MinThrowAngle) * 0.5f);
     float DistanceRatio = FMath::Clamp(1.0f - AngleDeviation * 0.7f, 0.3f, 1.0f);
     
     // 5. 조정된 타겟 위치 계산
@@ -367,7 +341,7 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(
     
     // 11. 궤적 최고점 높이 계산
     float PeakHeightRatio = FMath::GetMappedRangeValueClamped(
-        FVector2D(MinAngle, MaxAngle), FVector2D(0.15f, 0.9f), UseAngle);
+        FVector2D(MinThrowAngle, MaxThrowAngle), FVector2D(0.15f, 0.9f), UseAngle);
     Result.PeakHeight = HorizontalDistance * PeakHeightRatio;
     
     // 12. 계산 성공 표시

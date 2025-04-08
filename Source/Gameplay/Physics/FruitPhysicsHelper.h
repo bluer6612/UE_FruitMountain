@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
+#include "FruitThrowHelper.h"
 #include "FruitPhysicsHelper.generated.h"
 
 class AFruitPlayerController;
@@ -62,14 +63,6 @@ public:
     static const float MinThrowAngle;
     static const float MaxThrowAngle;
     
-    // 각도 제한 확인 함수
-    UFUNCTION(BlueprintCallable, Category = "Physics")
-    static bool IsAngleInValidRange(float Angle);
-    
-    // 각도 범위 가져오기
-    UFUNCTION(BlueprintCallable, Category = "Physics")
-    static void GetThrowAngleRange(float& OutMinAngle, float& OutMaxAngle);
-    
     // 속도 벡터 계산 함수
     UFUNCTION(BlueprintCallable, Category = "Physics")
     static bool CalculateThrowVelocity(const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, float BallMass, FVector& OutLaunchVelocity);
@@ -84,15 +77,11 @@ public:
         
     // 포물선 궤적의 피크 높이 계산
     UFUNCTION(BlueprintCallable, Category = "Physics")
-    static float CalculateTrajectoryPeakHeight(float HorizontalDistance, float ThrowAngle, float MinAngle, float MaxAngle);
+    static float CalculateTrajectoryPeakHeight(float HorizontalDistance, float ThrowAngle);
     
-    // [NEW] 궤적 계산 함수 - 포물선 물리 (FruitTrajectoryHelper에서 이동)
+    // 궤적 계산 함수 - 포물선 물리 (FruitTrajectoryHelper에서 이동)
     UFUNCTION(BlueprintCallable, Category = "Physics")
     static TArray<FVector> CalculateTrajectoryPoints(UWorld* World, const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, float BallMass);
-    
-    // [NEW] 베지어 곡선 계산 함수 (FruitTrajectoryHelper에서 이동)
-    UFUNCTION(BlueprintCallable, Category = "Physics")
-    static TArray<FVector> CalculateBezierPoints(const FVector& Start, const FVector& End, float PeakHeight, int32 PointCount);
     
     // 통합 물리 계산 함수 (모든 물리 계산의 핵심)
     UFUNCTION(BlueprintCallable, Category = "Physics")
