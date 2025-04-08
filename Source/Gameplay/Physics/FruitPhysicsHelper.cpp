@@ -4,7 +4,6 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/Actor.h"
 #include "DrawDebugHelpers.h"
-#include "PhysicsEngine/PhysicsSettings.h"
 
 // const 정적 변수 초기화
 const float UFruitPhysicsHelper::MinThrowAngle = 5.0f;
@@ -28,8 +27,7 @@ bool UFruitPhysicsHelper::CalculateInitialSpeed(const FVector& StartLocation, co
 {
     // 1. 기본 파라미터 설정
     float ThrowAngleRad = FMath::DegreesToRadians(ThrowAngle);
-    //float Gravity = 980.f;
-    float Gravity = GetDefault<UPhysicsSettings>()->DefaultGravityZ * -1.0f; // 음수로 변환
+    float Gravity = 980.0f; // 중력 가속도 (양수로 설정)
     
     // 2. 수평 거리와 높이 차이 계산
     FVector HorizontalDelta = TargetLocation - StartLocation;
@@ -166,48 +164,51 @@ void UFruitPhysicsHelper::CalculateThrowParameters(AFruitPlayerController* Contr
 // 물리 헬퍼 클래스에 새 함수 구현 추가
 FVector UFruitPhysicsHelper::CalculateAdjustedTargetLocation(UWorld* World, const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, FVector& OutPlateCenter, float& OutPlateTopHeight)
 {
-    // 접시 중심 찾기
-    OutPlateCenter = FVector::ZeroVector;
-    OutPlateTopHeight = 0.0f;
+    // 기본값 설정
+    OutPlateTopHeight = 20.0f;
+    OutPlateCenter = TargetLocation;
     
+    // 각도 범위 가져오기
+    float MinAngle, MaxAngle;
+    GetThrowAngleRange(MinAngle, MaxAngle);
+    float UseAngle = FMath::Clamp(ThrowAngle, MinAngle, MaxAngle);
+    
+    // 접시 액터 찾기
     TArray<AActor*> PlateActors;
     UGameplayStatics::GetAllActorsWithTag(World, FName("Plate"), PlateActors);
     
-    if (PlateActors.Num() > 0)
-    {
-        AActor* PlateActor = PlateActors[0];
-        OutPlateCenter = PlateActor->GetActorLocation();
-        
-        // 접시 상단 높이 계산
-        FBox Bounds = PlateActor->GetComponentsBoundingBox();
-        OutPlateTopHeight = Bounds.Max.Z;
-        
-        // 접시 반경 계산 (간단히 X,Y 범위의 평균으로 계산)
-        float PlateRadius = (Bounds.Max.X - Bounds.Min.X + Bounds.Max.Y - Bounds.Min.Y) * 0.25f;
-        
-        // 플레이어에서 접시까지의 방향 벡터 계산
-        FVector PlayerToPlateDirection = (OutPlateCenter - StartLocation);
-        PlayerToPlateDirection.Z = 0; // 수평 방향만 고려
-        PlayerToPlateDirection.Normalize();
-        
-        // 각도에 따른 착지 지점 조정
-        // 각도 매핑: 낮은 각도(5도)에서는 접시의 가까운 쪽(-0.8)
-        //           높은 각도(60도)에서는 접시의 먼 쪽(+0.8)
-        float TargetPlateOffset = FMath::GetMappedRangeValueClamped(
-            FVector2D(MinThrowAngle, MaxThrowAngle),
-            FVector2D(-0.8f, 0.8f),
-            ThrowAngle
-        );
-        
-        // 최종 타겟 위치 계산 (접시 중심 + 방향 * 반경 * 오프셋)
-        FVector AdjustedTarget = OutPlateCenter + (PlayerToPlateDirection * PlateRadius * TargetPlateOffset);
-        AdjustedTarget.Z = OutPlateTopHeight + 5.0f; // 접시 상단 높이 + 약간의 여유
-        
-        return AdjustedTarget;
-    }
+    if (PlateActors.Num() <= 0)
+        return TargetLocation; // 접시가 없으면 기본 위치 반환
     
-    // 접시를 찾지 못한 경우 원래 타겟 사용
-    return TargetLocation;
+    // 접시 정보 가져오기
+    AActor* PlateActor = PlateActors[0];
+    FVector PlateOrigin;
+    FVector PlateExtent;
+    PlateActor->GetActorBounds(false, PlateOrigin, PlateExtent);
+    
+    // 접시 정보 저장
+    OutPlateCenter = PlateOrigin;
+    OutPlateTopHeight = PlateOrigin.Z + PlateExtent.Z + 5.0f;
+    
+    // 방향 벡터 계산
+    FVector DirectionToTarget = PlateOrigin - StartLocation;
+    float BaseDistance = DirectionToTarget.Size2D();
+    DirectionToTarget.Z = 0.0f;
+    DirectionToTarget.Normalize();
+    
+    // 각도에 따른 비율 계산 - 중간 각도에서 가장 멀리, 너무 높거나 낮으면 가까이 도착
+    float OptimalAngle = (MinAngle + MaxAngle) * 0.5f;
+    float AngleDeviation = FMath::Abs(UseAngle - OptimalAngle) / ((MaxAngle - MinAngle) * 0.5f);
+    float DistanceRatio = FMath::Clamp(1.0f - AngleDeviation * 0.7f, 0.3f, 1.0f);
+    
+    // 최종 도달 거리 계산
+    float AdjustedDistance = BaseDistance * DistanceRatio;
+    
+    // 최종 도착 위치 계산
+    FVector AdjustedTarget = StartLocation + DirectionToTarget * AdjustedDistance;
+    AdjustedTarget.Z = OutPlateTopHeight;
+    
+    return AdjustedTarget;
 }
 
 float UFruitPhysicsHelper::CalculateTrajectoryPeakHeight(float HorizontalDistance, float ThrowAngle, float MinAngle, float MaxAngle)

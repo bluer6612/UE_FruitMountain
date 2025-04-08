@@ -54,28 +54,34 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
                 MeshComp->SetSimulatePhysics(true);
             }
             
-            // 접시 위치 찾기 및 궤적과 동일한 타겟 사용
+            // 접시 위치 찾기
             FVector PlateCenter = FVector::ZeroVector;
-            float PlateTopHeight = 0.0f;
-            FVector AdjustedTarget = UFruitPhysicsHelper::CalculateAdjustedTargetLocation(
-                Controller->GetWorld(), SpawnLocation, PlateCenter, Controller->ThrowAngle, 
-                PlateCenter, PlateTopHeight);
+            TArray<AActor*> PlateActors;
+            UGameplayStatics::GetAllActorsWithTag(Controller->GetWorld(), FName("Plate"), PlateActors);
+            if (PlateActors.Num() > 0)
+            {
+                PlateCenter = PlateActors[0]->GetActorLocation();
                 
+                // 접시 약간 위를 목표로 설정
+                PlateCenter.Z += 10.0f;
+            }
+            
             // 물리 시뮬레이션 활성화 상태에서 질량 확인
             float ActualMass = MeshComp->GetMass();
             
-            // 던지기 파라미터 계산시 조정된 타겟 위치 사용
-            FVector LaunchVelocity;
-            bool bSuccess = UFruitPhysicsHelper::CalculateThrowVelocity(
-                SpawnLocation, AdjustedTarget, Controller->ThrowAngle, ActualMass, LaunchVelocity);
+            // 던지기 파라미터 계산
+            float AdjustedForce;
+            FVector LaunchDirection;
+            UFruitPhysicsHelper::CalculateThrowParameters(Controller, SpawnLocation, PlateCenter, AdjustedForce, LaunchDirection, ActualMass);
 
-            if (bSuccess)
-            {
-                MeshComp->SetPhysicsLinearVelocity(LaunchVelocity);
-            }
+            // 충격량 직접 적용 - 보정 계수 제거하고 정확한 힘 사용
+            FVector FinalImpulse = LaunchDirection * AdjustedForce;
             
-            UE_LOG(LogTemp, Warning, TEXT("공 던지기: 방향=%s, 질량=%f, 타겟=%s"),
-                *LaunchVelocity.ToString(), ActualMass, *AdjustedTarget.ToString());
+            // 즉시 충격량 적용하여 공이 날아가도록 함
+            MeshComp->AddImpulse(FinalImpulse);
+            
+            UE_LOG(LogTemp, Warning, TEXT("공 던지기: 힘=%f, 방향=%s, 질량=%f"),
+                AdjustedForce, *LaunchDirection.ToString(), ActualMass);
         }
     }
     

@@ -91,14 +91,36 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     // 기존 궤적 비우기
     FlushPersistentDebugLines(World);
     
-    // 공의 질량 계산
-    float BallMass = AFruitBall::CalculateBallMass(Controller->CurrentBallType);
+    // 1. 현재 각도 가져오기
+    float MinAngle, MaxAngle;
+    UFruitPhysicsHelper::GetThrowAngleRange(MinAngle, MaxAngle);
+    float UseAngle = FMath::Clamp(Controller->ThrowAngle, MinAngle, MaxAngle);
     
-    // 물리적 포물선 계산 사용
-    TArray<FVector> TrajectoryPoints = CalculateTrajectoryPoints(Controller, StartLocation, TargetLocation, BallMass);
+    // 2. 물리 헬퍼를 통해 조정된 타겟 위치 계산
+    FVector PlateCenter;
+    float PlateTopHeight;
+    FVector AdjustedTarget = UFruitPhysicsHelper::CalculateAdjustedTargetLocation(
+        World, StartLocation, TargetLocation, UseAngle, PlateCenter, PlateTopHeight);
     
-    // 궤적 시각화
+    // 3. 수평 거리 계산
+    FVector HorizontalDelta = AdjustedTarget - StartLocation;
+    float HorizontalDistance = FVector(HorizontalDelta.X, HorizontalDelta.Y, 0.0f).Size();
+    
+    // 4. 물리 헬퍼를 통해 궤적 높이 계산
+    float PeakHeight = UFruitPhysicsHelper::CalculateTrajectoryPeakHeight(
+        HorizontalDistance, UseAngle, MinAngle, MaxAngle);
+    
+    // 5. 베지어 곡선으로 궤적 포인트 계산
+    const int32 PointCount = 19; // 18개 세그먼트
+    TArray<FVector> TrajectoryPoints = CalculateBezierPoints(
+        StartLocation, AdjustedTarget, PeakHeight, PointCount);
+    
+    // 6. 궤적 시각화
     DrawTrajectoryPath(World, TrajectoryPoints, TrajectoryID);
+    
+    // 로그 출력
+    //UE_LOG(LogTemp, Log, TEXT("궤적 계산: 각도=%.1f, 거리=%.1f, 높이=%.1f"), 
+    //    UseAngle, HorizontalDistance, PeakHeight);
 }
 
 // 베지어 곡선으로 포물선 포인트 계산
@@ -107,13 +129,10 @@ TArray<FVector> UFruitTrajectoryHelper::CalculateBezierPoints(const FVector& Sta
     TArray<FVector> Points;
     Points.Reserve(PointCount);
     
-    // 정점 위치 계산 - 접시 크기 변화에 맞게 조정
+    // 정점 위치 계산
     FVector HorizontalDelta = End - Start;
-    // 더 높은 정밀도를 위해 비율 조정: 0.5f → 0.45f
-    FVector Peak = Start + HorizontalDelta * 0.45f;
-    
-    // 피크 높이를 약간 높게 조정 (20% 증가)
-    Peak.Z = FMath::Max(Start.Z, End.Z) + PeakHeight * 1.2f;
+    FVector Peak = Start + HorizontalDelta * 0.5f;
+    Peak.Z = FMath::Max(Start.Z, End.Z) + PeakHeight;
     
     // 베지어 곡선 포인트 생성
     for (int32 i = 0; i < PointCount; i++)
