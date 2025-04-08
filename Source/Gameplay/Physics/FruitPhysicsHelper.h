@@ -39,6 +39,14 @@ public:
     // 포물선 궤적의 피크 높이 계산
     UFUNCTION(BlueprintCallable, Category = "Physics")
     static float CalculateTrajectoryPeakHeight(float HorizontalDistance, float ThrowAngle, float MinAngle, float MaxAngle);
+    
+    // [NEW] 궤적 계산 함수 - 포물선 물리 (FruitTrajectoryHelper에서 이동)
+    UFUNCTION(BlueprintCallable, Category = "Physics")
+    static TArray<FVector> CalculateTrajectoryPoints(UWorld* World, const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, float BallMass);
+    
+    // [NEW] 베지어 곡선 계산 함수 (FruitTrajectoryHelper에서 이동)
+    UFUNCTION(BlueprintCallable, Category = "Physics")
+    static TArray<FVector> CalculateBezierPoints(const FVector& Start, const FVector& End, float PeakHeight, int32 PointCount);
 
 private:
     // 내부 헬퍼 함수 - 초기 속도 계산

@@ -21,7 +21,6 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
     }
     
     // 미리보기 공이 있는지 확인하고 필요시 제거
-    // (이미 PlayerController에서 제거했을 수 있음)
     if (Controller->PreviewBall)
     {
         Controller->PreviewBall->Destroy();
@@ -40,7 +39,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
     // 공 스폰 후 물리 적용 - 즉시 표시되도록 설정
     AActor* SpawnedBall = UFruitSpawnHelper::SpawnBall(Controller, SpawnLocation, Controller->CurrentBallType, true);
     
-    // 공 던지기 - 접시 중심을 향해 힘 적용
+    // 공 던지기 - 물리 헬퍼 활용하여 힘 적용
     if (SpawnedBall)
     {
         UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(
@@ -69,10 +68,11 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
             // 물리 시뮬레이션 활성화 상태에서 질량 확인
             float ActualMass = MeshComp->GetMass();
             
-            // 던지기 파라미터 계산
+            // [변경] 물리 헬퍼를 통해 던지기 파라미터 계산
             float AdjustedForce;
             FVector LaunchDirection;
-            UFruitPhysicsHelper::CalculateThrowParameters(Controller, SpawnLocation, PlateCenter, AdjustedForce, LaunchDirection, ActualMass);
+            UFruitPhysicsHelper::CalculateThrowParameters(
+                Controller, SpawnLocation, PlateCenter, AdjustedForce, LaunchDirection, ActualMass);
 
             // 충격량 직접 적용 - 보정 계수 제거하고 정확한 힘 사용
             FVector FinalImpulse = LaunchDirection * AdjustedForce;
@@ -88,7 +88,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
     // 다음 공 타입 랜덤 설정
     Controller->CurrentBallType = FMath::RandRange(1, AFruitBall::MaxBallType);
     
-    // 약간의 딜레이 후 새 미리보기 공 업데이트 - 하드코딩된 값 대신 BallThrowDelay 사용
+    // 약간의 딜레이 후 새 미리보기 공 업데이트
     FTimerHandle UpdatePreviewTimerHandle;
     Controller->GetWorld()->GetTimerManager().SetTimer(
         UpdatePreviewTimerHandle, 
@@ -101,7 +101,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
     );
 }
 
-// UpdatePreviewBall 함수 수정 - 던지기 중인지 확인
+// UpdatePreviewBall 함수 수정 - 물리 헬퍼 사용
 void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
 {
     if (!Controller)
@@ -114,13 +114,6 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
     if (Controller->bIsThrowingInProgress)
     {
         UE_LOG(LogTemp, Verbose, TEXT("던지기 중이므로 미리보기 공 업데이트 건너뜀"));
-        return;
-    }
-
-    // 먼저 FruitBallClass가 유효한지 확인
-    if (!Controller->FruitBallClass)
-    {
-        UE_LOG(LogTemp, Error, TEXT("FruitBallClass가 설정되지 않았습니다!"));
         return;
     }
 
@@ -145,27 +138,6 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
         
         // 새 미리보기 공 생성
         Controller->PreviewBall = UFruitSpawnHelper::SpawnBall(Controller, PreviewLocation, Controller->CurrentBallType, false);
-            
-        if (Controller->PreviewBall)
-        {
-            //UE_LOG(LogTemp, Warning, TEXT("미리보기 공 생성 성공: 위치=%s"), *PreviewLocation.ToString());
-            
-            // 접시 위치 찾기
-            FVector PlateCenter = FVector::ZeroVector;
-            TArray<AActor*> PlateActors;
-            UGameplayStatics::GetAllActorsWithTag(Controller->GetWorld(), FName("Plate"), PlateActors);
-            if (PlateActors.Num() > 0)
-            {
-                PlateCenter = PlateActors[0]->GetActorLocation();
-                
-                // 예상 경로 업데이트
-                UFruitTrajectoryHelper::UpdateTrajectoryPath(Controller, PreviewLocation, PlateCenter);
-            }
-        }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT("미리보기 공 생성 실패!"));
-        }
     }
     else
     {
@@ -184,30 +156,19 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
         {
             float BallMass = UFruitSpawnHelper::CalculateBallMass(Controller->CurrentBallType);
             MeshComp->SetMassOverrideInKg(NAME_None, BallMass);
-            
-            //UE_LOG(LogTemp, Warning, TEXT("미리보기 공 업데이트: 위치=%s, 크기=%f, 질량=%f"), 
-            //    *PreviewLocation.ToString(), BallSize, BallMass);
-            
-            // 접시 위치 찾기
-            FVector PlateCenter = FVector::ZeroVector;
-            TArray<AActor*> PlateActors;
-            UGameplayStatics::GetAllActorsWithTag(Controller->GetWorld(), FName("Plate"), PlateActors);
-            if (PlateActors.Num() > 0)
-            {
-                PlateCenter = PlateActors[0]->GetActorLocation();
-                
-                // 예상 경로 업데이트
-                UFruitTrajectoryHelper::UpdateTrajectoryPath(Controller, PreviewLocation, PlateCenter);
-            }
-        }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT("미리보기 공에 StaticMeshComponent를 찾을 수 없습니다!"));
         }
     }
-
-    if (!Controller->PreviewBall)
+    
+    // 접시 위치 찾기
+    FVector PlateCenter = FVector::ZeroVector;
+    TArray<AActor*> PlateActors;
+    UGameplayStatics::GetAllActorsWithTag(Controller->GetWorld(), FName("Plate"), PlateActors);
+    
+    if (PlateActors.Num() > 0)
     {
-        UE_LOG(LogTemp, Error, TEXT("미리보기 공 생성에 실패했습니다!"));
+        PlateCenter = PlateActors[0]->GetActorLocation();
+        
+        // 예상 경로 업데이트 (물리 헬퍼를 직접 사용하지 않고 래퍼 함수 호출)
+        UFruitTrajectoryHelper::UpdateTrajectoryPath(Controller, PreviewLocation, PlateCenter);
     }
 }

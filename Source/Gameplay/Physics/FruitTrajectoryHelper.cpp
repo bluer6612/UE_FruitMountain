@@ -74,8 +74,8 @@ TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(AFruitPlayerCo
             break;
     }
     
-    UE_LOG(LogTemp, Log, TEXT("포물선 계산: 각도=%.1f, 속도=%.1f, 포인트=%d개"),
-        UseAngle, LaunchVelocity.Size(), TrajectoryPoints.Num());
+    //UE_LOG(LogTemp, Log, TEXT("포물선 계산: 각도=%.1f, 속도=%.1f, 포인트=%d개"),
+    //    UseAngle, LaunchVelocity.Size(), TrajectoryPoints.Num());
     
     return TrajectoryPoints;
 }
@@ -110,39 +110,29 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     float PeakHeight = UFruitPhysicsHelper::CalculateTrajectoryPeakHeight(
         HorizontalDistance, UseAngle, MinAngle, MaxAngle);
     
-    // 5. 베지어 곡선으로 궤적 포인트 계산
-    const int32 PointCount = 19; // 18개 세그먼트
-    TArray<FVector> TrajectoryPoints = CalculateBezierPoints(
-        StartLocation, AdjustedTarget, PeakHeight, PointCount);
+    // 5. 공의 질량 계산
+    float BallMass = UFruitSpawnHelper::CalculateBallMass(Controller->CurrentBallType);
     
-    // 6. 궤적 시각화
-    DrawTrajectoryPath(World, TrajectoryPoints, TrajectoryID);
+    // 6. 물리 헬퍼를 통해 궤적 계산
+    TArray<FVector> TrajectoryPoints;
     
-    // 로그 출력
-    //UE_LOG(LogTemp, Log, TEXT("궤적 계산: 각도=%.1f, 거리=%.1f, 높이=%.1f"), 
-    //    UseAngle, HorizontalDistance, PeakHeight);
-}
-
-// 베지어 곡선으로 포물선 포인트 계산
-TArray<FVector> UFruitTrajectoryHelper::CalculateBezierPoints(const FVector& Start, const FVector& End, float PeakHeight, int32 PointCount)
-{
-    TArray<FVector> Points;
-    Points.Reserve(PointCount);
+    bool useBezier = true; // 베지어 곡선과 물리 계산 중 선택
     
-    // 정점 위치 계산
-    FVector HorizontalDelta = End - Start;
-    FVector Peak = Start + HorizontalDelta * 0.5f;
-    Peak.Z = FMath::Max(Start.Z, End.Z) + PeakHeight;
-    
-    // 베지어 곡선 포인트 생성
-    for (int32 i = 0; i < PointCount; i++)
+    if (useBezier)
     {
-        float t = (float)i / (PointCount - 1);
-        FVector Point = FMath::Pow(1.0f - t, 2) * Start + 2 * t * (1.0f - t) * Peak + t * t * End;
-        Points.Add(Point);
+        // [변경] FruitPhysicsHelper의 함수 사용
+        TrajectoryPoints = UFruitPhysicsHelper::CalculateBezierPoints(
+            StartLocation, AdjustedTarget, PeakHeight, 19);
+    }
+    else
+    {
+        // 물리 계산 방식
+        TrajectoryPoints = UFruitPhysicsHelper::CalculateTrajectoryPoints(
+            World, StartLocation, TargetLocation, UseAngle, BallMass);
     }
     
-    return Points;
+    // 7. 궤적 시각화
+    DrawTrajectoryPath(World, TrajectoryPoints, TrajectoryID);
 }
 
 // 궤적 시각화 - 통합된 버전

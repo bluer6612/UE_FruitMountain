@@ -221,3 +221,92 @@ float UFruitPhysicsHelper::CalculateTrajectoryPeakHeight(float HorizontalDistanc
     // 정점 높이 = 수평 거리 * 높이 비율
     return HorizontalDistance * PeakHeightRatio;
 }
+
+// CalculateTrajectoryPoints 함수를 FruitTrajectoryHelper에서 이동 및 수정
+TArray<FVector> UFruitPhysicsHelper::CalculateTrajectoryPoints(UWorld* World, const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, float BallMass)
+{
+    TArray<FVector> TrajectoryPoints;
+    
+    if (!World)
+        return TrajectoryPoints;
+    
+    // 1. 각도 가져오기
+    float MinAngle, MaxAngle;
+    GetThrowAngleRange(MinAngle, MaxAngle);
+    float UseAngle = FMath::Clamp(ThrowAngle, MinAngle, MaxAngle);
+    
+    // 2. 물리 헬퍼를 통해 조정된 타겟 위치 계산
+    FVector PlateCenter;
+    float PlateTopHeight;
+    FVector AdjustedTarget = CalculateAdjustedTargetLocation(
+        World, StartLocation, TargetLocation, UseAngle, PlateCenter, PlateTopHeight);
+    
+    // 3. 물리 헬퍼를 통해 초기 속도 계산
+    FVector LaunchVelocity;
+    bool bSuccess = CalculateThrowVelocity(
+        StartLocation, AdjustedTarget, UseAngle, BallMass, LaunchVelocity);
+    
+    if (!bSuccess)
+    {
+        // 계산 실패 시 기본값 사용
+        UE_LOG(LogTemp, Warning, TEXT("물리 계산에 실패하여 기본 속도 사용"));
+        
+        // 기본 방향과 속도 설정 (물리 헬퍼의 함수 사용)
+        float ThrowAngleRad = FMath::DegreesToRadians(UseAngle);
+        FVector HorizontalDelta = TargetLocation - StartLocation;
+        FVector HorizontalDir = FVector(HorizontalDelta.X, HorizontalDelta.Y, 0.0f).GetSafeNormal();
+        
+        FVector LaunchDirection = FVector(HorizontalDir.X * FMath::Cos(ThrowAngleRad), 
+                                          HorizontalDir.Y * FMath::Cos(ThrowAngleRad), 
+                                          FMath::Sin(ThrowAngleRad)).GetSafeNormal();
+        
+        LaunchVelocity = LaunchDirection * 300.0f; // 기본 속도
+    }
+    
+    // 4. 시간에 따른 포물선 궤적 계산
+    float Gravity = 980.0f; // 중력 가속도
+    const float TimeStep = 0.05f;
+    const float MaxTime = 5.0f;
+    FVector Gravity3D = FVector(0, 0, -Gravity);
+    
+    // 시작점 추가
+    TrajectoryPoints.Add(StartLocation);
+    
+    // 시간에 따른 위치 계산 (포물선 방정식)
+    for (float Time = TimeStep; Time < MaxTime; Time += TimeStep)
+    {
+        FVector Position = StartLocation + LaunchVelocity * Time + 0.5f * Gravity3D * Time * Time;
+        TrajectoryPoints.Add(Position);
+        
+        // 지면에 닿았거나 목표 근처에 도달했는지 확인
+        if (Position.Z <= 0.0f || FVector::Dist(Position, AdjustedTarget) < 10.0f)
+            break;
+    }
+    
+    UE_LOG(LogTemp, Log, TEXT("포물선 계산: 각도=%.1f, 속도=%.1f, 포인트=%d개"),
+        UseAngle, LaunchVelocity.Size(), TrajectoryPoints.Num());
+    
+    return TrajectoryPoints;
+}
+
+// CalculateBezierPoints 함수를 FruitTrajectoryHelper에서 이동
+TArray<FVector> UFruitPhysicsHelper::CalculateBezierPoints(const FVector& Start, const FVector& End, float PeakHeight, int32 PointCount)
+{
+    TArray<FVector> Points;
+    Points.Reserve(PointCount);
+    
+    // 정점 위치 계산
+    FVector HorizontalDelta = End - Start;
+    FVector Peak = Start + HorizontalDelta * 0.5f;
+    Peak.Z = FMath::Max(Start.Z, End.Z) + PeakHeight;
+    
+    // 베지어 곡선 포인트 생성
+    for (int32 i = 0; i < PointCount; i++)
+    {
+        float t = (float)i / (PointCount - 1);
+        FVector Point = FMath::Pow(1.0f - t, 2) * Start + 2 * t * (1.0f - t) * Peak + t * t * End;
+        Points.Add(Point);
+    }
+    
+    return Points;
+}
