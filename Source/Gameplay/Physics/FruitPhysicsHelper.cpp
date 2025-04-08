@@ -7,7 +7,7 @@
 #include "PhysicsEngine/PhysicsSettings.h"
 
 // const 정적 변수 초기화
-const float UFruitPhysicsHelper::MinThrowAngle = 5.0f;
+const float UFruitPhysicsHelper::MinThrowAngle = 10.0f;
 const float UFruitPhysicsHelper::MaxThrowAngle = 60.0f;
 
 // 각도 범위 가져오기
