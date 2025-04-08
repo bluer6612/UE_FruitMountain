@@ -19,7 +19,7 @@ AFruitBall::AFruitBall()
     MeshComponent->SetCollisionProfileName(TEXT("PhysicsActor"));
 
     // 기본 공 메시로 언리얼 기본 20면체 메시 사용
-    static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset(TEXT("/Engine/BasicShapes/Sphere"));
+    static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset(TEXT("/Game/Asset/Fruit/Fruit2"));
     if (MeshAsset.Succeeded())
     {
         MeshComponent->SetStaticMesh(MeshAsset.Object);

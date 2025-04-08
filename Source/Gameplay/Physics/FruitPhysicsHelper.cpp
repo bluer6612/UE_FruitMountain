@@ -182,34 +182,26 @@ FVector UFruitPhysicsHelper::CalculateAdjustedTargetLocation(UWorld* World, cons
         FBox Bounds = PlateActor->GetComponentsBoundingBox();
         OutPlateTopHeight = Bounds.Max.Z;
         
-        // 던지기 각도에 따라 타겟 위치 조정
-        float ThrowAngleRad = FMath::DegreesToRadians(ThrowAngle);
-        float HorizontalCoefficient = 0.0f;
+        // 접시 반경 계산 (간단히 X,Y 범위의 평균으로 계산)
+        float PlateRadius = (Bounds.Max.X - Bounds.Min.X + Bounds.Max.Y - Bounds.Min.Y) * 0.25f;
         
-        // 각도에 따른 수평 거리 계수 조정 (수정: 계수를 더 작게하여 접시 가까이에 착지하도록)
-        if (ThrowAngle < 20.0f)
-            HorizontalCoefficient = 0.4f; // 낮은 각도 (이전: 0.8f)
-        else if (ThrowAngle < 40.0f)
-            HorizontalCoefficient = 0.3f; // 중간 각도 (이전: 0.6f)
-        else
-            HorizontalCoefficient = 0.2f; // 높은 각도 (이전: 0.4f)
+        // 플레이어에서 접시까지의 방향 벡터 계산
+        FVector PlayerToPlateDirection = (OutPlateCenter - StartLocation);
+        PlayerToPlateDirection.Z = 0; // 수평 방향만 고려
+        PlayerToPlateDirection.Normalize();
         
-        // 타겟 방향 벡터 계산
-        FVector DirectionToTarget = TargetLocation - StartLocation;
-        FVector HorizontalDirection = FVector(DirectionToTarget.X, DirectionToTarget.Y, 0.0f).GetSafeNormal();
+        // 각도에 따른 착지 지점 조정
+        // 각도 매핑: 낮은 각도(5도)에서는 접시의 가까운 쪽(-0.8)
+        //           높은 각도(60도)에서는 접시의 먼 쪽(+0.8)
+        float TargetPlateOffset = FMath::GetMappedRangeValueClamped(
+            FVector2D(MinThrowAngle, MaxThrowAngle),
+            FVector2D(-0.8f, 0.8f),
+            ThrowAngle
+        );
         
-        // 접시 중심점에서 조정된 위치 계산
-        FVector AdjustedTarget = OutPlateCenter;
-        
-        // 조정: 항상 접시 중심을 향하되, 접시 크기에 맞게 거리 조정
-        float AdjustedHorizontalDistance = FVector::Dist2D(OutPlateCenter, StartLocation) * HorizontalCoefficient;
-        FVector AdjustedHorizontalDirection = (OutPlateCenter - StartLocation);
-        AdjustedHorizontalDirection.Z = 0;
-        AdjustedHorizontalDirection.Normalize();
-        
-        // 최종 위치 계산 (수정: 0.2f → 0.05f로 변경하여 접시 중심에 더 가깝게)
-        AdjustedTarget = OutPlateCenter - (AdjustedHorizontalDirection * AdjustedHorizontalDistance * 0.05f);
-        AdjustedTarget.Z = OutPlateTopHeight + 5.0f; // 약간의 마진 추가
+        // 최종 타겟 위치 계산 (접시 중심 + 방향 * 반경 * 오프셋)
+        FVector AdjustedTarget = OutPlateCenter + (PlayerToPlateDirection * PlateRadius * TargetPlateOffset);
+        AdjustedTarget.Z = OutPlateTopHeight + 5.0f; // 접시 상단 높이 + 약간의 여유
         
         return AdjustedTarget;
     }
