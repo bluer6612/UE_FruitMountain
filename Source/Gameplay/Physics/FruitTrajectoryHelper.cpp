@@ -88,7 +88,7 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVec
     float LineThickness = 0.8f;
     
     // 포인트 간 거리가 최소값 이상일 때만 그리기 (너무 조밀한 점은 건너뜀)
-    float MinDistance = 5.0f;
+    float MinDistance = 2.5f;
     TArray<FVector> FilteredPoints;
     FilteredPoints.Add(Points[0]);
     
@@ -115,27 +115,6 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVec
                 LineThickness, 
                 -1.0f // 영구적
             );
-        }
-    }
-    else
-    {
-        // 폴백: PersistentLineBatcher를 사용할 수 없는 경우
-        for (int32 i = 0; i < FilteredPoints.Num() - 1; i++)
-        {
-            // 일반 DrawDebugLine은 깊이 테스트를 지원하지 않음
-            DrawDebugLine(World, FilteredPoints[i], FilteredPoints[i + 1], 
-                PathColor, true, -1.0f, TrajectoryID, LineThickness);
-        }
-        
-        // 주요 지점에만 마커 표시
-        if (FilteredPoints.Num() >= MarkerCount)
-        {
-            for (int32 i = 0; i < MarkerCount; i++)
-            {
-                int32 Index = (i * (FilteredPoints.Num() - 1)) / (MarkerCount - 1);
-                DrawDebugBox(World, FilteredPoints[Index], FVector(0.01f), 
-                    FQuat::Identity, PathColor, true, -1.0f, TrajectoryID);
-            }
         }
     }
 }

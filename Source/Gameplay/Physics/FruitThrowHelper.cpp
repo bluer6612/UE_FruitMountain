@@ -123,8 +123,8 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
             MeshComp->SetWorldLocation(SpawnLocation, false, nullptr, ETeleportType::TeleportPhysics);
             MeshComp->AddImpulse(PhysicsResult.LaunchDirection * PhysicsResult.InitialSpeed * ActualMass);
             
-            UE_LOG(LogTemp, Warning, TEXT("공 던지기: 직접 속도 설정=(%s), 크기=%.1f"),
-                *PhysicsResult.LaunchDirection.ToString(), PhysicsResult.InitialSpeed);
+            //UE_LOG(LogTemp, Warning, TEXT("공 던지기: 직접 속도 설정=(%s), 크기=%.1f"),
+            //    *PhysicsResult.LaunchDirection.ToString(), PhysicsResult.InitialSpeed);
         }
     }
     

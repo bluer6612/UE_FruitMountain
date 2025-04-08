@@ -123,13 +123,30 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     // 4. 중력 값 가져오기 (추가)
     float Gravity = FMath::Abs(GetDefault<UPhysicsSettings>()->DefaultGravityZ);
 
-    // 5. 각도에 따른 거리 계산 부분 수정 - 인위적인 조정 제거
-    // 새로운 코드 - 물리학적으로 자연스러운 계산
-    float BaseInitialSpeed = 250.0f; // 기본 초기 속도 (모든 각도에서 일정)
-    float DistanceRatio = 1.0f;
+    // 5. 각도에 따른 거리 계산 수정 - 완전히 부드러운 곡선으로 변경
+    // 물리학적으로 정확한 각도-거리 관계 구현 (sin(2θ) 기반 수식)
+    float RadAngle = FMath::DegreesToRadians(UseAngle);
+    float TwoRadAngle = 2.0f * RadAngle;
 
-    // 포물선 궤적의 타겟 위치 계산
-    float AdjustedDistance = HorizontalDistance;
+    // 최대 투사 거리는 45도에서 발생하는 sin(2θ) 곡선 활용
+    // 실제 물리학에서 최대 사거리는 sin(2θ)에 비례하며 이는 45도에서 최대
+    float SinTwoTheta = FMath::Sin(TwoRadAngle);
+
+    // 공기 저항 효과를 시뮬레이션하는 추가 조정 (극단 각도에서 더 감소)
+    // 저각도와 고각도에서 실제보다 더 빨리 감소하는 공기 저항 효과 모델링
+    float AirResistanceEffect = FMath::Pow(FMath::Sin(RadAngle) * FMath::Cos(RadAngle), 0.7f);
+
+    // 최종 거리 비율 계산 (0.4 ~ 1.0 범위로 매핑)
+    float DistanceRatio = FMath::GetMappedRangeValueClamped(FVector2D(0.0f, 1.0f), FVector2D(0.4f, 1.0f), SinTwoTheta * AirResistanceEffect);
+
+    // 거리 감소가 자연스러운 곡선으로 이루어지도록 추가 스무딩
+    // 사인 곡선 기반 스무딩으로 부드러운 변화 보장
+    float NormalizedAngle = (UseAngle - MinThrowAngle) / (MaxThrowAngle - MinThrowAngle);
+    float SmoothingFactor = 0.9f + 0.1f * FMath::Sin(NormalizedAngle * PI);
+    DistanceRatio *= SmoothingFactor;
+
+    // 포물선 궤적의 타겟 위치 계산 - 각도에 따라 조정된 거리 사용
+    float AdjustedDistance = HorizontalDistance * DistanceRatio;
     Result.AdjustedTarget = StartLocation + DirectionToTarget * AdjustedDistance;
     Result.AdjustedTarget.Z = PlateTopHeight;
 
@@ -138,57 +155,39 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     Result.LaunchDirection = FVector(HorizontalDir.X * FMath::Cos(ThrowAngleRad), HorizontalDir.Y * FMath::Cos(ThrowAngleRad), FMath::Sin(ThrowAngleRad)
     ).GetSafeNormal();
 
-    // 7. 초기 속도 계산 수정 (자연스러운 포물선 물리)
-    // 투사체 도달에 필요한 속도 계산 (표준 포물선 방정식 사용)
-    float InitialSpeedSquared = (Gravity * HorizontalDistance * HorizontalDistance) / 
-                              (2.0f * FMath::Cos(ThrowAngleRad) * FMath::Cos(ThrowAngleRad) * 
-                              (HorizontalDistance * FMath::Tan(ThrowAngleRad) - HeightDifference));
+    // 7. 초기 속도 계산 보완 - 자연스러운 곡선을 위한 수정
+    // 항상 물리적으로 일관된 속도 계산
+    float InitialSpeedSquared = (Gravity * AdjustedDistance * AdjustedDistance) / 
+                            (2.0f * FMath::Cos(ThrowAngleRad) * FMath::Cos(ThrowAngleRad) * 
+                            (AdjustedDistance * FMath::Tan(ThrowAngleRad) - HeightDifference));
 
-    // 속도가 유효하지 않으면 근사치 사용
+    // 속도가 유효하지 않으면 물리학적으로 정확한 근사치 사용
     if (InitialSpeedSquared <= 0.0f || FMath::IsNaN(InitialSpeedSquared))
     {
-        // 물리적으로 더 정확한 대체 공식:
-        // v = sqrt((g*x) / sin(2θ))  (평지에서의 투사체 속도 공식)
+        // 연속적인 속도 곡선을 위한 일관된 대체 공식
+        float SinTwoTheta = FMath::Sin(2.0f * ThrowAngleRad);
+        SinTwoTheta = FMath::Max(SinTwoTheta, 0.1f); // 안정성 보장
         
-        // 2θ 값 계산 (각도의 2배)
-        float TwoTheta = 2.0f * ThrowAngleRad;
-        float SinTwoTheta = FMath::Sin(TwoTheta);
+        // 속도 계산 (기본 물리 공식 + 부드러운 보정 계수)
+        Result.InitialSpeed = FMath::Sqrt((Gravity * AdjustedDistance) / SinTwoTheta);
         
-        // 0에 가까운 값은 오류 방지
-        SinTwoTheta = FMath::Max(SinTwoTheta, 0.1f);
-        
-        // 대체 속도 계산
-        Result.InitialSpeed = FMath::Sqrt((Gravity * HorizontalDistance) / SinTwoTheta);
+        // 자연스러운 속도 곡선을 위한 부드러운 보정
+        float AngleNormalized = (UseAngle - MinThrowAngle) / (MaxThrowAngle - MinThrowAngle);
+        float SpeedCurve = 1.0f - 0.2f * FMath::Pow(2.0f * (AngleNormalized - 0.5f), 2);
+        Result.InitialSpeed *= SpeedCurve;
     }
     else
     {
         Result.InitialSpeed = FMath::Sqrt(InitialSpeedSquared);
     }
 
-    // 물리적으로 합리적인 범위로 제한
+    // 속도 범위 제한 (게임 균형을 위해)
     Result.InitialSpeed = FMath::Clamp(Result.InitialSpeed, 150.0f, 350.0f);
 
-    // 극단적인 각도에서 안정성 확보를 위한 미세 조정
-    // 각도가 너무 낮거나 높을 때 약간의 속도 보정 (강한 각도 종속성 제거)
-    if (UseAngle < 15.0f || UseAngle > 55.0f)
-    {
-        float AngleAdjustment = FMath::GetMappedRangeValueClamped(
-            FVector2D(10.0f, 15.0f), 
-            FVector2D(0.85f, 1.0f),
-            FMath::Clamp(UseAngle, 10.0f, 15.0f)
-        );
-        
-        if (UseAngle > 55.0f)
-        {
-            AngleAdjustment = FMath::GetMappedRangeValueClamped(
-                FVector2D(55.0f, 60.0f), 
-                FVector2D(1.0f, 0.9f),
-                UseAngle
-            );
-        }
-        
-        Result.InitialSpeed *= AngleAdjustment;
-    }
+    // 속도 스무딩 - 극단 각도에서도 부드러운 변화
+    float AngleParam = (UseAngle - MinThrowAngle) / (MaxThrowAngle - MinThrowAngle);
+    float SpeedAdjustment = 0.9f + 0.1f * FMath::Sin(AngleParam * PI);
+    Result.InitialSpeed *= SpeedAdjustment;
     
     // 8. 발사 속도 벡터 계산
     Result.LaunchVelocity = Result.LaunchDirection * Result.InitialSpeed;
@@ -200,6 +199,7 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     // 10. 힘 범위 제한 (극단적인 값 방지)
     float MinForce = 1800.0f;
     float MaxForce = 9000.0f;
+
     // 질량에 따른 힘 조정
     float MassRatio = BallMass / 30.0f; // 30kg을 기준으로 비율 계산
     MinForce *= MassRatio;
@@ -208,8 +208,7 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     Result.AdjustedForce = FMath::Clamp(Result.AdjustedForce, MinForce, MaxForce);
     
     // 11. 궤적 최고점 높이 계산
-    float PeakHeightRatio = FMath::GetMappedRangeValueClamped(
-        FVector2D(MinThrowAngle, MaxThrowAngle), FVector2D(0.15f, 0.9f), UseAngle);
+    float PeakHeightRatio = FMath::GetMappedRangeValueClamped(FVector2D(MinThrowAngle, MaxThrowAngle), FVector2D(0.15f, 0.9f), UseAngle);
     Result.PeakHeight = HorizontalDistance * PeakHeightRatio;
     
     // 12. 계산 성공 표시
@@ -223,8 +222,8 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     CachedResult = Result;
     CacheTimeout = CurrentTime;
     
-    //UE_LOG(LogTemp, Log, TEXT("물리 계산: 각도=%.1f°, 속도=%.1f, 힘=%.1f, 질량=%.1f"),
-    //    UseAngle, Result.InitialSpeed, Result.AdjustedForce, BallMass);
+    UE_LOG(LogTemp, Log, TEXT("물리 계산: 각도=%.1f°, 속도=%.1f, 힘=%.1f, 질량=%.1f"),
+        UseAngle, Result.InitialSpeed, Result.AdjustedForce, BallMass);
     
     return Result;
 }
