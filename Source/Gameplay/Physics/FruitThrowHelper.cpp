@@ -53,24 +53,41 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
                 MeshComp->SetSimulatePhysics(true);
             }
             
-            // 접시 위치 찾기
-            FVector PlateCenter = FVector::ZeroVector;
-            TArray<AActor*> PlateActors;
-            UGameplayStatics::GetAllActorsWithTag(Controller->GetWorld(), FName("Plate"), PlateActors);
-            if (PlateActors.Num() > 0)
+            // 접시 위치 찾기 - 한 번만 계산
+            static FVector CachedPlateCenter = FVector::ZeroVector;
+            static bool bPlateCached = false;
+            FVector PlateCenter;
+            
+            if (!bPlateCached)
             {
-                PlateCenter = PlateActors[0]->GetActorLocation();
-                
-                // 접시 약간 위를 목표로 설정
-                PlateCenter.Z += 10.0f;
+                TArray<AActor*> PlateActors;
+                UGameplayStatics::GetAllActorsWithTag(Controller->GetWorld(), FName("Plate"), PlateActors);
+                if (PlateActors.Num() > 0)
+                {
+                    CachedPlateCenter = PlateActors[0]->GetActorLocation();
+                    bPlateCached = true;
+                }
             }
+            
+            PlateCenter = CachedPlateCenter;
+            if (PlateCenter == FVector::ZeroVector)
+            {
+                // 캐시된 값이 없으면 기본값 설정
+                PlateCenter = FVector(0, 0, 100); // 기본 접시 위치
+            }
+            
+            // 접시 약간 위를 목표로 설정
+            PlateCenter.Z += 10.0f;
             
             // 물리 시뮬레이션 활성화 상태에서 질량 확인
             float ActualMass = MeshComp->GetMass();
             
+            // 소수점 1자리로 반올림된 각도 사용
+            float RoundedAngle = FMath::RoundToFloat(Controller->ThrowAngle * 10.0f) / 10.0f;
+            
             // 통합 물리 계산 사용
             FThrowPhysicsResult PhysicsResult = UFruitPhysicsHelper::CalculateThrowPhysics(
-                Controller->GetWorld(), SpawnLocation, PlateCenter, Controller->ThrowAngle, ActualMass);
+                Controller->GetWorld(), SpawnLocation, PlateCenter, RoundedAngle, ActualMass);
             
             // 물리적으로 더 정확한 초기화 방법
             MeshComp->SetPhysicsLinearVelocity(FVector::ZeroVector, false); // 현재 속도 초기화

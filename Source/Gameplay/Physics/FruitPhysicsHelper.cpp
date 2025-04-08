@@ -235,6 +235,29 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(
     float ThrowAngle, 
     float BallMass)
 {
+    // 정적 캐시 변수 (중복 호출 시 안정성 보장)
+    static FThrowPhysicsResult CachedResult;
+    static FVector LastStartLocation = FVector::ZeroVector;
+    static FVector LastTargetLocation = FVector::ZeroVector;
+    static float LastThrowAngle = 0.0f;
+    static float LastBallMass = 0.0f;
+    static float CacheTimeout = 0.0f;
+    
+    // 현재 시간 가져오기
+    float CurrentTime = World ? World->GetTimeSeconds() : 0.0f;
+    
+    // 입력 파라미터가 이전과 거의 같고, 캐시가 너무 오래되지 않았으면 캐시된 결과 반환
+    if (CachedResult.bSuccess && 
+        (LastStartLocation - StartLocation).Size() < 1.0f &&
+        (LastTargetLocation - TargetLocation).Size() < 1.0f &&
+        FMath::Abs(LastThrowAngle - ThrowAngle) < 0.1f &&
+        FMath::Abs(LastBallMass - BallMass) < 0.1f &&
+        (CurrentTime - CacheTimeout) < 0.1f) // 0.1초 이내 캐시만 사용
+    {
+        return CachedResult;
+    }
+    
+    // 새 결과 계산
     FThrowPhysicsResult Result;
     
     // 1. 각도 범위 가져오기 & 조정
@@ -349,6 +372,14 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(
     
     // 12. 계산 성공 표시
     Result.bSuccess = true;
+    
+    // 계산 결과 캐싱
+    LastStartLocation = StartLocation;
+    LastTargetLocation = TargetLocation;
+    LastThrowAngle = ThrowAngle;
+    LastBallMass = BallMass;
+    CachedResult = Result;
+    CacheTimeout = CurrentTime;
     
     UE_LOG(LogTemp, Log, TEXT("물리 계산: 각도=%.1f°, 속도=%.1f, 힘=%.1f, 질량=%.1f"),
         UseAngle, Result.InitialSpeed, Result.AdjustedForce, BallMass);

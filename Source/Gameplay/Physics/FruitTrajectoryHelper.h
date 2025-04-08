@@ -22,4 +22,8 @@ public:
     // 궤적 시각화 함수 - 공용으로 변경
     UFUNCTION(BlueprintCallable, Category="Trajectory")
     static void DrawTrajectoryPath(UWorld* World, const TArray<FVector>& Points, int32 TrajectoryID);
+
+private:
+    // 벡터 좌표를 지정된 소수점 자리로 반올림하는 유틸리티 함수
+    static FVector RoundVector(const FVector& InVector, int32 DecimalPlaces);
 };
