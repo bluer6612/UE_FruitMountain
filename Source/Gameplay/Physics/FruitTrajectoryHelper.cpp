@@ -62,17 +62,14 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
         LastPhysicsResult = PhysicsResult;
     }
     
-    // 5. 궤적 계산
-    TArray<FVector> TrajectoryPoints;
+    // 5. 물리 기반 궤적 계산 (bezier 궤적은 사용하지 않음)
+    TArray<FVector> TrajectoryPoints = CalculateTrajectoryPoints(World, StableStartLocation, StableTargetLocation, StableAngle, BallMass);
 
-    // 물리 기반 궤적 (FruitPhysicsHelper로 직접 호출), (bezier 궤적은 사용하지 않음)
-    TrajectoryPoints = UFruitPhysicsHelper::CalculateTrajectoryPoints(World, StableStartLocation, StableTargetLocation, StableAngle, BallMass);
-    
-        // 6. 궤적 시각화
+    // 6. 궤적 시각화
     DrawTrajectoryPath(World, TrajectoryPoints, TrajectoryID);
 }
 
-// 궤적 시각화 - 통합된 버전
+// 궤적 시각화 함수 수정
 void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVector>& Points, int32 TrajectoryID)
 {
     if (!World || Points.Num() < 2)
@@ -83,7 +80,7 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVec
     // 이전에 그린 모든 궤적 먼저 비우기 (최대한 확실하게)
     FlushPersistentDebugLines(World);
     
-    FColor PathColor = FColor(135, 206, 235, 180);
+    FColor PathColor = FColor(135, 206, 235, 100);
     int32 MarkerCount = 3;
     float LineThickness = 0.8f;
     
@@ -101,12 +98,13 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVec
         }
     }
     
-    // LineBatcher를 사용하여 깊이 테스트를 활성화한 선 그리기
+    // LineBatcher를 사용하여 궤적 그리기
     if (World->PersistentLineBatcher)
     {
         for (int32 i = 0; i < FilteredPoints.Num() - 1; i++)
         {
             // DepthPriority를 SDPG_World로 설정하여 일반 물체와 동일한 깊이 테스트 적용
+            // 이 부분은 미리보기 공 뒤에 가려지는 궤적을 그림
             World->PersistentLineBatcher->DrawLine(
                 FilteredPoints[i], 
                 FilteredPoints[i + 1], 
@@ -128,4 +126,59 @@ FVector UFruitTrajectoryHelper::RoundVector(const FVector& InVector, int32 Decim
         FMath::RoundToFloat(InVector.Y * Multiplier) / Multiplier,
         FMath::RoundToFloat(InVector.Z * Multiplier) / Multiplier
     );
+}
+
+// 이 함수는 FruitPhysicsHelper에서 이동됨
+TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(UWorld* World, const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, float BallMass)
+{
+    TArray<FVector> TrajectoryPoints;
+    
+    if (!World)
+        return TrajectoryPoints;
+    
+    // 물리 계산 결과 사용
+    FThrowPhysicsResult PhysicsResult = UFruitPhysicsHelper::CalculateThrowPhysics(
+        World, StartLocation, TargetLocation, ThrowAngle, BallMass);
+    
+    // 가상의 물리 바디 생성 (시각적으로 표시하지 않고 예측용으로만 사용)
+    FPredictProjectilePathParams PredictParams;
+    PredictParams.StartLocation = StartLocation;
+    PredictParams.LaunchVelocity = PhysicsResult.LaunchVelocity;
+    PredictParams.bTraceWithCollision = true;
+    PredictParams.ProjectileRadius = 5.0f;
+    PredictParams.MaxSimTime = 5.0f;
+    PredictParams.SimFrequency = 20;
+    PredictParams.OverrideGravityZ = -FMath::Abs(GetDefault<UPhysicsSettings>()->DefaultGravityZ);
+    PredictParams.DrawDebugType = EDrawDebugTrace::None;
+    
+    // 중요: 충돌 채널 설정 - WorldStatic만 검사하고 물체(FruitBall)은 무시
+    PredictParams.TraceChannel = ECC_WorldStatic;
+    
+    // 중요: 과일 공 무시 설정 추가
+    PredictParams.ActorsToIgnore.Empty();
+    
+    // 모든 FruitBall 찾아서 무시 목록에 추가
+    TArray<AActor*> FruitBalls;
+    UGameplayStatics::GetAllActorsOfClass(World, AFruitBall::StaticClass(), FruitBalls);
+    PredictParams.ActorsToIgnore = FruitBalls;
+    
+    // 접시는 충돌 테스트에 포함 (접시에 도달하는지 보여주기 위해)
+    TArray<AActor*> PlateActors;
+    UGameplayStatics::GetAllActorsWithTag(World, FName("Plate"), PlateActors);
+    if (PlateActors.Num() > 0)
+    {
+        // 이미 무시 목록에 있으면 제거
+        PredictParams.ActorsToIgnore.Remove(PlateActors[0]);
+    }
+    
+    FPredictProjectilePathResult PredictResult;
+    bool bHit = UGameplayStatics::PredictProjectilePath(World, PredictParams, PredictResult);
+    
+    // 예측 결과를 궤적 포인트로 변환
+    for (const FPredictProjectilePathPointData& PointData : PredictResult.PathData)
+    {
+        TrajectoryPoints.Add(PointData.Location);
+    }
+    
+    return TrajectoryPoints;
 }

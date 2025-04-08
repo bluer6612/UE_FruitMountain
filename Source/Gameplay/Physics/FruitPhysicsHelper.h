@@ -63,10 +63,6 @@ public:
     static const float MinThrowAngle;
     static const float MaxThrowAngle;
     
-    // 궤적 계산 함수 - 포물선 물리 (FruitTrajectoryHelper에서 이동)
-    UFUNCTION(BlueprintCallable, Category = "Physics")
-    static TArray<FVector> CalculateTrajectoryPoints(UWorld* World, const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, float BallMass);
-    
     // 통합 물리 계산 함수 (모든 물리 계산의 핵심)
     UFUNCTION(BlueprintCallable, Category = "Physics")
     static FThrowPhysicsResult CalculateThrowPhysics(UWorld* World, const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, float BallMass);

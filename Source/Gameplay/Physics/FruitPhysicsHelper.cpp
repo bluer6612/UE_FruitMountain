@@ -10,45 +10,6 @@
 const float UFruitPhysicsHelper::MinThrowAngle = 10.0f;
 const float UFruitPhysicsHelper::MaxThrowAngle = 60.0f;
 
-// CalculateTrajectoryPoints 함수 수정
-TArray<FVector> UFruitPhysicsHelper::CalculateTrajectoryPoints(UWorld* World, const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, float BallMass)
-{
-    TArray<FVector> TrajectoryPoints;
-    
-    if (!World)
-        return TrajectoryPoints;
-    
-    // 물리 계산 결과 사용
-    FThrowPhysicsResult PhysicsResult = CalculateThrowPhysics(
-        World, StartLocation, TargetLocation, ThrowAngle, BallMass);
-    
-    // 가상의 물리 바디 생성 (시각적으로 표시하지 않고 예측용으로만 사용)
-    FPredictProjectilePathParams PredictParams;
-    PredictParams.StartLocation = StartLocation;
-    PredictParams.LaunchVelocity = PhysicsResult.LaunchVelocity;
-    PredictParams.bTraceWithCollision = true;
-    PredictParams.ProjectileRadius = 5.0f;
-    PredictParams.MaxSimTime = 5.0f;
-    PredictParams.SimFrequency = 20;
-    PredictParams.OverrideGravityZ = -FMath::Abs(GetDefault<UPhysicsSettings>()->DefaultGravityZ); // 언리얼 엔진의 물리 설정에서 중력값 가져오기
-    PredictParams.DrawDebugType = EDrawDebugTrace::None;
-    PredictParams.TraceChannel = ECC_WorldDynamic;
-    
-    FPredictProjectilePathResult PredictResult;
-    bool bHit = UGameplayStatics::PredictProjectilePath(World, PredictParams, PredictResult);
-    
-    // 예측 결과를 궤적 포인트로 변환
-    for (const FPredictProjectilePathPointData& PointData : PredictResult.PathData)
-    {
-        TrajectoryPoints.Add(PointData.Location);
-    }
-    
-    //UE_LOG(LogTemp, Log, TEXT("예측 궤적: %d개 포인트, 충돌=%s"), 
-    //    TrajectoryPoints.Num(), bHit ? TEXT("True") : TEXT("False"));
-    
-    return TrajectoryPoints;
-}
-
 // 통합 물리 계산 함수 구현
 FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, float BallMass)
 {

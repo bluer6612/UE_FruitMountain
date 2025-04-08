@@ -147,19 +147,14 @@ FVector UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(UWorld* World, float 
                 FVector PlateSize = PlateBounds.GetSize();
                 
                 // 접시만의 반지름 계산 (X, Y 중 큰 값의 절반)
-                PlateRadius = FMath::Max(PlateSize.X, PlateSize.Y) * 0.45f; // 약간 여유를 두고 0.45배
+                PlateRadius = FMath::Max(PlateSize.X, PlateSize.Y) * 0.475f; // 약간 여유를 두고 0.475배
                 
                 UE_LOG(LogTemp, Verbose, TEXT("순수 접시 반경: %.1f (X=%.1f, Y=%.1f)"),
                     PlateRadius, PlateSize.X, PlateSize.Y);
             }
             else
             {
-                // 접시 컴포넌트를 못 찾았다면 전체 바운드에서 예상 반지름 계산
-                // 테이블을 제외한 접시 크기를 추정
-                FVector Bounds = TotalBounds.GetSize();
-                PlateRadius = FMath::Min(Bounds.X, Bounds.Y) * 0.4f; // 더 작은 값 사용 (테이블이 더 큰 경향)
-                
-                UE_LOG(LogTemp, Warning, TEXT("접시 메시를 찾을 수 없어 추정 반경 사용: %.1f"), PlateRadius);
+                UE_LOG(LogTemp, Warning, TEXT("접시 메시를 찾을 수 없음"));
             }
             
             // 카메라 방향 벡터 계산
@@ -174,7 +169,7 @@ FVector UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(UWorld* World, float 
             FVector EdgePoint = PlateCenter + CameraDirection * PlateRadius;
             
             // 높이 조정 - 전체 구조물(테이블+접시) 위로, 공 크기를 고려한 오프셋 적용
-            float BallTypeOffset = 2.5f; // 추가 여유 높이
+            float BallTypeOffset = 3.75f; // 추가 여유 높이
             EdgePoint.Z = TotalBounds.Max.Z + BallTypeOffset;
             
             // 디버그 로그
