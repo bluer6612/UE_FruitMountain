@@ -123,50 +123,85 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     // 4. 중력 값 가져오기 (추가)
     float Gravity = FMath::Abs(GetDefault<UPhysicsSettings>()->DefaultGravityZ);
 
-    // 5. 각도에 따른 거리 계산 수정 - 평균 각도 기준 방식으로 변경
+    // 5. 각도에 따른 거리 계산 수정 - 아치형 곡선으로 조정
 
     // 최적 각도를 MinAngle과 MaxAngle의 평균으로 설정
     float OptimalAngle = (MinThrowAngle + MaxThrowAngle) / 2.0f; // 35도
     float AngleRange = (MaxThrowAngle - MinThrowAngle); // 50도 범위
 
-    // 현재 각도가 최적 각도에서 얼마나 떨어져 있는지 계산 (정규화된 값)
+    // 현재 각도가 최적 각도에서 얼마나 떨어져 있는지 계산 (0~1 범위)
     float AngleDeviation = FMath::Abs(UseAngle - OptimalAngle) / (AngleRange / 2.0f);
 
-    // 포물선 형태의 거리 감소 커브 적용 (최적 각도=1.0, 양쪽 끝=0.3)
-    // 제곱 함수 사용으로 부드러운 곡선 효과
-    float DistanceRatio = FMath::Clamp(1.0f - (AngleDeviation * AngleDeviation * 0.7f), 0.3f, 1.0f);
+    // U자형 거리 곡선 적용 - 중간 각도에서 멀리, 낮거나 높은 각도에서 가깝게
+    // 최적 각도(35도)에서는 0.8, 극단 각도(10도, 60도)에서는 0.2 거리 비율
+    float DistanceRatio = FMath::Clamp(0.8f - (AngleDeviation * AngleDeviation * 0.6f), 0.2f, 0.8f);
 
     // 낮은 각도(10-20도)에서 추가 거리 감소 적용 (낮은 각도 문제 해결)
     if (UseAngle < 20.0f)
     {
-        // 10-20도 구간에서 추가 거리 감소 (더 가파른 감소)
+        // 10-20도 구간에서 추가 거리 감소
         float LowAngleFactor = FMath::GetMappedRangeValueClamped(
             FVector2D(MinThrowAngle, 20.0f),
-            FVector2D(0.6f, 1.0f),  // 최소 60% 수준으로 추가 감소
+            FVector2D(0.4f, 1.0f),  // 최소 40% 수준으로 조정
             UseAngle
         );
         DistanceRatio *= LowAngleFactor;
         
-        // 매우 낮은 각도(10-12도)에서 최소 거리 보장
-        if (UseAngle <= 12.0f)
+        // 매우 낮은 각도(10-15도)에서는 더 가깝게 - 중앙에 가깝게
+        if (UseAngle <= 15.0f)
         {
             float MinDistRatio = FMath::GetMappedRangeValueClamped(
-                FVector2D(10.0f, 12.0f),
-                FVector2D(0.2f, 0.25f),  // 10도에서는 20% 거리로 강제
+                FVector2D(10.0f, 15.0f),
+                FVector2D(0.2f, 0.3f),  // 10도에서는 20% 거리로 강제
                 UseAngle
             );
             DistanceRatio = FMath::Min(DistanceRatio, MinDistRatio);
         }
     }
 
-    // 포물선 궤적의 타겟 위치 계산 - 각도에 따라 조정된 거리 사용
+    // 높은 각도(50-60도)에서도 마찬가지로 거리 감소 강화
+    if (UseAngle > 50.0f)
+    {
+        float HighAngleFactor = FMath::GetMappedRangeValueClamped(
+            FVector2D(50.0f, MaxThrowAngle),
+            FVector2D(1.0f, 0.4f),  // 60도에서는 40% 수준으로 강제 감소
+            UseAngle
+        );
+        DistanceRatio *= HighAngleFactor;
+    }
+
+    // 포물선 궤적의 타겟 위치 계산 - 접시 중앙 방향으로 조정
     float AdjustedDistance = HorizontalDistance * DistanceRatio;
     Result.AdjustedTarget = StartLocation + DirectionToTarget * AdjustedDistance;
     Result.AdjustedTarget.Z = PlateTopHeight;
 
-    // 6. 발사 방향 계산
+    // 6. 발사 방향 계산 수정 - 각도에 따른 Z 성분 강화
     FVector HorizontalDir = FVector(DirectionToTarget.X, DirectionToTarget.Y, 0.0f).GetSafeNormal();
-    Result.LaunchDirection = FVector(HorizontalDir.X * FMath::Cos(ThrowAngleRad), HorizontalDir.Y * FMath::Cos(ThrowAngleRad), FMath::Sin(ThrowAngleRad)
+
+    // 각도에 따라 수직 성분 증가율 대폭 강화 - 단순히 각도가 높을수록 더 큰 HeightBoostFactor
+    float AngleNormalized = (UseAngle - MinThrowAngle) / AngleRange; // 0~1 범위
+    float HeightBoostFactor;
+
+    // 각도에 따른 높이 조정 - 선형 증가에서 지수 증가로 변경
+    // 단순히 각도가 높을수록 더 높은 곡선 (최적값 개념 삭제)
+    HeightBoostFactor = FMath::GetMappedRangeValueClamped(
+        FVector2D(MinThrowAngle, MaxThrowAngle),
+        FVector2D(1.0f, 4.0f), // 10도에서 1.0, 60도에서 4.0 (더 큰 범위)
+        UseAngle
+    );
+
+    // 고각도에서 더 급격하게 증가하도록 지수 함수 적용
+    HeightBoostFactor = FMath::Pow(HeightBoostFactor, 1.4f);
+
+    // 수직 성분 증가 - 더 높은 값 허용
+    float VerticalComponent = FMath::Sin(ThrowAngleRad) * HeightBoostFactor;
+    // 수직 성분 제한값을 0.99로 상향 (거의 제한 없음)
+    VerticalComponent = FMath::Min(VerticalComponent, 0.99f);
+
+    Result.LaunchDirection = FVector(
+        HorizontalDir.X * FMath::Cos(ThrowAngleRad),
+        HorizontalDir.Y * FMath::Cos(ThrowAngleRad),
+        VerticalComponent
     ).GetSafeNormal();
 
     // 7. 초기 속도 계산 보완 - 안정성 강화
@@ -208,9 +243,31 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     MaxForce *= MassRatio;
 
     Result.AdjustedForce = FMath::Clamp(Result.AdjustedForce, MinForce, MaxForce);
-    
-    // 11. 궤적 최고점 높이 계산
-    float PeakHeightRatio = FMath::GetMappedRangeValueClamped(FVector2D(MinThrowAngle, MaxThrowAngle), FVector2D(0.15f, 0.9f), UseAngle);
+
+    // 11. 궤적 최고점 높이 계산 - 각도에 따라 비선형으로 증가 (대폭 강화)
+    // 각도 정규화 (0~1)
+    float NormalizedAngle = (UseAngle - MinThrowAngle) / AngleRange;
+
+    // 각도에 따른 높이 비율 - 각도가 높을수록 급격히 높아지는 단순한 관계로 변경
+    float PeakHeightRatio = FMath::GetMappedRangeValueClamped(
+        FVector2D(MinThrowAngle, MaxThrowAngle),
+        FVector2D(0.1f, 3.5f), // 10도에서 0.1, 60도에서 3.5 (훨씬 더 큰 범위)
+        UseAngle
+    );
+
+    // 고각도에서 더욱 급격하게 증가하도록 지수 함수 적용
+    PeakHeightRatio = FMath::Pow(PeakHeightRatio, 1.5f);
+
+    // 50~60도 구간에서 추가 급증 효과
+    if (UseAngle > 50.0f) {
+        float HighAngleFactor = FMath::GetMappedRangeValueClamped(
+            FVector2D(50.0f, MaxThrowAngle),
+            FVector2D(1.0f, 1.5f), // 60도에서 50% 추가 증가
+            UseAngle
+        );
+        PeakHeightRatio *= HighAngleFactor;
+    }
+
     Result.PeakHeight = HorizontalDistance * PeakHeightRatio;
     
     // 12. 계산 성공 표시
