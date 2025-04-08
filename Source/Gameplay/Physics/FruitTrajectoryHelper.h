@@ -10,14 +10,6 @@ class UE_FRUITMOUNTAIN_API UFruitTrajectoryHelper : public UBlueprintFunctionLib
     GENERATED_BODY()
     
 public:
-    // 궤적 계산 공통 함수
-    UFUNCTION()
-    static TArray<FVector> CalculateTrajectoryPoints(
-        class AFruitPlayerController* Controller,
-        const FVector& StartLocation,
-        const FVector& TargetLocation,
-        float BallMass);
-    
     // 통합된 궤적 업데이트 함수 - 기본 매개변수 추가
     UFUNCTION(BlueprintCallable, Category="Trajectory")
     static void UpdateTrajectoryPath(

@@ -11,75 +11,6 @@
 #include "PhysicsEngine/PhysicsSettings.h"
 #include "Actors/FruitBall.h"
 
-TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(AFruitPlayerController* Controller, const FVector& StartLocation, const FVector& TargetLocation, float BallMass)
-{
-    TArray<FVector> TrajectoryPoints;
-    
-    if (!Controller)
-        return TrajectoryPoints;
-    
-    UWorld* World = Controller->GetWorld();
-    
-    // 1. 각도 가져오기
-    float UseAngle = Controller->ThrowAngle;
-    float MinAngle, MaxAngle;
-    UFruitPhysicsHelper::GetThrowAngleRange(MinAngle, MaxAngle);
-    UseAngle = FMath::Clamp(UseAngle, MinAngle, MaxAngle);
-    
-    // 2. 물리 헬퍼를 통해 조정된 타겟 위치 계산
-    FVector PlateCenter;
-    float PlateTopHeight;
-    FVector AdjustedTarget = UFruitPhysicsHelper::CalculateAdjustedTargetLocation(
-        World, StartLocation, TargetLocation, UseAngle, PlateCenter, PlateTopHeight);
-    
-    // 3. 물리 헬퍼를 통해 초기 속도 계산
-    FVector LaunchVelocity;
-    bool bSuccess = UFruitPhysicsHelper::CalculateThrowVelocity(
-        StartLocation, AdjustedTarget, UseAngle, BallMass, LaunchVelocity);
-    
-    if (!bSuccess)
-    {
-        // 계산 실패 시 기본값 사용
-        UE_LOG(LogTemp, Warning, TEXT("물리 계산에 실패하여 기본 속도 사용"));
-        
-        // 기본 방향과 속도 설정 (물리 헬퍼의 함수 사용)
-        float ThrowAngleRad = FMath::DegreesToRadians(UseAngle);
-        FVector HorizontalDelta = TargetLocation - StartLocation;
-        FVector HorizontalDir = FVector(HorizontalDelta.X, HorizontalDelta.Y, 0.0f).GetSafeNormal();
-        
-        FVector LaunchDirection = FVector(HorizontalDir.X * FMath::Cos(ThrowAngleRad), 
-                                          HorizontalDir.Y * FMath::Cos(ThrowAngleRad), 
-                                          FMath::Sin(ThrowAngleRad)).GetSafeNormal();
-        
-        LaunchVelocity = LaunchDirection * 300.0f; // 기본 속도
-    }
-    
-    // 4. 시간에 따른 포물선 궤적 계산
-    float Gravity = 980.0f; // 중력 가속도
-    const float TimeStep = 0.05f;
-    const float MaxTime = 5.0f;
-    FVector Gravity3D = FVector(0, 0, -Gravity);
-    
-    // 시작점 추가
-    TrajectoryPoints.Add(StartLocation);
-    
-    // 시간에 따른 위치 계산 (포물선 방정식)
-    for (float Time = TimeStep; Time < MaxTime; Time += TimeStep)
-    {
-        FVector Position = StartLocation + LaunchVelocity * Time + 0.5f * Gravity3D * Time * Time;
-        TrajectoryPoints.Add(Position);
-        
-        // 지면에 닿았거나 목표 근처에 도달했는지 확인
-        if (Position.Z <= 0.0f || FVector::Dist(Position, AdjustedTarget) < 10.0f)
-            break;
-    }
-    
-    //UE_LOG(LogTemp, Log, TEXT("포물선 계산: 각도=%.1f, 속도=%.1f, 포인트=%d개"),
-    //    UseAngle, LaunchVelocity.Size(), TrajectoryPoints.Num());
-    
-    return TrajectoryPoints;
-}
-
 void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Controller, const FVector& StartLocation, const FVector& TargetLocation, bool bPersistent, int32 CustomTrajectoryID)
 {
     if (!Controller || !Controller->GetWorld())
@@ -91,47 +22,31 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     // 기존 궤적 비우기
     FlushPersistentDebugLines(World);
     
-    // 1. 현재 각도 가져오기
-    float MinAngle, MaxAngle;
-    UFruitPhysicsHelper::GetThrowAngleRange(MinAngle, MaxAngle);
-    float UseAngle = FMath::Clamp(Controller->ThrowAngle, MinAngle, MaxAngle);
-    
-    // 2. 물리 헬퍼를 통해 조정된 타겟 위치 계산
-    FVector PlateCenter;
-    float PlateTopHeight;
-    FVector AdjustedTarget = UFruitPhysicsHelper::CalculateAdjustedTargetLocation(
-        World, StartLocation, TargetLocation, UseAngle, PlateCenter, PlateTopHeight);
-    
-    // 3. 수평 거리 계산
-    FVector HorizontalDelta = AdjustedTarget - StartLocation;
-    float HorizontalDistance = FVector(HorizontalDelta.X, HorizontalDelta.Y, 0.0f).Size();
-    
-    // 4. 물리 헬퍼를 통해 궤적 높이 계산
-    float PeakHeight = UFruitPhysicsHelper::CalculateTrajectoryPeakHeight(
-        HorizontalDistance, UseAngle, MinAngle, MaxAngle);
-    
-    // 5. 공의 질량 계산
+    // 1. 공의 질량 계산
     float BallMass = UFruitSpawnHelper::CalculateBallMass(Controller->CurrentBallType);
     
-    // 6. 물리 헬퍼를 통해 궤적 계산
+    // 2. 물리 계산 결과 가져오기
+    FThrowPhysicsResult PhysicsResult = UFruitPhysicsHelper::CalculateThrowPhysics(
+        World, StartLocation, TargetLocation, Controller->ThrowAngle, BallMass);
+    
+    // 3. 궤적 계산
     TArray<FVector> TrajectoryPoints;
     
-    bool useBezier = true; // 베지어 곡선과 물리 계산 중 선택
-    
+    bool useBezier = false;
     if (useBezier)
     {
-        // [변경] FruitPhysicsHelper의 함수 사용
+        // 베지어 곡선 방식
         TrajectoryPoints = UFruitPhysicsHelper::CalculateBezierPoints(
-            StartLocation, AdjustedTarget, PeakHeight, 19);
+            StartLocation, PhysicsResult.AdjustedTarget, PhysicsResult.PeakHeight, 19);
     }
     else
     {
-        // 물리 계산 방식
+        // 물리 기반 궤적 (FruitPhysicsHelper로 직접 호출)
         TrajectoryPoints = UFruitPhysicsHelper::CalculateTrajectoryPoints(
-            World, StartLocation, TargetLocation, UseAngle, BallMass);
+            World, StartLocation, TargetLocation, Controller->ThrowAngle, BallMass);
     }
     
-    // 7. 궤적 시각화
+    // 4. 궤적 시각화
     DrawTrajectoryPath(World, TrajectoryPoints, TrajectoryID);
 }
 
