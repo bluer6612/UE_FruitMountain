@@ -15,39 +15,6 @@
 FVector UFruitThrowHelper::CachedPlateCenter = FVector::ZeroVector;
 bool UFruitThrowHelper::bPlateCached = false;
 
-// 접시 위치 초기화 함수 - 게임 시작 시 한 번만 호출
-void UFruitThrowHelper::InitializePlatePosition(UWorld* World)
-{
-    // 이미 초기화되었으면 스킵
-    if (bPlateCached)
-        return;
-        
-    if (!World)
-        return;
-        
-    TArray<AActor*> PlateActors;
-    UGameplayStatics::GetAllActorsWithTag(World, FName("Plate"), PlateActors);
-    
-    if (PlateActors.Num() > 0)
-    {
-        // 접시 경계 구하기 (중심점 정확히 계산)
-        FVector PlateOrigin;
-        FVector PlateExtent;
-        PlateActors[0]->GetActorBounds(false, PlateOrigin, PlateExtent);
-        
-        CachedPlateCenter = PlateOrigin;
-        bPlateCached = true;
-        
-        UE_LOG(LogTemp, Warning, TEXT("접시 위치 최초 캐싱 완료: %s"), *CachedPlateCenter.ToString());
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("접시를 찾을 수 없습니다. 기본 위치 사용"));
-        CachedPlateCenter = FVector(0, 0, 30); // 기본 접시 위치
-        bPlateCached = true;
-    }
-}
-
 // ThrowFruit 함수 - FruitPhysicsHelper 활용
 void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
 {
@@ -93,7 +60,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
             // 접시 위치 초기화 - 아직 초기화되지 않았다면
             if (!bPlateCached && Controller && Controller->GetWorld())
             {
-                InitializePlatePosition(Controller->GetWorld());
+                UE_LOG(LogTemp, Warning, TEXT("접시 위치 미초기화"));
             }
             
             // 항상 캐시된 접시 위치 사용
@@ -205,7 +172,7 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
     // 접시 위치 사용 (더 이상 직접 검색 안 함)
     if (!bPlateCached && Controller && Controller->GetWorld())
     {
-        InitializePlatePosition(Controller->GetWorld());
+        UE_LOG(LogTemp, Warning, TEXT("접시 위치 미초기화"));
     }
     
     // 추후 궤적 계산에 접시 위치 전달

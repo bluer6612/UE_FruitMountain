@@ -59,6 +59,10 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ball")
     int32 CurrentBallType;
 
+    // 던지기 상태 추적을 위한 변수 (static 대신 멤버 변수로)
+    UPROPERTY()
+    bool bIsThrowingInProgress = false;
+
     // 회전 기준이 되는 접시(Plate)의 위치
     FVector PlateLocation;
 
@@ -68,10 +72,6 @@ public:
     // 궤적 업데이트 함수 추가
     UFUNCTION(BlueprintCallable, Category="Trajectory")
     void UpdateTrajectory();
-
-    // 던지기 상태 추적을 위한 변수 (static 대신 멤버 변수로)
-    UPROPERTY()
-    bool bIsThrowingInProgress = false;
     
 protected:
     virtual void SetupInputComponent() override;
@@ -92,7 +92,10 @@ private:
     // 미리보기 공 업데이트 제한을 위한 변수들
     FTimerHandle PreviewBallUpdateTimerHandle;
     bool bPreviewBallUpdatePending = false;
-    const float PreviewBallUpdateDelay = 0.02f;
+    const float PreviewBallUpdateDelay = 0.02f;// 헤더 파일에 함수 선언 추가
+    
+    // 접시 위치 초기화 함수 (FruitThrowHelper에서 이동)
+    void InitializePlatePosition();
     
     // 실제 업데이트 수행 함수
     void ExecutePreviewBallUpdate();

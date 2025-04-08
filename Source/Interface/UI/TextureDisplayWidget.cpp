@@ -58,8 +58,6 @@ void UTextureDisplayWidget::NativeConstruct()
 
 void UTextureDisplayWidget::SetupAllImages()
 {
-    UE_LOG(LogTemp, Warning, TEXT("TextureDisplayWidget: 이미지 설정 시작"));
-    
     // 화면 크기를 고려한 앵커 기반 위치 설정 + 개별 패딩값 적용
     SetupImageWithTexture(UI_Play_Score, EWidgetAnchor::TopLeft, 
                          TEXT("/Game/Asset/UI/UI_Play_Score"), 
@@ -76,7 +74,7 @@ void UTextureDisplayWidget::SetupAllImages()
                          FVector2D(301, 339),
                          120.0f, 60.0f); // 오른쪽 상단 다음 과일
 
-    UE_LOG(LogTemp, Warning, TEXT("TextureDisplayWidget: 이미지 설정 완료"));
+    UE_LOG(LogTemp, Warning, TEXT("TextureDisplayWidget: 위젯 이미지 설정 완료"));
 }
 
 void UTextureDisplayWidget::SetImageTexture(EWidgetImageType Position, const FString& TexturePath, const FVector2D& CustomSize, float PaddingX, float PaddingY)
@@ -156,9 +154,6 @@ void UTextureDisplayWidget::SetupImageWithTexture(UImage*& ImageWidget, EWidgetA
 
     if (LoadedTexture)
     {
-        // 자세한 텍스처 정보 로그 추가
-        UE_LOG(LogTemp, Warning, TEXT("========= 텍스처 경로: %s ========="), *TexturePath);
-        
         // 사용자 지정 크기 또는 원본 크기 사용
         FVector2D FinalSize = CustomSize;
         
@@ -174,13 +169,9 @@ void UTextureDisplayWidget::SetupImageWithTexture(UImage*& ImageWidget, EWidgetA
         
         // 앵커 기반 위치 설정 (패딩 값 전달)
         UUIHelper::SetAnchorForSlot(ImageSlot, Anchor, PaddingX, PaddingY);
-        
-        UE_LOG(LogTemp, Warning, TEXT("위젯 패딩 적용: X=%.1f, Y=%.1f"), PaddingX, PaddingY);
     }
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("TextureDisplayWidget: 텍스처 로드 및 적용 실패!"));
-        
         // 패딩 값 로그 출력
         UE_LOG(LogTemp, Warning, TEXT("텍스처 로드 실패, 패딩 적용: X=%.1f, Y=%.1f"), PaddingX, PaddingY);
     }

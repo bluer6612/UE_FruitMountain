@@ -86,7 +86,7 @@ UTexture2D* UUIHelper::LoadAndApplyTexture(UImage* ImageWidget, const FString& T
         ImageWidget->SetRenderOpacity(1.0f);
         ImageWidget->SetVisibility(ESlateVisibility::Visible);
         
-        UE_LOG(LogTemp, Warning, TEXT("텍스처 로드 성공! 경로: %s, 실제 크기: %dx%d"), 
+        UE_LOG(LogTemp, Log, TEXT("텍스처 로드 성공! 경로: %s, 실제 크기: %dx%d"), 
                *TexturePath, TexWidth, TexHeight);
     }
     else

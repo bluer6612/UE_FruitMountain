@@ -10,9 +10,6 @@ class UE_FRUITMOUNTAIN_API UFruitThrowHelper : public UBlueprintFunctionLibrary
     GENERATED_BODY()
 
 public:
-    UFUNCTION(BlueprintCallable, Category="Fruit Throw")
-    static void InitializePlatePosition(UWorld* World);
-    
     // 공 던지기 함수
     UFUNCTION(BlueprintCallable, Category="Fruit Throw")
     static void ThrowFruit(class AFruitPlayerController* Controller);

@@ -88,7 +88,7 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     // 접시 위치 초기화 - 아직 초기화되지 않았다면
     if (!UFruitThrowHelper::bPlateCached && World)
     {
-        UFruitThrowHelper::InitializePlatePosition(World);
+        UE_LOG(LogTemp, Warning, TEXT("접시 위치 미초기화"));
     }
     
     // 항상 캐시된 접시 위치 사용
@@ -123,30 +123,43 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     // 4. 중력 값 가져오기 (추가)
     float Gravity = FMath::Abs(GetDefault<UPhysicsSettings>()->DefaultGravityZ);
 
-    // 5. 각도에 따른 거리 계산 - 부드러운 곡선으로 개선
-    // U자형 거리 곡선 적용 - 중간 각도에서 멀리, 낮거나 높은 각도에서 가깝게
-    // 코사인 함수를 사용하여 부드러운 곡선 생성
+    // 5. 각도에 따른 거리 계산 - 모든 각도에서 접시 중앙 근처에 도착하도록 수정
     float AngleRange = MaxThrowAngle - MinThrowAngle;
     float NormalizedAngle = (UseAngle - MinThrowAngle) / AngleRange; // 0~1 범위로 정규화
-    float CosineValue = FMath::Cos((NormalizedAngle * 2.0f - 1.0f) * PI); // -1~1 코사인 곡선
-    float DistanceRatio = FMath::Lerp(0.2f, 0.8f, (CosineValue + 1.0f) * 0.5f); // 0.2~0.8 범위로 매핑
 
-    // 낮은 각도와 높은 각도에서의 추가 조정을 부드러운 함수로 대체
-    if (UseAngle < 20.0f) {
-        float LowAngleSmooth = FMath::SmoothStep(10.0f, 20.0f, UseAngle);
-        DistanceRatio *= FMath::Lerp(0.4f, 1.0f, LowAngleSmooth);
-        
-        if (UseAngle < 15.0f) {
-            float VeryLowAngleSmooth = FMath::SmoothStep(10.0f, 15.0f, UseAngle);
-            float MinRatio = FMath::Lerp(0.2f, 0.3f, VeryLowAngleSmooth);
-            DistanceRatio = FMath::Min(DistanceRatio, MinRatio);
-        }
+    // 접시 중앙에 정확히 도착하도록 거리 비율 크게 감소 및 균일화
+    // 모든 각도에서 접시 중앙 부근(5.0f 이내)에 도착하도록 설정
+    float DistanceRatio = 0.15f; // 기본값을 매우 작게 설정 (접시 중앙에 가깝게)
+
+    // 각도에 따른 미세 조정 - 매우 작은 차이만 허용
+    float CentralAngle = 35.0f; // 중앙값
+    float AngleDeviation = FMath::Abs(UseAngle - CentralAngle) / 25.0f; // 각도 차이 (0~1 스케일)
+    float MicroAdjustment = 0.02f * AngleDeviation; // 최대 ±0.02 조정 (5.0f 이내 유지)
+
+    // 중간 각도보다 낮으면 약간 더 가깝게, 높으면 약간 더 멀게 조정
+    if (UseAngle < CentralAngle) {
+        DistanceRatio -= MicroAdjustment; // 낮은 각도에서 살짝 더 가깝게
+    } else {
+        DistanceRatio += MicroAdjustment; // 높은 각도에서 살짝 더 멀게
+    }
+
+    // 거리 비율 최종 제한 (안전장치)
+    DistanceRatio = FMath::Clamp(DistanceRatio, 0.13f, 0.17f);
+
+    // 접시 높이에 따른 추가 미세 조정 (높이가 높을수록 좀 더 정확하게)
+    if (PlateTopHeight > 30.0f) {
+        float HeightFactor = (PlateTopHeight - 30.0f) / 20.0f; // 높이에 비례
+        DistanceRatio *= (1.0f - 0.02f * HeightFactor); // 최대 2% 감소
     }
 
     // 포물선 궤적의 타겟 위치 계산 - 접시 중앙 방향으로 조정
     float AdjustedDistance = HorizontalDistance * DistanceRatio;
     Result.AdjustedTarget = StartLocation + DirectionToTarget * AdjustedDistance;
     Result.AdjustedTarget.Z = PlateTopHeight;
+
+    // 추가 디버그 로그 - 조정된 타겟 위치 확인용
+    UE_LOG(LogTemp, Warning, TEXT("조정된 타겟: %s (거리비율: %.3f, 거리: %.1f)"),
+        *Result.AdjustedTarget.ToString(), DistanceRatio, AdjustedDistance);
 
     // 6. 발사 방향 계산 수정 - 각도와 고도를 직접적이고 명확하게 연결
     // 6-1. 기본 발사 각도 계산 (라디안)
@@ -183,18 +196,20 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     // 7-1. 기본 속도값 설정 - 거리와 각도에 기반
     float BaseSpeed = 250.0f;
 
-    // 7-2. 각도에 따른 속도 조정 - 연속적인 곡선 사용
-    // 전체 각도 범위에서 부드럽게 변화하는 속도 팩터
-    float AngleSpeedFactor = FMath::GetMappedRangeValueClamped(
-        FVector2D(MinThrowAngle, 50.0f),
-        FVector2D(0.8f, 1.4f),
+    // 7-2. 각도에 따른 속도 조정 - 모든 각도에서 일관된 결과를 위해 균일화
+    float AngleSpeedFactor;
+
+    // 전체 각도 범위에서 거의 균일한 속도 계수 적용 (차이 최소화)
+    AngleSpeedFactor = FMath::GetMappedRangeValueClamped(
+        FVector2D(MinThrowAngle, MaxThrowAngle),
+        FVector2D(0.95f, 1.05f), // 10도에서 0.95, 60도에서 1.05 (차이 10%로 감소)
         UseAngle
     );
-    
-    // 7-3. 거리에 따른 속도 조정 - 가까운 거리는 더 낮은 속도
+
+    // 7-3. 거리에 따른 속도 조정 - 모든 거리에서 거의 동일한 속도
     float DistanceSpeedFactor = FMath::GetMappedRangeValueClamped(
         FVector2D(0.0f, 1.0f),
-        FVector2D(0.7f, 1.0f),
+        FVector2D(0.95f, 1.0f), // 차이 5%로 감소
         DistanceRatio
     );
 

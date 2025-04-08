@@ -22,7 +22,7 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     
     // 기존 궤적 비우기 - 더 확실하게 모든 디버그 선 제거
     FlushPersistentDebugLines(World);
-    FlushDebugStrings(World);
+    //FlushDebugStrings(World);
     
     // 1. 입력값 안정화 - 입력 좌표를 소수점 아래 1자리까지만 사용
     FVector StableStartLocation = RoundVector(StartLocation, 1);
@@ -31,7 +31,7 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     // 접시 위치 초기화 - 아직 초기화되지 않았다면
     if (!UFruitThrowHelper::bPlateCached)
     {
-        UFruitThrowHelper::InitializePlatePosition(World);
+        UE_LOG(LogTemp, Warning, TEXT("접시 위치 미초기화"));
     }
     
     // 항상 캐시된 접시 위치 사용 (더 이상 직접 찾지 않음)
