@@ -123,27 +123,41 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     // 4. 중력 값 가져오기 (추가)
     float Gravity = FMath::Abs(GetDefault<UPhysicsSettings>()->DefaultGravityZ);
 
-    // 5. 각도에 따른 거리 계산 수정 - 완전히 부드러운 곡선으로 변경
-    // 물리학적으로 정확한 각도-거리 관계 구현 (sin(2θ) 기반 수식)
-    float RadAngle = FMath::DegreesToRadians(UseAngle);
-    float TwoRadAngle = 2.0f * RadAngle;
+    // 5. 각도에 따른 거리 계산 수정 - 평균 각도 기준 방식으로 변경
 
-    // 최대 투사 거리는 45도에서 발생하는 sin(2θ) 곡선 활용
-    // 실제 물리학에서 최대 사거리는 sin(2θ)에 비례하며 이는 45도에서 최대
-    float SinTwoTheta = FMath::Sin(TwoRadAngle);
+    // 최적 각도를 MinAngle과 MaxAngle의 평균으로 설정
+    float OptimalAngle = (MinThrowAngle + MaxThrowAngle) / 2.0f; // 35도
+    float AngleRange = (MaxThrowAngle - MinThrowAngle); // 50도 범위
 
-    // 공기 저항 효과를 시뮬레이션하는 추가 조정 (극단 각도에서 더 감소)
-    // 저각도와 고각도에서 실제보다 더 빨리 감소하는 공기 저항 효과 모델링
-    float AirResistanceEffect = FMath::Pow(FMath::Sin(RadAngle) * FMath::Cos(RadAngle), 0.7f);
+    // 현재 각도가 최적 각도에서 얼마나 떨어져 있는지 계산 (정규화된 값)
+    float AngleDeviation = FMath::Abs(UseAngle - OptimalAngle) / (AngleRange / 2.0f);
 
-    // 최종 거리 비율 계산 (0.4 ~ 1.0 범위로 매핑)
-    float DistanceRatio = FMath::GetMappedRangeValueClamped(FVector2D(0.0f, 1.0f), FVector2D(0.4f, 1.0f), SinTwoTheta * AirResistanceEffect);
+    // 포물선 형태의 거리 감소 커브 적용 (최적 각도=1.0, 양쪽 끝=0.3)
+    // 제곱 함수 사용으로 부드러운 곡선 효과
+    float DistanceRatio = FMath::Clamp(1.0f - (AngleDeviation * AngleDeviation * 0.7f), 0.3f, 1.0f);
 
-    // 거리 감소가 자연스러운 곡선으로 이루어지도록 추가 스무딩
-    // 사인 곡선 기반 스무딩으로 부드러운 변화 보장
-    float NormalizedAngle = (UseAngle - MinThrowAngle) / (MaxThrowAngle - MinThrowAngle);
-    float SmoothingFactor = 0.9f + 0.1f * FMath::Sin(NormalizedAngle * PI);
-    DistanceRatio *= SmoothingFactor;
+    // 낮은 각도(10-20도)에서 추가 거리 감소 적용 (낮은 각도 문제 해결)
+    if (UseAngle < 20.0f)
+    {
+        // 10-20도 구간에서 추가 거리 감소 (더 가파른 감소)
+        float LowAngleFactor = FMath::GetMappedRangeValueClamped(
+            FVector2D(MinThrowAngle, 20.0f),
+            FVector2D(0.6f, 1.0f),  // 최소 60% 수준으로 추가 감소
+            UseAngle
+        );
+        DistanceRatio *= LowAngleFactor;
+        
+        // 매우 낮은 각도(10-12도)에서 최소 거리 보장
+        if (UseAngle <= 12.0f)
+        {
+            float MinDistRatio = FMath::GetMappedRangeValueClamped(
+                FVector2D(10.0f, 12.0f),
+                FVector2D(0.2f, 0.25f),  // 10도에서는 20% 거리로 강제
+                UseAngle
+            );
+            DistanceRatio = FMath::Min(DistanceRatio, MinDistRatio);
+        }
+    }
 
     // 포물선 궤적의 타겟 위치 계산 - 각도에 따라 조정된 거리 사용
     float AdjustedDistance = HorizontalDistance * DistanceRatio;
@@ -155,40 +169,28 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     Result.LaunchDirection = FVector(HorizontalDir.X * FMath::Cos(ThrowAngleRad), HorizontalDir.Y * FMath::Cos(ThrowAngleRad), FMath::Sin(ThrowAngleRad)
     ).GetSafeNormal();
 
-    // 7. 초기 속도 계산 보완 - 자연스러운 곡선을 위한 수정
-    // 항상 물리적으로 일관된 속도 계산
-    float InitialSpeedSquared = (Gravity * AdjustedDistance * AdjustedDistance) / 
-                            (2.0f * FMath::Cos(ThrowAngleRad) * FMath::Cos(ThrowAngleRad) * 
-                            (AdjustedDistance * FMath::Tan(ThrowAngleRad) - HeightDifference));
+    // 7. 초기 속도 계산 보완 - 안정성 강화
 
-    // 속도가 유효하지 않으면 물리학적으로 정확한 근사치 사용
-    if (InitialSpeedSquared <= 0.0f || FMath::IsNaN(InitialSpeedSquared))
+    // 안전장치: HeightDifference가 0에 가까우면 작은 값으로 설정 (계산 오류 방지)
+    float SafeHeightDifference = HeightDifference;
+    if (FMath::Abs(SafeHeightDifference) < 0.1f)
     {
-        // 연속적인 속도 곡선을 위한 일관된 대체 공식
-        float SpeedSinTwoTheta = FMath::Sin(2.0f * ThrowAngleRad);
-        SpeedSinTwoTheta = FMath::Max(SpeedSinTwoTheta, 0.1f); // 안정성 보장
-        
-        // 속도 계산 (기본 물리 공식 + 부드러운 보정 계수)
-        Result.InitialSpeed = FMath::Sqrt((Gravity * AdjustedDistance) / SpeedSinTwoTheta);
-        
-        // 자연스러운 속도 곡선을 위한 부드러운 보정
-        float AngleNormalized = (UseAngle - MinThrowAngle) / (MaxThrowAngle - MinThrowAngle);
-        float SpeedCurve = 1.0f - 0.2f * FMath::Pow(2.0f * (AngleNormalized - 0.5f), 2);
-        Result.InitialSpeed *= SpeedCurve;
+        SafeHeightDifference = 0.1f;
     }
-    else
-    {
-        Result.InitialSpeed = FMath::Sqrt(InitialSpeedSquared);
-    }
+
+    // 각도별 맞춤형 속도 계산 - 더 단순하고 일관된 방식
+    float BaseSpeed = 250.0f; // 기본 속도
+    float OptimalAngleFactor = 1.0f - (AngleDeviation * 0.3f); // 최적 각도에서 최대 속도
+
+    // 거리 비율에 따른 속도 조정 (짧은 거리는 낮은 속도)
+    float DistanceSpeedFactor = FMath::Lerp(0.8f, 1.1f, FMath::Clamp(DistanceRatio, 0.0f, 1.0f));
+
+    // 최종 초기 속도 계산
+    Result.InitialSpeed = BaseSpeed * OptimalAngleFactor * DistanceSpeedFactor;
 
     // 속도 범위 제한 (게임 균형을 위해)
     Result.InitialSpeed = FMath::Clamp(Result.InitialSpeed, 150.0f, 350.0f);
 
-    // 속도 스무딩 - 극단 각도에서도 부드러운 변화
-    float AngleParam = (UseAngle - MinThrowAngle) / (MaxThrowAngle - MinThrowAngle);
-    float SpeedAdjustment = 0.9f + 0.1f * FMath::Sin(AngleParam * PI);
-    Result.InitialSpeed *= SpeedAdjustment;
-    
     // 8. 발사 속도 벡터 계산
     Result.LaunchVelocity = Result.LaunchDirection * Result.InitialSpeed;
 
