@@ -123,51 +123,24 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     // 4. 중력 값 가져오기 (추가)
     float Gravity = FMath::Abs(GetDefault<UPhysicsSettings>()->DefaultGravityZ);
 
-    // 5. 각도에 따른 거리 계산 수정 - 아치형 곡선으로 조정
-
-    // 최적 각도를 MinAngle과 MaxAngle의 평균으로 설정
-    float OptimalAngle = (MinThrowAngle + MaxThrowAngle) / 2.0f; // 35도
-    float AngleRange = (MaxThrowAngle - MinThrowAngle); // 50도 범위
-
-    // 현재 각도가 최적 각도에서 얼마나 떨어져 있는지 계산 (0~1 범위)
-    float AngleDeviation = FMath::Abs(UseAngle - OptimalAngle) / (AngleRange / 2.0f);
-
+    // 5. 각도에 따른 거리 계산 - 부드러운 곡선으로 개선
     // U자형 거리 곡선 적용 - 중간 각도에서 멀리, 낮거나 높은 각도에서 가깝게
-    // 최적 각도(35도)에서는 0.8, 극단 각도(10도, 60도)에서는 0.2 거리 비율
-    float DistanceRatio = FMath::Clamp(0.8f - (AngleDeviation * AngleDeviation * 0.6f), 0.2f, 0.8f);
+    // 코사인 함수를 사용하여 부드러운 곡선 생성
+    float AngleRange = MaxThrowAngle - MinThrowAngle;
+    float NormalizedAngle = (UseAngle - MinThrowAngle) / AngleRange; // 0~1 범위로 정규화
+    float CosineValue = FMath::Cos((NormalizedAngle * 2.0f - 1.0f) * PI); // -1~1 코사인 곡선
+    float DistanceRatio = FMath::Lerp(0.2f, 0.8f, (CosineValue + 1.0f) * 0.5f); // 0.2~0.8 범위로 매핑
 
-    // 낮은 각도(10-20도)에서 추가 거리 감소 적용 (낮은 각도 문제 해결)
-    if (UseAngle < 20.0f)
-    {
-        // 10-20도 구간에서 추가 거리 감소
-        float LowAngleFactor = FMath::GetMappedRangeValueClamped(
-            FVector2D(MinThrowAngle, 20.0f),
-            FVector2D(0.4f, 1.0f),  // 최소 40% 수준으로 조정
-            UseAngle
-        );
-        DistanceRatio *= LowAngleFactor;
+    // 낮은 각도와 높은 각도에서의 추가 조정을 부드러운 함수로 대체
+    if (UseAngle < 20.0f) {
+        float LowAngleSmooth = FMath::SmoothStep(10.0f, 20.0f, UseAngle);
+        DistanceRatio *= FMath::Lerp(0.4f, 1.0f, LowAngleSmooth);
         
-        // 매우 낮은 각도(10-15도)에서는 더 가깝게 - 중앙에 가깝게
-        if (UseAngle <= 15.0f)
-        {
-            float MinDistRatio = FMath::GetMappedRangeValueClamped(
-                FVector2D(10.0f, 15.0f),
-                FVector2D(0.2f, 0.3f),  // 10도에서는 20% 거리로 강제
-                UseAngle
-            );
-            DistanceRatio = FMath::Min(DistanceRatio, MinDistRatio);
+        if (UseAngle < 15.0f) {
+            float VeryLowAngleSmooth = FMath::SmoothStep(10.0f, 15.0f, UseAngle);
+            float MinRatio = FMath::Lerp(0.2f, 0.3f, VeryLowAngleSmooth);
+            DistanceRatio = FMath::Min(DistanceRatio, MinRatio);
         }
-    }
-
-    // 높은 각도(50-60도)에서도 마찬가지로 거리 감소 강화
-    if (UseAngle > 50.0f)
-    {
-        float HighAngleFactor = FMath::GetMappedRangeValueClamped(
-            FVector2D(50.0f, MaxThrowAngle),
-            FVector2D(1.0f, 0.4f),  // 60도에서는 40% 수준으로 강제 감소
-            UseAngle
-        );
-        DistanceRatio *= HighAngleFactor;
     }
 
     // 포물선 궤적의 타겟 위치 계산 - 접시 중앙 방향으로 조정
@@ -175,53 +148,65 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     Result.AdjustedTarget = StartLocation + DirectionToTarget * AdjustedDistance;
     Result.AdjustedTarget.Z = PlateTopHeight;
 
-    // 6. 발사 방향 계산 수정 - 각도에 따른 Z 성분 강화
+    // 6. 발사 방향 계산 수정 - 각도와 고도를 직접적이고 명확하게 연결
+    // 6-1. 기본 발사 각도 계산 (라디안)
+    ThrowAngleRad = FMath::DegreesToRadians(UseAngle);
+
+    // 6-2. 각도에 따른 수직 성분 계산을 간소화하고 명확하게 처리
     FVector HorizontalDir = FVector(DirectionToTarget.X, DirectionToTarget.Y, 0.0f).GetSafeNormal();
 
-    // 각도에 따라 수직 성분 증가율 대폭 강화 - 단순히 각도가 높을수록 더 큰 HeightBoostFactor
-    float AngleNormalized = (UseAngle - MinThrowAngle) / AngleRange; // 0~1 범위
-    float HeightBoostFactor;
-
-    // 각도에 따른 높이 조정 - 선형 증가에서 지수 증가로 변경
-    // 단순히 각도가 높을수록 더 높은 곡선 (최적값 개념 삭제)
-    HeightBoostFactor = FMath::GetMappedRangeValueClamped(
-        FVector2D(MinThrowAngle, MaxThrowAngle),
-        FVector2D(1.0f, 4.0f), // 10도에서 1.0, 60도에서 4.0 (더 큰 범위)
+    // 6-3. 각도에 따른 높이 계수 계산 - 25% 낮춤
+    float HeightFactor = FMath::GetMappedRangeValueClamped(
+        FVector2D(MinThrowAngle, 50.0f),
+        FVector2D(0.375f, 1.875f), // 0.5 -> 0.375, 2.5 -> 1.875 (25% 감소)
         UseAngle
     );
 
-    // 고각도에서 더 급격하게 증가하도록 지수 함수 적용
-    HeightBoostFactor = FMath::Pow(HeightBoostFactor, 1.4f);
+    // 6-4. 수직 성분은 sin(각도)에 비례하고, 높이 계수를 곱해 증폭
+    float VerticalMultiplier = FMath::Sin(ThrowAngleRad) * HeightFactor;
 
-    // 수직 성분 증가 - 더 높은 값 허용
-    float VerticalComponent = FMath::Sin(ThrowAngleRad) * HeightBoostFactor;
-    // 수직 성분 제한값을 0.99로 상향 (거의 제한 없음)
-    VerticalComponent = FMath::Min(VerticalComponent, 0.99f);
+    // 6-5. 수평 성분은 cos(각도)에 비례
+    float HorizontalMultiplier = FMath::Cos(ThrowAngleRad);
 
+    // 6-6. 최종 발사 방향 계산 - 정규화로 방향만 유지
     Result.LaunchDirection = FVector(
-        HorizontalDir.X * FMath::Cos(ThrowAngleRad),
-        HorizontalDir.Y * FMath::Cos(ThrowAngleRad),
-        VerticalComponent
+        HorizontalDir.X * HorizontalMultiplier,
+        HorizontalDir.Y * HorizontalMultiplier,
+        VerticalMultiplier
     ).GetSafeNormal();
 
-    // 7. 초기 속도 계산 보완 - 안정성 강화
+    // 6-7. 디버그 로깅 추가
+    UE_LOG(LogTemp, Warning, TEXT("발사 각도: %.1f°, 높이계수: %.2f, 수직성분: %.2f, 수평성분: %.2f"),
+        UseAngle, HeightFactor, VerticalMultiplier, HorizontalMultiplier);
 
-    // 안전장치: HeightDifference가 0에 가까우면 작은 값으로 설정 (계산 오류 방지)
-    float SafeHeightDifference = HeightDifference;
-    if (FMath::Abs(SafeHeightDifference) < 0.1f)
-    {
-        SafeHeightDifference = 0.1f;
-    }
+    // 7. 초기 속도 계산 보완 - 단순화 및 명확화
+    // 7-1. 기본 속도값 설정 - 거리와 각도에 기반
+    float BaseSpeed = 250.0f;
 
-    // 각도별 맞춤형 속도 계산 - 더 단순하고 일관된 방식
-    float BaseSpeed = 250.0f; // 기본 속도
-    float OptimalAngleFactor = 1.0f - (AngleDeviation * 0.3f); // 최적 각도에서 최대 속도
+    // 7-2. 각도에 따른 속도 조정 - 연속적인 곡선 사용
+    // 전체 각도 범위에서 부드럽게 변화하는 속도 팩터
+    float AngleSpeedFactor = FMath::GetMappedRangeValueClamped(
+        FVector2D(MinThrowAngle, 50.0f),
+        FVector2D(0.8f, 1.4f),
+        UseAngle
+    );
+    
+    // 7-3. 거리에 따른 속도 조정 - 가까운 거리는 더 낮은 속도
+    float DistanceSpeedFactor = FMath::GetMappedRangeValueClamped(
+        FVector2D(0.0f, 1.0f),
+        FVector2D(0.7f, 1.0f),
+        DistanceRatio
+    );
 
-    // 거리 비율에 따른 속도 조정 (짧은 거리는 낮은 속도)
-    float DistanceSpeedFactor = FMath::Lerp(0.8f, 1.1f, FMath::Clamp(DistanceRatio, 0.0f, 1.0f));
+    // 7-4. 최종 초기 속도 계산
+    Result.InitialSpeed = BaseSpeed * AngleSpeedFactor * DistanceSpeedFactor;
 
-    // 최종 초기 속도 계산
-    Result.InitialSpeed = BaseSpeed * OptimalAngleFactor * DistanceSpeedFactor;
+    // 7-5. 물리 시뮬레이션 안정성을 위한 범위 제한
+    Result.InitialSpeed = FMath::Clamp(Result.InitialSpeed, 150.0f, 350.0f);
+
+    // 7-6. 디버그 로깅
+    UE_LOG(LogTemp, Warning, TEXT("초기 속도: %.1f (각도계수: %.2f, 거리계수: %.2f)"),
+        Result.InitialSpeed, AngleSpeedFactor, DistanceSpeedFactor);
 
     // 속도 범위 제한 (게임 균형을 위해)
     Result.InitialSpeed = FMath::Clamp(Result.InitialSpeed, 150.0f, 350.0f);
@@ -244,31 +229,23 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
 
     Result.AdjustedForce = FMath::Clamp(Result.AdjustedForce, MinForce, MaxForce);
 
-    // 11. 궤적 최고점 높이 계산 - 각도에 따라 비선형으로 증가 (대폭 강화)
-    // 각도 정규화 (0~1)
-    float NormalizedAngle = (UseAngle - MinThrowAngle) / AngleRange;
-
-    // 각도에 따른 높이 비율 - 각도가 높을수록 급격히 높아지는 단순한 관계로 변경
-    float PeakHeightRatio = FMath::GetMappedRangeValueClamped(
+    // 11. 궤적 최고점 높이 계산 - 직접적이고 일관된 방식
+    // 11-1. 각도에 비례하는 직접적인 높이 계수 (25% 더 낮춤)
+    float DirectAngleHeightRatio = FMath::GetMappedRangeValueClamped(
         FVector2D(MinThrowAngle, MaxThrowAngle),
-        FVector2D(0.1f, 3.5f), // 10도에서 0.1, 60도에서 3.5 (훨씬 더 큰 범위)
+        FVector2D(0.0375f, 0.9375f), // 0.05 -> 0.0375, 1.25 -> 0.9375 (25% 감소)
         UseAngle
     );
 
-    // 고각도에서 더욱 급격하게 증가하도록 지수 함수 적용
-    PeakHeightRatio = FMath::Pow(PeakHeightRatio, 1.5f);
+    // 11-2. 비선형 증가 효과 (지수 함수로 고각도에서 더 급격한 증가)
+    float PoweredHeightRatio = FMath::Pow(DirectAngleHeightRatio, 1.5f);
 
-    // 50~60도 구간에서 추가 급증 효과
-    if (UseAngle > 50.0f) {
-        float HighAngleFactor = FMath::GetMappedRangeValueClamped(
-            FVector2D(50.0f, MaxThrowAngle),
-            FVector2D(1.0f, 1.5f), // 60도에서 50% 추가 증가
-            UseAngle
-        );
-        PeakHeightRatio *= HighAngleFactor;
-    }
+    // 11-3. 최고점 높이 계산
+    Result.PeakHeight = HorizontalDistance * PoweredHeightRatio;
 
-    Result.PeakHeight = HorizontalDistance * PeakHeightRatio;
+    // 11-4. 디버그 로깅
+    UE_LOG(LogTemp, Warning, TEXT("궤적 최고점: %.1f (높이비율: %.2f, 거리: %.1f)"),
+        Result.PeakHeight, PoweredHeightRatio, HorizontalDistance);
     
     // 12. 계산 성공 표시
     Result.bSuccess = true;
