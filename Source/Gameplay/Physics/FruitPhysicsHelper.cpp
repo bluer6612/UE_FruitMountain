@@ -4,6 +4,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/Actor.h"
 #include "DrawDebugHelpers.h"
+#include "PhysicsEngine/PhysicsSettings.h"
 
 // const 정적 변수 초기화
 const float UFruitPhysicsHelper::MinThrowAngle = 5.0f;
@@ -27,7 +28,7 @@ bool UFruitPhysicsHelper::CalculateInitialSpeed(const FVector& StartLocation, co
 {
     // 1. 기본 파라미터 설정
     float ThrowAngleRad = FMath::DegreesToRadians(ThrowAngle);
-    float Gravity = 980.0f; // 중력 가속도 (양수로 설정)
+    float Gravity = FMath::Abs(GetDefault<UPhysicsSettings>()->DefaultGravityZ); // 언리얼 엔진의 물리 설정에서 중력값 가져오기
     
     // 2. 수평 거리와 높이 차이 계산
     FVector HorizontalDelta = TargetLocation - StartLocation;
@@ -177,25 +178,29 @@ TArray<FVector> UFruitPhysicsHelper::CalculateTrajectoryPoints(UWorld* World, co
     FThrowPhysicsResult PhysicsResult = CalculateThrowPhysics(
         World, StartLocation, TargetLocation, ThrowAngle, BallMass);
     
-    // 계산된 속도로 포물선 궤적 생성
-    float Gravity = 980.0f;
-    const float TimeStep = 0.05f;
-    const float MaxTime = 5.0f;
-    FVector Gravity3D = FVector(0, 0, -Gravity);
+    // 가상의 물리 바디 생성 (시각적으로 표시하지 않고 예측용으로만 사용)
+    FPredictProjectilePathParams PredictParams;
+    PredictParams.StartLocation = StartLocation;
+    PredictParams.LaunchVelocity = PhysicsResult.LaunchVelocity;
+    PredictParams.bTraceWithCollision = true;
+    PredictParams.ProjectileRadius = 5.0f;
+    PredictParams.MaxSimTime = 5.0f;
+    PredictParams.SimFrequency = 20;
+    PredictParams.OverrideGravityZ = -FMath::Abs(GetDefault<UPhysicsSettings>()->DefaultGravityZ); // 언리얼 엔진의 물리 설정에서 중력값 가져오기
+    PredictParams.DrawDebugType = EDrawDebugTrace::None;
+    PredictParams.TraceChannel = ECC_WorldDynamic;
     
-    // 시작점 추가
-    TrajectoryPoints.Add(StartLocation);
+    FPredictProjectilePathResult PredictResult;
+    bool bHit = UGameplayStatics::PredictProjectilePath(World, PredictParams, PredictResult);
     
-    // 시간에 따른 위치 계산
-    for (float Time = TimeStep; Time < MaxTime; Time += TimeStep)
+    // 예측 결과를 궤적 포인트로 변환
+    for (const FPredictProjectilePathPointData& PointData : PredictResult.PathData)
     {
-        FVector Position = StartLocation + PhysicsResult.LaunchVelocity * Time + 0.5f * Gravity3D * Time * Time;
-        TrajectoryPoints.Add(Position);
-        
-        // 지면에 닿았거나 목표 근처에 도달했는지 확인
-        if (Position.Z <= 0.0f || FVector::Dist(Position, PhysicsResult.AdjustedTarget) < 10.0f)
-            break;
+        TrajectoryPoints.Add(PointData.Location);
     }
+    
+    UE_LOG(LogTemp, Log, TEXT("예측 궤적: %d개 포인트, 충돌=%s"), 
+        TrajectoryPoints.Num(), bHit ? TEXT("True") : TEXT("False"));
     
     return TrajectoryPoints;
 }
@@ -285,7 +290,8 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(
     ).GetSafeNormal();
     
     // 7. 초기 속도 계산 (포물선 공식)
-    float Gravity = 980.0f; // 중력 가속도
+    float Gravity = FMath::Abs(GetDefault<UPhysicsSettings>()->DefaultGravityZ); // 언리얼 엔진의 물리 설정에서 중력값 가져오기
+    FVector Gravity3D = FVector(0, 0, -Gravity); // FThrowPhysicsResult 계산 시 동일한 중력값 사용
     float AdjustedHorizontalDistance = AdjustedDistance;
     float AdjustedHeightDifference = Result.AdjustedTarget.Z - StartLocation.Z;
     
@@ -324,13 +330,13 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(
     // 8. 발사 속도 벡터 계산
     Result.LaunchVelocity = Result.LaunchDirection * Result.InitialSpeed;
     
-    // 9. 적용할 힘 계산 (질량 고려)
-    float ForceAdjustment = 0.6f;
+    // 9. 적용할 힘 계산 (질량 고려) - 힘 조정 계수 증가
+    float ForceAdjustment = 1.5f; // 0.6f에서 1.5f로 증가
     Result.AdjustedForce = BallMass * Result.InitialSpeed * ForceAdjustment;
     
-    // 10. 힘 범위 제한
-    float MinForce = 1500.0f;
-    float MaxForce = 7500.0f;
+    // 10. 힘 범위 제한 - 힘 범위 확장
+    float MinForce = 2000.0f; // 1500.0f에서 2000.0f로 증가
+    float MaxForce = 10000.0f; // 7500.0f에서 10000.0f로 증가
     float AdjustedMinForce = MinForce * (BallMass / 30.0f);
     float AdjustedMaxForce = MaxForce * (BallMass / 30.0f);
     
@@ -348,4 +354,36 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(
         UseAngle, Result.InitialSpeed, Result.AdjustedForce, BallMass);
     
     return Result;
+}
+
+// 주요 방정식 단순화 - 동일한 공식으로 속도와 궤적 계산
+FVector UFruitPhysicsHelper::CalculateLaunchVelocity(const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle)
+{
+    float ThrowAngleRad = FMath::DegreesToRadians(ThrowAngle);
+    
+    // 중력 가져오기 (언리얼 물리와 동일한 값 사용)
+    float Gravity = FMath::Abs(GetDefault<UPhysicsSettings>()->DefaultGravityZ);
+    
+    // 수평 거리 계산
+    FVector Delta = TargetLocation - StartLocation;
+    float HorizontalDistance = FVector(Delta.X, Delta.Y, 0.0f).Size();
+    float HeightDifference = TargetLocation.Z - StartLocation.Z;
+    
+    // 발사 방향 단위 벡터
+    FVector HorizontalDir = FVector(Delta.X, Delta.Y, 0.0f).GetSafeNormal();
+    FVector LaunchDirection = FVector(
+        HorizontalDir.X * FMath::Cos(ThrowAngleRad),
+        HorizontalDir.Y * FMath::Cos(ThrowAngleRad),
+        FMath::Sin(ThrowAngleRad)
+    ).GetSafeNormal();
+    
+    // 속도 크기 계산 (포물선 공식)
+    float SpeedSquared = (Gravity * HorizontalDistance * HorizontalDistance) /
+                        (2.0f * FMath::Cos(ThrowAngleRad) * FMath::Cos(ThrowAngleRad) *
+                        (HorizontalDistance * FMath::Tan(ThrowAngleRad) - HeightDifference));
+    
+    float Speed = FMath::Sqrt(FMath::Max(100.0f, SpeedSquared));
+    
+    // 속도 벡터 반환
+    return LaunchDirection * Speed;
 }

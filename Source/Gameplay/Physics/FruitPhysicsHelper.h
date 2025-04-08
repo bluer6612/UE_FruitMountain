@@ -97,6 +97,10 @@ public:
     // 통합 물리 계산 함수 (모든 물리 계산의 핵심)
     UFUNCTION(BlueprintCallable, Category = "Physics")
     static FThrowPhysicsResult CalculateThrowPhysics(UWorld* World, const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, float BallMass);
+    
+    // 주요 방정식 단순화 - 동일한 공식으로 속도와 궤적 계산
+    UFUNCTION(BlueprintCallable, Category = "Physics")
+    static FVector CalculateLaunchVelocity(const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle);
 
 private:
     // 내부 헬퍼 함수 - 초기 속도 계산

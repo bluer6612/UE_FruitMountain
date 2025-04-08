@@ -72,14 +72,13 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
             FThrowPhysicsResult PhysicsResult = UFruitPhysicsHelper::CalculateThrowPhysics(
                 Controller->GetWorld(), SpawnLocation, PlateCenter, Controller->ThrowAngle, ActualMass);
             
-            // 발사 벡터 적용
-            FVector FinalImpulse = PhysicsResult.LaunchDirection * PhysicsResult.AdjustedForce;
+            // 물리적으로 더 정확한 초기화 방법
+            MeshComp->SetPhysicsLinearVelocity(FVector::ZeroVector, false); // 현재 속도 초기화
+            MeshComp->SetWorldLocation(SpawnLocation, false, nullptr, ETeleportType::TeleportPhysics);
+            MeshComp->AddImpulse(PhysicsResult.LaunchDirection * PhysicsResult.InitialSpeed * ActualMass);
             
-            // 충격량 적용
-            MeshComp->AddImpulse(FinalImpulse);
-            
-            UE_LOG(LogTemp, Warning, TEXT("공 던지기: 힘=%.1f, 속도=%.1f, 질량=%.1f"),
-                PhysicsResult.AdjustedForce, PhysicsResult.InitialSpeed, ActualMass);
+            UE_LOG(LogTemp, Warning, TEXT("공 던지기: 직접 속도 설정=(%s), 크기=%.1f"),
+                *PhysicsResult.LaunchDirection.ToString(), PhysicsResult.InitialSpeed);
         }
     }
     
