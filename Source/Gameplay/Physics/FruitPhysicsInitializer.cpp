@@ -97,12 +97,33 @@ void UFruitPhysicsInitializer::FindPlateInfo(const FPhysicsInitData& InitData, F
 // 방향 벡터 및 거리 계산 함수
 void UFruitPhysicsInitializer::CalculateDirectionAndDistance(const FPhysicsInitData& InitData, FPhysicsBaseResult& Result)
 {
-    // 기본 방향 벡터 계산
-    Result.DirectionToTarget = Result.PlateCenter - InitData.StartLocation;
-    Result.HorizontalDistance = FVector(Result.DirectionToTarget.X, Result.DirectionToTarget.Y, 0.0f).Size();
+    // 접시 중심에서 플레이어까지의 방향 벡터 계산 (Z 성분은 무시)
+    FVector DirectionToPlate = Result.PlateCenter - InitData.StartLocation;
+    
+    // 중요: 수평 거리는 항상 일관되게 계산 (카메라 회전과 무관하게)
+    // 실제 XY 평면상의 거리를 사용
+    Result.HorizontalDistance = FVector(DirectionToPlate.X, DirectionToPlate.Y, 0.0f).Size();
+    
+    // 중요: 높이 차이도 일관되게 유지
     Result.HeightDifference = Result.PlateTopHeight - InitData.StartLocation.Z;
-    Result.DirectionToTarget.Z = 0.0f;
-    Result.DirectionToTarget.Normalize();
+    
+    // 정규화된 방향 (XY 평면에서만)
+    DirectionToPlate.Z = 0.0f;
+    if (!DirectionToPlate.IsNearlyZero())
+    {
+        DirectionToPlate.Normalize();
+    }
+    else
+    {
+        // 접시와 플레이어가 같은 위치에 있는 경우를 대비한 안전장치
+        DirectionToPlate = FVector(1.0f, 0.0f, 0.0f);
+    }
+    
+    Result.DirectionToTarget = DirectionToPlate;
+    
+    // 디버그 로깅 추가
+    UE_LOG(LogTemp, Verbose, TEXT("방향 계산: 거리=%.1f, 높이차=%.1f, 방향=%s"),
+           Result.HorizontalDistance, Result.HeightDifference, *Result.DirectionToTarget.ToString());
 }
 
 // 조정된 타겟 위치 계산 함수

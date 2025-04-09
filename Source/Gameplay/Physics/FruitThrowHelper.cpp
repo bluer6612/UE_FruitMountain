@@ -78,12 +78,15 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
             // 물리 시뮬레이션 활성화 상태에서 질량 확인
             float ActualMass = MeshComp->GetMass();
             
-            // 소수점 1자리로 반올림된 각도 사용
+            // 소수점 1자리로 반올림된 각도 사용 (안정성 향상)
             float RoundedAngle = FMath::RoundToFloat(Controller->ThrowAngle * 10.0f) / 10.0f;
             
             // 통합 물리 계산 사용
             FThrowPhysicsResult PhysicsResult = UFruitPhysicsHelper::CalculateThrowPhysics(
                 Controller->GetWorld(), SpawnLocation, PlateCenter, RoundedAngle, ActualMass);
+            
+            // 이 시점에서 힘과 방향이 확정
+            // 카메라 회전과 무관하게 항상 동일해야 함
             
             // 물리적으로 더 정확한 초기화 방법
             MeshComp->SetPhysicsLinearVelocity(FVector::ZeroVector, false); // 현재 속도 초기화

@@ -48,19 +48,32 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     FThrowPhysicsResult PhysicsResult = UFruitPhysicsHelper::CalculateThrowPhysics(
         World, StableStartLocation, StableTargetLocation, StableAngle, BallMass);
     
-    // 4. 결과 안정화 - 너무 작은 변화는 무시
-    if (LastPhysicsResult.bSuccess &&
-        (PhysicsResult.AdjustedTarget - LastPhysicsResult.AdjustedTarget).Size() < 5.0f &&
-        FMath::Abs(PhysicsResult.InitialSpeed - LastPhysicsResult.InitialSpeed) < 5.0f)
+    // 중요: 정적 변수를 사용하여 이전 결과와 비교할 때 카메라 각도 무시
+    static float LastAngle = 0.0f;
+    static FVector LastStartLoc = FVector::ZeroVector;
+    
+    // 스폰 위치와 각도만 비교 (카메라 회전은 무시)
+    bool bSimilarConditions = 
+        FMath::Abs(LastAngle - StableAngle) < 0.1f &&
+        (LastStartLoc - StableStartLocation).Size() < 1.0f;
+    
+    // 결과 안정화 - 동일한 조건에서 이전 결과 재사용
+    if (LastPhysicsResult.bSuccess && bSimilarConditions)
     {
-        // 작은 변화는 이전 계산 결과 재사용
         PhysicsResult = LastPhysicsResult;
     }
     else
     {
-        // 큰 변화가 있을 때만 결과 업데이트
         LastPhysicsResult = PhysicsResult;
+        LastAngle = StableAngle;
+        LastStartLoc = StableStartLocation;
     }
+    
+    // 스폰 위치와 카메라 각도 로깅
+    UE_LOG(LogTemp, Warning, TEXT("궤적 업데이트: 카메라각도=%.1f°, 스폰위치=%s, 거리=%.1f"),
+        Controller->CameraOrbitAngle, 
+        *StableStartLocation.ToString(), 
+        BaseResult.HorizontalDistance);
     
     // 5. 물리 기반 궤적 계산 (bezier 궤적은 사용하지 않음)
     TArray<FVector> TrajectoryPoints = CalculateTrajectoryPoints(World, StableStartLocation, StableTargetLocation, StableAngle, BallMass);

@@ -108,6 +108,20 @@ AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, const F
 // 접시 가장자리 위치 계산 함수 구현 - 순수 접시 반지름만 계산
 FVector UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(UWorld* World, float CameraAngle)
 {
+    static FVector LastSpawnPos = FVector::ZeroVector;
+    static float LastAngle = -999.0f;
+    
+    // 카메라 각도 테스트 모드 활성화 (일관성 확인용)
+    static bool bTestMode = true;
+    if (bTestMode) {
+        if (LastSpawnPos != FVector::ZeroVector && FMath::Abs(LastAngle - CameraAngle) < 180.0f) {
+            // 카메라 회전에도 동일한 위치 반환 (테스트용)
+            // 일관된 계산을 위한 것, 실제 게임에서는 주석 처리 고려
+            UE_LOG(LogTemp, Warning, TEXT("테스트 모드: 카메라 회전 무시, 이전 위치 재사용"));
+            return LastSpawnPos;
+        }
+    }
+    
     // 접시 위치 확인
     FVector PlateCenter = FVector::ZeroVector;
     float PlateRadius = 0.0f;
@@ -176,7 +190,13 @@ FVector UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(UWorld* World, float 
             UE_LOG(LogTemp, Verbose, TEXT("공 스폰 위치 계산: 접시 중심=(%.1f, %.1f, %.1f), 순수 접시 반경=%.1f, 최종 높이=%.1f"),
                 PlateCenter.X, PlateCenter.Y, PlateCenter.Z, PlateRadius, EdgePoint.Z);
                 
-            return EdgePoint;
+            FVector FinalPosition = EdgePoint;
+            
+            // 계산된 위치 저장
+            LastSpawnPos = FinalPosition;
+            LastAngle = CameraAngle;
+            
+            return FinalPosition;
         }
     }
     
