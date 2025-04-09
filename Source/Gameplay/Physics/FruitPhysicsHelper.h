@@ -66,7 +66,4 @@ public:
     // 통합 물리 계산 함수 (모든 물리 계산의 핵심)
     UFUNCTION(BlueprintCallable, Category = "Physics")
     static FThrowPhysicsResult CalculateThrowPhysics(UWorld* World, const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, float BallMass);
-
-private:
-    static float CalculateOptimalSpeedForAngle(float angle);
 };

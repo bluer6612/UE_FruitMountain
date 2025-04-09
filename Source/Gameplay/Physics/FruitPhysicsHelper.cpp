@@ -35,6 +35,9 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     Result.AdjustedTarget = BaseResult.AdjustedTarget;
     Result.LaunchDirection = BaseResult.LaunchDirection;
     
+    // 현재 시간 가져오기
+    float CurrentTime = World ? World->GetTimeSeconds() : 0.0f;
+    
     // 7. 속도 계산 (아래 코드는 원래 코드 유지)
     // 7-1. 기본 속도값 설정
     float BaseSpeed = 250.0f;
@@ -63,7 +66,7 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     if (FruitTypeCorrections.Num() > 0 || AngleCorrections.Num() > 0) {
         // 학습 데이터가 있을 때만 보정 적용
         int32 FruitTypeKey = FMath::RoundToInt(BallMass);
-        float AngleKey = UseAngle; // 반올림하지 않고 실제 각도 사용
+        float AngleKey = BaseResult.UseAngle; // 반올림하지 않고 실제 각도 사용
         
         if (FruitTypeCorrections.Contains(FruitTypeKey)) {
             Result.InitialSpeed *= FruitTypeCorrections[FruitTypeKey];
@@ -72,13 +75,13 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
 
     // 9. 자연스러운 속도 계산 - 실제 물리 기반
     // 9-1. 각도에 따른 연속적인 함수 사용 (반올림 대신)
-    Result.InitialSpeed = CalculateOptimalSpeedForAngle(UseAngle) * MassCompensationFactor;
+    Result.InitialSpeed = (245.0f - 0.9f * BaseResult.UseAngle) * MassCompensationFactor;
 
     // 9-3. 발사 속도 벡터 계산
     Result.LaunchVelocity = Result.LaunchDirection * Result.InitialSpeed;
 
-    // 10. 발사 속도 벡터 계산
-    Result.LaunchVelocity = Result.LaunchDirection * Result.InitialSpeed;
+    // 10. 발사 속도 벡터 계산 (중복 제거)
+    // 이미 9-3에서 계산했으므로 제거
 
     // 11. 질량 보정이 반영된 힘 계산
     // 11-1. 질량에 따른 힘 조정 필요 없이 일관된 힘 적용
@@ -102,18 +105,18 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     float DirectAngleHeightRatio = FMath::GetMappedRangeValueClamped(
         FVector2D(MinThrowAngle, MaxThrowAngle),
         FVector2D(0.025f, 0.625f), // 0.0375 -> 0.025, 0.9375 -> 0.625 (추가 40% 감소)
-        UseAngle
+        BaseResult.UseAngle
     );
 
     // 13-2. 비선형 증가 효과 (지수 함수로 고각도에서 더 급격한 증가)
     float PoweredHeightRatio = FMath::Pow(DirectAngleHeightRatio, 1.5f);
 
     // 13-3. 최고점 높이 계산
-    Result.PeakHeight = HorizontalDistance * PoweredHeightRatio;
+    Result.PeakHeight = BaseResult.HorizontalDistance * PoweredHeightRatio;
 
     // 13-4. 디버그 로깅
     UE_LOG(LogTemp, Warning, TEXT("궤적 최고점: %.1f (높이비율: %.2f, 거리: %.1f)"),
-        Result.PeakHeight, PoweredHeightRatio, HorizontalDistance);
+        Result.PeakHeight, PoweredHeightRatio, BaseResult.HorizontalDistance);
     
     // 14. 물리 기반 발사 속도 참조값 계산 안함
 
@@ -126,7 +129,7 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     ValidateParams.ProjectileRadius = 5.0f;     // 과일 반경 추가
     ValidateParams.SimFrequency = 30;           // 더 정밀한 시뮬레이션
     ValidateParams.MaxSimTime = 3.0f;           // 3초로 제한 (접시 도달 충분)
-    ValidateParams.OverrideGravityZ = -Gravity;
+    ValidateParams.OverrideGravityZ = -BaseResult.Gravity;
     ValidateParams.TraceChannel = ECC_WorldStatic;  // 월드 정적 객체와 충돌 확인
 
     // 접시를 명시적으로 충돌 테스트에 포함
@@ -150,10 +153,10 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
         
         float XYDistance = FVector::Dist(
             FVector(EndPoint.X, EndPoint.Y, 0),
-            FVector(PlateCenter.X, PlateCenter.Y, 0)
+            FVector(BaseResult.PlateCenter.X, BaseResult.PlateCenter.Y, 0)
         );
         
-        float ZDistance = FMath::Abs(EndPoint.Z - PlateTopHeight);
+        float ZDistance = FMath::Abs(EndPoint.Z - BaseResult.PlateTopHeight);
         
         // 로깅만 수행하고 보정은 하지 않음
         UE_LOG(LogTemp, Warning, TEXT("검증 결과: XY거리=%.1f, Z거리=%.1f (발사속도=%.1f)"), 
@@ -162,7 +165,7 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
         if (XYDistance > 20.0f || ZDistance > 20.0f)
         {
             UE_LOG(LogTemp, Warning, TEXT("정확도가 낮은 투척 감지: 각도=%.1f, 거리=%.1f"), 
-                   UseAngle, HorizontalDistance);
+                   BaseResult.UseAngle, BaseResult.HorizontalDistance);
         }
         
         // 검증 정보를 통계에 저장하여 나중에 참조 가능하게 함
@@ -188,24 +191,13 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     // 16-1. 계산 성공 표시
     Result.bSuccess = true;
     
-    // 16-2. 계산 결과 캐싱
-    LastStartLocation = StartLocation;
-    LastTargetLocation = TargetLocation;
-    LastThrowAngle = ThrowAngle;
-    LastBallMass = BallMass;
-    CachedResult = Result;
-    CacheTimeout = CurrentTime;
+    // 16-2. 계산 결과 캐싱 - InitializePhysics 클래스의 함수 사용
+    UFruitPhysicsInitializer::UpdateCachedResult(InitData, Result, CurrentTime);
     
     // 16-3. 최종 로깅
     UE_LOG(LogTemp, Log, TEXT("물리 계산: 각도=%.1f°, 속도=%.1f, 힘=%.1f, 질량=%.1f"),
-        UseAngle, Result.InitialSpeed, Result.AdjustedForce, BallMass);
+        BaseResult.UseAngle, Result.InitialSpeed, Result.AdjustedForce, BallMass);
     
     // 16-4. 결과 반환
     return Result;
-}
-
-float UFruitPhysicsHelper::CalculateOptimalSpeedForAngle(float angle) 
-{
-    // 부드러운 곡선 함수 (선형이 아닌 지수 감소)
-    return 245.0f - 0.9f * angle;  // 각도 증가에 따라 속도 감소
 }

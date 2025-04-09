@@ -12,9 +12,7 @@ float UFruitPhysicsInitializer::LastBallMass = 0.0f;
 float UFruitPhysicsInitializer::CacheTimeout = 0.0f;
 
 // 캐시 확인 함수
-bool UFruitPhysicsInitializer::CheckCachedResult(
-    const FPhysicsInitData& InitData, 
-    FThrowPhysicsResult& OutResult)
+bool UFruitPhysicsInitializer::CheckCachedResult(const FPhysicsInitData& InitData, FThrowPhysicsResult& OutResult)
 {
     // 현재 시간 가져오기
     float CurrentTime = InitData.World ? InitData.World->GetTimeSeconds() : 0.0f;
@@ -35,8 +33,7 @@ bool UFruitPhysicsInitializer::CheckCachedResult(
 }
 
 // 물리 초기화 통합 함수
-FPhysicsBaseResult UFruitPhysicsInitializer::InitializePhysics(
-    const FPhysicsInitData& InitData)
+FPhysicsBaseResult UFruitPhysicsInitializer::InitializePhysics(const FPhysicsInitData& InitData)
 {
     FPhysicsBaseResult Result;
     
@@ -51,9 +48,7 @@ FPhysicsBaseResult UFruitPhysicsInitializer::InitializePhysics(
 }
 
 // 각도 초기화 함수
-void UFruitPhysicsInitializer::InitializeAngles(
-    const FPhysicsInitData& InitData, 
-    FPhysicsBaseResult& Result)
+void UFruitPhysicsInitializer::InitializeAngles(const FPhysicsInitData& InitData, FPhysicsBaseResult& Result)
 {
     // 각도 값 클램핑
     Result.UseAngle = FMath::Clamp(InitData.ThrowAngle, UFruitPhysicsHelper::MinThrowAngle, UFruitPhysicsHelper::MaxThrowAngle);
@@ -64,9 +59,7 @@ void UFruitPhysicsInitializer::InitializeAngles(
 }
 
 // 접시 정보 찾기 함수
-void UFruitPhysicsInitializer::FindPlateInfo(
-    const FPhysicsInitData& InitData, 
-    FPhysicsBaseResult& Result)
+void UFruitPhysicsInitializer::FindPlateInfo(const FPhysicsInitData& InitData, FPhysicsBaseResult& Result)
 {
     // 기본값 설정
     Result.PlateCenter = InitData.TargetLocation;
@@ -102,9 +95,7 @@ void UFruitPhysicsInitializer::FindPlateInfo(
 }
 
 // 방향 벡터 및 거리 계산 함수
-void UFruitPhysicsInitializer::CalculateDirectionAndDistance(
-    const FPhysicsInitData& InitData, 
-    FPhysicsBaseResult& Result)
+void UFruitPhysicsInitializer::CalculateDirectionAndDistance(const FPhysicsInitData& InitData, FPhysicsBaseResult& Result)
 {
     // 기본 방향 벡터 계산
     Result.DirectionToTarget = Result.PlateCenter - InitData.StartLocation;
@@ -115,9 +106,7 @@ void UFruitPhysicsInitializer::CalculateDirectionAndDistance(
 }
 
 // 조정된 타겟 위치 계산 함수
-void UFruitPhysicsInitializer::CalculateAdjustedTarget(
-    const FPhysicsInitData& InitData, 
-    FPhysicsBaseResult& Result)
+void UFruitPhysicsInitializer::CalculateAdjustedTarget(const FPhysicsInitData& InitData, FPhysicsBaseResult& Result)
 {
     // 기본 거리 비율 설정
     Result.DistanceRatio = 0.15f;
@@ -139,9 +128,7 @@ void UFruitPhysicsInitializer::CalculateAdjustedTarget(
 }
 
 // 발사 방향 계산 함수
-void UFruitPhysicsInitializer::CalculateLaunchDirection(
-    const FPhysicsInitData& InitData, 
-    FPhysicsBaseResult& Result)
+void UFruitPhysicsInitializer::CalculateLaunchDirection(const FPhysicsInitData& InitData, FPhysicsBaseResult& Result)
 {
     // 수평 방향 계산
     FVector HorizontalDir = FVector(Result.DirectionToTarget.X, Result.DirectionToTarget.Y, 0.0f).GetSafeNormal();
@@ -167,4 +154,14 @@ void UFruitPhysicsInitializer::CalculateLaunchDirection(
     // 디버그 로깅
     UE_LOG(LogTemp, Warning, TEXT("발사 각도: %.1f°, 높이계수: %.2f, 수직성분: %.2f, 수평성분: %.2f"),
         Result.UseAngle, Result.HeightFactor, Result.VerticalMultiplier, Result.HorizontalMultiplier);
+}
+
+void UFruitPhysicsInitializer::UpdateCachedResult(const FPhysicsInitData& InitData, const FThrowPhysicsResult& Result, float CurrentTime)
+{
+    LastStartLocation = InitData.StartLocation;
+    LastTargetLocation = InitData.TargetLocation;
+    LastThrowAngle = InitData.ThrowAngle;
+    LastBallMass = InitData.BallMass;
+    CachedResult = Result;
+    CacheTimeout = CurrentTime;
 }

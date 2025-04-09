@@ -78,35 +78,25 @@ class UE_FRUITMOUNTAIN_API UFruitPhysicsInitializer : public UObject
     
 public:
     // 캐시 확인 함수
-    static bool CheckCachedResult(
-        const FPhysicsInitData& InitData, 
-        FThrowPhysicsResult& OutResult);
+    static bool CheckCachedResult(const FPhysicsInitData& InitData, FThrowPhysicsResult& OutResult);
     
     // 물리 초기화 통합 함수 - 섹션 0~6 모두 처리
-    static FPhysicsBaseResult InitializePhysics(
-        const FPhysicsInitData& InitData);
+    static FPhysicsBaseResult InitializePhysics(const FPhysicsInitData& InitData);
+    
+    // 캐시 결과 업데이트 함수 추가
+    static void UpdateCachedResult(const FPhysicsInitData& InitData, const FThrowPhysicsResult& Result, float CurrentTime);
     
 private:
     // 개별 단계 함수들
-    static void InitializeAngles(
-        const FPhysicsInitData& InitData, 
-        FPhysicsBaseResult& Result);
+    static void InitializeAngles(const FPhysicsInitData& InitData, FPhysicsBaseResult& Result);
         
-    static void FindPlateInfo(
-        const FPhysicsInitData& InitData, 
-        FPhysicsBaseResult& Result);
+    static void FindPlateInfo(const FPhysicsInitData& InitData, FPhysicsBaseResult& Result);
         
-    static void CalculateDirectionAndDistance(
-        const FPhysicsInitData& InitData, 
-        FPhysicsBaseResult& Result);
+    static void CalculateDirectionAndDistance(const FPhysicsInitData& InitData, FPhysicsBaseResult& Result);
         
-    static void CalculateAdjustedTarget(
-        const FPhysicsInitData& InitData, 
-        FPhysicsBaseResult& Result);
+    static void CalculateAdjustedTarget(const FPhysicsInitData& InitData, FPhysicsBaseResult& Result);
         
-    static void CalculateLaunchDirection(
-        const FPhysicsInitData& InitData, 
-        FPhysicsBaseResult& Result);
+    static void CalculateLaunchDirection(const FPhysicsInitData& InitData, FPhysicsBaseResult& Result);
         
     // 캐시 관련 정적 변수
     static FThrowPhysicsResult CachedResult;
