@@ -73,11 +73,19 @@ public:
     UFUNCTION(BlueprintCallable, Category="Trajectory")
     void UpdateTrajectory();
     
-protected:
-    virtual void SetupInputComponent() override;
+private:
+    // 미리보기 공 업데이트 제한을 위한 변수들
+    FTimerHandle PreviewBallUpdateTimerHandle;
+    bool bPreviewBallUpdatePending = false;
+    const float PreviewBallUpdateDelay = 0.02f;// 헤더 파일에 함수 선언 추가
 
-    // 프로젝트 시작 시 C++로 키 매핑 설정
-    void SetupProjectInputMappings();
+    virtual void SetupInputComponent() override;
+    
+    // 접시 위치 초기화 함수 (FruitThrowHelper에서 이동)
+    void InitializePlatePosition();
+    
+    // 실제 업데이트 수행 함수
+    void ExecutePreviewBallUpdate();
 
     // 스페이스바 입력에 따라 과일을 던짐
     void ThrowFruit();
@@ -87,16 +95,4 @@ protected:
 
     // Axis 입력으로 카메라 회전 처리 함수
     void RotateCamera(float Value);
-
-private:
-    // 미리보기 공 업데이트 제한을 위한 변수들
-    FTimerHandle PreviewBallUpdateTimerHandle;
-    bool bPreviewBallUpdatePending = false;
-    const float PreviewBallUpdateDelay = 0.02f;// 헤더 파일에 함수 선언 추가
-    
-    // 접시 위치 초기화 함수 (FruitThrowHelper에서 이동)
-    void InitializePlatePosition();
-    
-    // 실제 업데이트 수행 함수
-    void ExecutePreviewBallUpdate();
 };

@@ -22,7 +22,7 @@ AFruitPlayerController::AFruitPlayerController()
     AngleStep = 5.f;
 
     // 오빗 기본 값 설정
-    CameraOrbitRadius = 105.f;
+    CameraOrbitRadius = 110.f;
 
     CurrentBallType = 1;
 }
@@ -109,9 +109,7 @@ void AFruitPlayerController::InitializePlatePosition()
         FVector PlateExtent;
         PlateActors[0]->GetActorBounds(false, PlateOrigin, PlateExtent);
 
-        PlateOrigin =- FVector(0, 10.0f, 0);
-
-        // 정적 변수에도 값 설정 (FruitThrowHelper에서 접근할 수 있도록)
+        PlateLocation = PlateOrigin;
         UFruitThrowHelper::CachedPlateCenter = PlateOrigin;
         UFruitThrowHelper::bPlateCached = true;
         

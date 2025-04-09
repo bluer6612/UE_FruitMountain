@@ -18,5 +18,6 @@ public:
     FVector PlateScale = FVector(12.f, 12.f, 5.f);
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Plate")
-    FVector PlateLocation = FVector(0.f, -10.f, 30.f);
+    //FVector PlateLocation = FVector(0.f, -10.f, 30.f);
+    FVector PlateLocation = FVector(0.f, 0.f, 30.f);
 };
