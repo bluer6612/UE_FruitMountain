@@ -35,10 +35,7 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     }
     
     // 항상 캐시된 접시 위치 사용 (더 이상 직접 찾지 않음)
-    FVector PlateCenter = UFruitThrowHelper::CachedPlateCenter;
-    
-    // 안정화된 타겟 위치를 접시 중심으로 설정
-    FVector StableTargetLocation = PlateCenter;
+    FVector PlateCenter = Controller->PlateLocation;
     
     // 2. 공의 질량 계산
     float BallMass = UFruitSpawnHelper::CalculateBallMass(Controller->CurrentBallType);
@@ -46,7 +43,7 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     // 3. 물리 계산 결과 가져오기
     static FThrowPhysicsResult LastPhysicsResult; // 마지막 결과 저장용 정적 변수
     FThrowPhysicsResult PhysicsResult = UFruitPhysicsHelper::CalculateThrowPhysics(
-        World, StableStartLocation, StableTargetLocation, StableAngle, BallMass);
+        World, StableStartLocation, PlateCenter, StableAngle, BallMass);
     
     // 중요: 정적 변수를 사용하여 이전 결과와 비교할 때 카메라 각도 무시
     static float LastAngle = 0.0f;
@@ -70,7 +67,7 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     }
     
     // 스폰 위치와 카메라 각도 로깅
-    float HorizontalDistance = FVector(StableTargetLocation - StableStartLocation).Size2D();
+    float HorizontalDistance = FVector(PlateCenter - StableStartLocation).Size2D();
 
     UE_LOG(LogTemp, Warning, TEXT("궤적 업데이트: 카메라각도=%.1f°, 스폰위치=%s, 거리=%.1f"),
         Controller->CameraOrbitAngle, 
@@ -78,7 +75,7 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
         HorizontalDistance);
     
     // 5. 물리 기반 궤적 계산 (bezier 궤적은 사용하지 않음)
-    TArray<FVector> TrajectoryPoints = CalculateTrajectoryPoints(World, StableStartLocation, StableTargetLocation, StableAngle, BallMass);
+    TArray<FVector> TrajectoryPoints = CalculateTrajectoryPoints(World, StableStartLocation, PlateCenter, StableAngle, BallMass);
 
     // 6. 궤적 시각화
     DrawTrajectoryPath(World, TrajectoryPoints, TrajectoryID);

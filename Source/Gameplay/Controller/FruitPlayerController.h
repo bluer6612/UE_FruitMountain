@@ -63,7 +63,8 @@ public:
     UPROPERTY()
     bool bIsThrowingInProgress = false;
 
-    // 회전 기준이 되는 접시(Plate)의 위치
+    // 접시 위치 저장 변수 (모든 클래스에서 공유)
+    UPROPERTY(BlueprintReadOnly, Category="Plate")
     FVector PlateLocation;
 
     // 미리보기 공 업데이트 함수
@@ -80,9 +81,6 @@ private:
     const float PreviewBallUpdateDelay = 0.02f;// 헤더 파일에 함수 선언 추가
 
     virtual void SetupInputComponent() override;
-    
-    // 접시 위치 초기화 함수 (FruitThrowHelper에서 이동)
-    void InitializePlatePosition();
     
     // 실제 업데이트 수행 함수
     void ExecutePreviewBallUpdate();

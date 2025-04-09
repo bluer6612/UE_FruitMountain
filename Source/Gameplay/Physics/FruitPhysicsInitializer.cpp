@@ -58,38 +58,26 @@ void UFruitPhysicsInitializer::InitializeAngles(const FPhysicsInitData& InitData
     Result.Gravity = FMath::Abs(GetDefault<UPhysicsSettings>()->DefaultGravityZ);
 }
 
-// 접시 정보 찾기 함수
+// FindPlateInfo 함수 수정
 void UFruitPhysicsInitializer::FindPlateInfo(const FPhysicsInitData& InitData, FPhysicsBaseResult& Result)
 {
-    // 기본값 설정
+    // 접시 위치는 TargetLocation으로 전달받음
     Result.PlateCenter = InitData.TargetLocation;
-    Result.PlateTopHeight = 20.0f;
+    Result.PlateTopHeight = 0.f;
     
-    // 접시 위치 초기화 여부 확인
-    if (!UFruitThrowHelper::bPlateCached && InitData.World)
+    // 접시 높이 정보만 계산
+    if (InitData.World)
     {
-        UE_LOG(LogTemp, Warning, TEXT("접시 위치 미초기화"));
-    }
-    
-    // 캐시된 접시 위치 사용
-    if (UFruitThrowHelper::bPlateCached)
-    {
-        Result.PlateCenter = UFruitThrowHelper::CachedPlateCenter;
+        TArray<AActor*> PlateActors;
+        UGameplayStatics::GetAllActorsWithTag(InitData.World, FName("Plate"), PlateActors);
         
-        // 접시 높이 정보 계산
-        if (InitData.World)
+        if (PlateActors.Num() > 0)
         {
-            TArray<AActor*> PlateActors;
-            UGameplayStatics::GetAllActorsWithTag(InitData.World, FName("Plate"), PlateActors);
+            FVector PlateOrigin;
+            FVector PlateExtent;
+            PlateActors[0]->GetActorBounds(false, PlateOrigin, PlateExtent);
             
-            if (PlateActors.Num() > 0)
-            {
-                FVector PlateOrigin;
-                FVector PlateExtent;
-                PlateActors[0]->GetActorBounds(false, PlateOrigin, PlateExtent);
-                
-                Result.PlateTopHeight = PlateOrigin.Z + PlateExtent.Z + 5.0f;
-            }
+            Result.PlateTopHeight = PlateOrigin.Z + PlateExtent.Z + 5.0f;
         }
     }
 }

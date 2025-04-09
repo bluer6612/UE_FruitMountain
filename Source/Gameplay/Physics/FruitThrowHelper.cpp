@@ -12,7 +12,6 @@
 #include "Actors/FruitBall.h"
 
 // 접시 위치 캐시 변수 초기화 (정적 변수를 클래스 외부에 정의)
-FVector UFruitThrowHelper::CachedPlateCenter = FVector::ZeroVector;
 bool UFruitThrowHelper::bPlateCached = false;
 
 // ThrowFruit 함수 - FruitPhysicsHelper 활용
@@ -64,7 +63,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
             }
             
             // 항상 캐시된 접시 위치 사용
-            FVector PlateCenter = CachedPlateCenter;
+            FVector PlateCenter = Controller->PlateLocation;
             if (PlateCenter == FVector::ZeroVector)
             {
                 // 캐시된 값이 없으면 기본값 설정 (이 코드는 실행되면 안 됨)
@@ -179,6 +178,6 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
     }
     
     // 추후 궤적 계산에 접시 위치 전달
-    FVector PlateCenter = CachedPlateCenter;
+    FVector PlateCenter = Controller->PlateLocation;
     UFruitTrajectoryHelper::UpdateTrajectoryPath(Controller, PreviewLocation, PlateCenter);
 }

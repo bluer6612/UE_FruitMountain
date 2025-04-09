@@ -60,14 +60,19 @@ void AFruitPlayerController::BeginPlay()
         UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Plate"), PlateActors);
         if (PlateActors.Num() > 0)
         {
-            PlateLocation = PlateActors[0]->GetActorLocation();
+            // 접시 경계 구하기 (중심점 정확히 계산)
+            FVector PlateOrigin;
+            FVector PlateExtent;
+            PlateActors[0]->GetActorBounds(false, PlateOrigin, PlateExtent);
+            
+            // 직접 중심점 설정 (오프셋 없이)
+            PlateLocation = PlateOrigin;
+            UFruitThrowHelper::bPlateCached = true;
+            
             UE_LOG(LogTemp, Warning, TEXT("접시 액터를 찾았습니다: %s"), *PlateLocation.ToString());
             
             // 카메라 위치 업데이트
             UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius);
-            
-            // 접시 위치 초기화
-            InitializePlatePosition();
         }
         else
         {
@@ -94,30 +99,6 @@ void AFruitPlayerController::SetupInputComponent()
         InputComponent->BindAxis("RotateCamera", this, &AFruitPlayerController::RotateCamera);
         InputComponent->BindAction("ThrowFruit", IE_Pressed, this, &AFruitPlayerController::ThrowFruit);
         UE_LOG(LogTemp, Log, TEXT("입력 바인딩 완료"));
-    }
-}
-
-void AFruitPlayerController::InitializePlatePosition()
-{
-    TArray<AActor*> PlateActors;
-    UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Plate"), PlateActors);
-    
-    if (PlateActors.Num() > 0)
-    {
-        // 접시 경계 구하기 (중심점 정확히 계산)
-        FVector PlateOrigin;
-        FVector PlateExtent;
-        PlateActors[0]->GetActorBounds(false, PlateOrigin, PlateExtent);
-
-        PlateLocation = PlateOrigin;
-        UFruitThrowHelper::CachedPlateCenter = PlateOrigin;
-        UFruitThrowHelper::bPlateCached = true;
-        
-        UE_LOG(LogTemp, Warning, TEXT("접시 위치 최종 캐싱 : %s"), *PlateOrigin.ToString());
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("접시를 찾을 수 없습니다. 기본 위치 사용"));
     }
 }
 
