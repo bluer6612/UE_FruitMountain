@@ -14,8 +14,8 @@ UTextureDisplayWidget* UTextureDisplayWidget::CreateDisplayWidget(UObject* World
     UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
     if (!World) return nullptr;
     
-    // 인스턴스 유효성 검사 강화
-    if (Instance && IsValid(Instance) && !Instance->IsPendingKill() && Instance->GetIsVisible())
+    // 인스턴스 유효성 검사 강화 - IsValid 함수만 사용하여 단순화
+    if (Instance && IsValid(Instance) && Instance->GetIsVisible())
     {
         UE_LOG(LogTemp, Warning, TEXT("TextureDisplayWidget: 유효한 기존 인스턴스 재사용"));
         if (!Instance->IsInViewport())
@@ -90,7 +90,7 @@ void UTextureDisplayWidget::NativeConstruct()
     }
     
     // 인스턴스가 유효하면 정적 참조 업데이트
-    if (IsValid(this) && !IsPendingKill())
+    if (IsValid(this))
     {
         Instance = this;
     }

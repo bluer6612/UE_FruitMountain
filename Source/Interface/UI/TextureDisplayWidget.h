@@ -25,6 +25,9 @@ public:
     // 초기화 시 호출
     virtual void NativeConstruct() override;
     
+    // 소멸 시 호출
+    virtual void NativeDestruct() override;
+    
     // 이미지 설정
     void SetupAllImages();
     

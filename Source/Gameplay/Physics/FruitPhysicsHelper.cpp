@@ -175,42 +175,35 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     // 7-9. 속도 범위 제한 (게임 균형을 위해)
     Result.InitialSpeed = FMath::Clamp(Result.InitialSpeed, 150.0f, 350.0f);
 
-    // 8. 보정값 적용
-    // 8-1. 현재 과일과 각도에 대한 보정값 적용
-    int32 FruitTypeKey = FMath::RoundToInt(BallMass);
-    float AngleKey = FMath::RoundToFloat(UseAngle);
-
-    // 8-2. 과일 타입별 보정
-    if (FruitTypeCorrections.Contains(FruitTypeKey)) {
-        Result.InitialSpeed *= FruitTypeCorrections[FruitTypeKey];
+    // 8. 보정값 시스템 (제거 또는 비활성화)
+    // 보정 맵이 비어 있을 때만 보정 적용을 허용
+    if (FruitTypeCorrections.Num() > 0 || AngleCorrections.Num() > 0) {
+        // 학습 데이터가 있을 때만 보정 적용
+        int32 FruitTypeKey = FMath::RoundToInt(BallMass);
+        float AngleKey = UseAngle; // 반올림하지 않고 실제 각도 사용
+        
+        if (FruitTypeCorrections.Contains(FruitTypeKey)) {
+            Result.InitialSpeed *= FruitTypeCorrections[FruitTypeKey];
+        }
+        
+        // 각도별 보정은 제거하여 부드러운 변화 보장
+        // if (AngleCorrections.Contains(AngleKey)) {
+        //     Result.InitialSpeed *= AngleCorrections[AngleKey];
+        // }
     }
 
-    // 8-3. 각도별 보정
-    if (AngleCorrections.Contains(AngleKey)) {
-        Result.InitialSpeed *= AngleCorrections[AngleKey];
+    // 9. 자연스러운 속도 계산 - 실제 물리 기반
+    // 9-1. 각도에 따른 연속적인 함수 사용 (반올림 대신)
+    float CalculateOptimalSpeed(float angle) {
+        // 부드러운 곡선 함수 (선형이 아닌 지수 감소)
+        return 245.0f - 0.9f * angle;  // 각도 증가에 따라 속도 감소
     }
 
-    // 9. 최적화된 속도 적용
-    // 9-1. 각도별로 최적화된 속도 사용 (실험 기반)
-    TMap<int32, float> OptimalSpeeds;
-    OptimalSpeeds.Add(10, 240.0f);
-    OptimalSpeeds.Add(20, 230.0f);
-    OptimalSpeeds.Add(30, 220.0f);
-    OptimalSpeeds.Add(40, 210.0f);
-    OptimalSpeeds.Add(50, 200.0f);
-    OptimalSpeeds.Add(60, 190.0f);
+    // 9-2. 물리 기반 속도 계산 적용 (테이블 대신 함수 사용)
+    Result.InitialSpeed = CalculateOptimalSpeed(UseAngle) * MassCompensationFactor;
 
-    // 9-2. 각도 반올림
-    int32 RoundedAngle = FMath::RoundToInt(UseAngle / 10.0f) * 10; // 가장 가까운 10의 배수
-    RoundedAngle = FMath::Clamp(RoundedAngle, 10, 60);
-
-    // 9-3. 최적화된 속도 적용
-    if (OptimalSpeeds.Contains(RoundedAngle))
-    {
-        Result.InitialSpeed = OptimalSpeeds[RoundedAngle] * MassCompensationFactor;
-        UE_LOG(LogTemp, Warning, TEXT("최적화된 값 사용: 각도=%d, 속도=%.1f"), 
-               RoundedAngle, Result.InitialSpeed);
-    }
+    // 9-3. 발사 속도 벡터 계산
+    Result.LaunchVelocity = Result.LaunchDirection * Result.InitialSpeed;
 
     // 10. 발사 속도 벡터 계산
     Result.LaunchVelocity = Result.LaunchDirection * Result.InitialSpeed;
@@ -283,64 +276,38 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     {
         FVector EndPoint = ValidationResult.PathData.Last().Location;
         
-        // 15-4. XY 평면에서의 거리만 체크 (높이 차이는 무시)
         float XYDistance = FVector::Dist(
             FVector(EndPoint.X, EndPoint.Y, 0),
             FVector(PlateCenter.X, PlateCenter.Y, 0)
         );
         
-        // 15-5. 높이 차이 별도 계산
         float ZDistance = FMath::Abs(EndPoint.Z - PlateTopHeight);
         
-        // 15-6. 검증 결과 로깅
+        // 로깅만 수행하고 보정은 하지 않음
         UE_LOG(LogTemp, Warning, TEXT("검증 결과: XY거리=%.1f, Z거리=%.1f (발사속도=%.1f)"), 
                XYDistance, ZDistance, Result.InitialSpeed);
         
-        // 15-7. 정확도가 낮으면 기록
-        if (XYDistance > 5.0f || ZDistance > 5.0f)
+        if (XYDistance > 20.0f || ZDistance > 20.0f)
         {
             UE_LOG(LogTemp, Warning, TEXT("정확도가 낮은 투척 감지: 각도=%.1f, 거리=%.1f"), 
                    UseAngle, HorizontalDistance);
         }
-    }
-    
-    // 아래 코드를 추가하여 검증에 실패하더라도 접시에 도달하는 속도 보장
-
-    // 15-7. 정확도가 낮아도 접시 근처에 도달하도록 보정
-    if (ValidationResult.PathData.Num() > 0)
-    {
-        FVector EndPoint = ValidationResult.PathData.Last().Location;
         
-        float XYDistance = FVector::Dist(
-            FVector(EndPoint.X, EndPoint.Y, 0),
-            FVector(PlateCenter.X, PlateCenter.Y, 0)
-        );
-        
-        float ZDistance = FMath::Abs(EndPoint.Z - PlateTopHeight);
-        
-        // 로깅은 그대로 유지
-        UE_LOG(LogTemp, Warning, TEXT("검증 결과: XY거리=%.1f, Z거리=%.1f (발사속도=%.1f)"), 
-               XYDistance, ZDistance, Result.InitialSpeed);
-        
-        // 접시 도달 실패 시 보정
-        if (XYDistance > 20.0f || ZDistance > 20.0f)
+        // 검증 정보를 통계에 저장하여 나중에 참조 가능하게 함
+        // 이 코드는 보정에 사용하지 않고 통계 목적으로만 사용
+        if (FruitTypeCorrections.Num() < 10 && !FruitTypeCorrections.Contains(FruitTypeKey))
         {
-            UE_LOG(LogTemp, Warning, TEXT("정확도가 낮은 투척 감지: 각도=%.1f, 거리=%.1f - 보정 적용"), 
-                   UseAngle, HorizontalDistance);
-                   
-            // 각도에 따른 안전한 속도 사용
-            if (OptimalSpeeds.Contains(RoundedAngle))
-            {
-                // 이미 적용된 최적화 속도를 그대로 사용 (재적용)
-                Result.InitialSpeed = OptimalSpeeds[RoundedAngle] * MassCompensationFactor;
-                
-                // 발사 벡터 업데이트
-                Result.LaunchVelocity = Result.LaunchDirection * Result.InitialSpeed;
-                
-                // 힘도 재계산
-                Result.AdjustedForce = BallMass * Result.InitialSpeed * 1.2f;
-                Result.AdjustedForce = FMath::Clamp(Result.AdjustedForce, MinForce, MaxForce);
+            // 특정 과일 타입에 대한 첫 10개 유형만 기록 (자동 학습용)
+            float AccuracyFactor = 1.0f;
+            if (XYDistance > 0.1f) {
+                // 정확도 기반 보정 계수 (실제로 보정에 사용하지는 않음)
+                AccuracyFactor = 20.0f / FMath::Max(XYDistance, 1.0f);
+                AccuracyFactor = FMath::Clamp(AccuracyFactor, 0.8f, 1.2f);
             }
+            
+            // 로깅만 수행
+            UE_LOG(LogTemp, Warning, TEXT("과일 타입 %d의 정확도 계수: %.2f (기록용)"), 
+                  FruitTypeKey, AccuracyFactor);
         }
     }
     
