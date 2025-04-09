@@ -20,7 +20,7 @@ APlayerPawn::APlayerPawn()
 
     FVector CurrentLocation = CameraComponent->GetRelativeLocation();
     CurrentLocation.Y += 5.f;
-    CurrentLocation.Z += 75.f;
+    CurrentLocation.Z += 50.f; // 접시 높이의 10배
     CameraComponent->SetRelativeLocation(CurrentLocation);
 
     FRotator CurrentRotation = CameraComponent->GetRelativeRotation();

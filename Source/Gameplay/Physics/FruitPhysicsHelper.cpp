@@ -182,7 +182,7 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
             }
             
             // 로깅만 수행
-            UE_LOG(LogTemp, Warning, TEXT("과일 타입 %d의 정확도 계수: %.2f (기록용)"), 
+            UE_LOG(LogTemp, Warning, TEXT("과일 크기 %d의 정확도 계수: %.2f (기록용)"), 
                   FruitTypeKey, AccuracyFactor);
         }
     }
