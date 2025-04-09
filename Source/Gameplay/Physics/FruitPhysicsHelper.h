@@ -68,6 +68,5 @@ public:
     static FThrowPhysicsResult CalculateThrowPhysics(UWorld* World, const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, float BallMass);
 
 private:
-    // 내부 헬퍼 함수 - 발사 방향 계산
-    static FVector CalculateLaunchDirection(const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngleRad);
+    static float CalculateOptimalSpeedForAngle(float angle);
 };

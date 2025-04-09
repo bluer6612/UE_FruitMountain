@@ -18,161 +18,44 @@ static TMap<float, float> AngleCorrections;
 // 통합 물리 계산 함수 구현
 FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, float BallMass)
 {
-    // 0. 캐싱 처리 - 성능 최적화
-    // 0-1. 정적 캐시 변수 (중복 호출 시 안정성 보장)
-    static FThrowPhysicsResult CachedResult;
-    static FVector LastStartLocation = FVector::ZeroVector;
-    static FVector LastTargetLocation = FVector::ZeroVector;
-    static float LastThrowAngle = 0.0f;
-    static float LastBallMass = 0.0f;
-    static float CacheTimeout = 0.0f;
+    // 물리 데이터 초기화 데이터 구조체 생성
+    FPhysicsInitData InitData(World, StartLocation, TargetLocation, ThrowAngle, BallMass);
     
-    // 0-2. 현재 시간 가져오기
-    float CurrentTime = World ? World->GetTimeSeconds() : 0.0f;
-    
-    // 0-3. 입력 파라미터가 이전과 거의 같고, 캐시가 너무 오래되지 않았으면 캐시된 결과 반환
-    if (CachedResult.bSuccess && 
-        (LastStartLocation - StartLocation).Size() < 1.0f &&
-        (LastTargetLocation - TargetLocation).Size() < 1.0f &&
-        FMath::Abs(LastThrowAngle - ThrowAngle) < 0.1f &&
-        FMath::Abs(LastBallMass - BallMass) < 0.1f &&
-        (CurrentTime - CacheTimeout) < 0.1f) // 0.1초 이내 캐시만 사용
-    {
-        return CachedResult;
-    }
-    
-    // 0-4. 새 결과 계산
+    // 0. 캐싱 처리 - 성능 최적화 (분리된 함수 사용)
     FThrowPhysicsResult Result;
-    
-    // 1. 각도 범위 가져오기 & 조정
-    // 1-1. 각도 값 클램핑
-    float UseAngle = FMath::Clamp(ThrowAngle, MinThrowAngle, MaxThrowAngle);
-    float ThrowAngleRad = FMath::DegreesToRadians(UseAngle);
-    
-    // 2. 접시 정보 찾기 - 공유된 캐시 사용
-    // 2-1. 기본값 설정
-    FVector PlateCenter = TargetLocation; // 기본값
-    float PlateTopHeight = 20.0f;
-    
-    // 2-2. 접시 위치 초기화 - 아직 초기화되지 않았다면
-    if (!UFruitThrowHelper::bPlateCached && World)
+    if (UFruitPhysicsInitializer::CheckCachedResult(InitData, Result))
     {
-        UE_LOG(LogTemp, Warning, TEXT("접시 위치 미초기화"));
+        return Result;
     }
     
-    // 2-3. 항상 캐시된 접시 위치 사용
-    if (UFruitThrowHelper::bPlateCached)
-    {
-        PlateCenter = UFruitThrowHelper::CachedPlateCenter;
-        
-        // 2-4. 접시 높이 정보 계산 - 이 부분은 유지 (매번 계산해도 큰 오버헤드 없음)
-        if (World)
-        {
-            TArray<AActor*> PlateActors;
-            UGameplayStatics::GetAllActorsWithTag(World, FName("Plate"), PlateActors);
-            
-            if (PlateActors.Num() > 0)
-            {
-                FVector PlateOrigin;
-                FVector PlateExtent;
-                PlateActors[0]->GetActorBounds(false, PlateOrigin, PlateExtent);
-                
-                PlateTopHeight = PlateOrigin.Z + PlateExtent.Z + 5.0f;
-            }
-        }
-    }
+    // 1~6. 초기 물리 데이터 계산 (별도 클래스 사용)
+    FPhysicsBaseResult BaseResult = UFruitPhysicsInitializer::InitializePhysics(InitData);
     
-    // 3. 방향 벡터 계산 부분 수정
-    // 3-1. 기본 방향 벡터 계산
-    FVector DirectionToTarget = PlateCenter - StartLocation;
-    float HorizontalDistance = FVector(DirectionToTarget.X, DirectionToTarget.Y, 0.0f).Size();
-    float HeightDifference = PlateTopHeight - StartLocation.Z;
-    DirectionToTarget.Z = 0.0f;
-    DirectionToTarget.Normalize();
-
-    // 4. 중력 값 가져오기 (추가)
-    float Gravity = FMath::Abs(GetDefault<UPhysicsSettings>()->DefaultGravityZ);
-
-    // 5. 각도에 따른 거리 계산 - 모든 각도에서 일관된 거리로 수정
-    // 5-1. 기본 거리 비율 설정
-    float DistanceRatio = 0.15f; // 0.12f -> 0.15f (25% 증가)
-
-    // 5-2. 고정된 거리 비율 사용 (각도에 상관없이 일정)
-    DistanceRatio = 0.15f;
-
-    // 5-3. 접시 높이에 따른 미세 조정은 유지 (환경에 맞춰 적응)
-    if (PlateTopHeight > 30.0f) {
-        float HeightFactor = (PlateTopHeight - 30.0f) / 20.0f;
-        DistanceRatio *= (1.0f - 0.02f * HeightFactor);
-    }
-
-    // 5-4. 포물선 궤적의 타겟 위치 계산 - 접시 중앙 방향으로 조정
-    float AdjustedDistance = HorizontalDistance * DistanceRatio;
-    Result.AdjustedTarget = StartLocation + DirectionToTarget * AdjustedDistance;
-    Result.AdjustedTarget.Z = PlateTopHeight;
-
-    // 5-5. 추가 디버그 로그 - 조정된 타겟 위치 확인용
-    UE_LOG(LogTemp, Warning, TEXT("조정된 타겟: %s (거리비율: %.3f, 거리: %.1f)"),
-        *Result.AdjustedTarget.ToString(), DistanceRatio, AdjustedDistance);
-
-    // 6. 발사 방향 계산 수정 - 각도와 고도를 직접적이고 명확하게 연결
-    // 6-1. 기본 발사 각도 계산 (라디안)
-    ThrowAngleRad = FMath::DegreesToRadians(UseAngle);
-
-    // 6-2. 각도에 따른 수직 성분 계산을 간소화하고 명확하게 처리
-    FVector HorizontalDir = FVector(DirectionToTarget.X, DirectionToTarget.Y, 0.0f).GetSafeNormal();
-
-    // 6-3. 각도에 따른 높이 계수 계산 - 추가로 40% 더 낮춤
-    float HeightFactor = FMath::GetMappedRangeValueClamped(
-        FVector2D(MinThrowAngle, 50.0f),
-        FVector2D(0.25f, 1.25f), // 0.375 -> 0.25, 1.875 -> 1.25 (추가 40% 감소)
-        UseAngle
-    );
-
-    // 6-4. 수직 성분은 sin(각도)에 비례하고, 높이 계수를 곱해 증폭
-    float VerticalMultiplier = FMath::Sin(ThrowAngleRad) * HeightFactor;
-
-    // 6-5. 수평 성분은 cos(각도)에 비례
-    float HorizontalMultiplier = FMath::Cos(ThrowAngleRad);
-
-    // 6-6. 최종 발사 방향 계산 - 정규화로 방향만 유지
-    Result.LaunchDirection = FVector(
-        HorizontalDir.X * HorizontalMultiplier,
-        HorizontalDir.Y * HorizontalMultiplier,
-        VerticalMultiplier
-    ).GetSafeNormal();
-
-    // 6-7. 디버그 로깅 추가
-    UE_LOG(LogTemp, Warning, TEXT("발사 각도: %.1f°, 높이계수: %.2f, 수직성분: %.2f, 수평성분: %.2f"),
-        UseAngle, HeightFactor, VerticalMultiplier, HorizontalMultiplier);
-        
-    // 7. 속도 계산
-    // 7-1. 기본 속도값 설정 - 거리와 각도에 기반 (기본 속도 증가)
-    float BaseSpeed = 250.0f; // 200.0f -> 250.0f (25% 증가)
-
-    // 7-2. 각도에 따른 속도 조정 - 모든 각도에서 일관된 결과
-    float AngleSpeedFactor = 1.0f; // 고정값 사용 (모든 각도에서 동일)
-
-    // 7-3. 거리에 따른 속도 조정 - 동일하게 유지
-    float DistanceSpeedFactor = 1.0f; // 고정값 사용 (거리에 상관없이 동일)
-
-    // 7-4. 질량에 따른 속도 보정 추가 - 질량이 다른 과일도 동일한 궤적을 그리도록
-    float MassCompensationFactor = FMath::Sqrt(BallMass / AFruitBall::DensityFactor); // AFruitBall::DensityFactor을 기준으로 제곱근 비율 계산
-
+    // 결과 데이터 초기화
+    Result.AdjustedTarget = BaseResult.AdjustedTarget;
+    Result.LaunchDirection = BaseResult.LaunchDirection;
+    
+    // 7. 속도 계산 (아래 코드는 원래 코드 유지)
+    // 7-1. 기본 속도값 설정
+    float BaseSpeed = 250.0f;
+    
+    // 7-4. 질량에 따른 속도 보정 추가
+    float MassCompensationFactor = FMath::Sqrt(BallMass / AFruitBall::DensityFactor);
+    
     // 7-5. 최종 초기 속도 계산 - 질량 보정 반영
     Result.InitialSpeed = BaseSpeed * MassCompensationFactor;
-
+    
     // 7-6. 디버그 로깅 추가
     UE_LOG(LogTemp, Log, TEXT("질량 보정 계수: %.2f (질량: %.1f)"), MassCompensationFactor, BallMass);
-
-    // 7-7. 물리 시뮬레이션 안정성을 위한 범위 제한 (상한 증가)
-    Result.InitialSpeed = FMath::Clamp(Result.InitialSpeed, 200.0f, 350.0f); // 150.0f->200.0f, 300.0f->350.0f
-
+    
+    // 7-7. 물리 시뮬레이션 안정성을 위한 범위 제한
+    Result.InitialSpeed = FMath::Clamp(Result.InitialSpeed, 200.0f, 350.0f);
+    
     // 7-8. 디버그 로깅
     UE_LOG(LogTemp, Warning, TEXT("초기 속도: %.1f (각도계수: %.2f, 거리계수: %.2f)"),
-        Result.InitialSpeed, AngleSpeedFactor, DistanceSpeedFactor);
-
-    // 7-9. 속도 범위 제한 (게임 균형을 위해)
+        Result.InitialSpeed, 1.0f, 1.0f);
+    
+    // 7-9. 속도 범위 제한
     Result.InitialSpeed = FMath::Clamp(Result.InitialSpeed, 150.0f, 350.0f);
 
     // 8. 보정값 시스템 (제거 또는 비활성화)
@@ -185,22 +68,11 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
         if (FruitTypeCorrections.Contains(FruitTypeKey)) {
             Result.InitialSpeed *= FruitTypeCorrections[FruitTypeKey];
         }
-        
-        // 각도별 보정은 제거하여 부드러운 변화 보장
-        // if (AngleCorrections.Contains(AngleKey)) {
-        //     Result.InitialSpeed *= AngleCorrections[AngleKey];
-        // }
     }
 
     // 9. 자연스러운 속도 계산 - 실제 물리 기반
     // 9-1. 각도에 따른 연속적인 함수 사용 (반올림 대신)
-    float CalculateOptimalSpeed(float angle) {
-        // 부드러운 곡선 함수 (선형이 아닌 지수 감소)
-        return 245.0f - 0.9f * angle;  // 각도 증가에 따라 속도 감소
-    }
-
-    // 9-2. 물리 기반 속도 계산 적용 (테이블 대신 함수 사용)
-    Result.InitialSpeed = CalculateOptimalSpeed(UseAngle) * MassCompensationFactor;
+    Result.InitialSpeed = CalculateOptimalSpeedForAngle(UseAngle) * MassCompensationFactor;
 
     // 9-3. 발사 속도 벡터 계산
     Result.LaunchVelocity = Result.LaunchDirection * Result.InitialSpeed;
@@ -295,6 +167,7 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
         
         // 검증 정보를 통계에 저장하여 나중에 참조 가능하게 함
         // 이 코드는 보정에 사용하지 않고 통계 목적으로만 사용
+        int32 FruitTypeKey = FMath::RoundToInt(BallMass);
         if (FruitTypeCorrections.Num() < 10 && !FruitTypeCorrections.Contains(FruitTypeKey))
         {
             // 특정 과일 타입에 대한 첫 10개 유형만 기록 (자동 학습용)
@@ -329,4 +202,10 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     
     // 16-4. 결과 반환
     return Result;
+}
+
+float UFruitPhysicsHelper::CalculateOptimalSpeedForAngle(float angle) 
+{
+    // 부드러운 곡선 함수 (선형이 아닌 지수 감소)
+    return 245.0f - 0.9f * angle;  // 각도 증가에 따라 속도 감소
 }
