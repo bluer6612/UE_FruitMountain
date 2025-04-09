@@ -14,15 +14,24 @@ UTextureDisplayWidget* UTextureDisplayWidget::CreateDisplayWidget(UObject* World
     UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
     if (!World) return nullptr;
     
-    // 이미 인스턴스가 있으면 반환
-    if (IsValid(Instance))
+    // 인스턴스 유효성 검사 강화
+    if (Instance && IsValid(Instance) && !Instance->IsPendingKill() && Instance->GetIsVisible())
     {
-        UE_LOG(LogTemp, Warning, TEXT("TextureDisplayWidget: 기존 인스턴스 재사용"));
+        UE_LOG(LogTemp, Warning, TEXT("TextureDisplayWidget: 유효한 기존 인스턴스 재사용"));
         if (!Instance->IsInViewport())
         {
             Instance->AddToViewport(10000);
         }
         return Instance;
+    }
+    else
+    {
+        // 기존 인스턴스가 무효하면 null로 설정
+        if (Instance)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("TextureDisplayWidget: 무효한 인스턴스 폐기"));
+            Instance = nullptr;
+        }
     }
 
     // 새 인스턴스 생성
@@ -39,21 +48,52 @@ UTextureDisplayWidget* UTextureDisplayWidget::CreateDisplayWidget(UObject* World
     return Instance;
 }
 
+// 추가: 위젯 소멸 시 정적 인스턴스 초기화
+void UTextureDisplayWidget::NativeDestruct()
+{
+    Super::NativeDestruct();
+    
+    // 이 위젯이 현재 싱글톤 인스턴스인 경우에만 초기화
+    if (Instance == this)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("TextureDisplayWidget: 인스턴스 소멸, 정적 참조 초기화"));
+        Instance = nullptr;
+    }
+}
+
+// NativeConstruct도 안전하게 업데이트
 void UTextureDisplayWidget::NativeConstruct()
 {
     Super::NativeConstruct();
     
-    // 루트 캔버스 가져오기
-    Canvas = Cast<UCanvasPanel>(GetRootWidget());
-    if (!Canvas)
+    // 루트 캔버스 가져오기 (null 체크 추가)
+    if (WidgetTree)
     {
-        Canvas = WidgetTree->ConstructWidget<UCanvasPanel>(UCanvasPanel::StaticClass());
-        WidgetTree->RootWidget = Canvas;
-        UE_LOG(LogTemp, Warning, TEXT("TextureDisplayWidget: 새 루트 캔버스 생성"));
+        Canvas = Cast<UCanvasPanel>(GetRootWidget());
+        if (!Canvas)
+        {
+            Canvas = WidgetTree->ConstructWidget<UCanvasPanel>(UCanvasPanel::StaticClass());
+            if (Canvas)
+            {
+                WidgetTree->RootWidget = Canvas;
+                UE_LOG(LogTemp, Warning, TEXT("TextureDisplayWidget: 새 루트 캔버스 생성"));
+            }
+            else
+            {
+                UE_LOG(LogTemp, Error, TEXT("TextureDisplayWidget: 캔버스 생성 실패!"));
+            }
+        }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("TextureDisplayWidget: WidgetTree가 null!"));
     }
     
-    // 정적 참조 업데이트
-    Instance = this;
+    // 인스턴스가 유효하면 정적 참조 업데이트
+    if (IsValid(this) && !IsPendingKill())
+    {
+        Instance = this;
+    }
 }
 
 void UTextureDisplayWidget::SetupAllImages()
