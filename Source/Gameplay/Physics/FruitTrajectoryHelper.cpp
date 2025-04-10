@@ -24,12 +24,6 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     FVector StableStartLocation = RoundVector(StartLocation, 1);
     float StableAngle = FMath::RoundToFloat(Controller->ThrowAngle * 10.0f) / 10.0f; // 소수점 첫째자리까지
     
-    // 접시 위치 초기화 - 아직 초기화되지 않았다면
-    if (!UFruitThrowHelper::bPlateCached)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("접시 위치 미초기화"));
-    }
-    
     // 항상 캐시된 접시 위치 사용 (더 이상 직접 찾지 않음)
     FVector PlateCenter = Controller->PlateLocation;
     

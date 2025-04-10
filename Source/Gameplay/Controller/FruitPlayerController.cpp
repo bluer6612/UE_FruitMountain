@@ -67,7 +67,6 @@ void AFruitPlayerController::BeginPlay()
             
             // 직접 중심점 설정 (오프셋 없이)
             PlateLocation = PlateOrigin;
-            UFruitThrowHelper::bPlateCached = true;
             
             UE_LOG(LogTemp, Warning, TEXT("접시 액터를 찾았습니다: %s"), *PlateLocation.ToString());
             

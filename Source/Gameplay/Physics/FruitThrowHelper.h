@@ -17,7 +17,4 @@ public:
     // 미리보기 공 업데이트 함수
     UFUNCTION(BlueprintCallable, Category="Fruit Throw")
     static void UpdatePreviewBall(class AFruitPlayerController* Controller);
-    
-    // 접시 위치 캐싱용 정적 변수 (클래스 간 공유)
-    static bool bPlateCached;
 };

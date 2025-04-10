@@ -11,9 +11,6 @@
 #include "Actors/PlateActor.h"
 #include "Actors/FruitBall.h"
 
-// 접시 위치 캐시 변수 초기화 (정적 변수를 클래스 외부에 정의)
-bool UFruitThrowHelper::bPlateCached = false;
-
 // ThrowFruit 함수 - FruitPhysicsHelper 활용
 void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
 {
@@ -54,12 +51,6 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
             if (!MeshComp->IsSimulatingPhysics())
             {
                 MeshComp->SetSimulatePhysics(true);
-            }
-            
-            // 접시 위치 초기화 - 아직 초기화되지 않았다면
-            if (!bPlateCached && Controller && Controller->GetWorld())
-            {
-                UE_LOG(LogTemp, Warning, TEXT("접시 위치 미초기화"));
             }
             
             // 항상 캐시된 접시 위치 사용
@@ -170,12 +161,7 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
             MeshComp->SetMassOverrideInKg(NAME_None, BallMass);
         }
     }
-    
-    // 접시 위치 사용 (더 이상 직접 검색 안 함)
-    if (!bPlateCached && Controller && Controller->GetWorld())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("접시 위치 미초기화"));
-    }
+
     
     // 추후 궤적 계산에 접시 위치 전달
     FVector PlateCenter = Controller->PlateLocation;
