@@ -81,16 +81,15 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     Result.AdjustedForce = FMath::Clamp(Result.AdjustedForce, MinForce, MaxForce);
 
     // 13. 궤적 최고점 높이 계산
-    // 13-1. 각도에 비례하는 직접적인 높이 계수 - 20% 증가
+    // 13-1. 각도에 비례하는 직접적인 높이 계수 - 추가 20% 증가
     float DirectAngleHeightRatio = FMath::GetMappedRangeValueClamped(
         FVector2D(MinThrowAngle, MaxThrowAngle),
-        FVector2D(0.06f, 1.2f), // 0.05f->0.06f, 1.0f->1.2f (20% 증가)
+        FVector2D(0.072f, 1.44f), // 0.06f->0.072f, 1.2f->1.44f (추가 20% 증가)
         BaseResult.UseAngle
     );
 
-    // 13-2. 비선형 증가 효과 (지수 함수로 고각도에서 더 급격한 증가)
-    // 수정: 지수 계수 증가
-    float PoweredHeightRatio = FMath::Pow(DirectAngleHeightRatio, 1.8f); // 1.5f -> 1.8f
+    // 13-2. 비선형 증가 효과 유지
+    float PoweredHeightRatio = FMath::Pow(DirectAngleHeightRatio, 1.8f);
 
     // 13-3. 최고점 높이 계산
     Result.PeakHeight = BaseResult.HorizontalDistance * PoweredHeightRatio;
@@ -127,7 +126,7 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     FPredictProjectilePathResult ValidationResult;
     UGameplayStatics::PredictProjectilePath(World, ValidateParams, ValidationResult);
 
-    // 15-3. 끝점 위치와 접시 중앙까지의 거리 계산
+    // 15-3. 끝점 위치와 접시 중앙까지의 거리 계산 및 자동 보정
     if (ValidationResult.PathData.Num() > 0)
     {
         FVector EndPoint = ValidationResult.PathData.Last().Location;
@@ -139,12 +138,62 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
         
         float ZDistance = FMath::Abs(EndPoint.Z - BaseResult.PlateTopHeight);
         
-        // 로깅만 수행 - 보정 없음
+        // 로깅 및 정확도 개선
         UE_LOG(LogTemp, Warning, TEXT("검증 결과: XY거리=%.1f, Z거리=%.1f (발사속도=%.1f)"), 
                XYDistance, ZDistance, Result.InitialSpeed);
         
-        // 거리 보정을 완전히 제거하고 일관된 궤적 사용
-        // if (XYDistance > 25.0f) { ... } 코드 블록 제거
+        // 목표 지점 보정 - 연속적인 자연스러운 보정 적용
+        // 임계값 없이 오차에 비례하여 부드럽게 보정
+        {
+            // 기존 방향 저장
+            FVector OriginalDirection = Result.LaunchDirection;
+            
+            // 연속적인 각도 기반 보정 계수 (딱딱한 임계값 없음)
+            float AngleRatio = FMath::Lerp(
+                0.02f,  // 낮은 각도에서는 미세 보정만
+                0.12f,  // 높은 각도에서는 더 강한 보정
+                FMath::Pow((BaseResult.UseAngle - MinThrowAngle) / (MaxThrowAngle - MinThrowAngle), 0.7f)
+            );
+            
+            // 거리 오차에 따른 연속적인 보정 계수
+            // 시그모이드 함수를 사용하여 부드러운 전환 (0에서 1 사이)
+            float DistanceErrorRatio = 1.0f / (1.0f + FMath::Exp(-0.1f * (XYDistance - 15.0f)));
+            
+            // 수평 성분 보정 - 부드러운 커브
+            float HorizontalBoost = 1.0f + DistanceErrorRatio * AngleRatio * XYDistance * 0.005f;
+            
+            // 수직 성분 보정 - 고각도에서는 약간 감소
+            float VerticalAdjust = 1.0f;
+            if (BaseResult.UseAngle > 45.0f) {
+                // 각도가 높을 수록 약간 수직 성분 감소하여 더 멀리 날아가게
+                VerticalAdjust = FMath::Lerp(1.0f, 0.95f, (BaseResult.UseAngle - 45.0f) / 15.0f);
+            }
+            
+            // 각 방향 성분 조절 (수평, 수직)
+            FVector AdjustedDirection = Result.LaunchDirection;
+            
+            // 수평 성분 (X, Y) 강화
+            AdjustedDirection.X *= HorizontalBoost;
+            AdjustedDirection.Y *= HorizontalBoost;
+            
+            // 수직 성분 (Z) 조절
+            AdjustedDirection.Z *= VerticalAdjust;
+            
+            // 정규화 및 새 방향 적용
+            Result.LaunchDirection = AdjustedDirection.GetSafeNormal();
+            
+            // 속도 미세 조정 - 거리 오차에 비례하여 매우 부드럽게
+            float SpeedBoost = 1.0f + DistanceErrorRatio * XYDistance * 0.0003f;
+            Result.InitialSpeed *= SpeedBoost;
+            Result.LaunchVelocity = Result.LaunchDirection * Result.InitialSpeed;
+            
+            // 조정이 의미있는 수준일 때만 로그 출력
+            if (HorizontalBoost > 1.01f || SpeedBoost > 1.01f || VerticalAdjust < 0.99f) {
+                UE_LOG(LogTemp, Warning, TEXT("궤적 자연스러운 보정: 수평=%.1f%%, 수직=%.1f%%, 속도=%.1f%% (거리오차: %.1f, 각도: %.1f)"),
+                       HorizontalBoost * 100.0f, VerticalAdjust * 100.0f, SpeedBoost * 100.0f, 
+                       XYDistance, BaseResult.UseAngle);
+            }
+        }
     }
     
     // 16. 결과 마무리 및 반환
