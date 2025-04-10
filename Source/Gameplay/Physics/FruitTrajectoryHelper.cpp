@@ -85,15 +85,21 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVec
         // 액터에 라인 배처 추가
         CustomLineBatcher = NewObject<ULineBatchComponent>(LineActor);
         CustomLineBatcher->RegisterComponent();
-    }
-    else
-    {
-        // 기존 배처 비우기
-        CustomLineBatcher->Flush();
+        
+        // 중요: 라인 배처가 카메라의 영향을 받지 않도록 설정
+        if (LineActor->GetRootComponent())
+        {
+            LineActor->GetRootComponent()->SetAbsolute(true, true, true);
+        }
     }
     
-    FColor PathColor = FColor(135, 206, 235, 100);
-    int32 MarkerCount = 3;
+    // 항상 먼저 Flush 실행 - Shipping 빌드에서 중요
+    CustomLineBatcher->Flush();
+    
+    // Sleep 제거 - 프레임 동기화 문제 해결
+    // FPlatformProcess::Sleep(0.001f); 
+    
+    FColor PathColor = FColor(135, 206, 235, 255);
     float LineThickness = 0.8f;
     
     // 포인트 간 거리가 최소값 이상일 때만 그리기 (너무 조밀한 점은 건너뜀)
@@ -113,6 +119,7 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVec
     // LineBatcher를 사용하여 궤적 그리기
     for (int32 i = 0; i < FilteredPoints.Num() - 1; i++)
     {
+        // 지속 시간은 요청대로 100000.f 유지
         CustomLineBatcher->DrawLine(
             FilteredPoints[i], 
             FilteredPoints[i + 1], 
