@@ -54,9 +54,9 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     // 7-9. 속도 범위 제한
     Result.InitialSpeed = FMath::Clamp(Result.InitialSpeed, 150.0f, 350.0f);
 
-    // 9. 자연스러운 속도 계산 - 실제 물리 기반
-    // 9-1. 각도에 따른 연속적인 함수 사용 (반올림 대신)
-    Result.InitialSpeed = (245.0f - 0.9f * BaseResult.UseAngle) * MassCompensationFactor;
+    // 9. 초기 속도 조정 - 기본값 낮추기 (290.0f → 250.0f)
+    Result.InitialSpeed = (250.0f - 0.5f * BaseResult.UseAngle) * MassCompensationFactor;
+    // 290.0f -> 250.0f로 변경 (15% 감소)
 
     // 9-3. 발사 속도 벡터 계산
     Result.LaunchVelocity = Result.LaunchDirection * Result.InitialSpeed;
@@ -64,14 +64,13 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     // 10. 발사 속도 벡터 계산 (중복 제거)
     // 이미 9-3에서 계산했으므로 제거
 
-    // 11. 질량 보정이 반영된 힘 계산
-    // 11-1. 질량에 따른 힘 조정 필요 없이 일관된 힘 적용
-    Result.AdjustedForce = BallMass * Result.InitialSpeed * 1.2f; // 20% 추가 힘 적용
+    // 11. 힘 계수 조정 - 과도한 힘 줄이기
+    Result.AdjustedForce = BallMass * Result.InitialSpeed * 1.35f; 
+    // 1.7f -> 1.35f로 변경 (20% 감소)
 
-    // 12. 힘 범위 제한
-    // 12-1. 힘 범위 설정
-    float MinForce = 2000.0f; // 1800.0f -> 2000.0f
-    float MaxForce = 9000.0f; // 7000.0f -> 9000.0f
+    // 12. 힘 범위 조정 - 최소/최대 힘 감소
+    float MinForce = 2400.0f; // 2800.0f -> 2400.0f
+    float MaxForce = 9000.0f; // 12000.0f -> 9000.0f
 
     // 12-2. 질량 비율 적용
     float MassRatio = BallMass / AFruitBall::DensityFactor;
@@ -82,15 +81,16 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     Result.AdjustedForce = FMath::Clamp(Result.AdjustedForce, MinForce, MaxForce);
 
     // 13. 궤적 최고점 높이 계산
-    // 13-1. 각도에 비례하는 직접적인 높이 계수 (추가로 40% 더 낮춤)
+    // 13-1. 각도에 비례하는 직접적인 높이 계수 - 20% 증가
     float DirectAngleHeightRatio = FMath::GetMappedRangeValueClamped(
         FVector2D(MinThrowAngle, MaxThrowAngle),
-        FVector2D(0.025f, 0.625f), // 0.0375 -> 0.025, 0.9375 -> 0.625 (추가 40% 감소)
+        FVector2D(0.06f, 1.2f), // 0.05f->0.06f, 1.0f->1.2f (20% 증가)
         BaseResult.UseAngle
     );
 
     // 13-2. 비선형 증가 효과 (지수 함수로 고각도에서 더 급격한 증가)
-    float PoweredHeightRatio = FMath::Pow(DirectAngleHeightRatio, 1.5f);
+    // 수정: 지수 계수 증가
+    float PoweredHeightRatio = FMath::Pow(DirectAngleHeightRatio, 1.8f); // 1.5f -> 1.8f
 
     // 13-3. 최고점 높이 계산
     Result.PeakHeight = BaseResult.HorizontalDistance * PoweredHeightRatio;
@@ -139,15 +139,12 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
         
         float ZDistance = FMath::Abs(EndPoint.Z - BaseResult.PlateTopHeight);
         
-        // 로깅만 수행하고 보정은 하지 않음
+        // 로깅만 수행 - 보정 없음
         UE_LOG(LogTemp, Warning, TEXT("검증 결과: XY거리=%.1f, Z거리=%.1f (발사속도=%.1f)"), 
                XYDistance, ZDistance, Result.InitialSpeed);
         
-        if (XYDistance > 20.0f || ZDistance > 20.0f)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("정확도가 낮은 투척 감지: 각도=%.1f, 거리=%.1f"), 
-                   BaseResult.UseAngle, BaseResult.HorizontalDistance);
-        }
+        // 거리 보정을 완전히 제거하고 일관된 궤적 사용
+        // if (XYDistance > 25.0f) { ... } 코드 블록 제거
     }
     
     // 16. 결과 마무리 및 반환

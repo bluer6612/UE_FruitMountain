@@ -116,23 +116,26 @@ void UFruitPhysicsInitializer::CalculateDirectionAndDistance(const FPhysicsInitD
 // 조정된 타겟 위치 계산 함수
 void UFruitPhysicsInitializer::CalculateAdjustedTarget(const FPhysicsInitData& InitData, FPhysicsBaseResult& Result)
 {
-    // 기본 거리 비율 설정
-    Result.DistanceRatio = 0.15f;
+    // 기본 거리 비율 설정 - 더 정확한 타겟팅을 위해 0.15f -> 0.08f로 변경
+    Result.DistanceRatio = 0.08f;
     
     // 접시 높이에 따른 미세 조정
     if (Result.PlateTopHeight > 30.0f) {
         float HeightFactor = (Result.PlateTopHeight - 30.0f) / 20.0f;
-        Result.DistanceRatio *= (1.0f - 0.02f * HeightFactor);
+        // 계수 강화 - 0.02f -> 0.04f
+        Result.DistanceRatio *= (1.0f - 0.04f * HeightFactor);
+    }
+    
+    // 거리 기반 보정 - 거리가 너무 멀면 더 가깝게 조정
+    if (Result.HorizontalDistance > 300.0f) {
+        // 300 이상 거리부터는 더 가까운 타겟 사용
+        Result.DistanceRatio *= (0.9f - 0.1f * FMath::Min((Result.HorizontalDistance - 300.0f) / 200.0f, 0.3f));
     }
     
     // 타겟 위치 계산
     float AdjustedDistance = Result.HorizontalDistance * Result.DistanceRatio;
     Result.AdjustedTarget = InitData.StartLocation + Result.DirectionToTarget * AdjustedDistance;
     Result.AdjustedTarget.Z = Result.PlateTopHeight;
-    
-    // 디버그 로깅
-    UE_LOG(LogTemp, Warning, TEXT("조정된 타겟: %s (거리비율: %.3f, 거리: %.1f)"),
-        *Result.AdjustedTarget.ToString(), Result.DistanceRatio, AdjustedDistance);
 }
 
 // 발사 방향 계산 함수
@@ -141,15 +144,15 @@ void UFruitPhysicsInitializer::CalculateLaunchDirection(const FPhysicsInitData& 
     // 수평 방향 계산
     FVector HorizontalDir = FVector(Result.DirectionToTarget.X, Result.DirectionToTarget.Y, 0.0f).GetSafeNormal();
     
-    // 각도에 따른 높이 계수 계산
+    // 각도에 따른 높이 계수 계산 - 20% 증가
     Result.HeightFactor = FMath::GetMappedRangeValueClamped(
         FVector2D(UFruitPhysicsHelper::MinThrowAngle, 50.0f),
-        FVector2D(0.25f, 1.25f),
+        FVector2D(0.3f, 1.5f),  // 0.25f->0.3f, 1.25f->1.5f (20% 증가)
         Result.UseAngle
     );
     
-    // 수직/수평 성분 계산
-    Result.VerticalMultiplier = FMath::Sin(Result.ThrowAngleRad) * Result.HeightFactor;
+    // 수직/수평 성분 계산 - 수직 성분도 추가로 20% 증가
+    Result.VerticalMultiplier = FMath::Sin(Result.ThrowAngleRad) * Result.HeightFactor * 1.2f;
     Result.HorizontalMultiplier = FMath::Cos(Result.ThrowAngleRad);
     
     // 최종 발사 방향 계산
