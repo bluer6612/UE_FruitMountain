@@ -1,18 +1,12 @@
 #include "FruitPlayerController.h"
 #include "System/Input/FruitInputMappingManager.h"
 #include "Engine/World.h"
-#include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
-#include "GameFramework/InputSettings.h"
-#include "Engine/Engine.h"
 #include "System/Camera/CameraOrbitFunctionLibrary.h"
 #include "Framework/UE_FruitMountainGameMode.h"
-#include "Camera/CameraComponent.h"
 #include "Gameplay/Physics/FruitThrowHelper.h"
 #include "Gameplay/Physics/FruitTrajectoryHelper.h"
 #include "Gameplay/Physics/FruitPhysicsHelper.h"
-#include "GameFramework/SpringArmComponent.h"
-#include "Interface/UI/TextureDisplayWidget.h"
 #include "Actors/FruitBall.h"
 
 AFruitPlayerController::AFruitPlayerController()

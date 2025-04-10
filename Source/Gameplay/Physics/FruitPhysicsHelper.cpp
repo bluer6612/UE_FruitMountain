@@ -1,19 +1,12 @@
 #include "FruitPhysicsHelper.h"
-#include "Gameplay/Controller/FruitPlayerController.h"
+#include "FruitPhysicsInitializer.h"
 #include "Kismet/GameplayStatics.h"
-#include "Kismet/KismetMathLibrary.h"
-#include "GameFramework/Actor.h"
-#include "DrawDebugHelpers.h"
 #include "PhysicsEngine/PhysicsSettings.h"
 #include "Actors/FruitBall.h"
 
 // const 정적 변수 초기화
 const float UFruitPhysicsHelper::MinThrowAngle = 10.0f;
 const float UFruitPhysicsHelper::MaxThrowAngle = 60.0f;
-
-// 정적 클래스 변수로 자기 학습용 데이터 추가
-static TMap<int32, float> FruitTypeCorrections;
-static TMap<float, float> AngleCorrections;
 
 // 통합 물리 계산 함수 구현
 FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, float BallMass)
@@ -60,18 +53,6 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     
     // 7-9. 속도 범위 제한
     Result.InitialSpeed = FMath::Clamp(Result.InitialSpeed, 150.0f, 350.0f);
-
-    // 8. 보정값 시스템 (제거 또는 비활성화)
-    // 보정 맵이 비어 있을 때만 보정 적용을 허용
-    if (FruitTypeCorrections.Num() > 0 || AngleCorrections.Num() > 0) {
-        // 학습 데이터가 있을 때만 보정 적용
-        int32 FruitTypeKey = FMath::RoundToInt(BallMass);
-        float AngleKey = BaseResult.UseAngle; // 반올림하지 않고 실제 각도 사용
-        
-        if (FruitTypeCorrections.Contains(FruitTypeKey)) {
-            Result.InitialSpeed *= FruitTypeCorrections[FruitTypeKey];
-        }
-    }
 
     // 9. 자연스러운 속도 계산 - 실제 물리 기반
     // 9-1. 각도에 따른 연속적인 함수 사용 (반올림 대신)
@@ -166,24 +147,6 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
         {
             UE_LOG(LogTemp, Warning, TEXT("정확도가 낮은 투척 감지: 각도=%.1f, 거리=%.1f"), 
                    BaseResult.UseAngle, BaseResult.HorizontalDistance);
-        }
-        
-        // 검증 정보를 통계에 저장하여 나중에 참조 가능하게 함
-        // 이 코드는 보정에 사용하지 않고 통계 목적으로만 사용
-        int32 FruitTypeKey = FMath::RoundToInt(BallMass);
-        if (FruitTypeCorrections.Num() < 10 && !FruitTypeCorrections.Contains(FruitTypeKey))
-        {
-            // 특정 과일 타입에 대한 첫 10개 유형만 기록 (자동 학습용)
-            float AccuracyFactor = 1.0f;
-            if (XYDistance > 0.1f) {
-                // 정확도 기반 보정 계수 (실제로 보정에 사용하지는 않음)
-                AccuracyFactor = 20.0f / FMath::Max(XYDistance, 1.0f);
-                AccuracyFactor = FMath::Clamp(AccuracyFactor, 0.8f, 1.2f);
-            }
-            
-            // 로깅만 수행
-            UE_LOG(LogTemp, Warning, TEXT("과일 크기 %d의 정확도 계수: %.2f (기록용)"), 
-                  FruitTypeKey, AccuracyFactor);
         }
     }
     

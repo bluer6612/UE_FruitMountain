@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "FruitThrowHelper.h"
 #include "FruitPhysicsHelper.generated.h"
 
 class AFruitPlayerController;
@@ -54,15 +53,15 @@ struct FThrowPhysicsResult
 };
 
 UCLASS()
-class UFruitPhysicsHelper : public UObject
+class UE_FRUITMOUNTAIN_API UFruitPhysicsHelper : public UObject
 {
     GENERATED_BODY()
 
 public:
-    // const 정적 변수 (UPROPERTY 없이)
+    // 최소 및 최대 각도 상수
     static const float MinThrowAngle;
     static const float MaxThrowAngle;
-    
+
     // 통합 물리 계산 함수 (모든 물리 계산의 핵심)
     UFUNCTION(BlueprintCallable, Category = "Physics")
     static FThrowPhysicsResult CalculateThrowPhysics(UWorld* World, const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, float BallMass);

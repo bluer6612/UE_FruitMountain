@@ -3,12 +3,7 @@
 #include "FruitPhysicsHelper.h"
 #include "Gameplay/Controller/FruitPlayerController.h"
 #include "Gameplay/Create/FruitSpawnHelper.h"
-#include "Engine/World.h"
-#include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
-#include "Components/PrimitiveComponent.h"
-#include "Camera/CameraComponent.h"
-#include "Actors/PlateActor.h"
 #include "Actors/FruitBall.h"
 
 // ThrowFruit 함수 - FruitPhysicsHelper 활용
@@ -161,7 +156,6 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
             MeshComp->SetMassOverrideInKg(NAME_None, BallMass);
         }
     }
-
     
     // 추후 궤적 계산에 접시 위치 전달
     FVector PlateCenter = Controller->PlateLocation;

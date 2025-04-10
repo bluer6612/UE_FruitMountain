@@ -1,5 +1,4 @@
 #include "FruitPhysicsInitializer.h"
-#include "FruitThrowHelper.h"
 #include "Kismet/GameplayStatics.h"
 #include "PhysicsEngine/PhysicsSettings.h"
 
