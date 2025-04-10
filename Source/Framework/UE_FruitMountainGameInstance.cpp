@@ -1,15 +1,4 @@
 #include "UE_FruitMountainGameInstance.h"
-
-#include "Blueprint/UserWidget.h"
-#include "Kismet/GameplayStatics.h"
-#include "Engine/Engine.h"
-#include "Engine/GameViewportClient.h"
-#include "Widgets/SOverlay.h"
-#include "Widgets/Images/SImage.h"
-#include "Widgets/Layout/SBorder.h"
-#include "Widgets/Layout/SBox.h"
-#include "Widgets/Text/STextBlock.h"
-#include "TimerManager.h"
 #include "Interface/UI/TextureDisplayWidget.h"
 
 UUE_FruitMountainGameInstance::UUE_FruitMountainGameInstance()
