@@ -16,7 +16,7 @@ public class UE_FruitMountain : ModuleRules
 			"UMG", 
 			"Slate", 
 			"SlateCore", 
-			"AssetRegistry" // AssetRegistry 추가
+			"AssetRegistry"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
