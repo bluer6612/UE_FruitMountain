@@ -52,4 +52,17 @@ protected:
     
     // 앵커 기반 이미지 설정 - 크기 직접 지정 가능
     void SetupImageWithTexture(UImage*& ImageWidget, EWidgetAnchor Anchor, const FString& TexturePath, const FVector2D& CustomSize = FVector2D(0, 0), float PaddingX = 20.0f, float PaddingY = 20.0f);
+
+    // 헤더에 애셋 레퍼런스 변수 추가
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+    TSoftObjectPtr<UTexture2D> ScoreTexture;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+    TSoftObjectPtr<UTexture2D> FruitListTexture;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+    TSoftObjectPtr<UTexture2D> NextFruitTexture;
+
+    // 로드 함수 추가
+    UTexture2D* LoadTexture(TSoftObjectPtr<UTexture2D>& TexturePtr, const FString& FallbackPath);
 };
