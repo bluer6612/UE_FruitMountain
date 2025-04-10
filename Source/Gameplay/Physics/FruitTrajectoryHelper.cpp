@@ -6,11 +6,11 @@
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
-#include "Components/PrimitiveComponent.h"
 #include "Components/LineBatchComponent.h"
-#include "DrawDebugHelpers.h"
 #include "PhysicsEngine/PhysicsSettings.h"
 #include "Actors/FruitBall.h"
+
+ULineBatchComponent* UFruitTrajectoryHelper::CustomLineBatcher = nullptr;
 
 void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Controller, const FVector& StartLocation, const FVector& TargetLocation, bool bPersistent, int32 CustomTrajectoryID)
 {
@@ -19,10 +19,6 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     
     UWorld* World = Controller->GetWorld();
     const int32 TrajectoryID = (CustomTrajectoryID != 0) ? CustomTrajectoryID : 9999;
-    
-    // 기존 궤적 비우기 - 더 확실하게 모든 디버그 선 제거
-    FlushPersistentDebugLines(World);
-    //FlushDebugStrings(World);
     
     // 1. 입력값 안정화 - 입력 좌표를 소수점 아래 1자리까지만 사용
     FVector StableStartLocation = RoundVector(StartLocation, 1);
@@ -89,8 +85,22 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVec
         return;
     }
     
-    // 이전에 그린 모든 궤적 먼저 비우기 (최대한 확실하게)
-    FlushPersistentDebugLines(World);
+    // 커스텀 라인 배처 초기화 또는 재사용
+    if (!CustomLineBatcher || !CustomLineBatcher->IsValidLowLevel())
+    {
+        // 새로운 액터 생성
+        AActor* LineActor = World->SpawnActor<AActor>();
+        LineActor->SetActorLabel("TrajectoryActor");
+        
+        // 액터에 라인 배처 추가
+        CustomLineBatcher = NewObject<ULineBatchComponent>(LineActor);
+        CustomLineBatcher->RegisterComponent();
+    }
+    else
+    {
+        // 기존 배처 비우기
+        CustomLineBatcher->Flush();
+    }
     
     FColor PathColor = FColor(135, 206, 235, 100);
     int32 MarkerCount = 3;
@@ -111,33 +121,17 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVec
     }
     
     // LineBatcher를 사용하여 궤적 그리기
-    if (World->PersistentLineBatcher)
+    for (int32 i = 0; i < FilteredPoints.Num() - 1; i++)
     {
-        for (int32 i = 0; i < FilteredPoints.Num() - 1; i++)
-        {
-            // DepthPriority를 SDPG_World로 설정하여 일반 물체와 동일한 깊이 테스트 적용
-            // 이 부분은 미리보기 공 뒤에 가려지는 궤적을 그림
-            World->PersistentLineBatcher->DrawLine(
-                FilteredPoints[i], 
-                FilteredPoints[i + 1], 
-                PathColor, 
-                SDPG_World, // 깊이 테스트 활성화 (물체에 가려짐)
-                LineThickness, 
-                -1.0f // 영구적
-            );
-        }
+        CustomLineBatcher->DrawLine(
+            FilteredPoints[i], 
+            FilteredPoints[i + 1], 
+            PathColor, 
+            SDPG_World,
+            LineThickness, 
+            -1.f // 영구적
+        );
     }
-}
-
-// 벡터 좌표 반올림 헬퍼 함수 추가
-FVector UFruitTrajectoryHelper::RoundVector(const FVector& InVector, int32 DecimalPlaces)
-{
-    float Multiplier = FMath::Pow(10.0f, (float)DecimalPlaces);
-    return FVector(
-        FMath::RoundToFloat(InVector.X * Multiplier) / Multiplier,
-        FMath::RoundToFloat(InVector.Y * Multiplier) / Multiplier,
-        FMath::RoundToFloat(InVector.Z * Multiplier) / Multiplier
-    );
 }
 
 // 이 함수는 FruitPhysicsHelper에서 이동됨
@@ -193,4 +187,15 @@ TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(UWorld* World,
     }
     
     return TrajectoryPoints;
+}
+
+// 벡터 좌표 반올림 헬퍼 함수 추가
+FVector UFruitTrajectoryHelper::RoundVector(const FVector& InVector, int32 DecimalPlaces)
+{
+    float Multiplier = FMath::Pow(10.0f, (float)DecimalPlaces);
+    return FVector(
+        FMath::RoundToFloat(InVector.X * Multiplier) / Multiplier,
+        FMath::RoundToFloat(InVector.Y * Multiplier) / Multiplier,
+        FMath::RoundToFloat(InVector.Z * Multiplier) / Multiplier
+    );
 }

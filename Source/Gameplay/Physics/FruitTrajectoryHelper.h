@@ -25,4 +25,7 @@ public:
 private:
     // 벡터 좌표를 지정된 소수점 자리로 반올림하는 유틸리티 함수
     static FVector RoundVector(const FVector& InVector, int32 DecimalPlaces);
+
+    // FruitTrajectoryHelper.h에 멤버 변수 추가
+    static ULineBatchComponent* CustomLineBatcher;
 };
