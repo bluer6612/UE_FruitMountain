@@ -36,7 +36,7 @@ public:
 
     // 공 던지기 관련 변수
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Throwing")
-    float BallThrowDelay = 0.5f;
+    float BallThrowDelay = 1.f;
 
     // 카메라 회전 속도 (도/초)
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Orbit")
