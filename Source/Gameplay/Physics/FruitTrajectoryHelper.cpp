@@ -81,7 +81,6 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVec
     {
         // 새로운 액터 생성
         AActor* LineActor = World->SpawnActor<AActor>();
-        LineActor->SetActorLabel("TrajectoryActor");
         
         // 액터에 라인 배처 추가
         CustomLineBatcher = NewObject<ULineBatchComponent>(LineActor);
@@ -120,7 +119,7 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVec
             PathColor, 
             SDPG_World,
             LineThickness, 
-            -1.f // 영구적
+            100000.f // 영구적
         );
     }
 }
