@@ -12,8 +12,6 @@
 AFruitPlayerController::AFruitPlayerController()
 {
     ThrowAngle = 45.f;
-    ThrowForce = 1000.f;
-    AngleStep = 5.f;
 
     // 오빗 기본 값 설정
     CameraOrbitRadius = 110.f;
@@ -118,7 +116,7 @@ void AFruitPlayerController::ThrowFruit()
     // 즉시 공 생성하여 던지기 실행
     UFruitThrowHelper::ThrowFruit(this);
     
-    // 0.5초 후 입력 다시 활성화 및 새 미리보기 공 생성
+    // 일정 딜레이 후 입력 다시 활성화 및 새 미리보기 공 생성
     FTimerHandle ThrowDelayTimerHandle;
     GetWorld()->GetTimerManager().SetTimer(
         ThrowDelayTimerHandle,
@@ -164,14 +162,12 @@ void AFruitPlayerController::AdjustAngle(float Value)
     // 안전을 위한 클램핑 (불필요하지만 추가 보호)
     ThrowAngle = FMath::Clamp(ThrowAngle, UFruitPhysicsHelper::MinThrowAngle, UFruitPhysicsHelper::MaxThrowAngle);
     
-    // 각도 변경 후 미리보기 공 업데이트
+    // 각도 변경 후 미리보기 공 및 궤적 업데이트
     UpdatePreviewBall();
-    
-    // 각도 변경 후 궤적도 업데이트
     UpdateTrajectory();
 }
 
-// 카메라 회전 처리 함수 수정
+// 카메라 회전 처리 함수 수정 - AdjustAngle과 완전히 동일한 방식 사용
 void AFruitPlayerController::RotateCamera(float Value)
 {
     if (FMath::IsNearlyZero(Value))
@@ -190,9 +186,8 @@ void AFruitPlayerController::RotateCamera(float Value)
     
     // 중요: 카메라 위치 업데이트
     UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius);
-    
-    // 즉시 공 위치 업데이트 (재귀 호출 없이)
     UFruitThrowHelper::UpdatePreviewBall(this);
+    UpdateTrajectory();
 }
 
 // 실제 업데이트 수행 함수 수정

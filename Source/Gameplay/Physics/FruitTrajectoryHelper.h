@@ -10,7 +10,7 @@ class UE_FRUITMOUNTAIN_API UFruitTrajectoryHelper : public UBlueprintFunctionLib
     GENERATED_BODY()
 
 public:
-    // 통합된 궤적 업데이트 함수 - 기본 매개변수 추가
+    // 궤적 업데이트 함수
     UFUNCTION(BlueprintCallable, Category = "Trajectory")
     static void UpdateTrajectoryPath(class AFruitPlayerController* Controller, const FVector& StartLocation, const FVector& TargetLocation, bool bPersistent = true, int32 CustomTrajectoryID = 9999);
 

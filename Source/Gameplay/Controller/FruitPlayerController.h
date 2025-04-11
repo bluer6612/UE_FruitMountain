@@ -21,15 +21,7 @@ public:
     // 현재 포물선 발사 각도 (피칭 각도)
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Throwing")
     float ThrowAngle;
-
-    // 포물선 발사 힘
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Throwing")
-    float ThrowForce;
-
-    // 각도 조정 단위 (한 번 입력 시 변경되는 값)
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Throwing")
-    float AngleStep;
-
+    
     // 각도 조정 속도 (도/초)
     UPROPERTY(EditAnywhere, Category = "Throwing")
     float AngleAdjustSpeed = 30.f;
@@ -76,7 +68,7 @@ private:
     // 미리보기 공 업데이트 제한을 위한 변수들
     FTimerHandle PreviewBallUpdateTimerHandle;
     bool bPreviewBallUpdatePending = false;
-    const float PreviewBallUpdateDelay = 0.02f;// 헤더 파일에 함수 선언 추가
+    const float PreviewBallUpdateDelay = 0.02f;
 
     virtual void SetupInputComponent() override;
     

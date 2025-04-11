@@ -157,7 +157,5 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
         }
     }
     
-    // 추후 궤적 계산에 접시 위치 전달
-    FVector PlateCenter = Controller->PlateLocation;
-    UFruitTrajectoryHelper::UpdateTrajectoryPath(Controller, PreviewLocation, PlateCenter);
+    //UFruitTrajectoryHelper::UpdateTrajectoryPath(Controller, PreviewLocation, PlateCenter);
 }
