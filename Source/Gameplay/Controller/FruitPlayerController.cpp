@@ -76,6 +76,7 @@ void AFruitPlayerController::BeginPlay()
     // 미리보기 공 생성
     CurrentBallType = FMath::RandRange(1, AFruitBall::MaxBallType);
     UpdatePreviewBall();
+    UpdateTrajectory();
         
     SetInputMode(FInputModeGameAndUI());
     SetShowMouseCursor(true);
@@ -131,6 +132,7 @@ void AFruitPlayerController::ThrowFruit()
             // 새로운 미리보기 공 업데이트 (공 타입 바꾸기)
             CurrentBallType = FMath::RandRange(1, AFruitBall::MaxBallType); // 다음에 던질 공 타입 랜덤 변경
             UpdatePreviewBall();
+            UpdateTrajectory();
         },
         BallThrowDelay,
         false // 반복 실행 안 함
