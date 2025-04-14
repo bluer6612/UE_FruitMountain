@@ -92,7 +92,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
         UpdatePreviewTimerHandle, 
         [Controller]() 
         { 
-            Controller->UpdatePreviewBall(); 
+            Controller->UpdatePreviewBallWithDebounce(); 
         }, 
         Controller->BallThrowDelay, 
         false

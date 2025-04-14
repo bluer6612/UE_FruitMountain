@@ -75,7 +75,7 @@ void AFruitPlayerController::BeginPlay()
 
     // 미리보기 공 생성 시 회전까지 적용되도록 true 매개변수 추가
     CurrentBallType = FMath::RandRange(1, AFruitBall::MaxBallType);
-    UpdatePreviewBall();
+    UpdatePreviewBallWithDebounce();
     
     SetInputMode(FInputModeGameAndUI());
     SetShowMouseCursor(true);
@@ -130,7 +130,7 @@ void AFruitPlayerController::ThrowFruit()
             
             // 새로운 미리보기 공 업데이트 (공 타입 바꾸기)
             CurrentBallType = FMath::RandRange(1, AFruitBall::MaxBallType); // 다음에 던질 공 타입 랜덤 변경
-            UpdatePreviewBall();
+            UpdatePreviewBallWithDebounce();
         },
         BallThrowDelay,
         false // 반복 실행 안 함
@@ -163,7 +163,7 @@ void AFruitPlayerController::AdjustAngle(float Value)
     ThrowAngle = FMath::Clamp(ThrowAngle, UFruitPhysicsHelper::MinThrowAngle, UFruitPhysicsHelper::MaxThrowAngle);
     
     // 각도 변경 후 미리보기 공 및 궤적 업데이트
-    UpdatePreviewBall();
+    UpdatePreviewBallWithDebounce();
 }
 
 // 카메라 회전 처리 함수 - 과일 회전 보정 수정
@@ -211,8 +211,8 @@ void AFruitPlayerController::ExecutePreviewBallUpdate()
     }
 }
 
-// UpdatePreviewBall 함수 수정 - 무한 재귀 방지
-void AFruitPlayerController::UpdatePreviewBall()
+// 미리보기 공 업데이트 함수 - 연속 호출 방지 (디바운싱) 처리 및 무한 루프 방지
+void AFruitPlayerController::UpdatePreviewBallWithDebounce()
 {
     // 이미 업데이트가 예약되어 있으면 중복 실행하지 않음
     if (!bPreviewBallUpdatePending)
@@ -228,32 +228,6 @@ void AFruitPlayerController::UpdatePreviewBall()
             false // 반복 실행 안 함
         );
     }
-}
-
-// 궤적 업데이트 함수 구현
-void AFruitPlayerController::UpdateTrajectory()
-{
-    if (!PreviewBall || !GetWorld())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("미리보기 공이 없거나 월드가 유효하지 않습니다."));
-        return;
-    }
-    
-    // 미리보기 공의 위치와 접시 위치를 이용하여 궤적 업데이트
-    FVector StartLocation = PreviewBall->GetActorLocation();
-    
-    // 접시 위치 가져오기 (저장된 위치 또는 액터 검색)
-    FVector TargetLocation = PlateLocation;
-    
-    // 유효한 위치가 있는지 확인
-    if (TargetLocation.IsZero())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("접시 위치를 찾을 수 없어 궤적을 업데이트할 수 없습니다."));
-        return;
-    }
-    
-    // 궤적 업데이트 함수 호출
-    UFruitTrajectoryHelper::UpdateTrajectoryPath(this, StartLocation);
 }
 
 // 과일 회전 설정 함수 구현 - 항상 카메라 각도 고려

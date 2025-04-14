@@ -58,11 +58,7 @@ public:
     FVector PlateLocation;
 
     // 미리보기 공 업데이트 함수
-    void UpdatePreviewBall();
-
-    // 궤적 업데이트 함수 추가
-    UFUNCTION(BlueprintCallable, Category="Trajectory")
-    void UpdateTrajectory();
+    void UpdatePreviewBallWithDebounce();
     
     // 과일 회전 설정 함수 - 던지기 각도와 카메라 각도 기반
     void SetFruitRotation(AActor* Fruit);
