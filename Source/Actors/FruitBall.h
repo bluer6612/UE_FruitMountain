@@ -12,6 +12,8 @@ class UE_FRUITMOUNTAIN_API AFruitBall : public AActor
 public:    
     AFruitBall();
     
+    virtual void BeginPlay() override;
+    
     // 공의 메시 컴포넌트
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
     class UStaticMeshComponent* MeshComponent;
@@ -41,17 +43,29 @@ public:
     UFUNCTION()
     void OnBallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
     
-    // 과일 합치기 시도
-    bool TryMergeWithOtherFruit(AFruitBall* OtherFruit);
-    
-    // 현재 과일 레벨 (BallType) 반환
-    UFUNCTION(BlueprintPure, Category="Fruit")
+    // 접근자 및 설정자 추가
+    UFUNCTION()
     int32 GetBallType() const { return BallType; }
-    
+
+    UFUNCTION()
+    void SetMerging(bool bMerging) { bIsBeingMerged = bMerging; }
+
+    UFUNCTION()
+    bool IsMerging() const { return bIsBeingMerged; }
+
+    UFUNCTION()
+    UStaticMeshComponent* GetMeshComponent() const { return MeshComponent; }
+
     // 디버그 정보 표시 함수 (선언 추가)
     UFUNCTION(BlueprintCallable, Category="Debug")
     void DisplayDebugInfo();
     
+    // 핸들러 등록 상태 확인
+    bool IsCollisionHandlerRegistered() const { return bCollisionHandlerRegistered; }
+    
+    // 핸들러 등록 상태 설정
+    void SetCollisionHandlerRegistered(bool bRegistered) { bCollisionHandlerRegistered = bRegistered; }
+
     // 병합 중인지 여부
     UPROPERTY()
     bool bIsBeingMerged;
@@ -59,4 +73,8 @@ public:
     // 현재 과일 레벨
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Fruit")
     int32 BallType;
+
+private:
+    // 충돌 핸들러 등록 여부 플래그
+    bool bCollisionHandlerRegistered = false;
 };

@@ -9,69 +9,96 @@
 #include "Framework/UE_FruitMountainGameMode.h"
 #include "Components/StaticMeshComponent.h"
 
+bool UFruitMergeHelper::TryMergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& CollisionPoint)
+{
+    // 로그 추가: 함수 호출 확인
+    UE_LOG(LogTemp, Warning, TEXT("TryMergeFruits 호출: FruitA=%p, FruitB=%p"),
+           FruitA, FruitB);
+           
+    if (!FruitA || !FruitB) {
+        UE_LOG(LogTemp, Error, TEXT("TryMergeFruits: 과일 참조가 유효하지 않음"));
+        return false;
+    }
+    
+    // 두 과일의 타입 가져오기
+    int32 TypeA = FruitA->GetBallType();
+    int32 TypeB = FruitB->GetBallType();
+    
+    // 타입이 서로 다르면 병합하지 않음
+    if (TypeA != TypeB) {
+        UE_LOG(LogTemp, Warning, TEXT("과일 타입이 다름: 병합 불가"));
+        return false; 
+    }
+    
+    // 이미 병합 중인 과일이면 무시
+    if (FruitA->IsMerging() || FruitB->IsMerging()) {
+        UE_LOG(LogTemp, Warning, TEXT("이미 병합중인 과일이 있음"));
+        return false;
+    }
+    
+    // 두 과일 모두 병합 상태로 설정
+    FruitA->SetMerging(true);
+    FruitB->SetMerging(true);
+    
+    // 병합 처리 수행
+    MergeFruits(FruitA, FruitB, CollisionPoint);
+    return true;
+}
+
 void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& MergeLocation)
 {
-    if (!FruitA || !FruitB) return;
+    // 로그 추가: 함수 호출 확인
+    UE_LOG(LogTemp, Warning, TEXT("MergeFruits 호출: FruitA=%p, FruitB=%p"),
+           FruitA, FruitB);
+           
+    if (!FruitA || !FruitB) {
+        UE_LOG(LogTemp, Error, TEXT("MergeFruits: 과일 참조가 유효하지 않음"));
+        return;
+    }
+    
+    // 두 과일의 타입 가져오기
+    int32 TypeA = FruitA->GetBallType();
+    int32 TypeB = FruitB->GetBallType();
+    
+    UE_LOG(LogTemp, Warning, TEXT("같은 타입의 과일 병합 시작: 타입=%d"), TypeA);
     
     UWorld* World = FruitA->GetWorld();
     if (!World) return;
     
-    // 현재 과일 레벨 저장
-    int32 CurrentType = FruitA->GetBallType();
-    
-    // 마지막 레벨 체크: 예를 들어 10이 최대 레벨이라면
-    if (CurrentType >= 10)
+    // 마지막 레벨 체크
+    if (TypeA >= 10)
     {
-        // 최대 레벨 도달 시 처리 (예: 추가 점수)
-        AddScore(CurrentType * 2); // 보너스 점수
-        PlayMergeEffect(World, MergeLocation, CurrentType);
+        UE_LOG(LogTemp, Warning, TEXT("최대 레벨 과일 병합"));
+        AddScore(TypeA * 2);
+        PlayMergeEffect(World, MergeLocation, TypeA);
         
-        // 두 과일 모두 제거
         FruitA->Destroy();
         FruitB->Destroy();
         return;
     }
     
-    // 다음 레벨의 과일 계산
-    int32 NextType = CurrentType + 1;
+    // 다음 레벨의 과일 생성
+    int32 NextType = TypeA + 1;
+    UE_LOG(LogTemp, Warning, TEXT("다음 레벨 과일 생성: %d -> %d"), TypeA, NextType);
     
-    // 병합 효과 재생
-    PlayMergeEffect(World, MergeLocation, CurrentType);
+    // 이펙트 및 점수 처리
+    PlayMergeEffect(World, MergeLocation, TypeA);
+    AddScore(TypeA);
     
-    // 점수 추가
-    AddScore(CurrentType);
-    
-    // 상위 레벨 과일 스폰
+    // 새 과일 생성
     AFruitPlayerController* PC = Cast<AFruitPlayerController>(UGameplayStatics::GetPlayerController(World, 0));
     if (PC)
     {
-        // 기존 과일들의 물리 속성 (속도) 계산
-        UStaticMeshComponent* MeshA = Cast<UStaticMeshComponent>(FruitA->GetComponentByClass(UStaticMeshComponent::StaticClass()));
-        UStaticMeshComponent* MeshB = Cast<UStaticMeshComponent>(FruitB->GetComponentByClass(UStaticMeshComponent::StaticClass()));
-        
-        FVector CombinedVelocity = FVector::ZeroVector;
-        if (MeshA && MeshB)
-        {
-            // 두 과일의 평균 속도 계산
-            CombinedVelocity = (MeshA->GetPhysicsLinearVelocity() + MeshB->GetPhysicsLinearVelocity()) * 0.5f;
-        }
-        
-        // 두 과일 제거
-        FruitA->Destroy();
-        FruitB->Destroy();
-        
-        // 새 과일 생성
-        AActor* NewFruit = UFruitSpawnHelper::SpawnBall(PC, MergeLocation, NextType, true);
-        if (NewFruit)
-        {
-            UStaticMeshComponent* NewMesh = Cast<UStaticMeshComponent>(NewFruit->GetComponentByClass(UStaticMeshComponent::StaticClass()));
-            if (NewMesh)
-            {
-                // 이전 과일들의 평균 속도를 적용
-                NewMesh->SetPhysicsLinearVelocity(CombinedVelocity * 0.8f); // 약간 감속
-            }
-        }
+        UFruitSpawnHelper::SpawnBall(PC, MergeLocation, NextType, true);
+        UE_LOG(LogTemp, Warning, TEXT("새 과일 생성 완료: 레벨=%d, 위치=%s"), 
+               NextType, *MergeLocation.ToString());
+    } else {
+        UE_LOG(LogTemp, Error, TEXT("PlayerController를 찾을 수 없음"));
     }
+    
+    // 기존 과일들 제거
+    FruitA->Destroy();
+    FruitB->Destroy();
 }
 
 void UFruitMergeHelper::AddScore(int32 BallType)

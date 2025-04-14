@@ -1,5 +1,6 @@
 #include "FruitBall.h"
 #include "Components/StaticMeshComponent.h"
+#include "Gameplay/Create/FruitCollisionHelper.h"
 #include "Gameplay/Create/FruitMergeHelper.h"
 
 AFruitBall::AFruitBall()
@@ -28,9 +29,14 @@ AFruitBall::AFruitBall()
     // 물리적 감쇠 설정
     MeshComponent->SetLinearDamping(0.0f);
     MeshComponent->SetAngularDamping(0.0f);
+}
 
-    // 충돌 이벤트 등록
-    MeshComponent->OnComponentHit.AddDynamic(this, &AFruitBall::OnBallHit);
+void AFruitBall::BeginPlay()
+{
+    Super::BeginPlay();
+    
+    // 충돌 핸들러 등록 추가
+    UFruitCollisionHelper::RegisterCollisionHandlers(this);
 }
 
 // 공 크기 계산 함수 구현 - 이미 언리얼 스케일로 반환
@@ -49,41 +55,19 @@ float AFruitBall::CalculateBallMass(int32 BallType)
     return DensityFactor * FMath::Pow(1.025f, BallType - 1);
 }
 
+// 이 함수는 유지 (델리게이트 타겟으로 사용)
 void AFruitBall::OnBallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-    // 이미 병합 중이면 무시
-    if (bIsBeingMerged) return;
-    
-    // 충돌한 상대방이 과일인지 확인
-    AFruitBall* OtherFruit = Cast<AFruitBall>(OtherActor);
-    if (OtherFruit && !OtherFruit->bIsBeingMerged)
-    {
-        TryMergeWithOtherFruit(OtherFruit);
-    }
-}
+    UE_LOG(LogTemp, Warning, TEXT("과일 충돌 감지: %s와 %s"), 
+           *GetName(), OtherActor ? *OtherActor->GetName() : TEXT("None"));
 
-bool AFruitBall::TryMergeWithOtherFruit(AFruitBall* OtherFruit)
-{
-    // 두 과일의 레벨이 같은지 확인
-    if (BallType == OtherFruit->BallType)
+    // 충돌한 액터가 과일인지 확인
+    AFruitBall* OtherFruit = Cast<AFruitBall>(OtherActor);
+    if (OtherFruit)
     {
-        // 병합 중 표시하여 중복 처리 방지
-        bIsBeingMerged = true;
-        OtherFruit->bIsBeingMerged = true;
-        
-        // 충돌 위치 계산 (두 과일의 중간점)
-        FVector MergeLocation = (GetActorLocation() + OtherFruit->GetActorLocation()) * 0.5f;
-        
-        // 병합 함수 호출
-        UFruitMergeHelper::MergeFruits(this, OtherFruit, MergeLocation);
-        
-        // 디버그 정보 표시
-        DisplayDebugInfo();
-        
-        return true;
+        // 충돌 처리는 CollisionHelper로 위임
+        UFruitCollisionHelper::HandleFruitCollision(this, OtherFruit, Hit);
     }
-    
-    return false;
 }
 
 void AFruitBall::DisplayDebugInfo()
