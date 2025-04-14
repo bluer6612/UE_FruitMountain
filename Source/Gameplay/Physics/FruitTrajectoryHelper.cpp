@@ -9,7 +9,7 @@
 
 ULineBatchComponent* UFruitTrajectoryHelper::CustomLineBatcher = nullptr;
 
-void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Controller, const FVector& StartLocation, const FVector& TargetLocation, bool bPersistent, int32 CustomTrajectoryID)
+void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Controller, const FVector& StartLocation, bool bPersistent, int32 CustomTrajectoryID)
 {
     if (!Controller || !Controller->GetWorld())
         return;

@@ -6,7 +6,7 @@
 
 // const 정적 변수 초기화
 const float UFruitPhysicsHelper::MinThrowAngle = 5.f;
-const float UFruitPhysicsHelper::MaxThrowAngle = 60.0f;
+const float UFruitPhysicsHelper::MaxThrowAngle = 57.5f;
 
 // 통합 물리 계산 함수 구현
 FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, float BallMass)

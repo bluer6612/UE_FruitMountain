@@ -13,7 +13,6 @@ AFruitPlayerController::AFruitPlayerController()
 {
     ThrowAngle = 45.f;
 
-    // 오빗 기본 값 설정
     CameraOrbitRadius = 110.f;
 
     CurrentBallType = 1;
@@ -56,6 +55,7 @@ void AFruitPlayerController::BeginPlay()
             FVector PlateOrigin;
             FVector PlateExtent;
             PlateActors[0]->GetActorBounds(false, PlateOrigin, PlateExtent);
+            PlateOrigin.Z += 10.0f; // 접시 표면 위로 약간 올림
             
             // 직접 중심점 설정 (오프셋 없이)
             PlateLocation = PlateOrigin;
@@ -76,7 +76,6 @@ void AFruitPlayerController::BeginPlay()
     // 미리보기 공 생성
     CurrentBallType = FMath::RandRange(1, AFruitBall::MaxBallType);
     UpdatePreviewBall();
-    UpdateTrajectory();
         
     SetInputMode(FInputModeGameAndUI());
     SetShowMouseCursor(true);
@@ -132,7 +131,6 @@ void AFruitPlayerController::ThrowFruit()
             // 새로운 미리보기 공 업데이트 (공 타입 바꾸기)
             CurrentBallType = FMath::RandRange(1, AFruitBall::MaxBallType); // 다음에 던질 공 타입 랜덤 변경
             UpdatePreviewBall();
-            UpdateTrajectory();
         },
         BallThrowDelay,
         false // 반복 실행 안 함
@@ -166,7 +164,6 @@ void AFruitPlayerController::AdjustAngle(float Value)
     
     // 각도 변경 후 미리보기 공 및 궤적 업데이트
     UpdatePreviewBall();
-    UpdateTrajectory();
 }
 
 // 카메라 회전 처리 함수 수정 - AdjustAngle과 완전히 동일한 방식 사용
@@ -189,7 +186,6 @@ void AFruitPlayerController::RotateCamera(float Value)
     // 중요: 카메라 위치 업데이트
     UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius);
     UFruitThrowHelper::UpdatePreviewBall(this);
-    UpdateTrajectory();
 }
 
 // 실제 업데이트 수행 함수 수정
@@ -224,26 +220,16 @@ void AFruitPlayerController::UpdatePreviewBall()
 void AFruitPlayerController::UpdateTrajectory()
 {
     if (!PreviewBall || !GetWorld())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("미리보기 공이 없거나 월드가 유효하지 않습니다."));
         return;
+    }
     
     // 미리보기 공의 위치와 접시 위치를 이용하여 궤적 업데이트
     FVector StartLocation = PreviewBall->GetActorLocation();
     
     // 접시 위치 가져오기 (저장된 위치 또는 액터 검색)
     FVector TargetLocation = PlateLocation;
-    
-    // 접시 위치가 초기화되지 않았다면 태그로 검색
-    if (TargetLocation.IsZero())
-    {
-        TArray<AActor*> PlateActors;
-        UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Plate"), PlateActors);
-        if (PlateActors.Num() > 0)
-        {
-            TargetLocation = PlateActors[0]->GetActorLocation();
-            TargetLocation.Z += 10.0f; // 접시 표면 위로 약간 올림
-            PlateLocation = TargetLocation; // 저장
-        }
-    }
     
     // 유효한 위치가 있는지 확인
     if (TargetLocation.IsZero())
@@ -253,5 +239,5 @@ void AFruitPlayerController::UpdateTrajectory()
     }
     
     // 궤적 업데이트 함수 호출
-    UFruitTrajectoryHelper::UpdateTrajectoryPath(this, StartLocation, TargetLocation);
+    UFruitTrajectoryHelper::UpdateTrajectoryPath(this, StartLocation);
 }

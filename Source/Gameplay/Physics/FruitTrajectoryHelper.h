@@ -12,7 +12,7 @@ class UE_FRUITMOUNTAIN_API UFruitTrajectoryHelper : public UBlueprintFunctionLib
 public:
     // 궤적 업데이트 함수
     UFUNCTION(BlueprintCallable, Category = "Trajectory")
-    static void UpdateTrajectoryPath(class AFruitPlayerController* Controller, const FVector& StartLocation, const FVector& TargetLocation, bool bPersistent = true, int32 CustomTrajectoryID = 9999);
+    static void UpdateTrajectoryPath(class AFruitPlayerController* Controller, const FVector& StartLocation, bool bPersistent = true, int32 CustomTrajectoryID = 9999);
 
     // 궤적 시각화 함수 - 공용으로 변경
     UFUNCTION(BlueprintCallable, Category = "Trajectory")

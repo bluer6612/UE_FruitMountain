@@ -157,5 +157,6 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
         }
     }
     
-    //UFruitTrajectoryHelper::UpdateTrajectoryPath(Controller, PreviewLocation, PlateCenter);
+    // 궤적 업데이트 함수 호출
+    UFruitTrajectoryHelper::UpdateTrajectoryPath(Controller, PreviewLocation);
 }
