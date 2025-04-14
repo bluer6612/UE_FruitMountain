@@ -264,14 +264,10 @@ void AFruitPlayerController::SetFruitRotation(AActor* Fruit)
         return;
     }
     
-    // 호출 스택 추적용 로그 추가
-    static int32 RotationCounter = 0;
-    RotationCounter++;
-    
     // 던지기 각도에 따른 피치 회전 계산
-    float PitchAngle = ThrowAngle - 30.0f; // 기본 피치 각도 오프셋
+    float PitchAngle = ThrowAngle - 30.0f; // 30도라는 적절한 각도값 찾아 놓았음
     
-    // 요(Yaw) 회전 - 항상 카메라를 고려
+    // 요(Yaw) 회전 - 항상 카메라가 바라보는 방향을 보도록 조정
     float YawAngle = CameraOrbitAngle - 180.0f;
     
     // 360도 범위 내로 제한
