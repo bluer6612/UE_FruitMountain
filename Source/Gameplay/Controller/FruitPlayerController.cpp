@@ -73,10 +73,10 @@ void AFruitPlayerController::BeginPlay()
         }
     });
 
-    // 미리보기 공 생성
+    // 미리보기 공 생성 시 회전까지 적용되도록 true 매개변수 추가
     CurrentBallType = FMath::RandRange(1, AFruitBall::MaxBallType);
     UpdatePreviewBall();
-        
+    
     SetInputMode(FInputModeGameAndUI());
     SetShowMouseCursor(true);
 }
@@ -166,7 +166,7 @@ void AFruitPlayerController::AdjustAngle(float Value)
     UpdatePreviewBall();
 }
 
-// 카메라 회전 처리 함수 수정 - AdjustAngle과 완전히 동일한 방식 사용
+// 카메라 회전 처리 함수 - 과일 회전 보정 수정
 void AFruitPlayerController::RotateCamera(float Value)
 {
     if (FMath::IsNearlyZero(Value))
@@ -183,18 +183,32 @@ void AFruitPlayerController::RotateCamera(float Value)
     if (CameraOrbitAngle < 0.0f)
         CameraOrbitAngle += 360.0f;
     
-    // 중요: 카메라 위치 업데이트
+    // 카메라 위치 업데이트
     UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius);
-    UFruitThrowHelper::UpdatePreviewBall(this);
+    
+    // 위치만 업데이트하고 회전은 별도로 처리
+    UFruitThrowHelper::UpdatePreviewBall(this, false);
+    
+    // 과일이 항상 카메라를 바라보도록 회전 조정
+    if (PreviewBall)
+    {
+        SetFruitRotation(PreviewBall, true); // true: 카메라 각도 고려
+    }
 }
 
-// 실제 업데이트 수행 함수 수정
+// 실제 업데이트 수행 함수
 void AFruitPlayerController::ExecutePreviewBallUpdate()
 {
     bPreviewBallUpdatePending = false;
     
-    // 공 위치 업데이트 함수 직접 호출 (UFruitThrowHelper를 통해)
-    UFruitThrowHelper::UpdatePreviewBall(this);
+    // 공 위치 업데이트 (회전은 별도 처리)
+    UFruitThrowHelper::UpdatePreviewBall(this, false);
+    
+    // 과일 각도 업데이트
+    if (PreviewBall)
+    {
+        SetFruitRotation(PreviewBall, true); // true: 카메라 각도 고려
+    }
 }
 
 // UpdatePreviewBall 함수 수정 - 무한 재귀 방지
@@ -240,4 +254,26 @@ void AFruitPlayerController::UpdateTrajectory()
     
     // 궤적 업데이트 함수 호출
     UFruitTrajectoryHelper::UpdateTrajectoryPath(this, StartLocation);
+}
+
+// 과일 회전 설정 함수 구현
+void AFruitPlayerController::SetFruitRotation(AActor* Fruit, bool bConsiderCameraAngle)
+{
+    if (!Fruit)
+        return;
+    
+    // 던지기 각도에 따른 피치 회전 계산
+    float PitchAngle = ThrowAngle - FruitPitchAngleOffset;
+    
+    // 요(Yaw) 회전 - 카메라를 고려할지 여부에 따라 다르게 설정
+    float YawAngle = bConsiderCameraAngle ? (CameraOrbitAngle - 180.0f) : 0.0f;
+    
+    // 360도 범위 내로 제한
+    YawAngle = FMath::Fmod(YawAngle, 360.0f);
+    if (YawAngle < 0.0f)
+        YawAngle += 360.0f;
+    
+    // 새로운 회전 설정
+    FRotator NewRotation = FRotator(PitchAngle, YawAngle, 0.0f);
+    Fruit->SetActorRotation(NewRotation);
 }

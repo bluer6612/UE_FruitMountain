@@ -21,7 +21,7 @@ public:
     // 현재 포물선 발사 각도 (피칭 각도)
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Throwing")
     float ThrowAngle;
-    
+
     // 각도 조정 속도 (도/초)
     UPROPERTY(EditAnywhere, Category = "Throwing")
     float AngleAdjustSpeed = 30.f;
@@ -64,6 +64,12 @@ public:
     UFUNCTION(BlueprintCallable, Category="Trajectory")
     void UpdateTrajectory();
     
+    // 과일 회전 설정 기본값 - 회전 각도 계산에 사용
+    static constexpr float FruitPitchAngleOffset = 30.0f;
+    
+    // 과일 회전 설정 함수 - 던지기 각도와 카메라 각도 기반
+    void SetFruitRotation(AActor* Fruit, bool bConsiderCameraAngle = true);
+
 private:
     // 미리보기 공 업데이트 제한을 위한 변수들
     FTimerHandle PreviewBallUpdateTimerHandle;

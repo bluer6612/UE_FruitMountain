@@ -15,6 +15,6 @@ public:
     static void ThrowFruit(class AFruitPlayerController* Controller);
     
     // 미리보기 공 업데이트 함수
-    UFUNCTION(BlueprintCallable, Category="Fruit Throw")
-    static void UpdatePreviewBall(class AFruitPlayerController* Controller);
+    UFUNCTION(BlueprintCallable, Category="Fruit Throw")// 기존 함수 선언 수정
+    static void UpdatePreviewBall(class AFruitPlayerController* Controller, bool bUpdateRotation = true);
 };

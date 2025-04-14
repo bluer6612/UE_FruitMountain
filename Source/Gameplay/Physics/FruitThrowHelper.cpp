@@ -100,7 +100,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
 }
 
 // UpdatePreviewBall 함수 수정 - 물리 헬퍼 사용
-void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
+void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller, bool bUpdateRotation)
 {
     if (!Controller)
     {
@@ -115,7 +115,7 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
         return;
     }
 
-    // 공통 함수를 사용하여 위치 계산
+    // 공 위치 계산
     FVector PreviewLocation = UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(Controller->GetWorld(), Controller->CameraOrbitAngle);
     
     if (PreviewLocation == FVector::ZeroVector)
@@ -124,8 +124,20 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
         return;
     }
     
-    // 미리보기 공이 없는 경우에만 새로 생성
-    if (!Controller->PreviewBall)
+    // 미리보기 공이 있으면 위치 업데이트
+    if (Controller->PreviewBall)
+    {
+        // 위치 업데이트
+        Controller->PreviewBall->SetActorLocation(PreviewLocation);
+        
+        // 회전 업데이트 (옵션에 따라)
+        if (bUpdateRotation)
+        {
+            // 던지기 각도에 따른 회전 적용
+            Controller->SetFruitRotation(Controller->PreviewBall, false); // false: 카메라 각도 무시
+        }
+    }
+    else
     {
         // 기존 미리보기 공 제거 (혹시 무효한 참조가 있을 경우를 대비)
         if (Controller->PreviewBall)
@@ -136,27 +148,15 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller)
         
         // 새 미리보기 공 생성
         Controller->PreviewBall = UFruitSpawnHelper::SpawnBall(Controller, PreviewLocation, Controller->CurrentBallType, false);
-    }
-    else
-    {
-        // 기존 공의 위치만 업데이트
-        Controller->PreviewBall->SetActorLocation(PreviewLocation);
         
-        // 크기도 업데이트 - 공통 함수 사용
-        float BallSize = UFruitSpawnHelper::CalculateBallSize(Controller->CurrentBallType);
-        Controller->PreviewBall->SetActorScale3D(FVector(BallSize));
-        
-        // 질량 업데이트 - 공통 함수 사용
-        UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(
-            Controller->PreviewBall->GetComponentByClass(UStaticMeshComponent::StaticClass()));
-            
-        if (MeshComp)
+        // 회전 설정 (신규 생성 시)
+        if (bUpdateRotation && Controller->PreviewBall)
         {
-            float BallMass = UFruitSpawnHelper::CalculateBallMass(Controller->CurrentBallType);
-            MeshComp->SetMassOverrideInKg(NAME_None, BallMass);
+            Controller->SetFruitRotation(Controller->PreviewBall, false); // false: 카메라 각도 무시
         }
     }
     
     // 궤적 업데이트 함수 호출
+    FVector PlateCenter = Controller->PlateLocation;
     UFruitTrajectoryHelper::UpdateTrajectoryPath(Controller, PreviewLocation);
 }

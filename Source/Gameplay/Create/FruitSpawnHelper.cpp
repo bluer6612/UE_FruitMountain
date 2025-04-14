@@ -58,6 +58,9 @@ AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, const F
         }
             
         FruitBall->DisplayDebugInfo();
+
+        // 초기 생성된 공의 회전 즉시 설정 (타이머 대기 없이)
+        Controller->SetFruitRotation(SpawnedBall, true); // true: 카메라 각도 고려
         
         // 디버그 로그로 크기 확인
         UE_LOG(LogTemp, Verbose, TEXT("공 생성: 타입=%d, 크기(스케일)=%f, 실제 크기(cm)=%f"),

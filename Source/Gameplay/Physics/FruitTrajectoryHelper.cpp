@@ -53,13 +53,13 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
         LastStartLoc = StableStartLocation;
     }
     
-    // 스폰 위치와 카메라 각도 로깅
+    // 스폰 위치와 카메라 각도 로깅 - 주석 처리
     float HorizontalDistance = FVector(PlateCenter - StableStartLocation).Size2D();
 
-    UE_LOG(LogTemp, Warning, TEXT("궤적 업데이트: 카메라각도=%.1f°, 스폰위치=%s, 거리=%.1f"),
-        Controller->CameraOrbitAngle, 
-        *StableStartLocation.ToString(), 
-        HorizontalDistance);
+    // UE_LOG(LogTemp, Warning, TEXT("궤적 업데이트: 카메라각도=%.1f°, 스폰위치=%s, 거리=%.1f"),
+    //     Controller->CameraOrbitAngle, 
+    //     *StableStartLocation.ToString(), 
+    //     HorizontalDistance);
     
     // 5. 물리 기반 궤적 계산 (bezier 궤적은 사용하지 않음)
     TArray<FVector> TrajectoryPoints = CalculateTrajectoryPoints(World, StableStartLocation, PlateCenter, StableAngle, BallMass);
