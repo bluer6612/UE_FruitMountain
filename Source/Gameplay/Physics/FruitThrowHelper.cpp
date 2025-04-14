@@ -124,18 +124,11 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller, bo
         return;
     }
     
-    // 미리보기 공이 있으면 위치 업데이트
+    // 미리보기 공이 있으면 위치만 업데이트
     if (Controller->PreviewBall)
     {
         // 위치 업데이트
         Controller->PreviewBall->SetActorLocation(PreviewLocation);
-        
-        // 회전 업데이트 (옵션에 따라)
-        if (bUpdateRotation)
-        {
-            // 던지기 각도에 따른 회전 적용
-            Controller->SetFruitRotation(Controller->PreviewBall, false); // false: 카메라 각도 무시
-        }
     }
     else
     {
@@ -148,12 +141,6 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller, bo
         
         // 새 미리보기 공 생성
         Controller->PreviewBall = UFruitSpawnHelper::SpawnBall(Controller, PreviewLocation, Controller->CurrentBallType, false);
-        
-        // 회전 설정 (신규 생성 시)
-        if (bUpdateRotation && Controller->PreviewBall)
-        {
-            Controller->SetFruitRotation(Controller->PreviewBall, false); // false: 카메라 각도 무시
-        }
     }
     
     // 궤적 업데이트 함수 호출

@@ -109,8 +109,8 @@ void UFruitPhysicsInitializer::CalculateDirectionAndDistance(const FPhysicsInitD
     Result.DirectionToTarget = DirectionToPlate;
     
     // 디버그 로깅 추가
-    UE_LOG(LogTemp, Verbose, TEXT("방향 계산: 거리=%.1f, 높이차=%.1f, 방향=%s"),
-           Result.HorizontalDistance, Result.HeightDifference, *Result.DirectionToTarget.ToString());
+    //UE_LOG(LogTemp, Verbose, TEXT("방향 계산: 거리=%.1f, 높이차=%.1f, 방향=%s"),
+    //       Result.HorizontalDistance, Result.HeightDifference, *Result.DirectionToTarget.ToString());
 }
 
 // 조정된 타겟 위치 계산 함수
@@ -145,8 +145,8 @@ void UFruitPhysicsInitializer::CalculateAdjustedTarget(const FPhysicsInitData& I
     Result.AdjustedTarget.Z = Result.PlateTopHeight;
     
     // 로깅 추가
-    UE_LOG(LogTemp, Warning, TEXT("타겟 조정: 각도=%.1f°, 거리비율=%.3f (각도계수=%.2f)"),
-           Result.UseAngle, Result.DistanceRatio, AngleFactor);
+    //UE_LOG(LogTemp, Warning, TEXT("타겟 조정: 각도=%.1f°, 거리비율=%.3f (각도계수=%.2f)"),
+    //       Result.UseAngle, Result.DistanceRatio, AngleFactor);
 }
 
 // 발사 방향 계산 함수
@@ -174,8 +174,8 @@ void UFruitPhysicsInitializer::CalculateLaunchDirection(const FPhysicsInitData& 
     ).GetSafeNormal();
     
     // 디버그 로깅
-    UE_LOG(LogTemp, Warning, TEXT("발사 각도: %.1f°, 높이계수: %.2f, 수직성분: %.2f, 수평성분: %.2f"),
-        Result.UseAngle, Result.HeightFactor, Result.VerticalMultiplier, Result.HorizontalMultiplier);
+    //UE_LOG(LogTemp, Warning, TEXT("발사 각도: %.1f°, 높이계수: %.2f, 수직성분: %.2f, 수평성분: %.2f"),
+    //    Result.UseAngle, Result.HeightFactor, Result.VerticalMultiplier, Result.HorizontalMultiplier);
 }
 
 void UFruitPhysicsInitializer::UpdateCachedResult(const FPhysicsInitData& InitData, const FThrowPhysicsResult& Result, float CurrentTime)

@@ -42,14 +42,14 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     Result.InitialSpeed = BaseSpeed * MassCompensationFactor;
     
     // 7-6. 디버그 로깅 추가
-    UE_LOG(LogTemp, Log, TEXT("질량 보정 계수: %.2f (질량: %.1f)"), MassCompensationFactor, BallMass);
+    // UE_LOG(LogTemp, Log, TEXT("질량 보정 계수: %.2f (질량: %.1f)"), MassCompensationFactor, BallMass);
     
     // 7-7. 물리 시뮬레이션 안정성을 위한 범위 제한
     Result.InitialSpeed = FMath::Clamp(Result.InitialSpeed, 200.0f, 350.0f);
     
     // 7-8. 디버그 로깅
-    UE_LOG(LogTemp, Warning, TEXT("초기 속도: %.1f (각도계수: %.2f, 거리계수: %.2f)"),
-        Result.InitialSpeed, 1.0f, 1.0f);
+    // UE_LOG(LogTemp, Warning, TEXT("초기 속도: %.1f (각도계수: %.2f, 거리계수: %.2f)"),
+    //     Result.InitialSpeed, 1.0f, 1.0f);
     
     // 7-9. 속도 범위 제한
     Result.InitialSpeed = FMath::Clamp(Result.InitialSpeed, 150.0f, 350.0f);
@@ -95,8 +95,8 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     Result.PeakHeight = BaseResult.HorizontalDistance * PoweredHeightRatio;
 
     // 13-4. 디버그 로깅
-    UE_LOG(LogTemp, Warning, TEXT("궤적 최고점: %.1f (높이비율: %.2f, 거리: %.1f)"),
-        Result.PeakHeight, PoweredHeightRatio, BaseResult.HorizontalDistance);
+    // UE_LOG(LogTemp, Warning, TEXT("궤적 최고점: %.1f (높이비율: %.2f, 거리: %.1f)"),
+    //     Result.PeakHeight, PoweredHeightRatio, BaseResult.HorizontalDistance);
     
     // 14. 물리 기반 발사 속도 참조값 계산 안함
 
@@ -139,8 +139,8 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
         float ZDistance = FMath::Abs(EndPoint.Z - BaseResult.PlateTopHeight);
         
         // 로깅 및 정확도 개선
-        UE_LOG(LogTemp, Warning, TEXT("검증 결과: XY거리=%.1f, Z거리=%.1f (발사속도=%.1f)"), 
-               XYDistance, ZDistance, Result.InitialSpeed);
+        // UE_LOG(LogTemp, Warning, TEXT("검증 결과: XY거리=%.1f, Z거리=%.1f (발사속도=%.1f)"), 
+        //        XYDistance, ZDistance, Result.InitialSpeed);
         
         // 목표 지점 보정 - 연속적인 자연스러운 보정 적용
         // 임계값 없이 오차에 비례하여 부드럽게 보정
@@ -189,9 +189,9 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
             
             // 조정이 의미있는 수준일 때만 로그 출력
             if (HorizontalBoost > 1.01f || SpeedBoost > 1.01f || VerticalAdjust < 0.99f) {
-                UE_LOG(LogTemp, Warning, TEXT("궤적 자연스러운 보정: 수평=%.1f%%, 수직=%.1f%%, 속도=%.1f%% (거리오차: %.1f, 각도: %.1f)"),
-                       HorizontalBoost * 100.0f, VerticalAdjust * 100.0f, SpeedBoost * 100.0f, 
-                       XYDistance, BaseResult.UseAngle);
+                // UE_LOG(LogTemp, Warning, TEXT("궤적 자연스러운 보정: 수평=%.1f%%, 수직=%.1f%%, 속도=%.1f%% (거리오차: %.1f, 각도: %.1f)"),
+                //        HorizontalBoost * 100.0f, VerticalAdjust * 100.0f, SpeedBoost * 100.0f, 
+                //        XYDistance, BaseResult.UseAngle);
             }
         }
     }
@@ -204,8 +204,8 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     UFruitPhysicsInitializer::UpdateCachedResult(InitData, Result, CurrentTime);
     
     // 16-3. 최종 로깅
-    UE_LOG(LogTemp, Log, TEXT("물리 계산: 각도=%.1f°, 속도=%.1f, 힘=%.1f, 질량=%.1f"),
-        BaseResult.UseAngle, Result.InitialSpeed, Result.AdjustedForce, BallMass);
+    // UE_LOG(LogTemp, Log, TEXT("물리 계산: 각도=%.1f°, 속도=%.1f, 힘=%.1f, 질량=%.1f"),
+    //    BaseResult.UseAngle, Result.InitialSpeed, Result.AdjustedForce, BallMass);
     
     // 16-4. 결과 반환
     return Result;

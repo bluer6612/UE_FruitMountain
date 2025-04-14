@@ -192,7 +192,7 @@ void AFruitPlayerController::RotateCamera(float Value)
     // 과일이 항상 카메라를 바라보도록 회전 조정
     if (PreviewBall)
     {
-        SetFruitRotation(PreviewBall, true); // true: 카메라 각도 고려
+        SetFruitRotation(PreviewBall);
     }
 }
 
@@ -207,7 +207,7 @@ void AFruitPlayerController::ExecutePreviewBallUpdate()
     // 과일 각도 업데이트
     if (PreviewBall)
     {
-        SetFruitRotation(PreviewBall, true); // true: 카메라 각도 고려
+        SetFruitRotation(PreviewBall);
     }
 }
 
@@ -256,17 +256,23 @@ void AFruitPlayerController::UpdateTrajectory()
     UFruitTrajectoryHelper::UpdateTrajectoryPath(this, StartLocation);
 }
 
-// 과일 회전 설정 함수 구현
-void AFruitPlayerController::SetFruitRotation(AActor* Fruit, bool bConsiderCameraAngle)
+// 과일 회전 설정 함수 구현 - 항상 카메라 각도 고려
+void AFruitPlayerController::SetFruitRotation(AActor* Fruit)
 {
     if (!Fruit)
+    {
         return;
+    }
+    
+    // 호출 스택 추적용 로그 추가
+    static int32 RotationCounter = 0;
+    RotationCounter++;
     
     // 던지기 각도에 따른 피치 회전 계산
-    float PitchAngle = ThrowAngle - FruitPitchAngleOffset;
+    float PitchAngle = ThrowAngle - 30.0f; // 기본 피치 각도 오프셋
     
-    // 요(Yaw) 회전 - 카메라를 고려할지 여부에 따라 다르게 설정
-    float YawAngle = bConsiderCameraAngle ? (CameraOrbitAngle - 180.0f) : 0.0f;
+    // 요(Yaw) 회전 - 항상 카메라를 고려
+    float YawAngle = CameraOrbitAngle - 180.0f;
     
     // 360도 범위 내로 제한
     YawAngle = FMath::Fmod(YawAngle, 360.0f);
