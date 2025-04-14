@@ -1,4 +1,5 @@
 #include "FruitSpawnHelper.h"
+#include "FruitCollisionHelper.h"
 #include "Gameplay/Controller/FruitPlayerController.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
@@ -50,58 +51,44 @@ AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, const F
         // 크기 설정 - 모든 축에 동일한 스케일 적용
         SpawnedBall->SetActorScale3D(FVector(BallSize));
         
-        // BallType 설정
+        // BallType 설정 및 미리보기 플래그 설정
         AFruitBall* FruitBall = Cast<AFruitBall>(SpawnedBall);
         if (FruitBall)
         {
             FruitBall->BallType = BallType;
+            
+            // 중요: 미리보기 여부 명시적 설정 (물리가 활성화되지 않으면 미리보기 공)
+            FruitBall->bIsPreviewBall = !bEnablePhysics;
+            
+            // 로그 추가
+            UE_LOG(LogTemp, Warning, TEXT("과일 생성: %s - 타입=%d, 미리보기=%s"), 
+                *SpawnedBall->GetName(), BallType, 
+                FruitBall->bIsPreviewBall ? TEXT("O") : TEXT("X"));
+                
+            // 여기서 직접 충돌 핸들러 등록 (미리보기 공이 아닐 때만)
+            if (!FruitBall->bIsPreviewBall)
+            {
+                UFruitCollisionHelper::RegisterCollisionHandlers(FruitBall);
+            }
+            
+            // 질량 설정 - 실제 과일일 경우만
+            if (!FruitBall->bIsPreviewBall)
+            {
+                UStaticMeshComponent* MeshComp = FruitBall->GetMeshComponent();
+                if (MeshComp)
+                {
+                    float Mass = AFruitBall::CalculateBallMass(BallType);
+                    MeshComp->SetMassOverrideInKg(NAME_None, Mass);
+                }
+            }
         }
-            
-        FruitBall->DisplayDebugInfo();
-
-        // 초기 생성된 공의 회전 즉시 설정
-        Controller->SetFruitRotation(SpawnedBall);
-
-        // 디버그 로그로 크기 확인
-        //UE_LOG(LogTemp, Verbose, TEXT("공 생성: 타입=%d, 크기(스케일)=%f, 실제 크기(cm)=%f"),
-        //    BallType, BallSize, BallSize * 100.0f);
         
-        // StaticMeshComponent 찾기
-        UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(
-            SpawnedBall->GetComponentByClass(UStaticMeshComponent::StaticClass()));
-            
-        if (MeshComp)
+        // 물리 활성화 설정
+        UPrimitiveComponent* RootPrimitive = Cast<UPrimitiveComponent>(SpawnedBall->GetRootComponent());
+        if (RootPrimitive)
         {
-            // 중요: 물리 시뮬레이션 활성화 후 질량 설정
-            if (bEnablePhysics)
-            {
-                // 물리 시뮬레이션 활성화
-                MeshComp->SetSimulatePhysics(true);
-                MeshComp->SetEnableGravity(true);
-                MeshComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-                MeshComp->SetCollisionProfileName(TEXT("PhysicsActor"));
-                
-                // 물리 시뮬레이션이 활성화된 후에만 질량 설정 가능
-                MeshComp->SetMassOverrideInKg(NAME_None, BallMass);
-                
-                // UE_LOG(LogTemp, Warning, TEXT("던지는 공 생성: 타입=%d, 크기=%f, 질량=%f, 시뮬레이션=켜짐"),
-                //     BallType, BallSize, BallMass);
-            }
-            else
-            {
-                // 미리보기용 공 설정 (물리 비활성화)
-                MeshComp->SetSimulatePhysics(false);
-                MeshComp->SetEnableGravity(false);
-                MeshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-                
-                // 물리 시뮬레이션이 꺼져 있으면 질량을 설정할 수 없음
-                // 대신 계산된 질량 값을 태그나 게임 데이터로 저장
-                FString MassTag = FString::Printf(TEXT("BallMass:%f"), BallMass);
-                SpawnedBall->Tags.Add(FName(*MassTag));
-                
-                // UE_LOG(LogTemp, Warning, TEXT("미리보기 공 생성: 타입=%d, 크기=%f, 계산된 질량=%f, 시뮬레이션=꺼짐"),
-                //     BallType, BallSize, BallMass);
-            }
+            RootPrimitive->SetSimulatePhysics(bEnablePhysics);
+            RootPrimitive->SetEnableGravity(bEnablePhysics);
         }
     }
     
@@ -195,7 +182,7 @@ FVector UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(UWorld* World, float 
                 
             FVector FinalPosition = EdgePoint;
             
-            // 계산된 위치 저장
+            // 계산된 위치 저장 (카메라 회전 테스트용으로 지워도 됨)
             LastSpawnPos = FinalPosition;
             LastAngle = CameraAngle;
             

@@ -66,6 +66,17 @@ public:
     // 핸들러 등록 상태 설정
     void SetCollisionHandlerRegistered(bool bRegistered) { bCollisionHandlerRegistered = bRegistered; }
 
+    // 미리보기 공 여부 플래그
+    UPROPERTY()
+    bool bIsPreviewBall = false;
+    
+    // 접근자/설정자 추가
+    UFUNCTION()
+    void SetIsPreviewBall(bool bPreview) { bIsPreviewBall = bPreview; }
+    
+    UFUNCTION()
+    bool IsPreviewBall() const { return bIsPreviewBall; }
+
     // 병합 중인지 여부
     UPROPERTY()
     bool bIsBeingMerged;

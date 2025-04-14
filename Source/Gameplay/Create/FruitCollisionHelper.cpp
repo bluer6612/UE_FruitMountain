@@ -11,22 +11,15 @@ void UFruitCollisionHelper::RegisterCollisionHandlers(AFruitBall* Fruit)
         return;
     }
 
-    // 이미 등록되었는지 확인
-    if (Fruit->IsCollisionHandlerRegistered())
+    // 미리보기 과일 체크 (추가 안전장치)
+    if (Fruit->bIsPreviewBall)
     {
-        UE_LOG(LogTemp, Log, TEXT("과일 충돌 핸들러 이미 등록됨: %s"), *Fruit->GetName());
+        UE_LOG(LogTemp, Warning, TEXT("미리보기 과일은 핸들러 등록 안 함: %s"), *Fruit->GetName());
         return;
     }
 
-    // 혹시 모를 기존 바인딩 제거 (안전 조치)
-    Fruit->GetMeshComponent()->OnComponentHit.RemoveDynamic(Fruit, &AFruitBall::OnBallHit);
-    
     // 충돌 이벤트에 연결
     Fruit->GetMeshComponent()->OnComponentHit.AddDynamic(Fruit, &AFruitBall::OnBallHit);
-    
-    // 등록 상태 설정
-    Fruit->SetCollisionHandlerRegistered(true);
-    
     UE_LOG(LogTemp, Log, TEXT("과일 충돌 핸들러 등록 완료: %s"), *Fruit->GetName());
 }
 
