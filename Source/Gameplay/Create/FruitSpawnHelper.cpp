@@ -56,14 +56,13 @@ AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, const F
         if (FruitBall)
         {
             FruitBall->BallType = BallType;
+
+            // 디버그 로그로 확인
+            UE_LOG(LogTemp, Verbose, TEXT("공 생성: 타입=%d, 크기(스케일)=%f, 실제 크기(cm)=%f"),
+                BallType, BallSize, BallSize * 100.0f);
             
             // 중요: 미리보기 여부 명시적 설정 (물리가 활성화되지 않으면 미리보기 공)
             FruitBall->bIsPreviewBall = !bEnablePhysics;
-            
-            // 로그 추가
-            UE_LOG(LogTemp, Warning, TEXT("과일 생성: %s - 타입=%d, 미리보기=%s"), 
-                *SpawnedBall->GetName(), BallType, 
-                FruitBall->bIsPreviewBall ? TEXT("O") : TEXT("X"));
                 
             // 여기서 직접 충돌 핸들러 등록 (미리보기 공이 아닐 때만)
             if (!FruitBall->bIsPreviewBall)
@@ -177,8 +176,8 @@ FVector UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(UWorld* World, float 
             EdgePoint.Z = TotalBounds.Max.Z + BallTypeOffset;
             
             // 디버그 로그
-            UE_LOG(LogTemp, Verbose, TEXT("공 스폰 위치 계산: 접시 중심=(%.1f, %.1f, %.1f), 순수 접시 반경=%.1f, 최종 높이=%.1f"),
-                PlateCenter.X, PlateCenter.Y, PlateCenter.Z, PlateRadius, EdgePoint.Z);
+            //UE_LOG(LogTemp, Verbose, TEXT("공 스폰 위치 계산: 접시 중심=(%.1f, %.1f, %.1f), 순수 접시 반경=%.1f, 최종 높이=%.1f"),
+            //    PlateCenter.X, PlateCenter.Y, PlateCenter.Z, PlateRadius, EdgePoint.Z);
                 
             FVector FinalPosition = EdgePoint;
             

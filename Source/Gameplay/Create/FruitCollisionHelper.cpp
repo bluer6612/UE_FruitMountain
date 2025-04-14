@@ -14,13 +14,12 @@ void UFruitCollisionHelper::RegisterCollisionHandlers(AFruitBall* Fruit)
     // 미리보기 과일 체크 (추가 안전장치)
     if (Fruit->bIsPreviewBall)
     {
-        UE_LOG(LogTemp, Warning, TEXT("미리보기 과일은 핸들러 등록 안 함: %s"), *Fruit->GetName());
         return;
     }
 
     // 충돌 이벤트에 연결
     Fruit->GetMeshComponent()->OnComponentHit.AddDynamic(Fruit, &AFruitBall::OnBallHit);
-    UE_LOG(LogTemp, Log, TEXT("과일 충돌 핸들러 등록 완료: %s"), *Fruit->GetName());
+    //UE_LOG(LogTemp, Log, TEXT("과일 충돌 핸들러 등록 완료: %s"), *Fruit->GetName());
 }
 
 void UFruitCollisionHelper::HandleFruitCollision(AFruitBall* FruitA, AFruitBall* FruitB, const FHitResult& Hit)
