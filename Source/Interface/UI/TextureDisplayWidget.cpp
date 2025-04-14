@@ -65,9 +65,11 @@ void UTextureDisplayWidget::NativeDestruct()
 void UTextureDisplayWidget::NativeConstruct()
 {
     Super::NativeConstruct();
+
+    static bool bAlreadyConstructed = false;
     
     // 루트 캔버스 가져오기 (null 체크 추가)
-    if (WidgetTree)
+    if (WidgetTree and bAlreadyConstructed)
     {
         Canvas = Cast<UCanvasPanel>(GetRootWidget());
         if (!Canvas)
@@ -86,7 +88,7 @@ void UTextureDisplayWidget::NativeConstruct()
     }
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("TextureDisplayWidget: WidgetTree가 null!"));
+        bAlreadyConstructed = true;
     }
     
     // 인스턴스가 유효하면 정적 참조 업데이트
