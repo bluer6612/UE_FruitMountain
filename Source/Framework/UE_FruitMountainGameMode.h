@@ -19,7 +19,7 @@ public:
     virtual void BeginPlay() override;
     virtual void StartPlay() override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
+    
     // 접시 클래스 지정 변수
     UPROPERTY(EditDefaultsOnly, Category = "Game")
     TSubclassOf<AActor> PlateClass;

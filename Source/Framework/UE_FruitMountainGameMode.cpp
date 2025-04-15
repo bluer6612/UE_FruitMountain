@@ -3,14 +3,18 @@
 #include "Gameplay/Controller/FruitPlayerController.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
-#include "UObject/ConstructorHelpers.h"
 #include "Actors/PlateActor.h"
 #include "Actors/PlayerPawn.h"
 #include "Actors/FruitBall.h"
 #include "Interface/HUD/FruitHUD.h"
 #include "Interface/UI/TextureDisplayWidget.h"
-#include "UE_FruitMountainGameInstance.h"
-#include "Components/WidgetComponent.h"
+#include "Gameplay/Physics/FruitTrajectoryHelper.h"
+#include "Gameplay/Fruit/FruitCollisionHelper.h"
+#include "UObject/GarbageCollection.h"
+
+#if WITH_EDITOR
+#include "Editor.h"
+#endif
 
 AUE_FruitMountainGameMode::AUE_FruitMountainGameMode()
 {
@@ -40,8 +44,10 @@ void AUE_FruitMountainGameMode::BeginPlay()
 
 void AUE_FruitMountainGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+    // 종료 시점에도 한번 더 정리
+    UFruitTrajectoryHelper::ResetTrajectorySystem();
+    
     Super::EndPlay(EndPlayReason);
-    UE_LOG(LogTemp, Error, TEXT("==== 게임 모드 EndPlay ===="));
 }
 
 void AUE_FruitMountainGameMode::StartPlay()

@@ -96,9 +96,6 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVec
     // 항상 먼저 Flush 실행 - Shipping 빌드에서 중요
     CustomLineBatcher->Flush();
     
-    // Sleep 제거 - 프레임 동기화 문제 해결
-    // FPlatformProcess::Sleep(0.001f); 
-    
     FColor PathColor = FColor(135, 206, 235, 255);
     float LineThickness = 0.8f;
     
@@ -195,4 +192,23 @@ FVector UFruitTrajectoryHelper::RoundVector(const FVector& InVector, int32 Decim
         FMath::RoundToFloat(InVector.Y * Multiplier) / Multiplier,
         FMath::RoundToFloat(InVector.Z * Multiplier) / Multiplier
     );
+}
+
+// 궤적 시스템 초기화 함수 추가
+void UFruitTrajectoryHelper::ResetTrajectorySystem()
+{
+    // 라인 배처 사용중인 액터 정리
+    if (CustomLineBatcher && CustomLineBatcher->IsValidLowLevel())
+    {
+        if (AActor* OwnerActor = CustomLineBatcher->GetOwner())
+        {
+            UE_LOG(LogTemp, Warning, TEXT("궤적 라인 배처 소유 액터 제거: %s"), *OwnerActor->GetName());
+            OwnerActor->Destroy();
+        }
+        
+        // 중요: 컴포넌트 참조를 null로 설정
+        CustomLineBatcher = nullptr;
+    }
+    
+    UE_LOG(LogTemp, Warning, TEXT("궤적 시각화 시스템 초기화 완료"));
 }
