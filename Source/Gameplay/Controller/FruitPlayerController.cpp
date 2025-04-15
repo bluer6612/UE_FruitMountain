@@ -34,114 +34,46 @@ void AFruitPlayerController::BeginPlay()
         UE_LOG(LogTemp, Warning, TEXT("GameMode의 FruitBallClass가 비어 있습니다."));
     }
 
+    // 타이머를 사용하여 약간의 지연 후 접시 액터 검색 (타이밍 문제 해결)
+    GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
+    {
+        // 접시 액터를 검색하여 회전 기준 위치로 사용
+        TArray<AActor*> PlateActors;
+        UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Plate"), PlateActors);
+        if (PlateActors.Num() > 0)
+        {
+            // 접시 경계 구하기 (중심점 정확히 계산)
+            FVector PlateOrigin;
+            FVector PlateExtent;
+            PlateActors[0]->GetActorBounds(false, PlateOrigin, PlateExtent);
+            PlateOrigin.Z += 10.0f; // 접시 표면 위로 약간 올림
+            
+            // 직접 중심점 설정 (오프셋 없이)
+            PlateLocation = PlateOrigin;
+            
+            UE_LOG(LogTemp, Warning, TEXT("접시 액터를 찾았습니다: %s"), *PlateLocation.ToString());
+            
+            // 카메라 위치 업데이트
+            UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius);
+        }
+        else
+        {
+            PlateLocation = FVector::ZeroVector;
+            UE_LOG(LogTemp, Warning, TEXT("접시 액터를 찾을 수 없습니다."));
+            return;
+        }
+    });
+
+    // 미리보기 공 생성 시 회전까지 적용되도록 true 매개변수 추가
+    CurrentBallType = FMath::RandRange(1, AFruitBall::MaxBallType);
+    UpdatePreviewBallWithDebounce();
+
     // 입력 매핑 설정
     UFruitInputMappingManager::ConfigureKeyMappings();
     SetInputMode(FInputModeGameAndUI());
     SetShowMouseCursor(true);
-
-    // 레벨 로딩이 완전히 완료된 후 호출
-    FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &AFruitPlayerController::OnPostLevelLoadComplete);
-
-    // 또는 안전하게 지연시키기
-    GetWorld()->GetTimerManager().SetTimer(
-        FirstPreviewBallTimerHandle,
-        this,
-        &AFruitPlayerController::OnPostLevelLoadComplete,
-        0.5f, // 충분한 지연 시간
-        false
-    );
-
+    
     UE_LOG(LogTemp, Log, TEXT("AFruitPlayerController::BeginPlay 호출 완료됨"));
-}
-
-// 레벨 로딩 완료 후 초기화 함수
-void AFruitPlayerController::OnPostLevelLoadComplete()
-{
-    UE_LOG(LogTemp, Warning, TEXT("레벨 로딩 완료 - 안전한 객체 생성 시작"));
-
-    // 접시 찾기 등 초기화 작업
-    TArray<AActor*> PlateActors;
-    UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Plate"), PlateActors);
-    if (PlateActors.Num() > 0)
-    {
-        // 접시 경계 구하기 (중심점 정확히 계산)
-        FVector PlateOrigin;
-        FVector PlateExtent;
-        PlateActors[0]->GetActorBounds(false, PlateOrigin, PlateExtent);
-        PlateOrigin.Z += 10.0f; // 접시 표면 위로 약간 올림
-
-        // 직접 중심점 설정 (오프셋 없이)
-        PlateLocation = PlateOrigin;
-
-        UE_LOG(LogTemp, Warning, TEXT("접시 액터를 찾았습니다: %s"), *PlateLocation.ToString());
-
-        // 카메라 설정
-        UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius);
-
-        // 이제 안전하게 첫번째 미리보기 과일 생성
-        CurrentBallType = FMath::RandRange(1, AFruitBall::MaxBallType);
-
-        // 특수 안전 모드로 첫 미리보기 공 생성 (직접 로직 구현)
-        SafeCreateFirstPreviewBall();
-    }
-    else
-    {
-        PlateLocation = FVector::ZeroVector;
-        UE_LOG(LogTemp, Warning, TEXT("접시 액터를 찾을 수 없습니다."));
-        return;
-    }
-}
-
-// 첫 번째 미리보기 공 안전하게 생성
-void AFruitPlayerController::SafeCreateFirstPreviewBall()
-{
-    UE_LOG(LogTemp, Warning, TEXT("첫번째 미리보기 과일 안전 생성 시도"));
-
-    // 이전 PreviewBall이 있으면 완전히 제거
-    if (PreviewBall)
-    {
-        if (IsValid(PreviewBall))
-        {
-            PreviewBall->Destroy();
-        }
-        PreviewBall = nullptr;
-    }
-
-    // 엔진 GC 실행 유도 (메모리 정리)
-    CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS);
-
-    // 약간의 추가 지연 후 실제 생성 (핵심!)
-    FTimerHandle SafeSpawnTimerHandle;
-    GetWorld()->GetTimerManager().SetTimer(
-        SafeSpawnTimerHandle,
-        [this]()
-        {
-            if (IsValid(this) && IsValid(GetWorld()))
-            {
-                // 수동으로 안전하게 공 스폰
-                UE_LOG(LogTemp, Warning, TEXT("안전 모드로 첫번째 미리보기 과일 생성"));
-
-                // 기본 값으로 공 생성 요청
-                bPreviewBallUpdatePending = false; // 플래그 초기화 중요
-                UFruitThrowHelper::UpdatePreviewBall(this, false);
-
-                // 공 생성 확인 후 회전 적용
-                if (PreviewBall && IsValid(PreviewBall))
-                {
-                    UE_LOG(LogTemp, Warning, TEXT("첫번째 미리보기 과일 생성 성공"));
-                    SetFruitRotation(PreviewBall);
-
-                    // 궤적 업데이트
-                    if (PreviewBall->GetActorLocation() != FVector::ZeroVector)
-                    {
-                        UFruitTrajectoryHelper::UpdateTrajectoryPath(this, PreviewBall->GetActorLocation());
-                    }
-                }
-            }
-        },
-        0.2f, // 추가 지연
-        false
-    );
 }
 
 void AFruitPlayerController::SetupInputComponent()
