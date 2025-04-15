@@ -9,15 +9,11 @@
 #include "Framework/UE_FruitMountainGameMode.h"
 #include "Components/StaticMeshComponent.h"
 
-bool UFruitMergeHelper::TryMergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& CollisionPoint)
+void UFruitMergeHelper::TryMergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& CollisionPoint)
 {
-    // 로그 추가: 함수 호출 확인
-    UE_LOG(LogTemp, Warning, TEXT("TryMergeFruits 호출: FruitA=%p, FruitB=%p"),
-           FruitA, FruitB);
-           
     if (!FruitA || !FruitB) {
         UE_LOG(LogTemp, Error, TEXT("TryMergeFruits: 과일 참조가 유효하지 않음"));
-        return false;
+        return;
     }
     
     // 두 과일의 타입 가져오기
@@ -26,14 +22,13 @@ bool UFruitMergeHelper::TryMergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, c
     
     // 타입이 서로 다르면 병합하지 않음
     if (TypeA != TypeB) {
-        UE_LOG(LogTemp, Warning, TEXT("과일 타입이 다름: 병합 불가"));
-        return false; 
+        return; 
     }
     
     // 이미 병합 중인 과일이면 무시
     if (FruitA->IsMerging() || FruitB->IsMerging()) {
         UE_LOG(LogTemp, Warning, TEXT("이미 병합중인 과일이 있음"));
-        return false;
+        return;
     }
     
     // 두 과일 모두 병합 상태로 설정
@@ -42,15 +37,10 @@ bool UFruitMergeHelper::TryMergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, c
     
     // 병합 처리 수행
     MergeFruits(FruitA, FruitB, CollisionPoint);
-    return true;
 }
 
 void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& MergeLocation)
 {
-    // 로그 추가: 함수 호출 확인
-    UE_LOG(LogTemp, Warning, TEXT("MergeFruits 호출: FruitA=%p, FruitB=%p"),
-           FruitA, FruitB);
-           
     if (!FruitA || !FruitB) {
         UE_LOG(LogTemp, Error, TEXT("MergeFruits: 과일 참조가 유효하지 않음"));
         return;

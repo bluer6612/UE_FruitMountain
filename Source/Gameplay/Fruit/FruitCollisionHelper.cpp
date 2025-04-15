@@ -29,21 +29,10 @@ void UFruitCollisionHelper::HandleFruitCollision(AFruitBall* FruitA, AFruitBall*
         UE_LOG(LogTemp, Error, TEXT("FruitCollisionHelper: 유효하지 않은 과일 참조"));
         return;
     }
-
-    UE_LOG(LogTemp, Warning, TEXT("과일 충돌 처리: %s와 %s"), 
-           *FruitA->GetName(), *FruitB->GetName());
     
     // 두 과일의 타입 비교
     int32 TypeA = FruitA->GetBallType();
     int32 TypeB = FruitB->GetBallType();
     
-    UE_LOG(LogTemp, Warning, TEXT("과일 타입 비교: A=%d, B=%d"), TypeA, TypeB);
-    
     // 병합 시도
-    bool bMerged = UFruitMergeHelper::TryMergeFruits(FruitA, FruitB, Hit.ImpactPoint);
-    
-    if (bMerged)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("과일 병합 성공"));
-    }
-}
+    UFruitMergeHelper::TryMergeFruits(FruitA, FruitB, Hit.ImpactPoint);
