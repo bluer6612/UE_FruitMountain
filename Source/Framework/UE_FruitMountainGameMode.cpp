@@ -11,6 +11,8 @@
 #include "Gameplay/Physics/FruitTrajectoryHelper.h"
 #include "Gameplay/Fruit/FruitCollisionHelper.h"
 #include "UObject/GarbageCollection.h"
+#include "Misc/CoreDelegates.h"
+#include "Logging/LogMacros.h"
 
 #if WITH_EDITOR
 #include "Editor.h"
@@ -31,8 +33,8 @@ AUE_FruitMountainGameMode::AUE_FruitMountainGameMode()
     PlateClass = APlateActor::StaticClass();
 
     FruitBallClass = AFruitBall::StaticClass();
-
-    UE_LOG(LogTemp, Log, TEXT("AUE_FruitMountainGameMode 생성자 호출됨 - 기본 컨트롤러와 HUD가 설정되었습니다."));
+    
+    UE_LOG(LogTemp, Log, TEXT("AUE_FruitMountainGameMode 생성자 호출됨"));
 }
 
 void AUE_FruitMountainGameMode::BeginPlay()

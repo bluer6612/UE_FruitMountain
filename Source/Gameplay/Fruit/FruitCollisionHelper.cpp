@@ -36,3 +36,4 @@ void UFruitCollisionHelper::HandleFruitCollision(AFruitBall* FruitA, AFruitBall*
     
     // 병합 시도
     UFruitMergeHelper::TryMergeFruits(FruitA, FruitB, Hit.ImpactPoint);
+}

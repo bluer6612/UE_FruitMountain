@@ -65,6 +65,10 @@ AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, const F
             {
                 UFruitCollisionHelper::RegisterCollisionHandlers(FruitBall);
             }
+            else
+            {
+                FruitBall->DisplayDebugInfo();
+            }
             
             // 질량 설정 - 실제 과일일 경우만
             if (!FruitBall->bIsPreviewBall)

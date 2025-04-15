@@ -50,15 +50,13 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
     int32 TypeA = FruitA->GetBallType();
     int32 TypeB = FruitB->GetBallType();
     
-    UE_LOG(LogTemp, Warning, TEXT("같은 타입의 과일 병합 시작: 타입=%d"), TypeA);
-    
     UWorld* World = FruitA->GetWorld();
     if (!World) return;
     
     // 마지막 레벨 체크
     if (TypeA >= 10)
     {
-        UE_LOG(LogTemp, Warning, TEXT("최대 레벨 과일 병합"));
+        UE_LOG(LogTemp, Warning, TEXT("병합 완료: 최대 레벨 과일 병합"));
         AddScore(TypeA * 2);
         PlayMergeEffect(World, MergeLocation, TypeA);
         
@@ -69,7 +67,7 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
     
     // 다음 레벨의 과일 생성
     int32 NextType = TypeA + 1;
-    UE_LOG(LogTemp, Warning, TEXT("다음 레벨 과일 생성: %d -> %d"), TypeA, NextType);
+    UE_LOG(LogTemp, Warning, TEXT("병합 완료: 다음 레벨 과일 생성: %d -> %d"), TypeA, NextType);
     
     // 이펙트 및 점수 처리
     PlayMergeEffect(World, MergeLocation, TypeA);
