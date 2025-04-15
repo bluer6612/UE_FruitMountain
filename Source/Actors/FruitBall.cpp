@@ -1,7 +1,7 @@
 #include "FruitBall.h"
 #include "Components/StaticMeshComponent.h"
-#include "Gameplay/Create/FruitCollisionHelper.h"
-#include "Gameplay/Create/FruitMergeHelper.h"
+#include "Gameplay/Fruit/FruitCollisionHelper.h"
+#include "Gameplay/Fruit/FruitMergeHelper.h"
 
 AFruitBall::AFruitBall()
 {
@@ -19,7 +19,6 @@ AFruitBall::AFruitBall()
     MeshComponent->SetSimulatePhysics(true);
     MeshComponent->SetCollisionProfileName(TEXT("PhysicsActor"));
 
-    // 기본 공 메시로 언리얼 기본 20면체 메시 사용
     static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset(TEXT("/Game/Asset/Fruit/Fruit2"));
     if (MeshAsset.Succeeded())
     {
@@ -38,6 +37,9 @@ void AFruitBall::BeginPlay()
     // 충돌 핸들러 등록은 여기서 하지 않고, FruitSpawnHelper에서 직접 수행
     UE_LOG(LogTemp, Verbose, TEXT("FruitBall::BeginPlay() - %s (미리보기: %s)"), 
            *GetName(), bIsPreviewBall ? TEXT("O") : TEXT("X"));
+           
+    // 디버그 정보 자동 표시
+    DisplayDebugInfo();
 }
 
 // 공 크기 계산 함수 구현 - 이미 언리얼 스케일로 반환

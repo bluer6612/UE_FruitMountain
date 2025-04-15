@@ -64,6 +64,11 @@ public:
     void SetFruitRotation(AActor* Fruit);
 
 private:
+    // 지연 생성으로 0 번째 과일 생성 타이밍 맞추는 용도
+    void OnPostLevelLoadComplete();
+    void SafeCreateFirstPreviewBall();
+    FTimerHandle FirstPreviewBallTimerHandle;
+
     // 미리보기 공 업데이트 제한을 위한 변수들
     FTimerHandle PreviewBallUpdateTimerHandle;
     bool bPreviewBallUpdatePending = false;

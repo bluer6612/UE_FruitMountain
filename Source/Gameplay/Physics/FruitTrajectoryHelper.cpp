@@ -1,6 +1,6 @@
 #include "FruitTrajectoryHelper.h"
 #include "FruitPhysicsHelper.h"
-#include "Gameplay/Create/FruitSpawnHelper.h"
+#include "Gameplay/Fruit/FruitSpawnHelper.h"
 #include "Gameplay/Controller/FruitPlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/LineBatchComponent.h"

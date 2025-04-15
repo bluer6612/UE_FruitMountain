@@ -2,7 +2,7 @@
 #include "FruitTrajectoryHelper.h"
 #include "FruitPhysicsHelper.h"
 #include "Gameplay/Controller/FruitPlayerController.h"
-#include "Gameplay/Create/FruitSpawnHelper.h"
+#include "Gameplay/Fruit/FruitSpawnHelper.h"
 #include "Kismet/GameplayStatics.h"
 #include "Actors/FruitBall.h"
 

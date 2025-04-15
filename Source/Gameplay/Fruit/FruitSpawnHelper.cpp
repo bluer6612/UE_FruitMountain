@@ -56,10 +56,6 @@ AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, const F
         if (FruitBall)
         {
             FruitBall->BallType = BallType;
-
-            // 디버그 로그로 확인
-            UE_LOG(LogTemp, Verbose, TEXT("공 생성: 타입=%d, 크기(스케일)=%f, 실제 크기(cm)=%f"),
-                BallType, BallSize, BallSize * 100.0f);
             
             // 중요: 미리보기 여부 명시적 설정 (물리가 활성화되지 않으면 미리보기 공)
             FruitBall->bIsPreviewBall = !bEnablePhysics;
