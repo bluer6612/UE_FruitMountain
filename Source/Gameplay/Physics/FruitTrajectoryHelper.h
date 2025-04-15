@@ -29,5 +29,8 @@ private:
     // 벡터 좌표를 지정된 소수점 자리로 반올림하는 유틸리티 함수
     static FVector RoundVector(const FVector& InVector, int32 DecimalPlaces);
 
+    // 언리얼 엔진에서 정적 변수는 PIE 모드 간에 공유, "Object is not in global object array"
+    // 오류는 주로 이전 PIE 세션의 객체 참조 (ULineBatchComponent라는 정적 변수)
+    // 앞으로 정적 변수는 명시적 초기화/정리 패턴을 적용
     static ULineBatchComponent* CustomLineBatcher;
 };
