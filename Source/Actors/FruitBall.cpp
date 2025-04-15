@@ -42,6 +42,18 @@ void AFruitBall::BeginPlay()
     DisplayDebugInfo();
 }
 
+void AFruitBall::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    // 충돌 핸들러 명시적 제거
+    if (MeshComponent)
+    {
+        MeshComponent->OnComponentHit.RemoveAll(this);
+        UE_LOG(LogTemp, Warning, TEXT("과일 충돌 핸들러 제거: %s"), *GetName());
+    }
+    
+    Super::EndPlay(EndPlayReason);
+}
+
 // 공 크기 계산 함수 구현 - 이미 언리얼 스케일로 반환
 float AFruitBall::CalculateBallSize(int32 BallType)
 {

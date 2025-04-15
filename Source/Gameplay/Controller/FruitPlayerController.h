@@ -62,13 +62,7 @@ public:
     
     // 과일 회전 설정 함수 - 던지기 각도와 카메라 각도 기반
     void SetFruitRotation(AActor* Fruit);
-
-protected:
-    // 지연 생성으로 0 번째 과일 생성 타이밍 맞추는 용도
-    virtual void OnPostLevelLoadComplete(UWorld* LoadedWorld);
-    virtual void SafeCreateFirstPreviewBall();
-    FTimerHandle FirstPreviewBallTimerHandle;
-
+    
 private:
     // 미리보기 공 업데이트 제한을 위한 변수들
     FTimerHandle PreviewBallUpdateTimerHandle;

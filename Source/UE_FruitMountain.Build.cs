@@ -20,5 +20,15 @@ public class UE_FruitMountain : ModuleRules
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
+
+		// 에디터 모듈 의존성 추가
+		if (Target.bBuildEditor)
+		{
+			PublicDependencyModuleNames.AddRange(
+				new string[] {
+					"UnrealEd"
+				}
+			);
+		}
 	}
 }

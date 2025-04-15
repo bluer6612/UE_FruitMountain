@@ -11,6 +11,12 @@
 #include "Interface/UI/TextureDisplayWidget.h"
 #include "UE_FruitMountainGameInstance.h"
 #include "Components/WidgetComponent.h"
+#include "Gameplay/Fruit/FruitCollisionHelper.h"
+
+#if WITH_EDITOR // 에디터 모드에서만 포함
+#include "UnrealEd.h"
+#include "Editor.h"
+#endif
 
 AUE_FruitMountainGameMode::AUE_FruitMountainGameMode()
 {
@@ -34,6 +40,11 @@ AUE_FruitMountainGameMode::AUE_FruitMountainGameMode()
 void AUE_FruitMountainGameMode::BeginPlay()
 {
     Super::BeginPlay();
+    
+#if WITH_EDITOR
+    // PIE 종료 시 호출될 델리게이트 등록
+    FEditorDelegates::EndPIE.AddUObject(this, &AUE_FruitMountainGameMode::OnEndPIE);
+#endif
     
     // 화면에 디버그 메시지 직접 표시
     if (GEngine)
@@ -90,3 +101,27 @@ void AUE_FruitMountainGameMode::StartPlay()
         UE_LOG(LogTemp, Log, TEXT("이미 접시 액터가 존재합니다."));
     }
 }
+
+#if WITH_EDITOR
+void AUE_FruitMountainGameMode::OnEndPIE(bool bIsSimulating)
+{
+    UE_LOG(LogTemp, Warning, TEXT("PIE 종료 - 핸들러 정리 시작"));
+    
+    // 남아있는 모든 과일 찾기
+    TArray<AActor*> AllFruits;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFruitBall::StaticClass(), AllFruits);
+    
+    // 모든 과일의 핸들러 강제 정리
+    for (AActor* Actor : AllFruits)
+    {
+        AFruitBall* Fruit = Cast<AFruitBall>(Actor);
+        if (Fruit && Fruit->GetMeshComponent())
+        {
+            Fruit->GetMeshComponent()->OnComponentHit.RemoveAll(Fruit);
+        }
+    }
+    
+    // 가비지 컬렉션 요청
+    CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS);
+}
+#endif

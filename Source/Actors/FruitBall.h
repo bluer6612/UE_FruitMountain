@@ -85,6 +85,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Fruit")
     int32 BallType;
 
+protected:
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
 private:
     // 충돌 핸들러 등록 여부 플래그
     bool bCollisionHandlerRegistered = false;

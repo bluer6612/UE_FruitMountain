@@ -27,4 +27,8 @@ public:
     // 과일 볼 클래스 지정 변수
     UPROPERTY(EditDefaultsOnly, Category = "Game")
     TSubclassOf<AActor> FruitBallClass;
+    
+    // PIE 종료 시 호출될 함수
+    UFUNCTION()
+    void OnEndPIE(bool bIsSimulating);
 };
