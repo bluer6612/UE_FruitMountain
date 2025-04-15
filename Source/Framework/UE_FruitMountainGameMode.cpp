@@ -41,17 +41,13 @@ void AUE_FruitMountainGameMode::BeginPlay()
 {
     Super::BeginPlay();
     
+    // 게임 시작 시 충돌 시스템 초기화
+    UFruitCollisionHelper::ResetCollisionSystem();
+    
 #if WITH_EDITOR
     // PIE 종료 시 호출될 델리게이트 등록
     FEditorDelegates::EndPIE.AddUObject(this, &AUE_FruitMountainGameMode::OnEndPIE);
 #endif
-    
-    // 화면에 디버그 메시지 직접 표시
-    if (GEngine)
-    {
-        // 여러 위치에 메시지 표시
-        //GEngine->AddOnScreenDebugMessage(-1, 60.0f, FColor::Red, TEXT("화면 상단 디버그 메시지"));
-    }
         
     // 함수 호출 수정: SimpleTextureWidget → TextureDisplayWidget
     UTextureDisplayWidget::CreateDisplayWidget(this);
@@ -120,6 +116,9 @@ void AUE_FruitMountainGameMode::OnEndPIE(bool bIsSimulating)
             Fruit->GetMeshComponent()->OnComponentHit.RemoveAll(Fruit);
         }
     }
+    
+    // 충돌 시스템 정리
+    UFruitCollisionHelper::ResetCollisionSystem();
     
     // 가비지 컬렉션 요청
     CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS);
