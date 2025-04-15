@@ -56,15 +56,9 @@ public:
     UFUNCTION()
     UStaticMeshComponent* GetMeshComponent() const { return MeshComponent; }
 
-    // 디버그 정보 표시 함수 (선언 추가)
+    // 디버그 정보 표시 함수
     UFUNCTION(BlueprintCallable, Category="Debug")
     void DisplayDebugInfo();
-    
-    // 핸들러 등록 상태 확인
-    bool IsCollisionHandlerRegistered() const { return bCollisionHandlerRegistered; }
-    
-    // 핸들러 등록 상태 설정
-    void SetCollisionHandlerRegistered(bool bRegistered) { bCollisionHandlerRegistered = bRegistered; }
 
     // 미리보기 공 여부 플래그
     UPROPERTY()
@@ -84,8 +78,4 @@ public:
     // 현재 과일 레벨
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Fruit")
     int32 BallType;
-
-private:
-    // 충돌 핸들러 등록 여부 플래그
-    bool bCollisionHandlerRegistered = false;
 };

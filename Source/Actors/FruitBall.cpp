@@ -1,7 +1,7 @@
 #include "FruitBall.h"
 #include "Components/StaticMeshComponent.h"
-#include "Gameplay/Create/FruitCollisionHelper.h"
-#include "Gameplay/Create/FruitMergeHelper.h"
+#include "Gameplay/Fruit/FruitCollisionHelper.h"
+#include "Gameplay/Fruit/FruitMergeHelper.h"
 
 AFruitBall::AFruitBall()
 {
@@ -38,7 +38,7 @@ void AFruitBall::BeginPlay()
     UE_LOG(LogTemp, Verbose, TEXT("FruitBall::BeginPlay() - %s (미리보기: %s)"), 
            *GetName(), bIsPreviewBall ? TEXT("O") : TEXT("X"));
 
-    DisplayDebugInfo()
+    DisplayDebugInfo();
 }
 
 // 공 크기 계산 함수 구현 - 이미 언리얼 스케일로 반환

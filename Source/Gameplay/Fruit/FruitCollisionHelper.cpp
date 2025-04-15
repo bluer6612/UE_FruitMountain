@@ -5,21 +5,11 @@
 
 void UFruitCollisionHelper::RegisterCollisionHandlers(AFruitBall* Fruit)
 {
-    if (!Fruit || !Fruit->GetMeshComponent())
-    {
-        UE_LOG(LogTemp, Error, TEXT("FruitCollisionHelper: 유효하지 않은 과일 또는 메시 컴포넌트"));
-        return;
-    }
-
-    // 미리보기 과일 체크 (추가 안전장치)
-    if (Fruit->bIsPreviewBall)
-    {
-        return;
-    }
-
-    // 충돌 이벤트에 연결
-    Fruit->GetMeshComponent()->OnComponentHit.AddDynamic(Fruit, &AFruitBall::OnBallHit);
-    //UE_LOG(LogTemp, Log, TEXT("과일 충돌 핸들러 등록 완료: %s"), *Fruit->GetName());
+    // 임시 디버그/테스트 목적으로 핸들러 등록 완전히 비활성화
+    UE_LOG(LogTemp, Warning, TEXT("[테스트] 충돌 핸들러 등록 비활성화: %s"), 
+        Fruit ? *Fruit->GetName() : TEXT("유효하지 않은 과일"));
+    
+    return; // 핸들러 등록 안함 - 일시적으로 비활성화
 }
 
 void UFruitCollisionHelper::HandleFruitCollision(AFruitBall* FruitA, AFruitBall* FruitB, const FHitResult& Hit)
