@@ -1,7 +1,7 @@
 #include "FruitBall.h"
 #include "Components/StaticMeshComponent.h"
-#include "Gameplay/Fruit/FruitCollisionHelper.h"
-#include "Gameplay/Fruit/FruitMergeHelper.h"
+#include "Gameplay/Create/FruitCollisionHelper.h"
+#include "Gameplay/Create/FruitMergeHelper.h"
 
 AFruitBall::AFruitBall()
 {
@@ -37,27 +37,14 @@ void AFruitBall::BeginPlay()
     // 충돌 핸들러 등록은 여기서 하지 않고, FruitSpawnHelper에서 직접 수행
     UE_LOG(LogTemp, Verbose, TEXT("FruitBall::BeginPlay() - %s (미리보기: %s)"), 
            *GetName(), bIsPreviewBall ? TEXT("O") : TEXT("X"));
-           
-    // 디버그 정보 자동 표시
-    DisplayDebugInfo();
-}
 
-void AFruitBall::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-    // 충돌 핸들러 명시적 제거
-    if (MeshComponent)
-    {
-        MeshComponent->OnComponentHit.RemoveAll(this);
-        UE_LOG(LogTemp, Warning, TEXT("과일 충돌 핸들러 제거: %s"), *GetName());
-    }
-    
-    Super::EndPlay(EndPlayReason);
+    DisplayDebugInfo()
 }
 
 // 공 크기 계산 함수 구현 - 이미 언리얼 스케일로 반환
 float AFruitBall::CalculateBallSize(int32 BallType)
 {
-    // 과일 레벨에 따른 크기 선형 상수수 증가 (UE 단위로 직접 반환)
+    // 과일 레벨에 따른 크기 선형 상수 증가 (UE 단위로 직접 반환)
     // 레벨 1: 15cm, 레벨 2: 16.5cm, ...
     return BaseBallSize + ((BallType - 1) * BaseBallSize * 0.2f);
 }
