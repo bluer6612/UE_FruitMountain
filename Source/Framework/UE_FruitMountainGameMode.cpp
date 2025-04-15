@@ -44,7 +44,7 @@ void AUE_FruitMountainGameMode::BeginPlay()
 
 void AUE_FruitMountainGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-    // 종료 시점에도 한번 더 정리
+    // 종료 시점에 정리
     UFruitTrajectoryHelper::ResetTrajectorySystem();
     
     Super::EndPlay(EndPlayReason);
