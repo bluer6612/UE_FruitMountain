@@ -2,9 +2,6 @@
 #include "Actors/FruitBall.h"
 #include "FruitSpawnHelper.h"
 #include "Kismet/GameplayStatics.h"
-#include "Particles/ParticleSystem.h"
-#include "Components/AudioComponent.h"
-#include "Interface/UI/TextureDisplayWidget.h"
 #include "Gameplay/Controller/FruitPlayerController.h"
 #include "Framework/UE_FruitMountainGameMode.h"
 #include "Components/StaticMeshComponent.h"
@@ -203,21 +200,49 @@ void UFruitMergeHelper::PlayMergeEffect(UWorld* World, const FVector& Location, 
 {
     if (!World) return;
     
-    // 1. 시각적 효과 (파티클)
-    static UParticleSystem* MergeParticle = nullptr;
-    if (!MergeParticle)
+    // 1. 시각적 효과 (블루프린트 액터)
+    static TSubclassOf<AActor> MergeEffectClass = nullptr;
+    if (!MergeEffectClass)
     {
-        // 파티클 에셋 로드 (게임에 맞는 경로로 수정 필요)
-        MergeParticle = LoadObject<UParticleSystem>(nullptr, TEXT("/Game/Effects/P_FruitMerge"));
+        // 블루프린트 액터 클래스 로드
+        MergeEffectClass = LoadClass<AActor>(nullptr, TEXT("/Game/Particle/02_Blueprints/BP_Particle_Burst_Lvl_1.BP_Particle_Burst_Lvl_1_C"));
     }
     
-    if (MergeParticle)
+    if (MergeEffectClass)
     {
-        // 파티클 크기를 과일 레벨에 따라 조정
-        float ParticleScale = 1.0f + (BallType * 0.05f);
-        UGameplayStatics::SpawnEmitterAtLocation(
-            World, MergeParticle, Location, FRotator::ZeroRotator, 
-            FVector(ParticleScale), true, EPSCPoolMethod::AutoRelease);
+        // 블루프린트 액터 생성 (Z축으로 100 올림)
+        FVector ElevatedLocation = Location + FVector(0, 0, 10.0f);
+        
+        FActorSpawnParameters SpawnParams;
+        SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+        
+        // 크기를 과일 레벨에 따라 조정
+        float EffectScale = 1.0f;
+        AActor* MergeEffect = World->SpawnActor<AActor>(
+            MergeEffectClass, 
+            ElevatedLocation,
+            FRotator::ZeroRotator, 
+            SpawnParams
+        );
+        
+        if (MergeEffect)
+        {
+            MergeEffect->SetActorScale3D(FVector(EffectScale));
+            
+            // 2초 후에 효과 제거
+            FTimerHandle DestroyTimerHandle;
+            World->GetTimerManager().SetTimer(
+                DestroyTimerHandle,
+                FTimerDelegate::CreateLambda([MergeEffect]() {
+                    if (IsValid(MergeEffect))
+                    {
+                        MergeEffect->Destroy();
+                    }
+                }),
+                2.0f,
+                false
+            );
+        }
     }
     
     // 2. 소리 효과
@@ -236,4 +261,34 @@ void UFruitMergeHelper::PlayMergeEffect(UWorld* World, const FVector& Location, 
             0.8f + (BallType * 0.05f)  // 피치 (레벨이 높을수록 더 높은 소리)
         );
     }
+}
+
+// FruitMergeHelper.cpp에 함수 구현 추가
+void UFruitMergeHelper::PreloadAssets(UWorld* World)
+{
+    // 블루프린트 클래스 미리 로드
+    TSubclassOf<AActor> PreloadClass = LoadClass<AActor>(nullptr, TEXT("/Game/Particle/02_Blueprints/BP_Particle_Burst_Lvl_1.BP_Particle_Burst_Lvl_1_C"));
+    if (PreloadClass && World)
+    {
+        // 보이지 않는 위치에 미리 인스턴스 생성 후 즉시 제거 (렌더링 캐시 준비)
+        FVector HiddenLocation = FVector(0, 0, -10000);
+        AActor* PreloadActor = World->SpawnActor<AActor>(PreloadClass, HiddenLocation, FRotator::ZeroRotator);
+        if (PreloadActor)
+        {
+            PreloadActor->SetActorHiddenInGame(true);
+            PreloadActor->SetActorTickEnabled(false);
+            
+            // 1프레임 후 삭제 (렌더링 자원이 초기화되도록)
+            FTimerHandle DestroyHandle;
+            World->GetTimerManager().SetTimer(DestroyHandle, [PreloadActor]() {
+                if(IsValid(PreloadActor)) PreloadActor->Destroy();
+            }, 0.1f, false);
+        }
+        
+        // 리소스가 이미 로딩됨을 알리는 로그
+        UE_LOG(LogTemp, Display, TEXT("병합 이펙트 파티클 미리 로드 완료"));
+    }
+    
+    // 사운드도 미리 로드
+    USoundBase* PreloadSound = LoadObject<USoundBase>(nullptr, TEXT("/Game/Sounds/S_FruitMerge"));
 }

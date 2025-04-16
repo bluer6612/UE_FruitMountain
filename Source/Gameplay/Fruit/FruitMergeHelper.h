@@ -26,4 +26,7 @@ public:
     
     // 병합 지점 주변의 과일을 안정화하는 함수
     static void StabilizeNearbyFruits(UWorld* World, const FVector& MergeLocation);
+    
+    // 병합 효과 리소스 미리 로드
+    static void PreloadAssets(UWorld* World);
 };

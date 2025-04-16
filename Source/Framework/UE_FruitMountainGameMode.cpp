@@ -1,7 +1,6 @@
 #include "UE_FruitMountainGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Gameplay/Controller/FruitPlayerController.h"
-#include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "Actors/PlateActor.h"
 #include "Actors/PlayerPawn.h"
@@ -9,9 +8,7 @@
 #include "Interface/HUD/FruitHUD.h"
 #include "Interface/UI/TextureDisplayWidget.h"
 #include "Gameplay/Physics/FruitTrajectoryHelper.h"
-#include "Gameplay/Fruit/FruitCollisionHelper.h"
-#include "UObject/GarbageCollection.h"
-#include "Misc/CoreDelegates.h"
+#include "Gameplay/Fruit/FruitMergeHelper.h"
 #include "Logging/LogMacros.h"
 
 #if WITH_EDITOR
@@ -41,6 +38,9 @@ void AUE_FruitMountainGameMode::BeginPlay()
 {
     Super::BeginPlay();
 
+    // 게임 시작 시 파티클 에셋 미리 로드
+    UFruitMergeHelper::PreloadAssets(GetWorld());
+    
     UTextureDisplayWidget::CreateDisplayWidget(this);
 }
 
