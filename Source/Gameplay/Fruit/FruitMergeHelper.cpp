@@ -73,20 +73,99 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
     PlayMergeEffect(World, MergeLocation, TypeA);
     AddScore(TypeA);
     
+    // 병합 위치 주변 과일들의 속도 감소 (폭발적 충돌 방지)
+    StabilizeNearbyFruits(World, MergeLocation);
+    
     // 새 과일 생성
     AFruitPlayerController* PC = Cast<AFruitPlayerController>(UGameplayStatics::GetPlayerController(World, 0));
     if (PC)
     {
-        UFruitSpawnHelper::SpawnBall(PC, MergeLocation, NextType, true);
+        // 병합 위치에서 약간 위로 조정 (충돌 가능성 감소)
+        FVector AdjustedLocation = MergeLocation + FVector(0, 0, 10.0f);
+        
+        // 새 과일 생성
+        AFruitBall* NewFruit = UFruitSpawnHelper::SpawnBall(PC, AdjustedLocation, NextType, true);
+        
+        // 생성된 과일에 초기 안정화 단계 적용
+        if (NewFruit && NewFruit->GetMeshComponent())
+        {
+            UStaticMeshComponent* MeshComp = NewFruit->GetMeshComponent();
+            
+            // 물리 시뮬레이션 일시 중지
+            MeshComp->SetSimulatePhysics(false);
+            
+            // 0.2초 후에 물리 시뮬레이션 활성화
+            FTimerHandle PhysicsTimerHandle;
+            World->GetTimerManager().SetTimer(PhysicsTimerHandle, [NewFruit]() {
+                if (IsValid(NewFruit) && NewFruit->GetMeshComponent())
+                {
+                    // 물리 시뮬레이션 활성화
+                    NewFruit->GetMeshComponent()->SetSimulatePhysics(true);
+                    
+                    // 천천히 중력 효과 시작
+                    NewFruit->GetMeshComponent()->SetLinearDamping(5.0f);
+                    
+                    UE_LOG(LogTemp, Log, TEXT("새 과일 물리 시뮬레이션 시작: %s"), *NewFruit->GetName());
+                }
+            }, 0.2f, false);
+        }
+        
         UE_LOG(LogTemp, Warning, TEXT("새 과일 생성 완료: 레벨=%d, 위치=%s"), 
-               NextType, *MergeLocation.ToString());
-    } else {
-        UE_LOG(LogTemp, Error, TEXT("PlayerController를 찾을 수 없음"));
+               NextType, *AdjustedLocation.ToString());
     }
     
     // 기존 과일들 제거
     FruitA->Destroy();
     FruitB->Destroy();
+}
+
+// 주변 과일 안정화 함수
+void UFruitMergeHelper::StabilizeNearbyFruits(UWorld* World, const FVector& MergeLocation)
+{
+    if (!World) return;
+    
+    // 병합 지점 주변 일정 반경의 과일을 찾아 속도 감소
+    TArray<AActor*> FoundFruits;
+    UGameplayStatics::GetAllActorsOfClass(World, AFruitBall::StaticClass(), FoundFruits);
+    
+    const float StabilizeRadius = 50.0f; // 안정화 범위 (cm)
+    
+    for (AActor* Actor : FoundFruits)
+    {
+        AFruitBall* NearbyFruit = Cast<AFruitBall>(Actor);
+        if (!NearbyFruit || !NearbyFruit->GetMeshComponent()) continue;
+        
+        // 거리 계산
+        float Distance = FVector::Distance(NearbyFruit->GetActorLocation(), MergeLocation);
+        
+        // 안정화 범위 내의 과일만 처리
+        if (Distance <= StabilizeRadius)
+        {
+            UStaticMeshComponent* MeshComp = NearbyFruit->GetMeshComponent();
+            
+            // 현재 속도 감소
+            FVector CurrentVel = MeshComp->GetPhysicsLinearVelocity();
+            MeshComp->SetPhysicsLinearVelocity(CurrentVel * 0.3f); // 70% 감속
+            
+            // 회전 속도 감소
+            FVector AngVel = MeshComp->GetPhysicsAngularVelocityInDegrees();
+            MeshComp->SetPhysicsAngularVelocityInDegrees(AngVel * 0.3f);
+            
+            // 일시적으로 감쇠 증가
+            MeshComp->SetLinearDamping(5.0f);
+            MeshComp->SetAngularDamping(5.0f);
+            
+            // 0.5초 후에 원래 감쇠 복원
+            FTimerHandle DampingTimerHandle;
+            World->GetTimerManager().SetTimer(DampingTimerHandle, [NearbyFruit]() {
+                if (IsValid(NearbyFruit) && NearbyFruit->GetMeshComponent())
+                {
+                    NearbyFruit->GetMeshComponent()->SetLinearDamping(2.0f);
+                    NearbyFruit->GetMeshComponent()->SetAngularDamping(2.0f);
+                }
+            }, 0.5f, false);
+        }
+    }
 }
 
 void UFruitMergeHelper::AddScore(int32 BallType)

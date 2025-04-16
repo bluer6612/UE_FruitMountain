@@ -74,19 +74,53 @@ float AFruitBall::CalculateBallMass(int32 BallType)
 void AFruitBall::OnBallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, 
                          UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-    // 접시 또는 테이블과의 충돌은 무시
-    if (OtherActor && (OtherComp->ComponentHasTag("Object")))
+    // 접시와의 충돌인지 확인
+    if (OtherActor && (OtherActor->ActorHasTag("Plate")))
     {
+        // 접시와 충돌 감지 - 안정화 시작
+        StabilizeOnPlate(HitComponent);
         return;
     }
 
-    // 충돌한 액터가 과일인지 확인
+    // 다른 과일과의 충돌 처리는 기존대로 유지
     AFruitBall* OtherFruit = Cast<AFruitBall>(OtherActor);
     if (OtherFruit)
     {
-        // 충돌 처리는 CollisionHelper로 위임
         UFruitCollisionHelper::HandleFruitCollision(this, OtherFruit, Hit);
     }
+}
+
+void AFruitBall::StabilizeOnPlate(UPrimitiveComponent* HitComponent)
+{
+    if (!HitComponent || !HitComponent->IsSimulatingPhysics())
+        return;
+
+    // 즉시 감쇠를 매우 높게 설정하여 빠르게 에너지 손실
+    HitComponent->SetAngularDamping(10.0f);
+    HitComponent->SetLinearDamping(10.0f);
+    
+    // 수직 속도를 즉시 감소
+    FVector CurrentVel = HitComponent->GetPhysicsLinearVelocity();
+    CurrentVel.Z *= 0.1f;  // Z 속도를 90% 감소
+    HitComponent->SetPhysicsLinearVelocity(CurrentVel);
+    
+    // 각속도 감소
+    //FVector AngVel = HitComponent->GetPhysicsAngularVelocityInDegrees();
+    //HitComponent->SetPhysicsAngularVelocityInDegrees(AngVel * 0.2f);
+    
+    // 0.2초 후에 완전히 안정화
+    GetWorld()->GetTimerManager().SetTimer(StabilizeTimerHandle, [this, HitComponent]() {
+        if (IsValid(this) && HitComponent && HitComponent->IsSimulatingPhysics())
+        {
+            // 모든 속도를 0으로 설정
+            HitComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
+            //HitComponent->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
+            
+            // 일반 감쇠 값 복원 (다른 충돌에 대비)
+            HitComponent->SetAngularDamping(2.0f);
+            HitComponent->SetLinearDamping(2.0f);
+        }
+    }, 0.2f, false);
 }
 
 void AFruitBall::DisplayDebugInfo()

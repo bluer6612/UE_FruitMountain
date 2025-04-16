@@ -23,4 +23,7 @@ public:
     
     // 병합 이펙트 재생
     static void PlayMergeEffect(UWorld* World, const FVector& Location, int32 BallType);
+    
+    // 병합 지점 주변의 과일을 안정화하는 함수
+    static void StabilizeNearbyFruits(UWorld* World, const FVector& MergeLocation);
 };

@@ -6,7 +6,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "Actors/FruitBall.h"
 
-// ThrowFruit 함수 - FruitPhysicsHelper 활용
 void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
 {
     if (!Controller)
@@ -99,7 +98,6 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
     );
 }
 
-// UpdatePreviewBall 함수 수정 - 물리 헬퍼 사용
 void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller, bool bUpdateRotation)
 {
     if (!Controller)

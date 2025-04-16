@@ -18,15 +18,6 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
     class UStaticMeshComponent* MeshComponent;
     
-    // 기본 공 크기 (월드 스케일)
-    static constexpr float BaseBallSize = 15.0f;
-    
-    // 밀도 계수 - 다른 클래스에서 참조할 수 있도록 상수로 정의
-    static constexpr float DensityFactor = 100.f;
-
-    // 생성 가능한 공의 최대 레벨
-    static constexpr int MaxBallType = 5;
-    
     // 공 크기 getter 함수 - 외부에서 공 크기 접근용
     UFUNCTION(BlueprintCallable, Category="Ball Properties")
     float GetBaseBallSize() const { return BaseBallSize; }
@@ -43,6 +34,10 @@ public:
     UFUNCTION()
     void OnBallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
     
+    // 디버그 정보 표시 함수
+    UFUNCTION(BlueprintCallable, Category="Debug")
+    void DisplayDebugInfo();
+
     // 접근자 및 설정자 추가
     UFUNCTION()
     int32 GetBallType() const { return BallType; }
@@ -55,14 +50,6 @@ public:
 
     UFUNCTION()
     UStaticMeshComponent* GetMeshComponent() const { return MeshComponent; }
-
-    // 디버그 정보 표시 함수
-    UFUNCTION(BlueprintCallable, Category="Debug")
-    void DisplayDebugInfo();
-
-    // 미리보기 공 여부 플래그
-    UPROPERTY()
-    bool bIsPreviewBall = false;
     
     // 접근자/설정자 추가
     UFUNCTION()
@@ -70,6 +57,19 @@ public:
     
     UFUNCTION()
     bool IsPreviewBall() const { return bIsPreviewBall; }
+    
+    // 기본 공 크기 (월드 스케일)
+    static constexpr float BaseBallSize = 15.0f;
+    
+    // 밀도 계수 - 다른 클래스에서 참조할 수 있도록 상수로 정의
+    static constexpr float DensityFactor = 100.f;
+
+    // 생성 가능한 공의 최대 레벨
+    static constexpr int MaxBallType = 5;
+
+    // 미리보기 공 여부 플래그
+    UPROPERTY()
+    bool bIsPreviewBall = false;
 
     // 병합 중인지 여부
     UPROPERTY()
@@ -78,4 +78,11 @@ public:
     // 현재 과일 레벨
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Fruit")
     int32 BallType;
+
+protected:
+    // 접시와 충돌 시 호출될 함수
+    void StabilizeOnPlate(UPrimitiveComponent* HitComponent);
+    
+    // 안정화 타이머 핸들
+    FTimerHandle StabilizeTimerHandle;
 };
