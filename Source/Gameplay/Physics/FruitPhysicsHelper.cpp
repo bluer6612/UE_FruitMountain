@@ -81,15 +81,15 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     Result.AdjustedForce = FMath::Clamp(Result.AdjustedForce, MinForce, MaxForce);
 
     // 13. 궤적 최고점 높이 계산
-    // 13-1. 각도에 비례하는 직접적인 높이 계수 - 추가 20% 증가
+    // 13-1. 직접적인 높이 계수 증가 - 원래보다 더 높게
     float DirectAngleHeightRatio = FMath::GetMappedRangeValueClamped(
         FVector2D(MinThrowAngle, MaxThrowAngle),
-        FVector2D(0.072f, 1.44f), // 0.06f->0.072f, 1.2f->1.44f (추가 20% 증가)
+        FVector2D(0.12f, 2.2f), // 0.072f->0.12f, 1.44f->2.2f (50% 이상 증가)
         BaseResult.UseAngle
     );
 
-    // 13-2. 비선형 증가 효과 유지
-    float PoweredHeightRatio = FMath::Pow(DirectAngleHeightRatio, 1.8f);
+    // 13-2. 비선형 증가 효과 강화 - 더 높은 포물선 궤적
+    float PoweredHeightRatio = FMath::Pow(DirectAngleHeightRatio, 1.7f); // 1.8f->1.7f
 
     // 13-3. 최고점 높이 계산
     Result.PeakHeight = BaseResult.HorizontalDistance * PoweredHeightRatio;
@@ -162,12 +162,16 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
             // 수평 성분 보정 - 부드러운 커브
             float HorizontalBoost = 1.0f + DistanceErrorRatio * AngleRatio * XYDistance * 0.005f;
             
-            // 수직 성분 보정 - 고각도에서는 약간 감소
-            float VerticalAdjust = 1.0f;
+            // 수직 성분 보정 - 강화
+            float VerticalAdjust = 1.25f; // 1.0f에서 1.25f로 증가
+
             if (BaseResult.UseAngle > 45.0f) {
-                // 각도가 높을 수록 약간 수직 성분 감소하여 더 멀리 날아가게
-                VerticalAdjust = FMath::Lerp(1.0f, 0.95f, (BaseResult.UseAngle - 45.0f) / 15.0f);
+                // 각도가 높을 때도 수직 성분 유지
+                VerticalAdjust = FMath::Lerp(1.25f, 1.2f, (BaseResult.UseAngle - 45.0f) / 15.0f);
             }
+
+            // 수직 성분 (Z) 강화
+            AdjustedDirection.Z *= VerticalAdjust;
             
             // 각 방향 성분 조절 (수평, 수직)
             FVector AdjustedDirection = Result.LaunchDirection;
@@ -175,9 +179,15 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
             // 수평 성분 (X, Y) 강화
             AdjustedDirection.X *= HorizontalBoost;
             AdjustedDirection.Y *= HorizontalBoost;
-            
-            // 수직 성분 (Z) 조절
-            AdjustedDirection.Z *= VerticalAdjust;
+
+            // 수직 성분이 강화된 만큼 수평 속도 보상 (거리 유지)
+            float HorizontalCompensation = 1.15f; // 수평 성분도 약간 강화
+            AdjustedDirection.X *= HorizontalCompensation;
+            AdjustedDirection.Y *= HorizontalCompensation;
+
+            // 정규화 및 속도 적용
+            Result.LaunchDirection = AdjustedDirection.GetSafeNormal();
+            Result.InitialSpeed *= 1.1f; // 전체 속도도 10% 증가
             
             // 정규화 및 새 방향 적용
             Result.LaunchDirection = AdjustedDirection.GetSafeNormal();
