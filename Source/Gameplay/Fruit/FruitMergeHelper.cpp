@@ -16,6 +16,12 @@ void UFruitMergeHelper::TryMergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, c
         return;
     }
     
+    // 미리보기 공 체크 추가 - 둘 중 하나라도 미리보기 공이면 병합하지 않음
+    if (FruitA->IsPreviewBall() || FruitB->IsPreviewBall()) {
+        UE_LOG(LogTemp, Verbose, TEXT("미리보기 공과의 충돌 무시"));
+        return;
+    }
+    
     // 두 과일의 타입 가져오기
     int32 TypeA = FruitA->GetBallType();
     int32 TypeB = FruitB->GetBallType();
@@ -76,43 +82,51 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
     // 병합 위치 주변 과일들의 속도 감소 (폭발적 충돌 방지)
     StabilizeNearbyFruits(World, MergeLocation);
     
+    // 새 과일 생성 전에 기존 과일의 회전값 저장
+    // 두 과일 중 어떤 것이 접시에 있는 과일인지 판단 (여기서는 단순히 FruitA 사용)
+    FRotator ExistingRotation = FruitA->GetActorRotation();
+    
     // 새 과일 생성
     AFruitPlayerController* Controller = Cast<AFruitPlayerController>(UGameplayStatics::GetPlayerController(World, 0));
     if (Controller)
     {
-        // 병합 위치에서 약간 위로 조정 (충돌 가능성 감소)
-        FVector AdjustedLocation = MergeLocation + FVector(0, 0, 10.0f);
-        
-        // 새 과일 생성 (명시적 캐스팅)
-        AActor* SpawnedActor = UFruitSpawnHelper::SpawnBall(Controller, AdjustedLocation, NextType, true);
+        // 정확히 병합 위치에 생성
+        AActor* SpawnedActor = UFruitSpawnHelper::SpawnBall(Controller, MergeLocation, NextType, true);
         AFruitBall* NewFruit = Cast<AFruitBall>(SpawnedActor);
         
-        // 생성된 과일에 초기 안정화 단계 적용
+        // 생성된 과일에 자연스러운 움직임 적용
         if (NewFruit && NewFruit->GetMeshComponent())
         {
+            // 기존 과일의 회전각 적용
+            NewFruit->SetActorRotation(ExistingRotation);
+            
             UStaticMeshComponent* MeshComp = NewFruit->GetMeshComponent();
             
-            // 물리 시뮬레이션 일시 중지
-            MeshComp->SetSimulatePhysics(false);
+            // 물리 시뮬레이션 즉시 활성화 (멈추지 않음)
+            MeshComp->SetSimulatePhysics(true);
             
-            // 0.2초 후에 물리 시뮬레이션 활성화
-            FTimerHandle PhysicsTimerHandle;
-            World->GetTimerManager().SetTimer(PhysicsTimerHandle, [NewFruit]() {
+            // 약간의 위쪽 방향 초기 속도 부여 (자연스러운 병합 효과)
+            float UpwardForce = 5.0f + (NextType * 1.0f); // 레벨에 따라 증가
+            MeshComp->SetPhysicsLinearVelocity(FVector(0, 0, UpwardForce));
+            
+            // 초기에는 댐핑을 높게 설정하여 폭발적인 움직임 방지
+            MeshComp->SetLinearDamping(8.0f);
+            MeshComp->SetAngularDamping(8.0f);
+            
+            // 잠시 후 댐핑 감소하여 자연스러운 낙하 허용
+            FTimerHandle DampingTimerHandle;
+            World->GetTimerManager().SetTimer(DampingTimerHandle, [NewFruit]() {
                 if (IsValid(NewFruit) && NewFruit->GetMeshComponent())
                 {
-                    // 물리 시뮬레이션 활성화
-                    NewFruit->GetMeshComponent()->SetSimulatePhysics(true);
-                    
-                    // 천천히 중력 효과 시작
-                    NewFruit->GetMeshComponent()->SetLinearDamping(5.0f);
-                    
-                    //UE_LOG(LogTemp, Log, TEXT("새 과일 물리 시뮬레이션 시작: %s"), *NewFruit->GetName());
+                    // 점진적으로 댐핑 감소
+                    NewFruit->GetMeshComponent()->SetLinearDamping(2.0f);
+                    NewFruit->GetMeshComponent()->SetAngularDamping(2.0f);
                 }
-            }, 0.2f, false);
+            }, 1.0f, false);
         }
         
         UE_LOG(LogTemp, Warning, TEXT("새 과일 생성 완료: 레벨=%d, 위치=%s"), 
-               NextType, *AdjustedLocation.ToString());
+               NextType, *MergeLocation.ToString());
     }
     
     // 기존 과일들 제거
