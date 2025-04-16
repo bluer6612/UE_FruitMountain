@@ -159,8 +159,15 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
             // 시그모이드 함수를 사용하여 부드러운 전환 (0에서 1 사이)
             float DistanceErrorRatio = 1.0f / (1.0f + FMath::Exp(-0.1f * (XYDistance - 15.0f)));
             
+            // 각 방향 성분 조절 (수평, 수직)
+            FVector AdjustedDirection = Result.LaunchDirection;
+
             // 수평 성분 보정 - 부드러운 커브
             float HorizontalBoost = 1.0f + DistanceErrorRatio * AngleRatio * XYDistance * 0.005f;
+            
+            // 수평 성분 (X, Y) 강화
+            AdjustedDirection.X *= HorizontalBoost;
+            AdjustedDirection.Y *= HorizontalBoost;
             
             // 수직 성분 보정 - 강화
             float VerticalAdjust = 1.25f; // 1.0f에서 1.25f로 증가
@@ -172,13 +179,6 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
 
             // 수직 성분 (Z) 강화
             AdjustedDirection.Z *= VerticalAdjust;
-            
-            // 각 방향 성분 조절 (수평, 수직)
-            FVector AdjustedDirection = Result.LaunchDirection;
-            
-            // 수평 성분 (X, Y) 강화
-            AdjustedDirection.X *= HorizontalBoost;
-            AdjustedDirection.Y *= HorizontalBoost;
 
             // 수직 성분이 강화된 만큼 수평 속도 보상 (거리 유지)
             float HorizontalCompensation = 1.15f; // 수평 성분도 약간 강화
