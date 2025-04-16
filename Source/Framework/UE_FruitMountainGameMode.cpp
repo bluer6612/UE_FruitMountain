@@ -38,7 +38,8 @@ void AUE_FruitMountainGameMode::BeginPlay()
 {
     Super::BeginPlay();
 
-    // 게임 시작 시 파티클 에셋 미리 로드
+    // 게임 시작 시 파티클-
+    // 에셋 미리 로드
     UFruitMergeHelper::PreloadAssets(GetWorld());
     
     UTextureDisplayWidget::CreateDisplayWidget(this);
