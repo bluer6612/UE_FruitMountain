@@ -2,6 +2,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Gameplay/Fruit/FruitCollisionHelper.h"
 #include "Gameplay/Fruit/FruitMergeHelper.h"
+#include "Engine/StaticMesh.h"
 
 AFruitBall::AFruitBall()
 {
@@ -19,10 +20,15 @@ AFruitBall::AFruitBall()
     MeshComponent->SetSimulatePhysics(true);
     MeshComponent->SetCollisionProfileName(TEXT("PhysicsActor"));
 
-    static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshAsset(TEXT("/Game/Asset/Fruit/Fruit2"));
-    if (MeshAsset.Succeeded())
+    // 생성자에서는 기본 메시(타입 1)를 로드 (나중에 UpdateFruitMesh에서 업데이트)
+    static ConstructorHelpers::FObjectFinder<UStaticMesh> DefaultMeshAsset(TEXT("/Game/Fruit/Meshes/Fruit1"));
+    if (DefaultMeshAsset.Succeeded())
     {
-        MeshComponent->SetStaticMesh(MeshAsset.Object);
+        MeshComponent->SetStaticMesh(DefaultMeshAsset.Object);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("기본 과일 메시(Fruit1)를 찾을 수 없습니다!"));
     }
 
     // 물리적 감쇠 설정
@@ -51,6 +57,9 @@ void AFruitBall::BeginPlay()
         
         // 충돌 이벤트 활성화
         MeshComponent->SetNotifyRigidBodyCollision(true);
+        
+        // 과일 메시 업데이트 (BeginPlay에서 현재 BallType으로 업데이트)
+        UpdateFruitMesh(BallType);
     }
 }
 
@@ -127,6 +136,48 @@ void AFruitBall::StabilizeOnPlate(UPrimitiveComponent* HitComponent)
             }
         }, 
         1.0f, false);
+}
+
+// 과일 타입에 맞는 메시 업데이트
+void AFruitBall::UpdateFruitMesh(int32 NewBallType)
+{
+    if (!MeshComponent) return;
+    
+    // 메시 경로 생성: /Game/Fruit/Meshes/Fruit + BallType
+    FString MeshPath = FString::Printf(TEXT("/Game/Fruit/Meshes/Fruit%d"), NewBallType);
+    
+    // 새 메시 로드
+    UStaticMesh* NewMesh = LoadObject<UStaticMesh>(nullptr, *MeshPath);
+    
+    if (NewMesh)
+    {
+        // 새 메시 설정
+        MeshComponent->SetStaticMesh(NewMesh);
+        UE_LOG(LogTemp, Verbose, TEXT("과일 메시 업데이트: %s (타입: %d)"), *MeshPath, NewBallType);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("메시를 찾을 수 없음: %s"), *MeshPath);
+        
+        // fallback 메시 - 기본 과일1 시도
+        UStaticMesh* FallbackMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/Fruit/Meshes/Fruit1"));
+        if (FallbackMesh)
+        {
+            MeshComponent->SetStaticMesh(FallbackMesh);
+            UE_LOG(LogTemp, Warning, TEXT("대체 메시 사용: Fruit1"));
+        }
+    }
+}
+
+// BallType을 설정하고 메시를 업데이트하는 함수
+void AFruitBall::SetBallType(int32 NewBallType)
+{
+    // 타입 변경 시에만 메시 업데이트
+    if (BallType != NewBallType)
+    {
+        BallType = NewBallType;
+        UpdateFruitMesh(BallType);
+    }
 }
 
 void AFruitBall::DisplayDebugInfo()

@@ -57,7 +57,7 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
     if (!World) return;
     
     // 마지막 레벨 체크
-    if (TypeA >= 10)
+    if (TypeA >= MaxBallType)
     {
         UE_LOG(LogTemp, Warning, TEXT("병합 완료: 최대 레벨 과일 병합"));
         AddScore(TypeA * 2);

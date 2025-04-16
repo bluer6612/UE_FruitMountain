@@ -58,6 +58,14 @@ public:
     UFUNCTION()
     bool IsPreviewBall() const { return bIsPreviewBall; }
     
+    // 과일 타입에 맞는 메시 업데이트 함수
+    UFUNCTION()
+    void UpdateFruitMesh(int32 NewBallType);
+    
+    // BallType 설정 시 메시도 함께 업데이트하는 함수
+    UFUNCTION()
+    void SetBallType(int32 NewBallType);
+    
     // 기본 공 크기 (월드 스케일)
     static constexpr float BaseBallSize = 15.0f;
     
@@ -65,7 +73,10 @@ public:
     static constexpr float DensityFactor = 100.f;
 
     // 생성 가능한 공의 최대 레벨
-    static constexpr int MaxBallType = 5;
+    static constexpr int RandomBallTypeMax = 5;
+
+    // 공의 최대 레벨
+    static constexpr int MaxBallType = 11;
 
     // 미리보기 공 여부 플래그
     UPROPERTY()

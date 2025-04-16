@@ -55,7 +55,8 @@ AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, const F
         AFruitBall* FruitBall = Cast<AFruitBall>(SpawnedBall);
         if (FruitBall)
         {
-            FruitBall->BallType = BallType;
+            // SetBallType 함수를 사용하여 타입 설정 및 메시 업데이트
+            FruitBall->SetBallType(BallType);
             
             // 중요: 미리보기 여부 명시적 설정 (물리가 활성화되지 않으면 미리보기 공)
             FruitBall->bIsPreviewBall = !bEnablePhysics;

@@ -65,7 +65,7 @@ void AFruitPlayerController::BeginPlay()
     });
 
     // 미리보기 공 생성 시 회전까지 적용되도록 true 매개변수 추가
-    CurrentBallType = FMath::RandRange(1, AFruitBall::MaxBallType);
+    CurrentBallType = FMath::RandRange(1, AFruitBall::RandomBallTypeMax);
     UpdatePreviewBallWithDebounce();
 
     // 입력 매핑 설정
@@ -124,7 +124,7 @@ void AFruitPlayerController::ThrowFruit()
             EnableInput(this);
             
             // 새로운 미리보기 공 업데이트 (공 타입 바꾸기)
-            CurrentBallType = FMath::RandRange(1, AFruitBall::MaxBallType); // 다음에 던질 공 타입 랜덤 변경
+            CurrentBallType = FMath::RandRange(1, AFruitBall::RandomBallTypeMax); // 다음에 던질 공 타입 랜덤 변경
             UpdatePreviewBallWithDebounce();
         },
         BallThrowDelay,
