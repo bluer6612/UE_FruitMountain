@@ -101,26 +101,25 @@ void AFruitBall::StabilizeOnPlate(UPrimitiveComponent* HitComponent)
     
     // 수직 속도를 즉시 감소
     FVector CurrentVel = HitComponent->GetPhysicsLinearVelocity();
-    CurrentVel.Z *= 0.1f;  // Z 속도를 90% 감소
+    CurrentVel.Z *= 0.2f;  // Z 속도를 80% 감소
     HitComponent->SetPhysicsLinearVelocity(CurrentVel);
     
     // 각속도 감소
     //FVector AngVel = HitComponent->GetPhysicsAngularVelocityInDegrees();
     //HitComponent->SetPhysicsAngularVelocityInDegrees(AngVel * 0.2f);
     
-    // 0.2초 후에 완전히 안정화
+    // 잠시 후에 완전히 안정화
     GetWorld()->GetTimerManager().SetTimer(StabilizeTimerHandle, [this, HitComponent]() {
         if (IsValid(this) && HitComponent && HitComponent->IsSimulatingPhysics())
         {
             // 모든 속도를 0으로 설정
             HitComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
-            //HitComponent->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
             
             // 일반 감쇠 값 복원 (다른 충돌에 대비)
             HitComponent->SetAngularDamping(2.0f);
             HitComponent->SetLinearDamping(2.0f);
         }
-    }, 0.2f, false);
+    }, 1.0f, false);
 }
 
 void AFruitBall::DisplayDebugInfo()

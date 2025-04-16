@@ -18,8 +18,8 @@ void AFruitHUD::BeginPlay()
 
 void AFruitHUD::CreateAndAddWidgets()
 {
-    APlayerController* PC = GetOwningPlayerController();
-    if (PC)
+    APlayerController* Controller = GetOwningPlayerController();
+    if (Controller)
     {
         // 기존 위젯 제거
         if (TextureWidget)
@@ -29,7 +29,7 @@ void AFruitHUD::CreateAndAddWidgets()
         }
         
         // TextureDisplayWidget 생성 (SimpleTextureWidget에서 변경됨)
-        TextureWidget = CreateWidget<UTextureDisplayWidget>(PC, UTextureDisplayWidget::StaticClass());
+        TextureWidget = CreateWidget<UTextureDisplayWidget>(Controller, UTextureDisplayWidget::StaticClass());
         if (TextureWidget)
         {
             // 뷰포트에 추가

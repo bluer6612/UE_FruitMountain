@@ -35,10 +35,10 @@ UTextureDisplayWidget* UTextureDisplayWidget::CreateDisplayWidget(UObject* World
     }
 
     // 새 인스턴스 생성
-    APlayerController* PC = World->GetFirstPlayerController();
-    if (!PC) return nullptr;
+    APlayerController* Controller = World->GetFirstPlayerController();
+    if (!Controller) return nullptr;
     
-    Instance = CreateWidget<UTextureDisplayWidget>(PC, UTextureDisplayWidget::StaticClass());
+    Instance = CreateWidget<UTextureDisplayWidget>(Controller, UTextureDisplayWidget::StaticClass());
     if (Instance)
     {
         Instance->AddToViewport(10000);

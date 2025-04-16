@@ -77,14 +77,15 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
     StabilizeNearbyFruits(World, MergeLocation);
     
     // 새 과일 생성
-    AFruitPlayerController* PC = Cast<AFruitPlayerController>(UGameplayStatics::GetPlayerController(World, 0));
-    if (PC)
+    AFruitPlayerController* Controller = Cast<AFruitPlayerController>(UGameplayStatics::GetPlayerController(World, 0));
+    if (Controller)
     {
         // 병합 위치에서 약간 위로 조정 (충돌 가능성 감소)
         FVector AdjustedLocation = MergeLocation + FVector(0, 0, 10.0f);
         
-        // 새 과일 생성
-        AFruitBall* NewFruit = UFruitSpawnHelper::SpawnBall(PC, AdjustedLocation, NextType, true);
+        // 새 과일 생성 (명시적 캐스팅)
+        AActor* SpawnedActor = UFruitSpawnHelper::SpawnBall(Controller, AdjustedLocation, NextType, true);
+        AFruitBall* NewFruit = Cast<AFruitBall>(SpawnedActor);
         
         // 생성된 과일에 초기 안정화 단계 적용
         if (NewFruit && NewFruit->GetMeshComponent())
@@ -105,7 +106,7 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
                     // 천천히 중력 효과 시작
                     NewFruit->GetMeshComponent()->SetLinearDamping(5.0f);
                     
-                    UE_LOG(LogTemp, Log, TEXT("새 과일 물리 시뮬레이션 시작: %s"), *NewFruit->GetName());
+                    //UE_LOG(LogTemp, Log, TEXT("새 과일 물리 시뮬레이션 시작: %s"), *NewFruit->GetName());
                 }
             }, 0.2f, false);
         }
