@@ -214,7 +214,7 @@ void UFruitMergeHelper::PlayMergeEffect(UWorld* World, const FVector& Location, 
     if (MergeParticle)
     {
         // 파티클 크기를 과일 레벨에 따라 조정
-        float ParticleScale = 1.0f + (BallType * 0.2f);
+        float ParticleScale = 1.0f + (BallType * 0.05f);
         UGameplayStatics::SpawnEmitterAtLocation(
             World, MergeParticle, Location, FRotator::ZeroRotator, 
             FVector(ParticleScale), true, EPSCPoolMethod::AutoRelease);
