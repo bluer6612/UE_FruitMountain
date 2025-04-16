@@ -94,32 +94,39 @@ void AFruitBall::StabilizeOnPlate(UPrimitiveComponent* HitComponent)
 {
     if (!HitComponent || !HitComponent->IsSimulatingPhysics())
         return;
-
+    
     // 즉시 감쇠를 매우 높게 설정하여 빠르게 에너지 손실
     HitComponent->SetAngularDamping(10.0f);
     HitComponent->SetLinearDamping(10.0f);
-    
+
+    // 부자연스러워서 제거
     // 수직 속도를 즉시 감소
-    FVector CurrentVel = HitComponent->GetPhysicsLinearVelocity();
-    CurrentVel.Z *= 0.2f;  // Z 속도를 80% 감소
-    HitComponent->SetPhysicsLinearVelocity(CurrentVel);
-    
+    //FVector CurrentVel = HitComponent->GetPhysicsLinearVelocity();
+    //CurrentVel.Z *= 0.2f;  // Z 속도를 80% 감소
+    //HitComponent->SetPhysicsLinearVelocity(CurrentVel);
+
     // 각속도 감소
     //FVector AngVel = HitComponent->GetPhysicsAngularVelocityInDegrees();
     //HitComponent->SetPhysicsAngularVelocityInDegrees(AngVel * 0.2f);
     
-    // 잠시 후에 완전히 안정화
-    GetWorld()->GetTimerManager().SetTimer(StabilizeTimerHandle, [this, HitComponent]() {
-        if (IsValid(this) && HitComponent && HitComponent->IsSimulatingPhysics())
+    // 잠시 후에 완전히 안정화 - 약한 참조 사용
+    GetWorld()->GetTimerManager().SetTimer(StabilizeTimerHandle, 
+        [WeakThis=TWeakObjectPtr<AFruitBall>(this), WeakMeshComp=TWeakObjectPtr<UPrimitiveComponent>(HitComponent)]() 
         {
-            // 모든 속도를 0으로 설정
-            HitComponent->SetPhysicsLinearVelocity(FVector::ZeroVector);
-            
-            // 일반 감쇠 값 복원 (다른 충돌에 대비)
-            HitComponent->SetAngularDamping(2.0f);
-            HitComponent->SetLinearDamping(2.0f);
-        }
-    }, 1.0f, false);
+            // 약한 포인터로 유효성 검사 (이미 소멸된 객체에 안전하게 접근)
+            if (WeakThis.IsValid() && WeakMeshComp.IsValid() && WeakMeshComp->IsSimulatingPhysics())
+            {
+                // 수직 속도를 0으로 설정 (부자연스러워서 제거)
+                //WeakMeshComp->SetPhysicsLinearVelocity(FVector::ZeroVector);
+                // 각속도는 기울임과 관련되서 0 처리 제외
+                //WeakMeshComp->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
+                
+                // 일반 감쇠 값 복원
+                WeakMeshComp->SetAngularDamping(2.0f);
+                WeakMeshComp->SetLinearDamping(2.0f);
+            }
+        }, 
+        1.0f, false);
 }
 
 void AFruitBall::DisplayDebugInfo()

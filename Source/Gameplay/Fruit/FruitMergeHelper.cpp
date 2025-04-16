@@ -73,7 +73,6 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
     
     // 다음 레벨의 과일 생성
     int32 NextType = TypeA + 1;
-    UE_LOG(LogTemp, Warning, TEXT("병합 완료: 다음 레벨 과일 생성: %d -> %d"), TypeA, NextType);
     
     // 이펙트 및 점수 처리
     PlayMergeEffect(World, MergeLocation, TypeA);
@@ -109,20 +108,11 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
             float UpwardForce = 5.0f + (NextType * 1.0f); // 레벨에 따라 증가
             MeshComp->SetPhysicsLinearVelocity(FVector(0, 0, UpwardForce));
             
-            // 초기에는 댐핑을 높게 설정하여 폭발적인 움직임 방지
+            // 초기에는 댐핑을 높게 설정 (병합 직후 안정화 용도)
             MeshComp->SetLinearDamping(8.0f);
-            MeshComp->SetAngularDamping(8.0f);
+            MeshComp->SetAngularDamping(5.0f);
             
-            // 잠시 후 댐핑 감소하여 자연스러운 낙하 허용
-            FTimerHandle DampingTimerHandle;
-            World->GetTimerManager().SetTimer(DampingTimerHandle, [NewFruit]() {
-                if (IsValid(NewFruit) && NewFruit->GetMeshComponent())
-                {
-                    // 점진적으로 댐핑 감소
-                    NewFruit->GetMeshComponent()->SetLinearDamping(2.0f);
-                    NewFruit->GetMeshComponent()->SetAngularDamping(2.0f);
-                }
-            }, 1.0f, false);
+            // 접시에 닿는 시점에 StabilizeOnPlate가 댐핑을 관리할 것임
         }
         
         UE_LOG(LogTemp, Warning, TEXT("새 과일 생성 완료: 레벨=%d, 위치=%s"), 
@@ -172,13 +162,17 @@ void UFruitMergeHelper::StabilizeNearbyFruits(UWorld* World, const FVector& Merg
             
             // 0.5초 후에 원래 감쇠 복원
             FTimerHandle DampingTimerHandle;
-            World->GetTimerManager().SetTimer(DampingTimerHandle, [NearbyFruit]() {
-                if (IsValid(NearbyFruit) && NearbyFruit->GetMeshComponent())
+            World->GetTimerManager().SetTimer(DampingTimerHandle, 
+                [WeakFruit=TWeakObjectPtr<AFruitBall>(NearbyFruit)]() 
                 {
-                    NearbyFruit->GetMeshComponent()->SetLinearDamping(2.0f);
-                    NearbyFruit->GetMeshComponent()->SetAngularDamping(2.0f);
-                }
-            }, 0.5f, false);
+                    // 약한 포인터로 유효성 검사 (이미 소멸된 객체에 안전하게 접근)
+                    if (WeakFruit.IsValid() && WeakFruit->GetMeshComponent())
+                    {
+                        WeakFruit->GetMeshComponent()->SetLinearDamping(2.0f);
+                        WeakFruit->GetMeshComponent()->SetAngularDamping(2.0f);
+                    }
+                }, 
+                0.5f, false);
         }
     }
 }
