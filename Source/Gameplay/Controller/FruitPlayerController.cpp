@@ -73,6 +73,10 @@ void AFruitPlayerController::BeginPlay()
     SetInputMode(FInputModeGameAndUI());
     SetShowMouseCursor(true);
     
+    // 추가된 콘솔 명령 실행
+    GetLocalPlayer()->ViewportClient->ConsoleCommand(TEXT("r.TranslucentSortPolicy 0"));
+    GetLocalPlayer()->ViewportClient->ConsoleCommand(TEXT("r.AllowOcclusionQueries 0"));
+    
     UE_LOG(LogTemp, Log, TEXT("AFruitPlayerController::BeginPlay 호출 완료됨"));
 }
 
