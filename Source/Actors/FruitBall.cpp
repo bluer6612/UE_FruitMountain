@@ -45,6 +45,15 @@ void AFruitBall::BeginPlay()
         // 물리 시뮬레이션 확인
         MeshComponent->SetSimulatePhysics(true);
         
+        // 겹침 시에도 항상 정확하게 렌더링되도록 설정
+        MeshComponent->bUseAsOccluder = false;  // 다른 물체를 가리지 않음
+        MeshComponent->bReceivesDecals = false; // 데칼 영향 안 받음
+        MeshComponent->SetCastShadow(true);     // 그림자 생성
+        
+        // 중요: 투명도 방지 설정
+        MeshComponent->bAllowCullDistanceVolume = false;
+        MeshComponent->SetVisibility(true, true);
+        
         // 모든 채널에 대해 충돌 설정
         MeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
         MeshComponent->SetCollisionObjectType(ECC_PhysicsBody);
@@ -153,7 +162,34 @@ void AFruitBall::UpdateFruitMesh(int32 NewBallType)
     {
         // 새 메시 설정
         MeshComponent->SetStaticMesh(NewMesh);
-        UE_LOG(LogTemp, Verbose, TEXT("과일 메시 업데이트: %s (타입: %d)"), *MeshPath, NewBallType);
+        //UE_LOG(LogTemp, Verbose, TEXT("과일 메시 업데이트: %s (타입: %d)"), *MeshPath, NewBallType);
+        
+        // 렌더링 속성 설정 - 항상 불투명하게 유지
+        MeshComponent->SetRenderCustomDepth(true);
+        MeshComponent->SetCustomDepthStencilValue(1);
+        
+        // 모든 머티리얼 슬롯에 대해 불투명 설정 적용
+        for (int32 i = 0; i < MeshComponent->GetNumMaterials(); i++)
+        {
+            UMaterialInterface* Material = MeshComponent->GetMaterial(i);
+            if (Material)
+            {
+                // 동적 머티리얼 인스턴스 생성
+                UMaterialInstanceDynamic* DynamicMaterial = 
+                    UMaterialInstanceDynamic::Create(Material, this);
+                
+                if (DynamicMaterial)
+                {
+                    // 블렌드 모드 설정 적용 (강제 불투명)
+                    DynamicMaterial->SetScalarParameterValue("OpacityMask", 1.0f);
+                    DynamicMaterial->SetScalarParameterValue("Opacity", 1.0f);
+                    MeshComponent->SetMaterial(i, DynamicMaterial);
+                }
+            }
+        }
+        
+        // 깊이 테스트 설정 (항상 표시)
+        MeshComponent->SetDepthPriorityGroup(SDPG_Foreground);
     }
     else
     {

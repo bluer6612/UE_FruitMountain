@@ -76,7 +76,7 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
     AddScore(TypeA);
     
     // 병합 위치 주변 과일들의 속도 감소 (폭발적 충돌 방지)
-    StabilizeNearbyFruits(World, MergeLocation);
+    StabilizeNearbyFruits(World, MergeLocation, TypeA);
     
     // 새 과일 생성 전에 기존 과일의 회전값 저장
     // 두 과일 중 어떤 것이 접시에 있는 과일인지 판단 (여기서는 단순히 FruitA 사용)
@@ -122,7 +122,7 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
 }
 
 // 주변 과일 안정화 함수
-void UFruitMergeHelper::StabilizeNearbyFruits(UWorld* World, const FVector& MergeLocation)
+void UFruitMergeHelper::StabilizeNearbyFruits(UWorld* World, const FVector& MergeLocation, int32 BallType)
 {
     if (!World) return;
     
@@ -130,7 +130,7 @@ void UFruitMergeHelper::StabilizeNearbyFruits(UWorld* World, const FVector& Merg
     TArray<AActor*> FoundFruits;
     UGameplayStatics::GetAllActorsOfClass(World, AFruitBall::StaticClass(), FoundFruits);
     
-    const float StabilizeRadius = 50.0f; // 안정화 범위 (cm)
+    const float StabilizeRadius = 75 * (1.0f + (BallType * 0.1f)); // 레벨당 10% 증가
     
     for (AActor* Actor : FoundFruits)
     {
