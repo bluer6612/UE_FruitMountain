@@ -70,10 +70,6 @@ public:
     
     // 과일 회전 설정 함수 - 던지기 각도와 카메라 각도 기반
     void SetFruitRotation(AActor* Fruit);
-
-    // 떨어지는 과일을 보기 위해 카메라 이동
-    UFUNCTION()
-    void MoveViewToFallingFruit(const FVector& CameraLocation, const FRotator& CameraRotation);
     
 private:
     // 미리보기 공 업데이트 제한을 위한 변수들

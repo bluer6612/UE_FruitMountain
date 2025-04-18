@@ -39,3 +39,47 @@ void UCameraOrbitFunctionLibrary::UpdateCameraOrbit(APawn* ControlledPawn, const
     FRotator NewRotation = FRotator(CurrentRotation.Pitch, LookAtRotation.Yaw, CurrentRotation.Roll);
     ControlledPawn->SetActorRotation(NewRotation);
 }
+
+void UCameraOrbitFunctionLibrary::MoveViewToFallingFruit(APlayerController* Controller, const FVector& FruitLocation, const FRotator& CameraRotation)
+{
+    if (!Controller) return;
+    
+    APlayerCameraManager* PlayerCameraManager = Controller->PlayerCameraManager;
+    if (PlayerCameraManager)
+    {
+        // 1. 현재 카메라 정보 저장
+        FVector CurrentCameraLocation = PlayerCameraManager->GetCameraLocation();
+        FRotator CurrentCameraRotation = PlayerCameraManager->GetCameraRotation();
+        
+        // 2. 새로운 카메라 위치 계산 - 과일 위치로부터 약간 떨어진 지점으로
+        FVector NewCameraLocation = FruitLocation;
+        NewCameraLocation.X -= 100.0f;  // 약간 뒤로 이동하여 과일을 보기 좋게
+        NewCameraLocation.Z += 75.0f;   // 과일 높이로 이동
+        
+        // 3. 카메라 뷰 직접 설정 (임시 액터 사용)
+        AActor* TempViewTarget = Controller->GetWorld()->SpawnActor<AActor>(AActor::StaticClass(), NewCameraLocation, CurrentCameraRotation);
+        
+        if (TempViewTarget)
+        {
+            // 블렌드 설정 (부드러운 전환 위해)
+            FViewTargetTransitionParams TransitionParams;
+            TransitionParams.BlendTime = 0.5f;
+            
+            // 새 타겟으로 카메라 변경
+            Controller->SetViewTargetWithBlend(TempViewTarget, 0.5f, EViewTargetBlendFunction::VTBlend_Cubic);
+            
+            // 타겟 액터는 나중에 게임오버 처리 후 자동 제거되도록 설정
+            TempViewTarget->SetLifeSpan(5.0f);
+            
+            UE_LOG(LogTemp, Warning, TEXT("카메라를 과일 관찰 위치로 이동: %s"), *NewCameraLocation.ToString());
+        }
+        
+        // 4. 플레이어 입력 일시적 비활성화
+        Controller->SetIgnoreLookInput(true);
+        Controller->SetIgnoreMoveInput(true);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("PlayerCameraManager가 없습니다!"));
+    }
+}

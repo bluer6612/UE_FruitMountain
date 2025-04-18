@@ -6,6 +6,7 @@
 #include "Gameplay/Controller/FruitPlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Interface/HUD/FruitHUD.h"
+#include "Camera/CameraOrbitFunctionLibrary.h"
 
 AFruitBall::AFruitBall()
 {
@@ -102,6 +103,9 @@ void AFruitBall::Tick(float DeltaTime)
         {
             UE_LOG(LogTemp, Warning, TEXT("충돌 경험 있는 과일이 접시 바깥으로 떨어짐: %s (Z=%f)"), 
                 *GetName(), CurrentZ);
+                            
+            // Tick 비활성화
+            SetActorTickEnabled(false);
             
             // 이미 슬로우 모션 처리 중인지 확인
             if (!bSlowMotionActive)
@@ -132,16 +136,8 @@ void AFruitBall::Tick(float DeltaTime)
                 
                 if (FruitController)
                 {
-                    // 카메라 위치 및 시점 변경
-                    FVector FruitLocation = GetActorLocation();
-                    
-                    // 과일로부터 약간 떨어진 지점에 카메라 배치
-                    FVector CameraLocation = FruitLocation + FVector(-150.0f, 0.0f, 50.0f);
-                    FRotator CameraRotation = (FruitLocation - CameraLocation).Rotation();
-                    
-                    // 카메라 배치
-                    FruitController->SetViewTarget(this);
-                    FruitController->MoveViewToFallingFruit(CameraLocation, CameraRotation);
+                    // 직접 CameraOrbitFunctionLibrary 함수 호출
+                    UCameraOrbitFunctionLibrary::MoveViewToFallingFruit(FruitController, GetActorLocation(), FRotator::ZeroRotator);
                     
                     // 약간의 딜레이 후 실제 게임 오버 처리
                     GetWorld()->GetTimerManager().SetTimer(
@@ -153,9 +149,6 @@ void AFruitBall::Tick(float DeltaTime)
                             
                             // 시간 다시 정상화
                             UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 1.0f);
-                            
-                            // Tick 비활성화
-                            SetActorTickEnabled(false);
                         },
                         2.0f * UGameplayStatics::GetGlobalTimeDilation(GetWorld()), // 슬로우 모션 상태에서 2초
                         false
@@ -166,51 +159,11 @@ void AFruitBall::Tick(float DeltaTime)
     }
 }
 
-// OnBallHit 함수 수정: 충돌 발생 시 플래그 설정
 void AFruitBall::OnBallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, 
-                         UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+    UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-    // 충돌 경험 설정
-    bHasCollided = true;
-    
-    // 접시와의 충돌인지 확인
-    if (OtherActor && (OtherActor->ActorHasTag("Plate")))
-    {
-        // 기존 코드 유지
-        StabilizeOnPlate(HitComponent);
-        return;
-    }
-
-    // 다른 과일과의 충돌 처리는 기존대로 유지
-    AFruitBall* OtherFruit = Cast<AFruitBall>(OtherActor);
-    if (OtherFruit)
-    {
-        UFruitCollisionHelper::HandleFruitCollision(this, OtherFruit, Hit);
-    }
-}
-
-void AFruitBall::StabilizeOnPlate(UPrimitiveComponent* HitComponent)
-{
-    if (!HitComponent || !HitComponent->IsSimulatingPhysics())
-        return;
-    
-    // 즉시 감쇠를 매우 높게 설정하여 빠르게 에너지 손실
-    HitComponent->SetAngularDamping(10.0f);
-    HitComponent->SetLinearDamping(10.0f);
-    
-    // 잠시 후에 완전히 안정화 - 약한 참조 사용
-    GetWorld()->GetTimerManager().SetTimer(StabilizeTimerHandle, 
-        [WeakThis=TWeakObjectPtr<AFruitBall>(this), WeakMeshComp=TWeakObjectPtr<UPrimitiveComponent>(HitComponent)]() 
-        {
-            // 약한 포인터로 유효성 검사 (이미 소멸된 객체에 안전하게 접근)
-            if (WeakThis.IsValid() && WeakMeshComp.IsValid() && WeakMeshComp->IsSimulatingPhysics())
-            {
-                // 일반 감쇠 값 복원
-                WeakMeshComp->SetAngularDamping(2.0f);
-                WeakMeshComp->SetLinearDamping(2.0f);
-            }
-        }, 
-        1.0f, false);
+// FruitCollisionHelper 함수 호출로 대체
+UFruitCollisionHelper::HandleBallHit(this, HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
 }
 
 // 과일 타입에 맞는 메시 업데이트

@@ -291,32 +291,3 @@ void AFruitPlayerController::SetFruitRotation(AActor* Fruit)
     FRotator NewRotation = FRotator(PitchAngle, YawAngle, 0.0f);
     Fruit->SetActorRotation(NewRotation);
 }
-
-void AFruitPlayerController::MoveViewToFallingFruit(const FVector& FruitLocation, const FRotator& CameraRotation)
-{
-    if (PlayerCameraManager)
-    {
-        // 현재 카메라 위치에서 과일을 바라보도록 회전만 계산
-        FVector CameraLocation = PlayerCameraManager->GetCameraLocation();
-        FVector DirectionToFruit = FruitLocation - CameraLocation;
-        FRotator NewRotation = DirectionToFruit.Rotation();
-        
-        // 카메라 회전만 설정 (위치는 변경하지 않음)
-        // 부드러운 전환을 위한 블렌드 설정
-        PlayerCameraManager->SetManualCameraFade(0.0f, FLinearColor::Black, false);
-        PlayerCameraManager->SetViewTarget(this, FViewTargetTransitionParams());
-        
-        // 새 시점으로 조정 (0.5초 동안 블렌드)
-        FViewTargetTransitionParams TransitionParams;
-        TransitionParams.BlendTime = 0.5f;
-        PlayerCameraManager->LockCameraView(NewRotation);
-        
-        // 플레이어 입력 일시적 비활성화
-        SetIgnoreLookInput(true);
-        SetIgnoreMoveInput(true);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("PlayerCameraManager가 없습니다!"));
-    }
-}

@@ -17,4 +17,8 @@ public:
     // ElevationAngle: 접시를 내려다보는 각도
     UFUNCTION(BlueprintCallable, Category = "Camera Orbit")
     static void UpdateCameraOrbit(APawn* ControlledPawn, const FVector& PlateLocation, float OrbitAngle, float OrbitRadius);
+
+    // 떨어지는 과일을 보기 위한 카메라 이동 함수
+    UFUNCTION(BlueprintCallable, Category = "Camera|Fruit")
+    static void MoveViewToFallingFruit(APlayerController* Controller, const FVector& FruitLocation, const FRotator& CameraRotation);
 };

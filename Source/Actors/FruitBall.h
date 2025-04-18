@@ -108,9 +108,6 @@ public:
     int32 BallType;
 
 protected:
-    // 접시와 충돌 시 호출될 함수
-    void StabilizeOnPlate(UPrimitiveComponent* HitComponent);
-    
     // 안정화 타이머 핸들
     FTimerHandle StabilizeTimerHandle;
 
