@@ -25,7 +25,7 @@ public:
     static void PlayMergeEffect(UWorld* World, const FVector& Location, int32 BallType);
     
     // 병합 시 과일들을 안정화하는 함수
-    static void StabilizeFruits(UWorld* World, const FVector& MergeLocation, int32 BallType);
+    static void StabilizeFruits(UWorld* World);
     
     // 병합 효과 리소스 미리 로드
     static void PreloadAssets(UWorld* World);

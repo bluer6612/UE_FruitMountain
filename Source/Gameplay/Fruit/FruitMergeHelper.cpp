@@ -76,7 +76,7 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
     AddScore(TypeA);
     
     // 병합 위치 주변 과일들의 속도 감소 (폭발적 충돌 방지)
-    StabilizeNearbyFruits(World, MergeLocation, TypeA);
+    StabilizeFruits(World);
     
     // 새 과일 생성 전에 기존 과일의 회전값 저장
     // 두 과일 중 어떤 것이 접시에 있는 과일인지 판단 (여기서는 단순히 FruitA 사용)
@@ -122,7 +122,7 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
 }
 
 // 모든 과일 안정화 함수
-void UFruitMergeHelper::StabilizeFruits(UWorld* World, const FVector& MergeLocation, int32 BallType)
+void UFruitMergeHelper::StabilizeFruits(UWorld* World)
 {
     if (!World) return;
     
@@ -141,17 +141,17 @@ void UFruitMergeHelper::StabilizeFruits(UWorld* World, const FVector& MergeLocat
         
         UStaticMeshComponent* MeshComp = Fruit->GetMeshComponent();
         
-        // 현재 속도 감소 (모든 과일의 속도를 70% 감소)
+        // 현재 속도 감소 (모든 과일의 속도를 90% 감소)
         FVector CurrentVel = MeshComp->GetPhysicsLinearVelocity();
-        MeshComp->SetPhysicsLinearVelocity(CurrentVel * 0.3f);
+        MeshComp->SetPhysicsLinearVelocity(CurrentVel * 0.1f);
         
         // 회전 속도 감소
         FVector AngVel = MeshComp->GetPhysicsAngularVelocityInDegrees();
-        MeshComp->SetPhysicsAngularVelocityInDegrees(AngVel * 0.3f);
+        MeshComp->SetPhysicsAngularVelocityInDegrees(AngVel * 0.1f);
         
         // 일시적으로 감쇠 증가
-        MeshComp->SetLinearDamping(5.0f);
-        MeshComp->SetAngularDamping(5.0f);
+        MeshComp->SetLinearDamping(10.0f);
+        MeshComp->SetAngularDamping(10.0f);
         
         // 1초 후에 원래 감쇠 복원
         FTimerHandle DampingTimerHandle;
