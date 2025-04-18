@@ -100,9 +100,6 @@ void AFruitPlayerController::GameOver()
     
     bIsGameOver = true;
     
-    // 플레이어 입력 비활성화
-    DisableInput(this);
-    
     // 게임 일시정지 (선택사항)
     // SetPause(true);
     

@@ -54,13 +54,10 @@ void UCameraOrbitFunctionLibrary::MoveViewToFallingFruit(APlayerController* Cont
     FVector NewCameraLocation = FruitLocation - FruitToPlateDirection * 100.0f; //카메라-과일 거리
     
     // 높이 조정
-    NewCameraLocation.Z -= 75.0f;
+    NewCameraLocation.Z -= 70.0f;
     
     // 카메라 회전 - 과일을 향하도록
     FRotator NewRotation = (FruitLocation - NewCameraLocation).Rotation();
-    
-    UE_LOG(LogTemp, Warning, TEXT("새 카메라 위치: %s, 회전: %s"), 
-           *NewCameraLocation.ToString(), *NewRotation.ToString());
     
     // 카메라 뷰 조작
     AActor* DefaultCameraActor = Controller->GetViewTarget();
@@ -69,7 +66,6 @@ void UCameraOrbitFunctionLibrary::MoveViewToFallingFruit(APlayerController* Cont
         // 기존 뷰 타겟 사용
         DefaultCameraActor->SetActorLocation(NewCameraLocation);
         DefaultCameraActor->SetActorRotation(NewRotation);
-        UE_LOG(LogTemp, Warning, TEXT("뷰 타겟 위치 이동: %s"), *NewCameraLocation.ToString());
 
         // 블렌드 설정
         FViewTargetTransitionParams TransitionParams;

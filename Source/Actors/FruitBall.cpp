@@ -7,6 +7,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Interface/HUD/FruitHUD.h"
 #include "System/Camera/CameraOrbitFunctionLibrary.h"
+#include "Gameplay/Physics/FruitTrajectoryHelper.h"
 
 AFruitBall::AFruitBall()
 {
@@ -133,9 +134,24 @@ void AFruitBall::Tick(float DeltaTime)
                 // 3. 카메라를 과일 쪽으로 이동
                 APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
                 AFruitPlayerController* FruitController = Cast<AFruitPlayerController>(PC);
-                
+
                 if (FruitController)
                 {
+                    // 미리보기 공 제거
+                    if (FruitController->PreviewBall)
+                    {
+                        FruitController->PreviewBall->Destroy();
+                        FruitController->PreviewBall = nullptr;
+                    }
+                    
+                    // 궤적 표시 제거 - 실제 구현된 방식으로 호출
+                    UFruitTrajectoryHelper::ResetTrajectorySystem();
+                    
+                    // 컨트롤러 입력 정지
+                    FruitController->DisableInput(PC);
+                    FruitController->bIsThrowingInProgress = false; // 던지기 상태 해제
+                    
+                    // 카메라 이동
                     UCameraOrbitFunctionLibrary::MoveViewToFallingFruit(FruitController, GetActorLocation(), FRotator::ZeroRotator);
                     
                     // 약간의 딜레이 후 실제 게임 오버 처리
