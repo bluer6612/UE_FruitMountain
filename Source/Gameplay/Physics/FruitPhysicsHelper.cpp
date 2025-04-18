@@ -5,7 +5,7 @@
 #include "Actors/FruitBall.h"
 
 // const 정적 변수 초기화
-const float UFruitPhysicsHelper::MinThrowAngle = 0.f;
+const float UFruitPhysicsHelper::MinThrowAngle = -30.f;
 const float UFruitPhysicsHelper::MaxThrowAngle = 57.5f;
 
 // 통합 물리 계산 함수 구현

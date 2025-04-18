@@ -6,7 +6,7 @@
 #include "Gameplay/Controller/FruitPlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Interface/HUD/FruitHUD.h"
-#include "Camera/CameraOrbitFunctionLibrary.h"
+#include "System/Camera/CameraOrbitFunctionLibrary.h"
 
 AFruitBall::AFruitBall()
 {
@@ -113,11 +113,11 @@ void AFruitBall::Tick(float DeltaTime)
                 bSlowMotionActive = true;
                 
                 // 슬로우 모션 효과 적용
-                UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 0.3f); // 30% 속도로 슬로우 모션
+                UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 0.3f); // 20% 속도로 감속해 슬로우 모션
                 
                 // 1. 과일 자체의 물리 설정 변경
-                MeshComponent->SetLinearDamping(20.0f);
-                MeshComponent->SetAngularDamping(20.0f);
+                MeshComponent->SetLinearDamping(30.0f);
+                MeshComponent->SetAngularDamping(30.0f);
                 
                 // 2. 중력 영향 감소 (떨어지는 속도 감소)
                 MeshComponent->SetEnableGravity(false); // 중력 비활성화
@@ -127,7 +127,7 @@ void AFruitBall::Tick(float DeltaTime)
                 MeshComponent->SetPhysicsLinearVelocity(CurrentVelocity * 0.2f);
                 
                 // 수동으로 약한 낙하 속도 적용 (중력 없이 아래로 천천히 떨어짐)
-                FVector SlowFallVector = FVector(0, 0, -50.0f);
+                FVector SlowFallVector = FVector(0, 0, -10.0f);
                 MeshComponent->AddForce(SlowFallVector, NAME_None, true);
                 
                 // 3. 카메라를 과일 쪽으로 이동
@@ -136,7 +136,6 @@ void AFruitBall::Tick(float DeltaTime)
                 
                 if (FruitController)
                 {
-                    // 직접 CameraOrbitFunctionLibrary 함수 호출
                     UCameraOrbitFunctionLibrary::MoveViewToFallingFruit(FruitController, GetActorLocation(), FRotator::ZeroRotator);
                     
                     // 약간의 딜레이 후 실제 게임 오버 처리
@@ -150,7 +149,7 @@ void AFruitBall::Tick(float DeltaTime)
                             // 시간 다시 정상화
                             UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 1.0f);
                         },
-                        2.0f * UGameplayStatics::GetGlobalTimeDilation(GetWorld()), // 슬로우 모션 상태에서 2초
+                        5.0f * UGameplayStatics::GetGlobalTimeDilation(GetWorld()), // 슬로우 모션 상태에서 5초
                         false
                     );
                 }
