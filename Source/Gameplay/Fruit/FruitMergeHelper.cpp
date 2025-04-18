@@ -287,32 +287,51 @@ void UFruitMergeHelper::PlayMergeEffect(UWorld* World, const FVector& Location, 
     }
 }
 
-// FruitMergeHelper.cpp에 함수 구현 추가
-void UFruitMergeHelper::PreloadAssets(UWorld* World)
+void UFruitMergeHelper::PreloadAllFruitMeshes(UWorld* World)
 {
-    // 블루프린트 클래스 미리 로드
-    TSubclassOf<AActor> PreloadClass = LoadClass<AActor>(nullptr, TEXT("/Game/Particle/02_Blueprints/BP_Particle_Burst_Lvl_1.BP_Particle_Burst_Lvl_1_C"));
-    if (PreloadClass && World)
+    UE_LOG(LogTemp, Display, TEXT("게임 에셋 사전 로드 시작..."));
+    
+    // 1. 모든 과일 메시 미리 로드 (최대 레벨까지)
+    for (int32 i = 1; i <= AFruitBall::MaxBallType; i++)
     {
-        // 보이지 않는 위치에 미리 인스턴스 생성 후 즉시 제거 (렌더링 캐시 준비)
+        // 메시 경로 - 게임의 실제 경로와 일치하게 수정
+        FString MeshPath = FString::Printf(TEXT("/Game/Fruit/Meshes/Fruit%d.Fruit%d"), i, i);
+        
+        // 동기적 로딩 사용
+        UStaticMesh* FruitMesh = LoadObject<UStaticMesh>(nullptr, *MeshPath);
+        
+        if (FruitMesh)
+        {
+            // 메시가 완전히 로드되도록 보장
+            FruitMesh->ConditionalPostLoad();
+            UE_LOG(LogTemp, Warning, TEXT("과일 메시 #%d 사전 로드 완료: %s"), i, *MeshPath);
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("과일 메시 #%d 로드 실패: %s"), i, *MeshPath);
+        }
+    }
+    
+    // 2. 파티클 효과 미리 로드
+    TSubclassOf<AActor> PreloadParticleClass = LoadClass<AActor>(nullptr, TEXT("/Game/Particle/02_Blueprints/BP_Particle_Burst_Lvl_1.BP_Particle_Burst_Lvl_1_C"));
+    if (PreloadParticleClass && World)
+    {
         FVector HiddenLocation = FVector(0, 0, -10000);
-        AActor* PreloadActor = World->SpawnActor<AActor>(PreloadClass, HiddenLocation, FRotator::ZeroRotator);
+        AActor* PreloadActor = World->SpawnActor<AActor>(PreloadParticleClass, HiddenLocation, FRotator::ZeroRotator);
         if (PreloadActor)
         {
             PreloadActor->SetActorHiddenInGame(true);
             PreloadActor->SetActorTickEnabled(false);
             
-            // 1프레임 후 삭제 (렌더링 자원이 초기화되도록)
             FTimerHandle DestroyHandle;
             World->GetTimerManager().SetTimer(DestroyHandle, [PreloadActor]() {
                 if(IsValid(PreloadActor)) PreloadActor->Destroy();
             }, 0.1f, false);
         }
         
-        // 리소스가 이미 로딩됨을 알리는 로그
         UE_LOG(LogTemp, Display, TEXT("병합 이펙트 파티클 미리 로드 완료"));
     }
     
-    // 사운드도 미리 로드
+    // 3. 사운드도 미리 로드
     USoundBase* PreloadSound = LoadObject<USoundBase>(nullptr, TEXT("/Game/Sounds/S_FruitMerge"));
 }

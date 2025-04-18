@@ -31,10 +31,11 @@ public:
     // 병합 시 과일들을 안정화하는 함수
     static void StabilizeFruits(UWorld* World);
     
-    // 병합 효과 리소스 미리 로드
-    static void PreloadAssets(UWorld* World);
-
     // 연쇄 초기화 함수
     UFUNCTION(BlueprintCallable, Category = "Score")
     static void ResetCombo(UWorld* World);
+
+    // 모든 과일 메시를 미리 로드
+    UFUNCTION(BlueprintCallable, Category = "Fruit")
+    static void PreloadAllFruitMeshes(UWorld* World);
 };

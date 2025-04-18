@@ -39,9 +39,9 @@ AUE_FruitMountainGameMode::AUE_FruitMountainGameMode()
 void AUE_FruitMountainGameMode::BeginPlay()
 {
     Super::BeginPlay();
-
-    // 게임 시작 시 에셋 미리 로드
-    UFruitMergeHelper::PreloadAssets(GetWorld());
+    
+    // 게임 시작 시 모든 과일 메시 사전 로드
+    UFruitMergeHelper::PreloadAllFruitMeshes(GetWorld());
     
     UTextureDisplayWidget::CreateDisplayWidget(this);
 }

@@ -114,21 +114,21 @@ void AFruitBall::Tick(float DeltaTime)
                 bSlowMotionActive = true;
                 
                 // 슬로우 모션 효과 적용
-                UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 0.3f); // 20% 속도로 감속해 슬로우 모션
+                UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 0.3f); // 30% 속도로 감속해 슬로우 모션
                 
                 // 1. 과일 자체의 물리 설정 변경
-                MeshComponent->SetLinearDamping(30.0f);
-                MeshComponent->SetAngularDamping(30.0f);
+                MeshComponent->SetLinearDamping(20.0f);
+                MeshComponent->SetAngularDamping(20.0f);
                 
                 // 2. 중력 영향 감소 (떨어지는 속도 감소)
                 MeshComponent->SetEnableGravity(false); // 중력 비활성화
                 
                 // 기존 속도의 방향을 유지하면서 속도 감소
                 FVector CurrentVelocity = MeshComponent->GetPhysicsLinearVelocity();
-                MeshComponent->SetPhysicsLinearVelocity(CurrentVelocity * 0.2f);
+                MeshComponent->SetPhysicsLinearVelocity(CurrentVelocity * 0.3f);
                 
                 // 수동으로 약한 낙하 속도 적용 (중력 없이 아래로 천천히 떨어짐)
-                FVector SlowFallVector = FVector(0, 0, -10.0f);
+                FVector SlowFallVector = FVector(0, 0, -20.0f);
                 MeshComponent->AddForce(SlowFallVector, NAME_None, true);
                 
                 // 3. 카메라를 과일 쪽으로 이동
