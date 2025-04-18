@@ -30,6 +30,8 @@ AUE_FruitMountainGameMode::AUE_FruitMountainGameMode()
     PlateClass = APlateActor::StaticClass();
 
     FruitBallClass = AFruitBall::StaticClass();
+
+    ScoreManager = CreateDefaultSubobject<UScoreManagerComponent>(TEXT("ScoreManager"));
     
     UE_LOG(LogTemp, Log, TEXT("AUE_FruitMountainGameMode 생성자 호출됨"));
 }
@@ -38,8 +40,7 @@ void AUE_FruitMountainGameMode::BeginPlay()
 {
     Super::BeginPlay();
 
-    // 게임 시작 시 파티클-
-    // 에셋 미리 로드
+    // 게임 시작 시 에셋 미리 로드
     UFruitMergeHelper::PreloadAssets(GetWorld());
     
     UTextureDisplayWidget::CreateDisplayWidget(this);

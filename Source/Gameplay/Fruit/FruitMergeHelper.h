@@ -4,7 +4,10 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "FruitMergeHelper.generated.h"
 
+// 전방 선언 추가
+class UScoreManagerComponent;
 class AFruitBall;
+class UWorld;
 
 UCLASS()
 class UE_FRUITMOUNTAIN_API UFruitMergeHelper : public UBlueprintFunctionLibrary
@@ -19,7 +22,8 @@ public:
     static void MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& MergeLocation);
     
     // 점수 추가
-    static void AddScore(int32 BallType);
+    UFUNCTION(BlueprintCallable, Category = "Score")
+    static void AddScore(UWorld* World, int32 BallType);
     
     // 병합 이펙트 재생
     static void PlayMergeEffect(UWorld* World, const FVector& Location, int32 BallType);
@@ -30,11 +34,7 @@ public:
     // 병합 효과 리소스 미리 로드
     static void PreloadAssets(UWorld* World);
 
-    // 연쇄병합 관련 변수
-    static int32 ComboCount;
-    static float LastMergeTime;
-    static float ComboTimeLimit;
-    
     // 연쇄 초기화 함수
-    static void ResetCombo();
+    UFUNCTION(BlueprintCallable, Category = "Score")
+    static void ResetCombo(UWorld* World);
 };

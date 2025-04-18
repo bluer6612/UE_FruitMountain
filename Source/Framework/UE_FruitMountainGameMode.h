@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
+#include "Gameplay/Fruit/ScoreManagerComponent.h"
 #include "UE_FruitMountainGameMode.generated.h"
 
 class APlateActor;
@@ -27,4 +28,7 @@ public:
     // 과일 볼 클래스 지정 변수
     UPROPERTY(EditDefaultsOnly, Category = "Game")
     TSubclassOf<AActor> FruitBallClass;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Components")
+    class UScoreManagerComponent* ScoreManager;
 };

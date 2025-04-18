@@ -5,11 +5,7 @@
 #include "Gameplay/Controller/FruitPlayerController.h"
 #include "Framework/UE_FruitMountainGameMode.h"
 #include "Components/StaticMeshComponent.h"
-
-// 파일 상단에 정적 변수 초기화
-int32 UFruitMergeHelper::ComboCount = 0;
-float UFruitMergeHelper::LastMergeTime = 0.0f;
-float UFruitMergeHelper::ComboTimeLimit = 1.5f; // 1.5초 내에 연쇄병합 필요
+#include "Gameplay/Fruit/ScoreManagerComponent.h"
 
 void UFruitMergeHelper::TryMergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& CollisionPoint)
 {
@@ -47,9 +43,6 @@ void UFruitMergeHelper::TryMergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, c
     MergeFruits(FruitA, FruitB, CollisionPoint);
 }
 
-// 연쇄는 2연쇄부터 시작해서 1.1배, 3연쇄 1.2배, 4연쇄 1.2배, 5연쇄 1.3배, 이렇게 2의 배수
-// 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 78, 91, 105, 120, 136, 153, 171, 190
-
 void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& MergeLocation)
 {
     if (!FruitA || !FruitB) {
@@ -68,7 +61,7 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
     if (TypeA >= AFruitBall::MaxBallType)
     {
         UE_LOG(LogTemp, Warning, TEXT("병합 완료: 최대 레벨 과일 병합"));
-        AddScore(TypeA);
+        AddScore(World, TypeA); // World 인자 추가
         PlayMergeEffect(World, MergeLocation, TypeA);
         
         FruitA->Destroy();
@@ -81,13 +74,12 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
     
     // 이펙트 및 점수 처리
     PlayMergeEffect(World, MergeLocation, TypeA);
-    AddScore(TypeA); // 새 과일의 타입으로 점수 계산 (변경 부분)
+    AddScore(World, NextType); // World 인자 추가
     
     // 병합 위치 주변 과일들의 속도 감소 (폭발적 충돌 방지)
     StabilizeFruits(World);
     
     // 새 과일 생성 전에 기존 과일의 회전값 저장
-    // 두 과일 중 어떤 것이 접시에 있는 과일인지 판단 (여기서는 단순히 FruitA 사용)
     FRotator ExistingRotation = FruitA->GetActorRotation();
     
     // 새 과일 생성
@@ -115,7 +107,7 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
             
             // 초기에는 댐핑을 높게 설정 (병합 직후 안정화 용도)
             MeshComp->SetLinearDamping(8.0f);
-            MeshComp->SetAngularDamping(5.0f);
+            MeshComp->SetAngularDamping(8.0f);
             
             // 접시에 닿는 시점에 StabilizeOnPlate가 댐핑을 관리할 것임
         }
@@ -162,12 +154,12 @@ void UFruitMergeHelper::StabilizeFruits(UWorld* World)
         FVector ToCenterXY = FVector::ZeroVector - Fruit->GetActorLocation();
         ToCenterXY.Z = 0; // Z 방향은 무시 (수직 안정화만)
         
-        FVector StabilizingForce = ToCenterXY.GetSafeNormal() * CurrentSpeed * 0.5f;
+        FVector StabilizingForce = ToCenterXY.GetSafeNormal() * CurrentSpeed * 1.5f;
         MeshComp->AddForce(StabilizingForce, NAME_None, true); // 질량 고려하여 적용
 
         // 일시적으로 감쇠 증가
-        MeshComp->SetLinearDamping(10.0f);
-        MeshComp->SetAngularDamping(10.0f);
+        MeshComp->SetLinearDamping(20.0f);
+        MeshComp->SetAngularDamping(20.0f);
         
         // 1초 후에 원래 감쇠 복원
         FTimerHandle DampingTimerHandle;
@@ -185,75 +177,46 @@ void UFruitMergeHelper::StabilizeFruits(UWorld* World)
     }
 }
 
-void UFruitMergeHelper::AddScore(int32 BallType)
+// 점수 추가 함수 수정 - ScoreManagerComponent를 사용하도록
+void UFruitMergeHelper::AddScore(UWorld* World, int32 BallType)
 {
-    // 1. 기본 점수 계산 - 등차수열의 합 공식: n*(n+1)/2
-    int32 BaseScore = (BallType * (BallType + 1)) / 2;
-    
-    // 2. 현재 시간 가져오기
-    UWorld* World = GEngine->GetWorld();
     if (!World) return;
     
-    float CurrentTime = World->GetTimeSeconds();
-    
-    // 3. 연쇄 상태 확인 및 업데이트
-    bool bIsCombo = false;
-    
-    if (LastMergeTime > 0 && (CurrentTime - LastMergeTime) <= ComboTimeLimit)
+    // 게임모드에서 ScoreManagerComponent 찾기 (또는 생성)
+    AUE_FruitMountainGameMode* GameMode = Cast<AUE_FruitMountainGameMode>(UGameplayStatics::GetGameMode(World));
+    if (!GameMode) 
     {
-        // 연쇄 성공 - 카운트 증가
-        ComboCount++;
-        bIsCombo = true;
-    }
-    else
-    {
-        // 연쇄 실패 - 카운트 리셋
-        ComboCount = 1; // 첫 번째 병합을 1로 시작
+        UE_LOG(LogTemp, Error, TEXT("AddScore: 게임모드를 찾을 수 없음"));
+        return;
     }
     
-    // 4. 마지막 병합 시간 업데이트
-    LastMergeTime = CurrentTime;
+    // 게임모드에서 ScoreManagerComponent 가져오기
+    UScoreManagerComponent* ScoreManager = GameMode->FindComponentByClass<UScoreManagerComponent>();
     
-    // 5. 연쇄 보너스 계산 - 2연쇄부터 시작, 짝수 연쇄마다 0.1배씩 증가
-    float ComboMultiplier = 1.0f;
-    
-    if (ComboCount >= 2)
+    // 없으면 생성
+    if (!ScoreManager)
     {
-        // 연쇄 보너스 계산 (2연쇄: 1.1배, 4연쇄: 1.2배, 6연쇄: 1.3배, ...)
-        int32 BonusTiers = ComboCount / 2;
-        ComboMultiplier = 1.0f + (BonusTiers * 0.1f);
+        UE_LOG(LogTemp, Warning, TEXT("AddScore: ScoreManagerComponent가 없어 새로 생성합니다."));
+        ScoreManager = NewObject<UScoreManagerComponent>(GameMode, UScoreManagerComponent::StaticClass());
+        ScoreManager->RegisterComponent();
     }
     
-    // 6. 최종 점수 계산 및 적용
-    int32 FinalScore = FMath::RoundToInt(BaseScore * ComboMultiplier);
+    // 점수 추가 로직을 ScoreManagerComponent에 위임
+    ScoreManager->AddScore(BallType);
+}
+
+// ResetCombo 함수도 ScoreManagerComponent 사용으로 수정
+void UFruitMergeHelper::ResetCombo(UWorld* World)
+{
+    if (!World) return;
     
-    // 7. 로그 출력
-    if (bIsCombo && ComboCount >= 2)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("%d연쇄 병합! 기본점수: %d, 보너스율: %.1f배, 최종점수: %d"),
-               ComboCount, BaseScore, ComboMultiplier, FinalScore);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("과일 병합 점수: %d (레벨 %d)"), FinalScore, BallType);
-    }
+    AUE_FruitMountainGameMode* GameMode = Cast<AUE_FruitMountainGameMode>(UGameplayStatics::GetGameMode(World));
+    if (!GameMode) return;
     
-    // 8. 게임 모드에 점수 추가
-    AGameModeBase* GameMode = World->GetAuthGameMode();
-    AUE_FruitMountainGameMode* FruitGameMode = Cast<AUE_FruitMountainGameMode>(GameMode);
-    if (FruitGameMode)
+    UScoreManagerComponent* ScoreManager = GameMode->FindComponentByClass<UScoreManagerComponent>();
+    if (ScoreManager)
     {
-        // 게임모드에서 점수 추가 함수 호출 (구현 필요)
-        // FruitGameMode->AddScore(FinalScore);
-        
-        // UI 업데이트 필요시 여기서 호출
-        // 예: FruitGameMode->UpdateScoreUI(FinalScore, ComboCount, ComboMultiplier);
-    }
-    
-    // 9. 효과음 - 연쇄 보너스 시 특별한 효과음 재생
-    if (bIsCombo && ComboCount >= 2)
-    {
-        // 특별한 콤보 효과음 재생 (필요시 구현)
+        ScoreManager->ResetCombo();
     }
 }
 
@@ -352,10 +315,4 @@ void UFruitMergeHelper::PreloadAssets(UWorld* World)
     
     // 사운드도 미리 로드
     USoundBase* PreloadSound = LoadObject<USoundBase>(nullptr, TEXT("/Game/Sounds/S_FruitMerge"));
-}
-
-void UFruitMergeHelper::ResetCombo()
-{
-    ComboCount = 0;
-    LastMergeTime = 0.0f;
 }
