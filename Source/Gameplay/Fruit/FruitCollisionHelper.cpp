@@ -72,7 +72,7 @@ void UFruitCollisionHelper::StabilizeOnPlate(AFruitBall* Fruit, UPrimitiveCompon
     UWorld* World = Fruit->GetWorld();
     if (!World) return;
     
-    // 각댐핑만 즉시 감쇠를 매우 높게 설정하여 빠르게 에너지 손실 
+    // 각댐핑만 즉시 감쇠를 매우 높게 설정하여 자연스럽고 빠르게 에너지 손실 
     HitComponent->SetAngularDamping(10.0f);
     //HitComponent->SetLinearDamping(10.0f);
     

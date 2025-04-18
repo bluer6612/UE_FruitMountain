@@ -6,6 +6,11 @@
 #include "Framework/UE_FruitMountainGameMode.h"
 #include "Components/StaticMeshComponent.h"
 
+// 파일 상단에 정적 변수 초기화
+int32 UFruitMergeHelper::ComboCount = 0;
+float UFruitMergeHelper::LastMergeTime = 0.0f;
+float UFruitMergeHelper::ComboTimeLimit = 1.5f; // 1.5초 내에 연쇄병합 필요
+
 void UFruitMergeHelper::TryMergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& CollisionPoint)
 {
     if (!FruitA || !FruitB) {
@@ -63,7 +68,7 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
     if (TypeA >= AFruitBall::MaxBallType)
     {
         UE_LOG(LogTemp, Warning, TEXT("병합 완료: 최대 레벨 과일 병합"));
-        AddScore(TypeA * 2);
+        AddScore(TypeA);
         PlayMergeEffect(World, MergeLocation, TypeA);
         
         FruitA->Destroy();
@@ -76,7 +81,7 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
     
     // 이펙트 및 점수 처리
     PlayMergeEffect(World, MergeLocation, TypeA);
-    AddScore(TypeA);
+    AddScore(TypeA); // 새 과일의 타입으로 점수 계산 (변경 부분)
     
     // 병합 위치 주변 과일들의 속도 감소 (폭발적 충돌 방지)
     StabilizeFruits(World);
@@ -182,23 +187,73 @@ void UFruitMergeHelper::StabilizeFruits(UWorld* World)
 
 void UFruitMergeHelper::AddScore(int32 BallType)
 {
-    // 레벨에 따른 점수 계산 (예: 레벨 * 10)
-    int32 ScoreToAdd = BallType * 10;
+    // 1. 기본 점수 계산 - 등차수열의 합 공식: n*(n+1)/2
+    int32 BaseScore = (BallType * (BallType + 1)) / 2;
     
-    // 게임 모드나 UI를 통해 점수 업데이트
+    // 2. 현재 시간 가져오기
     UWorld* World = GEngine->GetWorld();
-    if (World)
+    if (!World) return;
+    
+    float CurrentTime = World->GetTimeSeconds();
+    
+    // 3. 연쇄 상태 확인 및 업데이트
+    bool bIsCombo = false;
+    
+    if (LastMergeTime > 0 && (CurrentTime - LastMergeTime) <= ComboTimeLimit)
     {
-        AGameModeBase* GameMode = World->GetAuthGameMode();
-        AUE_FruitMountainGameMode* FruitGameMode = Cast<AUE_FruitMountainGameMode>(GameMode);
-        if (FruitGameMode)
-        {
-            // 게임 모드에 점수 추가 함수 호출 (구현 필요)
-            // FruitGameMode->AddScore(ScoreToAdd);
-            
-            // UI 업데이트
-            UE_LOG(LogTemp, Warning, TEXT("과일 병합 점수 추가: %d (레벨 %d)"), ScoreToAdd, BallType);
-        }
+        // 연쇄 성공 - 카운트 증가
+        ComboCount++;
+        bIsCombo = true;
+    }
+    else
+    {
+        // 연쇄 실패 - 카운트 리셋
+        ComboCount = 1; // 첫 번째 병합을 1로 시작
+    }
+    
+    // 4. 마지막 병합 시간 업데이트
+    LastMergeTime = CurrentTime;
+    
+    // 5. 연쇄 보너스 계산 - 2연쇄부터 시작, 짝수 연쇄마다 0.1배씩 증가
+    float ComboMultiplier = 1.0f;
+    
+    if (ComboCount >= 2)
+    {
+        // 연쇄 보너스 계산 (2연쇄: 1.1배, 4연쇄: 1.2배, 6연쇄: 1.3배, ...)
+        int32 BonusTiers = ComboCount / 2;
+        ComboMultiplier = 1.0f + (BonusTiers * 0.1f);
+    }
+    
+    // 6. 최종 점수 계산 및 적용
+    int32 FinalScore = FMath::RoundToInt(BaseScore * ComboMultiplier);
+    
+    // 7. 로그 출력
+    if (bIsCombo && ComboCount >= 2)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("%d연쇄 병합! 기본점수: %d, 보너스율: %.1f배, 최종점수: %d"),
+               ComboCount, BaseScore, ComboMultiplier, FinalScore);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("과일 병합 점수: %d (레벨 %d)"), FinalScore, BallType);
+    }
+    
+    // 8. 게임 모드에 점수 추가
+    AGameModeBase* GameMode = World->GetAuthGameMode();
+    AUE_FruitMountainGameMode* FruitGameMode = Cast<AUE_FruitMountainGameMode>(GameMode);
+    if (FruitGameMode)
+    {
+        // 게임모드에서 점수 추가 함수 호출 (구현 필요)
+        // FruitGameMode->AddScore(FinalScore);
+        
+        // UI 업데이트 필요시 여기서 호출
+        // 예: FruitGameMode->UpdateScoreUI(FinalScore, ComboCount, ComboMultiplier);
+    }
+    
+    // 9. 효과음 - 연쇄 보너스 시 특별한 효과음 재생
+    if (bIsCombo && ComboCount >= 2)
+    {
+        // 특별한 콤보 효과음 재생 (필요시 구현)
     }
 }
 
@@ -297,4 +352,10 @@ void UFruitMergeHelper::PreloadAssets(UWorld* World)
     
     // 사운드도 미리 로드
     USoundBase* PreloadSound = LoadObject<USoundBase>(nullptr, TEXT("/Game/Sounds/S_FruitMerge"));
+}
+
+void UFruitMergeHelper::ResetCombo()
+{
+    ComboCount = 0;
+    LastMergeTime = 0.0f;
 }

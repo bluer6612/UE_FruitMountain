@@ -29,4 +29,12 @@ public:
     
     // 병합 효과 리소스 미리 로드
     static void PreloadAssets(UWorld* World);
+
+    // 연쇄병합 관련 변수
+    static int32 ComboCount;
+    static float LastMergeTime;
+    static float ComboTimeLimit;
+    
+    // 연쇄 초기화 함수
+    static void ResetCombo();
 };
