@@ -29,7 +29,7 @@ public:
     static void PlayMergeEffect(UWorld* World, const FVector& Location, int32 BallType);
     
     // 병합 시 과일들을 안정화하는 함수
-    static void StabilizeFruits(UWorld* World);
+    static void StabilizeFruitPhysicscs(AFruitBall* Fruit, float InitialDampingMultiplier, bool bIsNewFruit);
     
     // 연쇄 초기화 함수
     UFUNCTION(BlueprintCallable, Category = "Score")
