@@ -102,7 +102,7 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
             MeshComp->SetSimulatePhysics(true);
             
             // 약간의 위쪽 방향 초기 속도 부여 (자연스러운 병합 효과)
-            float UpwardForce = 5.0f + (NextType * 1.0f); // 레벨에 따라 증가
+            float UpwardForce = -5.0f - (NextType * 1.0f); // 레벨에 따라 증가
             MeshComp->SetPhysicsLinearVelocity(FVector(0, 0, UpwardForce));
             
             // 초기에는 댐핑을 높게 설정 (병합 직후 안정화 용도)
@@ -130,6 +130,13 @@ void UFruitMergeHelper::StabilizeFruits(UWorld* World)
     TArray<AActor*> FoundFruits;
     UGameplayStatics::GetAllActorsOfClass(World, AFruitBall::StaticClass(), FoundFruits);
     
+    // 로그 추가: 총 발견된 과일 개수
+    UE_LOG(LogTemp, Warning, TEXT("StabilizeFruits: 총 %d개 과일 발견"), FoundFruits.Num());
+    
+    // 안정화 대상 과일 개수 카운팅
+    int32 StabilizedCount = 0;
+    TArray<int32> StabilizedTypes;
+    
     // 거리 제한 없이 모든 과일에 감속 적용
     for (AActor* Actor : FoundFruits)
     {
@@ -149,9 +156,25 @@ void UFruitMergeHelper::StabilizeFruits(UWorld* World)
         FVector AngVel = MeshComp->GetPhysicsAngularVelocityInDegrees();
         MeshComp->SetPhysicsAngularVelocityInDegrees(AngVel * 0.1f);
         
+        // 접시 중앙 방향으로 약한 안정화 힘 추가 (횡방향만)
+        float CurrentSpeed = CurrentVel.Size();
+        FVector ToCenterXY = FVector::ZeroVector - Fruit->GetActorLocation();
+        ToCenterXY.Z = 0; // Z 방향은 무시 (수직 안정화만)
+        
+        FVector StabilizingForce = ToCenterXY.GetSafeNormal() * CurrentSpeed * 0.5f;
+        MeshComp->AddForce(StabilizingForce, NAME_None, true); // 질량 고려하여 적용
+
         // 일시적으로 감쇠 증가
         MeshComp->SetLinearDamping(10.0f);
         MeshComp->SetAngularDamping(10.0f);
+        
+        // 로그: 안정화되는 과일 정보
+        StabilizedCount++;
+        StabilizedTypes.Add(Fruit->GetBallType());
+        UE_LOG(LogTemp, Display, TEXT("  - 과일 안정화: ID=%s, 타입=%d, 위치=%s, 속도=%s"),
+               *Fruit->GetName(), Fruit->GetBallType(), 
+               *Fruit->GetActorLocation().ToString(),
+               *CurrentVel.ToString());
         
         // 1초 후에 원래 감쇠 복원
         FTimerHandle DampingTimerHandle;
@@ -167,6 +190,16 @@ void UFruitMergeHelper::StabilizeFruits(UWorld* World)
             }, 
             1.0f, false);
     }
+    
+    // 최종 결과 로그
+    FString TypesStr;
+    for (int32 Type : StabilizedTypes)
+    {
+        TypesStr += FString::Printf(TEXT("%d, "), Type);
+    }
+    
+    UE_LOG(LogTemp, Warning, TEXT("StabilizeFruits: %d개 과일 안정화 완료. 과일 타입: %s"), 
+           StabilizedCount, *TypesStr);
 }
 
 void UFruitMergeHelper::AddScore(int32 BallType)

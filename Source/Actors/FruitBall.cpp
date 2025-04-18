@@ -101,6 +101,10 @@ void AFruitBall::Tick(float DeltaTime)
         {
             UE_LOG(LogTemp, Warning, TEXT("충돌 경험 있는 과일이 접시 바깥으로 떨어짐: %s (Z=%f)"), 
                 *GetName(), CurrentZ);
+
+            //슬로우 모션 처리리
+            MeshComponent->SetLinearDamping(20.0f);
+            MeshComponent->SetAngularDamping(20.0f);
                 
             // 게임오버 처리
             APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
