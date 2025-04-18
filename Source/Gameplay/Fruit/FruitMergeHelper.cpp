@@ -161,14 +161,6 @@ void UFruitMergeHelper::StabilizeFruits(UWorld* World)
         MeshComp->SetLinearDamping(10.0f);
         MeshComp->SetAngularDamping(10.0f);
         
-        // 로그: 안정화되는 과일 정보
-        StabilizedCount++;
-        StabilizedTypes.Add(Fruit->GetBallType());
-        UE_LOG(LogTemp, Display, TEXT("  - 과일 안정화: ID=%s, 타입=%d, 위치=%s, 속도=%s"),
-               *Fruit->GetName(), Fruit->GetBallType(), 
-               *Fruit->GetActorLocation().ToString(),
-               *CurrentVel.ToString());
-        
         // 1초 후에 원래 감쇠 복원
         FTimerHandle DampingTimerHandle;
         World->GetTimerManager().SetTimer(DampingTimerHandle, 
