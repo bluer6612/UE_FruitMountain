@@ -51,10 +51,10 @@ void UCameraOrbitFunctionLibrary::MoveViewToFallingFruit(APlayerController* Cont
     FVector FruitToPlateDirection = (PlateLocation - FruitLocation).GetSafeNormal();
     
     // 카메라 위치는 과일 반대쪽에서 일직선상에 배치
-    FVector NewCameraLocation = FruitLocation - FruitToPlateDirection * 50.0f; //카메라-과일 거리
+    FVector NewCameraLocation = FruitLocation - FruitToPlateDirection * 100.0f; //카메라-과일 거리
     
     // 높이 조정
-    NewCameraLocation.Z -= 60.0f;
+    NewCameraLocation.Z -= 75.0f;
     
     // 카메라 회전 - 과일을 향하도록
     FRotator NewRotation = (FruitLocation - NewCameraLocation).Rotation();
