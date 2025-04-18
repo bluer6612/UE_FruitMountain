@@ -121,56 +121,51 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
     FruitB->Destroy();
 }
 
-// 주변 과일 안정화 함수
-void UFruitMergeHelper::StabilizeNearbyFruits(UWorld* World, const FVector& MergeLocation, int32 BallType)
+// 모든 과일 안정화 함수
+void UFruitMergeHelper::StabilizeFruits(UWorld* World, const FVector& MergeLocation, int32 BallType)
 {
     if (!World) return;
     
-    // 병합 지점 주변 일정 반경의 과일을 찾아 속도 감소
+    // 현재 월드의 모든 과일 찾기
     TArray<AActor*> FoundFruits;
     UGameplayStatics::GetAllActorsOfClass(World, AFruitBall::StaticClass(), FoundFruits);
     
-    const float StabilizeRadius = 75 * (1.0f + (BallType * 0.1f)); // 레벨당 10% 증가
-    
+    // 거리 제한 없이 모든 과일에 감속 적용
     for (AActor* Actor : FoundFruits)
     {
-        AFruitBall* NearbyFruit = Cast<AFruitBall>(Actor);
-        if (!NearbyFruit || !NearbyFruit->GetMeshComponent()) continue;
+        AFruitBall* Fruit = Cast<AFruitBall>(Actor);
+        if (!Fruit || !Fruit->GetMeshComponent()) continue;
         
-        // 거리 계산
-        float Distance = FVector::Distance(NearbyFruit->GetActorLocation(), MergeLocation);
+        // 미리보기 공이나 이미 병합 중인 과일 제외
+        if (Fruit->IsPreviewBall() || Fruit->IsMerging()) continue;
         
-        // 안정화 범위 내의 과일만 처리
-        if (Distance <= StabilizeRadius)
-        {
-            UStaticMeshComponent* MeshComp = NearbyFruit->GetMeshComponent();
-            
-            // 현재 속도 감소
-            FVector CurrentVel = MeshComp->GetPhysicsLinearVelocity();
-            MeshComp->SetPhysicsLinearVelocity(CurrentVel * 0.3f); // 70% 감속
-            
-            // 회전 속도 감소
-            FVector AngVel = MeshComp->GetPhysicsAngularVelocityInDegrees();
-            MeshComp->SetPhysicsAngularVelocityInDegrees(AngVel * 0.3f);
-            
-            // 일시적으로 감쇠 증가
-            MeshComp->SetLinearDamping(5.0f);
-            MeshComp->SetAngularDamping(5.0f);
-            
-            // 0.5초 후에 원래 감쇠 복원
-            FTimerHandle DampingTimerHandle;
-            World->GetTimerManager().SetTimer(DampingTimerHandle, 
-                [WeakFruit=TWeakObjectPtr<AFruitBall>(NearbyFruit)]() 
+        UStaticMeshComponent* MeshComp = Fruit->GetMeshComponent();
+        
+        // 현재 속도 감소 (모든 과일의 속도를 70% 감소)
+        FVector CurrentVel = MeshComp->GetPhysicsLinearVelocity();
+        MeshComp->SetPhysicsLinearVelocity(CurrentVel * 0.3f);
+        
+        // 회전 속도 감소
+        FVector AngVel = MeshComp->GetPhysicsAngularVelocityInDegrees();
+        MeshComp->SetPhysicsAngularVelocityInDegrees(AngVel * 0.3f);
+        
+        // 일시적으로 감쇠 증가
+        MeshComp->SetLinearDamping(5.0f);
+        MeshComp->SetAngularDamping(5.0f);
+        
+        // 1초 후에 원래 감쇠 복원
+        FTimerHandle DampingTimerHandle;
+        World->GetTimerManager().SetTimer(DampingTimerHandle, 
+            [WeakFruit=TWeakObjectPtr<AFruitBall>(Fruit)]() 
+            {
+                // 약한 포인터로 유효성 검사 (이미 소멸된 객체에 안전하게 접근)
+                if (WeakFruit.IsValid() && WeakFruit->GetMeshComponent())
                 {
-                    // 약한 포인터로 유효성 검사 (이미 소멸된 객체에 안전하게 접근)
-                    if (WeakFruit.IsValid() && WeakFruit->GetMeshComponent())
-                    {
-                        WeakFruit->GetMeshComponent()->SetLinearDamping(2.0f);
-                        WeakFruit->GetMeshComponent()->SetAngularDamping(2.0f);
-                    }
-                }, 
-                0.5f, false);
-        }
+                    WeakFruit->GetMeshComponent()->SetLinearDamping(2.0f);
+                    WeakFruit->GetMeshComponent()->SetAngularDamping(2.0f);
+                }
+            }, 
+            1.0f, false);
     }
 }
 
