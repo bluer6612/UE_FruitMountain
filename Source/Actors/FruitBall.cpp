@@ -88,7 +88,7 @@ void AFruitBall::Tick(float DeltaTime)
     Super::Tick(DeltaTime);
     
     // 미리보기 공이나 병합 중인 과일은 체크하지 않음
-    if (bIsPreviewBall || bMerging) return;
+    if (bIsPreviewBall || bIsBeingMerged) return;
     
     // 모든 과일에 대해 추락 확인 (충돌 여부 상관없이)
     float CurrentZ = GetActorLocation().Z;
