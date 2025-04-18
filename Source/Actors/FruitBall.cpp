@@ -82,7 +82,7 @@ float AFruitBall::CalculateBallMass(int32 BallType)
     return DensityFactor * FMath::Pow(1.025f, BallType - 1);
 }
 
-// Tick 함수 수정/추가
+// Tick 함수 수정 - 충돌 발생한 과일만 게임오버 체크
 void AFruitBall::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
@@ -90,25 +90,27 @@ void AFruitBall::Tick(float DeltaTime)
     // 미리보기 공이나 병합 중인 과일은 체크하지 않음
     if (bIsPreviewBall || bIsBeingMerged) return;
     
-    // 모든 과일에 대해 추락 확인 (충돌 여부 상관없이)
-    float CurrentZ = GetActorLocation().Z;
-    
-    // 접시보다 약간이라도 아래로 내려가면 게임 오버
-    if (CurrentZ < FallThreshold)
+    // 충돌 경험이 있는 과일만 추락 체크
+    if (bHasCollided)
     {
-        UE_LOG(LogTemp, Warning, TEXT("과일이 접시 바깥으로 떨어짐: %s (Z=%f)"), 
-               *GetName(), CurrentZ);
-               
-        // 게임오버 처리
-        APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-        AFruitPlayerController* FruitController = Cast<AFruitPlayerController>(PC);
+        // 현재 위치 확인
+        float CurrentZ = GetActorLocation().Z;
         
-        if (FruitController)
+        // 접시보다 약간이라도 아래로 내려가면 게임 오버
+        if (CurrentZ < FallThreshold)
         {
-            FruitController->GameOver();
+            UE_LOG(LogTemp, Warning, TEXT("충돌 경험 있는 과일이 접시 바깥으로 떨어짐: %s (Z=%f)"), 
+                *GetName(), CurrentZ);
+                
+            // 게임오버 처리
+            APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+            AFruitPlayerController* FruitController = Cast<AFruitPlayerController>(PC);
             
-            // 게임오버 발생 후 더 이상 체크하지 않도록 Tick 비활성화
-            SetActorTickEnabled(false);
+            if (FruitController)
+            {
+                FruitController->GameOver();
+                SetActorTickEnabled(false);
+            }
         }
     }
 }
@@ -144,16 +146,6 @@ void AFruitBall::StabilizeOnPlate(UPrimitiveComponent* HitComponent)
     // 즉시 감쇠를 매우 높게 설정하여 빠르게 에너지 손실
     HitComponent->SetAngularDamping(10.0f);
     HitComponent->SetLinearDamping(10.0f);
-
-    // 부자연스러워서 제거
-    // 수직 속도를 즉시 감소
-    //FVector CurrentVel = HitComponent->GetPhysicsLinearVelocity();
-    //CurrentVel.Z *= 0.2f;  // Z 속도를 80% 감소
-    //HitComponent->SetPhysicsLinearVelocity(CurrentVel);
-
-    // 각속도 감소
-    //FVector AngVel = HitComponent->GetPhysicsAngularVelocityInDegrees();
-    //HitComponent->SetPhysicsAngularVelocityInDegrees(AngVel * 0.2f);
     
     // 잠시 후에 완전히 안정화 - 약한 참조 사용
     GetWorld()->GetTimerManager().SetTimer(StabilizeTimerHandle, 
@@ -162,11 +154,6 @@ void AFruitBall::StabilizeOnPlate(UPrimitiveComponent* HitComponent)
             // 약한 포인터로 유효성 검사 (이미 소멸된 객체에 안전하게 접근)
             if (WeakThis.IsValid() && WeakMeshComp.IsValid() && WeakMeshComp->IsSimulatingPhysics())
             {
-                // 수직 속도를 0으로 설정 (부자연스러워서 제거)
-                //WeakMeshComp->SetPhysicsLinearVelocity(FVector::ZeroVector);
-                // 각속도는 기울임과 관련되서 0 처리 제외
-                //WeakMeshComp->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
-                
                 // 일반 감쇠 값 복원
                 WeakMeshComp->SetAngularDamping(2.0f);
                 WeakMeshComp->SetLinearDamping(2.0f);
