@@ -175,10 +175,9 @@ void AFruitBall::Tick(float DeltaTime)
 }
 
 void AFruitBall::OnBallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, 
-    UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+                       UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-// FruitCollisionHelper 함수 호출로 대체
-UFruitCollisionHelper::HandleBallHit(this, HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
+    UFruitCollisionHelper::HandleBallHit(this, HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
 }
 
 // 과일 타입에 맞는 메시 업데이트
