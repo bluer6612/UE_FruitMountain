@@ -14,6 +14,7 @@ AFruitBall::AFruitBall()
     // 기본값 설정
     BallType = 1;
     bIsBeingMerged = false;
+    bSlowMotionActive = false;
     
     // 메시 컴포넌트 생성 및 루트로 설정
     MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("FruitBallMesh"));
@@ -82,7 +83,7 @@ float AFruitBall::CalculateBallMass(int32 BallType)
     return DensityFactor * FMath::Pow(1.025f, BallType - 1);
 }
 
-// Tick 함수 수정 - 충돌 발생한 과일만 게임오버 체크
+// Tick 함수 수정 - 떨어짐 감지 시 카메라 이동 및 슬로우 모션 추가
 void AFruitBall::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
@@ -101,19 +102,65 @@ void AFruitBall::Tick(float DeltaTime)
         {
             UE_LOG(LogTemp, Warning, TEXT("충돌 경험 있는 과일이 접시 바깥으로 떨어짐: %s (Z=%f)"), 
                 *GetName(), CurrentZ);
-
-            //슬로우 모션 처리리
-            MeshComponent->SetLinearDamping(20.0f);
-            MeshComponent->SetAngularDamping(20.0f);
-                
-            // 게임오버 처리
-            APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-            AFruitPlayerController* FruitController = Cast<AFruitPlayerController>(PC);
             
-            if (FruitController)
+            // 이미 슬로우 모션 처리 중인지 확인
+            if (!bSlowMotionActive)
             {
-                FruitController->GameOver();
-                SetActorTickEnabled(false);
+                bSlowMotionActive = true;
+                
+                // 슬로우 모션 효과 적용
+                UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 0.3f); // 30% 속도로 슬로우 모션
+                
+                // 1. 과일 자체의 물리 설정 변경
+                MeshComponent->SetLinearDamping(20.0f);
+                MeshComponent->SetAngularDamping(20.0f);
+                
+                // 2. 중력 영향 감소 (떨어지는 속도 감소)
+                MeshComponent->SetEnableGravity(false); // 중력 비활성화
+                
+                // 기존 속도의 방향을 유지하면서 속도 감소
+                FVector CurrentVelocity = MeshComponent->GetPhysicsLinearVelocity();
+                MeshComponent->SetPhysicsLinearVelocity(CurrentVelocity * 0.2f);
+                
+                // 수동으로 약한 낙하 속도 적용 (중력 없이 아래로 천천히 떨어짐)
+                FVector SlowFallVector = FVector(0, 0, -50.0f);
+                MeshComponent->AddForce(SlowFallVector, NAME_None, true);
+                
+                // 3. 카메라를 과일 쪽으로 이동
+                APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+                AFruitPlayerController* FruitController = Cast<AFruitPlayerController>(PC);
+                
+                if (FruitController)
+                {
+                    // 카메라 위치 및 시점 변경
+                    FVector FruitLocation = GetActorLocation();
+                    
+                    // 과일로부터 약간 떨어진 지점에 카메라 배치
+                    FVector CameraLocation = FruitLocation + FVector(-150.0f, 0.0f, 50.0f);
+                    FRotator CameraRotation = (FruitLocation - CameraLocation).Rotation();
+                    
+                    // 카메라 배치
+                    FruitController->SetViewTarget(this);
+                    FruitController->MoveViewToFallingFruit(CameraLocation, CameraRotation);
+                    
+                    // 약간의 딜레이 후 실제 게임 오버 처리
+                    GetWorld()->GetTimerManager().SetTimer(
+                        GameOverTimerHandle,
+                        [this, FruitController]()
+                        {
+                            // 게임 오버 처리
+                            FruitController->GameOver();
+                            
+                            // 시간 다시 정상화
+                            UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 1.0f);
+                            
+                            // Tick 비활성화
+                            SetActorTickEnabled(false);
+                        },
+                        2.0f * UGameplayStatics::GetGlobalTimeDilation(GetWorld()), // 슬로우 모션 상태에서 2초
+                        false
+                    );
+                }
             }
         }
     }

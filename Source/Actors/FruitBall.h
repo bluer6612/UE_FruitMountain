@@ -89,7 +89,7 @@ public:
     static constexpr int MaxBallType = 11;
 
     // 떨어진 것으로 간주되는 Z 좌표 (접시보다 낮은 위치)
-    static constexpr float FallThreshold = 87.5f;
+    static constexpr float FallThreshold = 80.f;
 
     // 미리보기 공 여부 플래그
     UPROPERTY()
@@ -113,4 +113,11 @@ protected:
     
     // 안정화 타이머 핸들
     FTimerHandle StabilizeTimerHandle;
+
+    // 슬로우 모션 활성화 여부
+    UPROPERTY()
+    bool bSlowMotionActive = false;
+    
+    // 게임오버 타이머 핸들
+    FTimerHandle GameOverTimerHandle;
 };

@@ -42,6 +42,9 @@ void UFruitMergeHelper::TryMergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, c
     MergeFruits(FruitA, FruitB, CollisionPoint);
 }
 
+// 연쇄는 2연쇄부터 시작해서 1.1배, 3연쇄 1.2배, 4연쇄 1.2배, 5연쇄 1.3배, 이렇게 2의 배수
+// 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 78, 91, 105, 120, 136, 153, 171, 190
+
 void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& MergeLocation)
 {
     if (!FruitA || !FruitB) {
