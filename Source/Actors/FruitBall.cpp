@@ -3,6 +3,9 @@
 #include "Gameplay/Fruit/FruitCollisionHelper.h"
 #include "Gameplay/Fruit/FruitMergeHelper.h"
 #include "Engine/StaticMesh.h"
+#include "Gameplay/Controller/FruitPlayerController.h"
+#include "Kismet/GameplayStatics.h"
+#include "Interface/HUD/FruitHUD.h"
 
 AFruitBall::AFruitBall()
 {
@@ -79,14 +82,48 @@ float AFruitBall::CalculateBallMass(int32 BallType)
     return DensityFactor * FMath::Pow(1.025f, BallType - 1);
 }
 
-// 델리게이트 타겟으로 사용
+// Tick 함수 수정/추가
+void AFruitBall::Tick(float DeltaTime)
+{
+    Super::Tick(DeltaTime);
+    
+    // 미리보기 공이나 병합 중인 과일은 체크하지 않음
+    if (bIsPreviewBall || bMerging) return;
+    
+    // 모든 과일에 대해 추락 확인 (충돌 여부 상관없이)
+    float CurrentZ = GetActorLocation().Z;
+    
+    // 접시보다 약간이라도 아래로 내려가면 게임 오버
+    if (CurrentZ < FallThreshold)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("과일이 접시 바깥으로 떨어짐: %s (Z=%f)"), 
+               *GetName(), CurrentZ);
+               
+        // 게임오버 처리
+        APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+        AFruitPlayerController* FruitController = Cast<AFruitPlayerController>(PC);
+        
+        if (FruitController)
+        {
+            FruitController->GameOver();
+            
+            // 게임오버 발생 후 더 이상 체크하지 않도록 Tick 비활성화
+            SetActorTickEnabled(false);
+        }
+    }
+}
+
+// OnBallHit 함수 수정: 충돌 발생 시 플래그 설정
 void AFruitBall::OnBallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, 
                          UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
+    // 충돌 경험 설정
+    bHasCollided = true;
+    
     // 접시와의 충돌인지 확인
     if (OtherActor && (OtherActor->ActorHasTag("Plate")))
     {
-        // 접시와 충돌 감지 - 안정화 시작
+        // 기존 코드 유지
         StabilizeOnPlate(HitComponent);
         return;
     }

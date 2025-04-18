@@ -14,6 +14,8 @@ public:
     
     virtual void BeginPlay() override;
     
+    virtual void Tick(float DeltaTime) override;
+    
     // 공의 메시 컴포넌트
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components")
     class UStaticMeshComponent* MeshComponent;
@@ -66,6 +68,14 @@ public:
     UFUNCTION()
     void SetBallType(int32 NewBallType);
     
+    // 충돌 경험 여부 설정
+    UFUNCTION()
+    void SetHasCollided(bool bNewValue) { bHasCollided = bNewValue; }
+    
+    // 충돌 경험 여부 확인
+    UFUNCTION()
+    bool HasCollidedBefore() const { return bHasCollided; }
+    
     // 기본 공 크기 (월드 스케일)
     static constexpr float BaseBallSize = 15.0f;
     
@@ -78,6 +88,9 @@ public:
     // 공의 최대 레벨
     static constexpr int MaxBallType = 11;
 
+    // 떨어진 것으로 간주되는 Z 좌표 (접시보다 낮은 위치)
+    static constexpr float FallThreshold = -20.0f;
+
     // 미리보기 공 여부 플래그
     UPROPERTY()
     bool bIsPreviewBall = false;
@@ -85,6 +98,10 @@ public:
     // 병합 중인지 여부
     UPROPERTY()
     bool bIsBeingMerged;
+    
+    // 충돌 경험 여부 트래킹
+    UPROPERTY()
+    bool bHasCollided = false;
     
     // 현재 과일 레벨
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Fruit")

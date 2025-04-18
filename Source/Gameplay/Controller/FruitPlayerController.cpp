@@ -8,6 +8,7 @@
 #include "Gameplay/Physics/FruitTrajectoryHelper.h"
 #include "Gameplay/Physics/FruitPhysicsHelper.h"
 #include "Actors/FruitBall.h"
+#include "Interface/HUD/FruitHUD.h"
 
 AFruitPlayerController::AFruitPlayerController()
 {
@@ -90,6 +91,44 @@ void AFruitPlayerController::SetupInputComponent()
         InputComponent->BindAction("ThrowFruit", IE_Pressed, this, &AFruitPlayerController::ThrowFruit);
         UE_LOG(LogTemp, Log, TEXT("입력 바인딩 완료"));
     }
+}
+
+void AFruitPlayerController::GameOver()
+{
+    // 이미 게임오버 상태면 중복 처리 방지
+    if (bIsGameOver) return;
+    
+    bIsGameOver = true;
+    
+    // 플레이어 입력 비활성화
+    DisableInput(this);
+    
+    // 게임 일시정지 (선택사항)
+    // SetPause(true);
+    
+    // 게임오버 UI 표시 (UI 클래스가 있다면)
+    UE_LOG(LogTemp, Warning, TEXT("게임 오버! 과일이 접시 밖으로 떨어졌습니다."));
+    
+    // 게임오버 UI 표시 코드
+    // 헤드업 디스플레이에 표시하거나 별도 위젯 생성
+    AFruitHUD* FruitHUD = Cast<AFruitHUD>(GetHUD());
+    if (FruitHUD)
+    {
+        // 예시: FruitHUD->ShowGameOverScreen();
+    }
+    
+    // 새 게임 시작하는 키 바인딩 또는 타이머로 재시작
+    FTimerHandle RestartTimerHandle;
+    GetWorld()->GetTimerManager().SetTimer(
+        RestartTimerHandle,
+        [this]()
+        {
+            // 현재 레벨 재시작
+            //UGameplayStatics::OpenLevel(GetWorld(), FName(*GetWorld()->GetName()));
+        },
+        3.0f,
+        false
+    );
 }
 
 // 과일 던지기 함수 수정

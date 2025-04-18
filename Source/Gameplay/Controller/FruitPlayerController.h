@@ -14,6 +14,14 @@ public:
 
     virtual void BeginPlay() override;
 
+    // 게임 오버 처리 함수
+    UFUNCTION(BlueprintCallable)
+    void GameOver();
+    
+    // 게임 중지 상태 추적
+    UPROPERTY()
+    bool bIsGameOver = false;
+
     // 던질 공(과일) 액터의 클래스, 에디터에서 지정 (예: 블루프린트 클래스)
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Throwing")
     TSubclassOf<AActor> FruitBallClass;
