@@ -20,59 +20,41 @@ void UScoreWidgetAnimator::SetTextBlocks(UTextBlock* InScoreText, UTextBlock* In
     ComboMultiplierTextBlock = InComboText;
 }
 
-bool UScoreWidgetAnimator::AreTextBlocksValid() const
-{
-    return ScoreTextBlock && ComboMultiplierTextBlock;
-}
-
-FTextBlockPositions UScoreWidgetAnimator::GetTextBlockPositions() const
-{
-    FTextBlockPositions Positions;
-    Positions.ScoreSlot = Cast<UCanvasPanelSlot>(ScoreTextBlock->Slot);
-    Positions.ComboSlot = Cast<UCanvasPanelSlot>(ComboMultiplierTextBlock->Slot);
-    
-    // 동일한 절대 좌표 사용
-    Positions.ScoreInitialPos = UScoreDisplayWidget::SCORE_TEXT_POS;
-    Positions.ComboInitialPos = UScoreDisplayWidget::COMBO_TEXT_POS;
-    
-    return Positions;
-}
-
-FAnimationParameters UScoreWidgetAnimator::SetupAnimationParameters() const
-{
-    FAnimationParameters Params;
-    Params.FadeDuration = 1.0f;
-    Params.FadeInterval = 0.05f;
-    Params.FadeSteps = FMath::RoundToInt(Params.FadeDuration / Params.FadeInterval);
-    Params.FadeStep = 1.0f / Params.FadeSteps;
-    Params.TotalMoveDistance = -100.0f;
-    Params.MoveStep = Params.TotalMoveDistance / Params.FadeSteps;
-    return Params;
-}
-
 void UScoreWidgetAnimator::StartFadeOutAnimation(UObject* WorldContextObject, float Delay)
 {
-    UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
-    if (!World || !AreTextBlocksValid())
+    // 유효성 검사를 인라인으로 수행 (AreTextBlocksValid 함수 대체)
+    if (!ScoreTextBlock || !ComboMultiplierTextBlock)
     {
         return;
     }
-    
-    // 먼저 이전 애니메이션 취소
+
+    // 기존 애니메이션 취소
     CancelAnimation();
     
-    // 지연 후 애니메이션 실행
-    bAnimationActive = true;
-    World->GetTimerManager().SetTimer(
-        AnimTimerHandle, 
-        this, 
-        &UScoreWidgetAnimator::ExecuteFadeOut, 
-        Delay, 
-        false
-    );
+    // 위치 정보 직접 가져오기 (GetTextBlockPositions 함수 대체)
+    FVector2D ScorePos = UScoreDisplayWidget::SCORE_TEXT_POS;
+    FVector2D ComboPos = UScoreDisplayWidget::COMBO_TEXT_POS;
+    
+    if (UCanvasPanelSlot* ScoreSlot = Cast<UCanvasPanelSlot>(ScoreTextBlock->Slot))
+    {
+        ScorePos = ScoreSlot->GetPosition();
+    }
+    
+    if (UCanvasPanelSlot* ComboSlot = Cast<UCanvasPanelSlot>(ComboMultiplierTextBlock->Slot))
+    {
+        ComboPos = ComboSlot->GetPosition();
+    }
+    
+    // 타이머 설정 및 애니메이션 시작
+    UWorld* World = WorldContextObject->GetWorld();
+    if (World)
+    {
+        FTimerDelegate TimerDelegate = CreateFadeDelegate(ScorePos, ComboPos);
+        World->GetTimerManager().SetTimer(AnimTimerHandle, TimerDelegate, Delay, false);
+        bAnimationActive = true;
+    }
 }
 
-// 기존 CancelAnimation 함수 수정
 void UScoreWidgetAnimator::CancelAnimation()
 {
     if (!bAnimationActive || !ScoreTextBlock || !ComboMultiplierTextBlock)
@@ -92,61 +74,35 @@ void UScoreWidgetAnimator::CancelAnimation()
     bAnimationActive = false;
 }
 
-// 새 함수 추가: 텍스트 블록 속성 초기화
 void UScoreWidgetAnimator::ResetTextBlockProperties()
 {
-    if (ScoreTextBlock)
+    if (!ScoreTextBlock || !ComboMultiplierTextBlock)
     {
-        // 색상 및 투명도 초기화 - 공유 상수 사용
-        ScoreTextBlock->SetColorAndOpacity(UScoreDisplayWidget::BRIGHT_YELLOW_COLOR);
-        
-        // 위치 초기화
-        if (UCanvasPanelSlot* ScoreSlot = Cast<UCanvasPanelSlot>(ScoreTextBlock->Slot))
-        {
-            ScoreSlot->SetPosition(UScoreDisplayWidget::SCORE_TEXT_POS);
-        }
+        return;
     }
-    
-    if (ComboMultiplierTextBlock)
-    {
-        // 색상 및 투명도 초기화 - 공유 상수 사용
-        ComboMultiplierTextBlock->SetColorAndOpacity(UScoreDisplayWidget::BRIGHT_YELLOW_COLOR);
-        
-        // 위치 초기화
-        if (UCanvasPanelSlot* ComboSlot = Cast<UCanvasPanelSlot>(ComboMultiplierTextBlock->Slot))
-        {
-            ComboSlot->SetPosition(UScoreDisplayWidget::COMBO_TEXT_POS);
-        }
-    }
-    
-    // 점수값도 초기화
-    TotalScoreGain = 0;
-    CurrentComboMultiplier = 1.0f;
-    bScoreTextActive = false;
-    
-    // 점수 초기화
-    CurrentScoreGain = 0;
-}
 
-void UScoreWidgetAnimator::ResetScoreValues()
-{
-    TotalScoreGain = 0;
+    // 색상 및 투명도 초기화
+    ScoreTextBlock->SetColorAndOpacity(UScoreDisplayWidget::BRIGHT_YELLOW_COLOR);
+    ComboMultiplierTextBlock->SetColorAndOpacity(UScoreDisplayWidget::BRIGHT_YELLOW_COLOR);
+    
+    // 위치 초기화
+    if (UCanvasPanelSlot* ScoreSlot = Cast<UCanvasPanelSlot>(ScoreTextBlock->Slot))
+    {
+        ScoreSlot->SetPosition(UScoreDisplayWidget::SCORE_TEXT_POS);
+    }
+    
+    if (UCanvasPanelSlot* ComboSlot = Cast<UCanvasPanelSlot>(ComboMultiplierTextBlock->Slot))
+    {
+        ComboSlot->SetPosition(UScoreDisplayWidget::COMBO_TEXT_POS);
+    }
+    
+    // 콤보 배율 초기화
     CurrentComboMultiplier = 1.0f;
-    
-    if (ScoreTextBlock)
-    {
-        ScoreTextBlock->SetVisibility(ESlateVisibility::Hidden);
-    }
-    
-    if (ComboMultiplierTextBlock)
-    {
-        ComboMultiplierTextBlock->SetVisibility(ESlateVisibility::Hidden);
-    }
 }
 
 void UScoreWidgetAnimator::ExecuteFadeOut()
 {
-    if (!AreTextBlocksValid())
+    if (!ScoreTextBlock || !ComboMultiplierTextBlock)
     {
         return;
     }
@@ -155,33 +111,43 @@ void UScoreWidgetAnimator::ExecuteFadeOut()
     if (!World) return;
     
     // 위치 및 애니메이션 설정
-    FTextBlockPositions Positions = GetTextBlockPositions();
-    FAnimationParameters AnimParams = SetupAnimationParameters();
+    FVector2D ScorePos = UScoreDisplayWidget::SCORE_TEXT_POS;
+    FVector2D ComboPos = UScoreDisplayWidget::COMBO_TEXT_POS;
+    
+    if (UCanvasPanelSlot* ScoreSlot = Cast<UCanvasPanelSlot>(ScoreTextBlock->Slot))
+    {
+        ScorePos = ScoreSlot->GetPosition();
+    }
+    
+    if (UCanvasPanelSlot* ComboSlot = Cast<UCanvasPanelSlot>(ComboMultiplierTextBlock->Slot))
+    {
+        ComboPos = ComboSlot->GetPosition();
+    }
     
     // 애니메이션 타이머 설정
-    FTimerDelegate FadeDelegate = CreateFadeDelegate(Positions, AnimParams);
+    FTimerDelegate FadeDelegate = CreateFadeDelegate(ScorePos, ComboPos);
     World->GetTimerManager().SetTimer(
         AnimTimerHandle, 
         FadeDelegate, 
-        AnimParams.FadeInterval, 
+        0.025f, 
         true
     );
 }
 
-FTimerDelegate UScoreWidgetAnimator::CreateFadeDelegate(const FTextBlockPositions& Positions, const FAnimationParameters& Params)
+FTimerDelegate UScoreWidgetAnimator::CreateFadeDelegate(const FVector2D& ScorePos, const FVector2D& ComboPos)
 {
     FTimerDelegate FadeDelegate;
-    FadeDelegate.BindLambda([this, Params, Positions]() mutable
+    FadeDelegate.BindLambda([this, ScorePos, ComboPos]() mutable
     {
         static int32 CurrentStep = 0;
         CurrentStep++;
         
         // 애니메이션 값 계산
-        float Alpha = 1.0f - (CurrentStep * Params.FadeStep);
-        float CurrentMoveX = CurrentStep * Params.MoveStep;
+        float Alpha = 1.0f - (CurrentStep * 0.05f);
+        float CurrentMoveX = CurrentStep * -2.0f;
         
         // 스코어 텍스트 업데이트
-        if (ScoreTextBlock && Positions.ScoreSlot)
+        if (ScoreTextBlock)
         {
             // 투명도 조절
             FLinearColor TextColor = ScoreTextBlock->GetColorAndOpacity().GetSpecifiedColor();
@@ -189,13 +155,16 @@ FTimerDelegate UScoreWidgetAnimator::CreateFadeDelegate(const FTextBlockPosition
             ScoreTextBlock->SetColorAndOpacity(TextColor);
             
             // 위치 이동
-            FVector2D NewPos = Positions.ScoreInitialPos;
+            FVector2D NewPos = ScorePos;
             NewPos.X += CurrentMoveX;
-            Positions.ScoreSlot->SetPosition(NewPos);
+            if (UCanvasPanelSlot* ScoreSlot = Cast<UCanvasPanelSlot>(ScoreTextBlock->Slot))
+            {
+                ScoreSlot->SetPosition(NewPos);
+            }
         }
         
         // 콤보 텍스트 업데이트
-        if (ComboMultiplierTextBlock && Positions.ComboSlot)
+        if (ComboMultiplierTextBlock)
         {
             // 투명도 조절
             FLinearColor ComboColor = ComboMultiplierTextBlock->GetColorAndOpacity().GetSpecifiedColor();
@@ -203,13 +172,16 @@ FTimerDelegate UScoreWidgetAnimator::CreateFadeDelegate(const FTextBlockPosition
             ComboMultiplierTextBlock->SetColorAndOpacity(ComboColor);
             
             // 위치 이동
-            FVector2D NewPos = Positions.ComboInitialPos;
+            FVector2D NewPos = ComboPos;
             NewPos.X += CurrentMoveX;
-            Positions.ComboSlot->SetPosition(NewPos);
+            if (UCanvasPanelSlot* ComboSlot = Cast<UCanvasPanelSlot>(ComboMultiplierTextBlock->Slot))
+            {
+                ComboSlot->SetPosition(NewPos);
+            }
         }
         
         // 애니메이션 종료
-        if (CurrentStep >= Params.FadeSteps)
+        if (CurrentStep >= 20)
         {
             CurrentStep = 0;
             UWorld* World = ScoreTextBlock->GetWorld();

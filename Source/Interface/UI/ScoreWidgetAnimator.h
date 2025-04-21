@@ -9,24 +9,15 @@
 // 전방 선언
 class UScoreDisplayWidget;
 
-// 텍스트 블록 위치 정보
-struct FTextBlockPositions
-{
-    UCanvasPanelSlot* ScoreSlot;
-    UCanvasPanelSlot* ComboSlot;
-    FVector2D ScoreInitialPos;
-    FVector2D ComboInitialPos;
-};
-
 // 애니메이션 파라미터
-struct FAnimationParameters
+struct FScoreAnimParams
 {
-    float FadeDuration;
-    float FadeInterval;
-    int32 FadeSteps;
-    float FadeStep;
-    float TotalMoveDistance;
-    float MoveStep;
+    float Duration;
+    float Interval;
+    int32 Steps;
+    float StepSize;
+    float MoveDistance;
+    float MoveStepSize;
 };
 
 UCLASS()
@@ -41,16 +32,10 @@ public:
     void SetTextBlocks(UTextBlock* InScoreText, UTextBlock* InComboText);
     
     // 페이드 아웃 애니메이션 시작
-    void StartFadeOutAnimation(UObject* WorldContextObject, float Delay = 2.0f);
+    void StartFadeOutAnimation(UObject* WorldContextObject, float Delay = 1.0f);
     
-    // 애니메이션 취소
+    // 애니메이션 취소 및 속성 초기화 (통합된 함수)
     void CancelAnimation();
-    
-    // 텍스트 블록 속성 초기화
-    void ResetTextBlockProperties();
-    
-    // 스코어 값 재설정
-    void ResetScoreValues();
     
 private:
     // 참조용 텍스트 블록
@@ -63,20 +48,16 @@ private:
     // 타이머 핸들
     FTimerHandle AnimTimerHandle;
     
-    // 애니메이션 상태 변수
-    int32 TotalScoreGain;
-    int32 CurrentScoreGain;
+    // 애니메이션 상태 관리 - 꼭 필요한 변수만 유지
     float CurrentComboMultiplier;
-    bool bScoreTextActive;
     bool bAnimationActive;
     
-    // 헬퍼 함수들
-    bool AreTextBlocksValid() const;
-    FTextBlockPositions GetTextBlockPositions() const;
-    FAnimationParameters SetupAnimationParameters() const;
-    FTimerDelegate CreateFadeDelegate(const FTextBlockPositions& Positions, const FAnimationParameters& Params);
+    // 헬퍼 함수들 - 통합/단순화
+    FScoreAnimParams SetupAnimationParameters() const;
+    FTimerDelegate CreateFadeDelegate(const FVector2D& ScorePos, const FVector2D& ComboPos);
     void ExecuteFadeOut();
-    
-    // 애니메이션 종료 처리 함수 (추가됨)
     void ExecuteAnimationEnd();
+    
+    // 텍스트 블록 속성 초기화 (private으로 이동)
+    void ResetTextBlockProperties();
 };

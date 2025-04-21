@@ -206,7 +206,7 @@ void UScoreDisplayWidget::DisplayScoreGain(int32 Score, int32 ComboCount, float 
     // 애니메이션 시작
     if (WidgetAnimator)
     {
-        WidgetAnimator->StartFadeOutAnimation(this, 2.0f);
+        WidgetAnimator->StartFadeOutAnimation(this);
     }
     
     UE_LOG(LogTemp, Warning, TEXT("점수 표시 설정 완료: '%s'"), *ScoreText);
