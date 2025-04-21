@@ -124,3 +124,46 @@ float UScoreManagerComponent::CalculateComboMultiplier() const
     int32 BonusTiers = ComboCount / 2;
     return 1.0f + (BonusTiers * 0.1f);
 }
+
+// 정적 헬퍼 함수 구현
+void UScoreManagerComponent::AddScoreStatic(UWorld* World, int32 BallType)
+{
+    if (!World) return;
+    
+    // 게임모드에서 ScoreManagerComponent 찾기
+    AUE_FruitMountainGameMode* GameMode = Cast<AUE_FruitMountainGameMode>(UGameplayStatics::GetGameMode(World));
+    if (!GameMode) 
+    {
+        UE_LOG(LogTemp, Error, TEXT("AddScoreStatic: 게임모드를 찾을 수 없음"));
+        return;
+    }
+    
+    // 컴포넌트 가져오기
+    UScoreManagerComponent* ScoreManager = GameMode->FindComponentByClass<UScoreManagerComponent>();
+    
+    // 없으면 생성
+    if (!ScoreManager)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("AddScoreStatic: ScoreManagerComponent가 없어 새로 생성합니다."));
+        ScoreManager = NewObject<UScoreManagerComponent>(GameMode, UScoreManagerComponent::StaticClass());
+        ScoreManager->RegisterComponent();
+    }
+    
+    // 점수 추가 실행
+    ScoreManager->AddScore(BallType);
+}
+
+// 정적 콤보 초기화 함수
+void UScoreManagerComponent::ResetComboStatic(UWorld* World)
+{
+    if (!World) return;
+    
+    AUE_FruitMountainGameMode* GameMode = Cast<AUE_FruitMountainGameMode>(UGameplayStatics::GetGameMode(World));
+    if (!GameMode) return;
+    
+    UScoreManagerComponent* ScoreManager = GameMode->FindComponentByClass<UScoreManagerComponent>();
+    if (ScoreManager)
+    {
+        ScoreManager->ResetCombo();
+    }
+}

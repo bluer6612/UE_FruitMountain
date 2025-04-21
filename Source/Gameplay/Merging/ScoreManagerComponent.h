@@ -39,6 +39,14 @@ public:
     UPROPERTY(BlueprintAssignable, Category = "Events")
     FOnComboEndedSignature OnComboEnded;
     
+    // 정적 헬퍼 함수 - 게임 내 어디서나 점수 추가 가능
+    UFUNCTION(BlueprintCallable, Category = "Score")
+    static void AddScoreStatic(UWorld* World, int32 BallType);
+    
+    // 정적 헬퍼 함수 - 게임 내 어디서나 콤보 초기화 가능
+    UFUNCTION(BlueprintCallable, Category = "Combo")
+    static void ResetComboStatic(UWorld* World);
+    
     // 점수 추가 함수
     UFUNCTION(BlueprintCallable, Category = "Score")
     int32 AddScore(int32 BallType);

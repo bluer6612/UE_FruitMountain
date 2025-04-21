@@ -1,7 +1,7 @@
 #include "FruitBall.h"
 #include "Components/StaticMeshComponent.h"
-#include "Gameplay/Fruit/FruitCollisionHelper.h"
-#include "Gameplay/Fruit/FruitMergeHelper.h"
+#include "Gameplay/Merging/FruitCollisionHelper.h"
+#include "Gameplay/Merging/FruitMergeHelper.h"
 #include "Engine/StaticMesh.h"
 #include "Gameplay/Controller/FruitPlayerController.h"
 #include "Kismet/GameplayStatics.h"
@@ -128,7 +128,7 @@ void AFruitBall::Tick(float DeltaTime)
                 MeshComponent->SetPhysicsLinearVelocity(CurrentVelocity * 0.3f);
                 
                 // 수동으로 약한 낙하 속도 적용 (중력 없이 아래로 천천히 떨어짐)
-                FVector SlowFallVector = FVector(0, 0, -20.0f);
+                FVector SlowFallVector = FVector(0, 0, -50.0f);
                 MeshComponent->AddForce(SlowFallVector, NAME_None, true);
                 
                 // 3. 카메라를 과일 쪽으로 이동

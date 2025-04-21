@@ -119,7 +119,7 @@ void UFruitPhysicsInitializer::CalculateAdjustedTarget(const FPhysicsInitData& I
     // 기본 거리 비율 설정
     Result.DistanceRatio = 0.08f;
     
-    // 각도 기반 조정: 완전히 반전 - 높은 각도에서 더 가까운 타겟으로 변경
+    // 각도 기반 조정
     float AngleFactor = FMath::GetMappedRangeValueClamped(
         FVector2D(UFruitPhysicsHelper::MinThrowAngle, UFruitPhysicsHelper::MaxThrowAngle),
         FVector2D(2.0f, 0.5f),  // 반전 적용: 낮은 각도에서 더 먼 타겟, 높은 각도에서 더 가까운 타겟

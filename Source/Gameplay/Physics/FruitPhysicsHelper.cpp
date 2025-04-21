@@ -54,19 +54,14 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     // 7-9. 속도 범위 제한
     Result.InitialSpeed = FMath::Clamp(Result.InitialSpeed, 150.0f, 350.0f);
 
-    // 9. 초기 속도 조정 - 기본값 낮추기 (290.0f → 250.0f)
+    // 9. 초기 속도 조정 - 기본값 낮추기
     Result.InitialSpeed = (250.0f - 0.5f * BaseResult.UseAngle) * MassCompensationFactor;
-    // 290.0f -> 250.0f로 변경 (15% 감소)
 
-    // 9-3. 발사 속도 벡터 계산
+    // 10. 발사 속도 벡터 계산
     Result.LaunchVelocity = Result.LaunchDirection * Result.InitialSpeed;
 
-    // 10. 발사 속도 벡터 계산 (중복 제거)
-    // 이미 9-3에서 계산했으므로 제거
-
     // 11. 힘 계수 조정 - 과도한 힘 줄이기
-    Result.AdjustedForce = BallMass * Result.InitialSpeed * 1.35f; 
-    // 1.7f -> 1.35f로 변경 (20% 감소)
+    Result.AdjustedForce = BallMass * Result.InitialSpeed * 1.35f;
 
     // 12. 힘 범위 조정 - 최소/최대 힘 감소
     float MinForce = 2400.0f; // 2800.0f -> 2400.0f

@@ -6,7 +6,6 @@
 #include "Components/LineBatchComponent.h"
 #include "PhysicsEngine/PhysicsSettings.h"
 #include "Actors/FruitBall.h"
-#include "Gameplay/Fruit/FruitUtilityHelper.h"
 
 ULineBatchComponent* UFruitTrajectoryHelper::CustomLineBatcher = nullptr;
 

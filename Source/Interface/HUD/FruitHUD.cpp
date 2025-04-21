@@ -28,7 +28,7 @@ void AFruitHUD::CreateAndAddWidgets()
             TextureWidget = nullptr;
         }
         
-        // TextureDisplayWidget 생성 (SimpleTextureWidget에서 변경됨)
+        // TextureDisplayWidget 생성
         TextureWidget = CreateWidget<UTextureDisplayWidget>(Controller, UTextureDisplayWidget::StaticClass());
         if (TextureWidget)
         {

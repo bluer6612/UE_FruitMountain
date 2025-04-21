@@ -1,5 +1,5 @@
 #include "FruitSpawnHelper.h"
-#include "FruitCollisionHelper.h"
+#include "Gameplay/Merging/FruitCollisionHelper.h"
 #include "Gameplay/Controller/FruitPlayerController.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"

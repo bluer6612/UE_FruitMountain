@@ -1,9 +1,10 @@
 #include "FruitMergeHelper.h"
 #include "Actors/FruitBall.h"
-#include "FruitSpawnHelper.h"
+#include "Gameplay/Fruit/FruitSpawnHelper.h"
 #include "Kismet/GameplayStatics.h"
 #include "Gameplay/Controller/FruitPlayerController.h"
-#include "FruitUtilityHelper.h"
+#include "FruitMergeFeedbackHelper.h"
+#include "ScoreManagerComponent.h" // 이 헤더 파일 추가
 
 void UFruitMergeHelper::TryMergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& CollisionPoint)
 {
@@ -59,8 +60,8 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
     if (TypeA >= AFruitBall::MaxBallType)
     {
         UE_LOG(LogTemp, Warning, TEXT("병합 완료: 최대 레벨 과일 병합"));
-        UFruitUtilityHelper::AddScore(World, TypeA);
-        UFruitUtilityHelper::PlayMergeEffect(World, MergeLocation, TypeA);
+        UScoreManagerComponent::AddScoreStatic(World, TypeA);
+        UFruitMergeFeedbackHelper::PlayMergeEffect(World, MergeLocation, TypeA);
         
         FruitA->Destroy();
         FruitB->Destroy();
@@ -71,11 +72,11 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
     int32 NextType = TypeA + 1;
     
     // 이펙트 및 점수 처리
-    UFruitUtilityHelper::PlayMergeEffect(World, MergeLocation, TypeA);
-    UFruitUtilityHelper::AddScore(World, NextType);
+    UFruitMergeFeedbackHelper::PlayMergeEffect(World, MergeLocation, TypeA);
+    UScoreManagerComponent::AddScoreStatic(World, NextType);
     
     // 병합 위치 주변 과일들의 속도 감소 (폭발적 충돌 방지)
-    UFruitUtilityHelper::StabilizeFruits(World);
+    UFruitMergeFeedbackHelper::StabilizeFruits(World);
     
     // 새 과일 생성 전에 기존 과일의 회전값 저장
     FRotator ExistingRotation = FruitA->GetActorRotation();
@@ -95,7 +96,7 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
             NewFruit->SetActorRotation(ExistingRotation);
             
             // 새 과일 물리 속성 설정
-            UFruitUtilityHelper::StabilizeFruits(World, NewFruit, 8.0f, true);
+            UFruitMergeFeedbackHelper::StabilizeFruits(World, NewFruit, 8.0f, true);
         }
         
         UE_LOG(LogTemp, Warning, TEXT("새 과일 생성 완료: 레벨=%d, 위치=%s"), 
@@ -105,4 +106,57 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
     // 기존 과일들 제거
     FruitA->Destroy();
     FruitB->Destroy();
+}
+
+// 모든 메시 사전 로드
+void UFruitMergeHelper::PreloadAllFruitMeshes(UWorld* World)
+{
+    UE_LOG(LogTemp, Display, TEXT("게임 에셋 사전 로드 시작..."));
+    
+    // 1. 모든 과일 메시 미리 로드 (최대 레벨까지)
+    for (int32 i = 1; i <= AFruitBall::MaxBallType; i++)
+    {
+        // 메시 경로 - 게임의 실제 경로와 일치하게 수정
+        FString MeshPath = FString::Printf(TEXT("/Game/Fruit/Meshes/Fruit%d.Fruit%d"), i, i);
+        
+        // 동기적 로딩 사용
+        UStaticMesh* FruitMesh = LoadObject<UStaticMesh>(nullptr, *MeshPath);
+        
+        if (FruitMesh)
+        {
+            // 메시가 완전히 로드되도록 보장
+            FruitMesh->ConditionalPostLoad();
+            UE_LOG(LogTemp, Warning, TEXT("과일 메시 #%d 사전 로드 완료: %s"), i, *MeshPath);
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("과일 메시 #%d 로드 실패: %s"), i, *MeshPath);
+        }
+    }
+    
+    // 2. 파티클 효과 미리 로드
+    if (World)
+    {
+        TSubclassOf<AActor> PreloadParticleClass = LoadClass<AActor>(nullptr, TEXT("/Game/Particle/02_Blueprints/BP_Particle_Burst_Lvl_1.BP_Particle_Burst_Lvl_1_C"));
+        if (PreloadParticleClass)
+        {
+            // 보이지 않는 위치에 미리 인스턴스 생성 후 즉시 제거 (렌더링 캐시 준비)
+            FVector HiddenLocation = FVector(0, 0, -10000);
+            AActor* PreloadActor = World->SpawnActor<AActor>(PreloadParticleClass, HiddenLocation, FRotator::ZeroRotator);
+            if (PreloadActor)
+            {
+                PreloadActor->SetActorHiddenInGame(true);
+                PreloadActor->Destroy();
+            }
+        }
+    }
+    
+    // 3. 사운드 미리 로드
+    USoundBase* PreloadSound = LoadObject<USoundBase>(nullptr, TEXT("/Game/Sounds/S_FruitMerge"));
+    if (PreloadSound)
+    {
+        UE_LOG(LogTemp, Display, TEXT("병합 사운드 미리 로드 완료"));
+    }
+    
+    UE_LOG(LogTemp, Display, TEXT("게임 에셋 사전 로드 완료"));
 }

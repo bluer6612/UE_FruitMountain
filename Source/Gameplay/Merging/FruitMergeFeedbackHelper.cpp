@@ -1,55 +1,13 @@
-#include "FruitUtilityHelper.h"
-#include "Actors/FruitBall.h"
+#include "FruitMergeFeedbackHelper.h"
 #include "Kismet/GameplayStatics.h"
-#include "Gameplay/Controller/FruitPlayerController.h"
 #include "Framework/UE_FruitMountainGameMode.h"
+#include "Gameplay/Merging/ScoreManagerComponent.h"
+#include "Actors/FruitBall.h"
 #include "Components/StaticMeshComponent.h"
-#include "Gameplay/Fruit/ScoreManagerComponent.h"
+#include "Gameplay/Controller/FruitPlayerController.h"
 
-// 점수 추가 함수 - ScoreManagerComponent를 사용
-void UFruitUtilityHelper::AddScore(UWorld* World, int32 BallType)
-{
-    if (!World) return;
-    
-    // 게임모드에서 ScoreManagerComponent 찾기 (또는 생성)
-    AUE_FruitMountainGameMode* GameMode = Cast<AUE_FruitMountainGameMode>(UGameplayStatics::GetGameMode(World));
-    if (!GameMode) 
-    {
-        UE_LOG(LogTemp, Error, TEXT("AddScore: 게임모드를 찾을 수 없음"));
-        return;
-    }
-    
-    // 게임모드에서 ScoreManagerComponent 가져오기
-    UScoreManagerComponent* ScoreManager = GameMode->FindComponentByClass<UScoreManagerComponent>();
-    
-    // 없으면 생성
-    if (!ScoreManager)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("AddScore: ScoreManagerComponent가 없어 새로 생성합니다."));
-        ScoreManager = NewObject<UScoreManagerComponent>(GameMode, UScoreManagerComponent::StaticClass());
-        ScoreManager->RegisterComponent();
-    }
-    
-    // 점수 추가 로직을 ScoreManagerComponent에 위임
-    ScoreManager->AddScore(BallType);
-}
-
-// ResetCombo 함수
-void UFruitUtilityHelper::ResetCombo(UWorld* World)
-{
-    if (!World) return;
-    
-    AUE_FruitMountainGameMode* GameMode = Cast<AUE_FruitMountainGameMode>(UGameplayStatics::GetGameMode(World));
-    if (!GameMode) return;
-    
-    UScoreManagerComponent* ScoreManager = GameMode->FindComponentByClass<UScoreManagerComponent>();
-    if (ScoreManager)
-    {
-        ScoreManager->ResetCombo();
-    }
-}
-
-void UFruitUtilityHelper::PlayMergeEffect(UWorld* World, const FVector& Location, int32 BallType)
+// 병합 이펙트 재생
+void UFruitMergeFeedbackHelper::PlayMergeEffect(UWorld* World, const FVector& Location, int32 BallType)
 {
     if (!World) return;
     
@@ -105,8 +63,8 @@ void UFruitUtilityHelper::PlayMergeEffect(UWorld* World, const FVector& Location
     }
 }
 
-// 통합된 과일 안정화 함수
-void UFruitUtilityHelper::StabilizeFruits(UWorld* World, AFruitBall* SingleFruit, float DampingMultiplier, bool bIsNewFruit)
+// 통합된 과일 안정화 함수 - FruitStabilizer에서 이전
+void UFruitMergeFeedbackHelper::StabilizeFruits(UWorld* World, AFruitBall* SingleFruit, float DampingMultiplier, bool bIsNewFruit)
 {
     if (!World) return;
     
@@ -135,8 +93,8 @@ void UFruitUtilityHelper::StabilizeFruits(UWorld* World, AFruitBall* SingleFruit
     }
 }
 
-// 단일 과일 안정화 작업을 수행하는 내부 함수
-void UFruitUtilityHelper::StabilizeSingleFruit(AFruitBall* Fruit, float InitialDampingMultiplier, bool bIsNewFruit)
+// 단일 과일 안정화 작업을 수행하는 내부 함수 - FruitStabilizer에서 이전
+void UFruitMergeFeedbackHelper::StabilizeSingleFruit(AFruitBall* Fruit, float InitialDampingMultiplier, bool bIsNewFruit)
 {
     if (!Fruit || !Fruit->GetMeshComponent()) return;
     
@@ -235,57 +193,4 @@ void UFruitUtilityHelper::StabilizeSingleFruit(AFruitBall* Fruit, float InitialD
                 0.5f, false);
         }
     }
-}
-
-// 모든 메시 사전 로드
-void UFruitUtilityHelper::PreloadAllFruitMeshes(UWorld* World)
-{
-    UE_LOG(LogTemp, Display, TEXT("게임 에셋 사전 로드 시작..."));
-    
-    // 1. 모든 과일 메시 미리 로드 (최대 레벨까지)
-    for (int32 i = 1; i <= AFruitBall::MaxBallType; i++)
-    {
-        // 메시 경로 - 게임의 실제 경로와 일치하게 수정
-        FString MeshPath = FString::Printf(TEXT("/Game/Fruit/Meshes/Fruit%d.Fruit%d"), i, i);
-        
-        // 동기적 로딩 사용
-        UStaticMesh* FruitMesh = LoadObject<UStaticMesh>(nullptr, *MeshPath);
-        
-        if (FruitMesh)
-        {
-            // 메시가 완전히 로드되도록 보장
-            FruitMesh->ConditionalPostLoad();
-            UE_LOG(LogTemp, Warning, TEXT("과일 메시 #%d 사전 로드 완료: %s"), i, *MeshPath);
-        }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT("과일 메시 #%d 로드 실패: %s"), i, *MeshPath);
-        }
-    }
-    
-    // 2. 파티클 효과 미리 로드
-    if (World)
-    {
-        TSubclassOf<AActor> PreloadParticleClass = LoadClass<AActor>(nullptr, TEXT("/Game/Particle/02_Blueprints/BP_Particle_Burst_Lvl_1.BP_Particle_Burst_Lvl_1_C"));
-        if (PreloadParticleClass)
-        {
-            // 보이지 않는 위치에 미리 인스턴스 생성 후 즉시 제거 (렌더링 캐시 준비)
-            FVector HiddenLocation = FVector(0, 0, -10000);
-            AActor* PreloadActor = World->SpawnActor<AActor>(PreloadParticleClass, HiddenLocation, FRotator::ZeroRotator);
-            if (PreloadActor)
-            {
-                PreloadActor->SetActorHiddenInGame(true);
-                PreloadActor->Destroy();
-            }
-        }
-    }
-    
-    // 3. 사운드 미리 로드
-    USoundBase* PreloadSound = LoadObject<USoundBase>(nullptr, TEXT("/Game/Sounds/S_FruitMerge"));
-    if (PreloadSound)
-    {
-        UE_LOG(LogTemp, Display, TEXT("병합 사운드 미리 로드 완료"));
-    }
-    
-    UE_LOG(LogTemp, Display, TEXT("게임 에셋 사전 로드 완료"));
 }
