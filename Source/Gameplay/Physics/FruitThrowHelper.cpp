@@ -37,6 +37,14 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
     // 공 던지기 - 물리 헬퍼 활용하여 힘 적용
     if (SpawnedBall)
     {
+        // 투척 상태 설정 - 여기에 추가
+        AFruitBall* FruitBall = Cast<AFruitBall>(SpawnedBall);
+        if (FruitBall)
+        {
+            FruitBall->SetBeingThrown(true);
+            UE_LOG(LogTemp, Log, TEXT("과일 투척 상태로 설정: %s"), *SpawnedBall->GetName());
+        }
+
         UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(
             SpawnedBall->GetComponentByClass(UStaticMeshComponent::StaticClass()));
             

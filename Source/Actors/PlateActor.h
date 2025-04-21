@@ -20,7 +20,7 @@ public:
     FVector PlateLocation = FVector(0.f, 0.f, 30.f);
     
     // 통합된 함수 (정적 함수로 선언)
-    UFUNCTION(BlueprintCallable, Category = "Plate|Helper")
+    UFUNCTION(BlueprintCallable, Category = "Plate")
     static FVector CalculatePlateEdge(UWorld* World, float CameraAngle, APlateActor* PlateInstance = nullptr);
     
     // 접시 반경 getter

@@ -128,4 +128,12 @@ protected:
     // 투척 중인지 여부를 나타내는 플래그
     UPROPERTY(BlueprintReadOnly, Category = "Fruit State")
     bool bIsBeingThrown = false;
+
+private:
+    // 접시 액터 캐싱 (성능 최적화)
+    UPROPERTY()
+    class APlateActor* CachedPlateActor;
+    
+    // 접시 액터 찾기 - 필요할 때만 호출하여 성능 최적화
+    APlateActor* GetPlateActor() const;
 };
