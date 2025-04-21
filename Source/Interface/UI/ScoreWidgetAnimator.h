@@ -46,10 +46,10 @@ public:
     // 애니메이션 취소
     void CancelAnimation();
     
-    // 텍스트 블록 속성 초기화 (추가됨)
+    // 텍스트 블록 속성 초기화
     void ResetTextBlockProperties();
     
-    // 스코어 값 재설정 (추가됨)
+    // 스코어 값 재설정
     void ResetScoreValues();
     
 private:
@@ -63,8 +63,9 @@ private:
     // 타이머 핸들
     FTimerHandle AnimTimerHandle;
     
-    // 애니메이션 상태 변수 추가
-    int32 PendingScoreGain;
+    // 애니메이션 상태 변수
+    int32 TotalScoreGain;
+    int32 CurrentScoreGain;
     float CurrentComboMultiplier;
     bool bScoreTextActive;
     bool bAnimationActive;

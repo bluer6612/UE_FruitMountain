@@ -11,13 +11,17 @@
 // 정적 인스턴스 초기화
 UScoreDisplayWidget* UScoreDisplayWidget::Instance = nullptr;
 TSubclassOf<UUserWidget> UScoreDisplayWidget::ScoreWidgetClass = nullptr;
+
+// 정적 상수 초기화
 const FVector2D UScoreDisplayWidget::SCORE_TEXT_POS = FVector2D(675.0f, 90.0f);
 const FVector2D UScoreDisplayWidget::COMBO_TEXT_POS = FVector2D(725.0f, 165.0f);
+const FLinearColor UScoreDisplayWidget::BRIGHT_YELLOW_COLOR = FLinearColor(1.0f, 0.9f, 0.6f, 1.0f);
 
 UScoreDisplayWidget::UScoreDisplayWidget(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
-    PendingScoreGain = 0;
+    TotalScoreGain = 0;
+    CurrentScoreGain = 0;  // 새 변수 초기화
     CurrentComboMultiplier = 1.0f;
     bScoreTextActive = false;
     WidgetAnimator = nullptr;
@@ -55,6 +59,38 @@ void UScoreDisplayWidget::NativeDestruct()
     }
 }
 
+UScoreDisplayWidget* UScoreDisplayWidget::CreateScoreWidget(UObject* WorldContextObject)
+{
+    // 기존 유효 인스턴스 확인
+    if (IsInstanceValid())
+    {
+        return Instance;
+    }
+    
+    // 플레이어 컨트롤러 가져오기
+    APlayerController* Controller = GetValidPlayerController(WorldContextObject);
+    if (!Controller)
+    {
+        return nullptr;
+    }
+    
+    // 위젯 클래스 로드
+    if (!LoadWidgetClassIfNeeded())
+    {
+        return nullptr;
+    }
+    
+    // 인스턴스 생성 및 뷰포트에 추가
+    Instance = CreateWidget<UScoreDisplayWidget>(Controller, ScoreWidgetClass);
+    if (Instance)
+    {
+        Instance->AddToViewport(10001);
+        Instance->SetVisibility(ESlateVisibility::HitTestInvisible);
+    }
+    
+    return Instance;
+}
+
 void UScoreDisplayWidget::InitializeTextBlocks()
 {
     if (!ScoreTextBlock || !ComboMultiplierTextBlock)
@@ -63,12 +99,9 @@ void UScoreDisplayWidget::InitializeTextBlocks()
         return;
     }
     
-    // 연한 노란색
-    FLinearColor BrighterYellow = FLinearColor(1.0f, 0.9f, 0.2f, 1.0f);
-    
     // 절대 좌표로 직접 지정
-    SetupTextBlock(ScoreTextBlock, BrighterYellow, 50, SCORE_TEXT_POS); 
-    SetupTextBlock(ComboMultiplierTextBlock, BrighterYellow, 45, COMBO_TEXT_POS);
+    SetupTextBlock(ScoreTextBlock, BRIGHT_YELLOW_COLOR, 50, SCORE_TEXT_POS); 
+    SetupTextBlock(ComboMultiplierTextBlock, BRIGHT_YELLOW_COLOR, 45, COMBO_TEXT_POS);
 
     // 초기에 텍스트 블록 숨기기
     ScoreTextBlock->SetVisibility(ESlateVisibility::Hidden);
@@ -118,19 +151,21 @@ void UScoreDisplayWidget::DisplayScoreGain(int32 Score, int32 ComboCount, float 
     }
     
     // 색상 및 투명도 명시적으로 초기화
-    FLinearColor BrighterYellow = FLinearColor(1.0f, 0.9f, 0.2f, 1.0f);
     if (ScoreTextBlock)
     {
-        ScoreTextBlock->SetColorAndOpacity(BrighterYellow);
+        ScoreTextBlock->SetColorAndOpacity(BRIGHT_YELLOW_COLOR);
     }
     if (ComboMultiplierTextBlock)
     {
-        ComboMultiplierTextBlock->SetColorAndOpacity(BrighterYellow);
+        ComboMultiplierTextBlock->SetColorAndOpacity(BRIGHT_YELLOW_COLOR);
     }
     
     // 점수 텍스트 업데이트
-    PendingScoreGain += Score;
-    FString ScoreText = FString::Printf(TEXT("+%d"), PendingScoreGain);
+    TotalScoreGain += Score;  // 총 점수는 계속 누적
+    CurrentScoreGain = Score;   // 현재 표시할 점수는 새로 받은 점수만
+    
+    // 현재 얻은 점수만 표시
+    FString ScoreText = FString::Printf(TEXT("+%d"), CurrentScoreGain);
     ScoreTextBlock->SetText(FText::FromString(ScoreText));
     ScoreTextBlock->SetVisibility(ESlateVisibility::HitTestInvisible);
     

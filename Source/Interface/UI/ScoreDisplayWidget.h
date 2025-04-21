@@ -22,9 +22,10 @@ public:
     // 위젯 클래스 참조
     static TSubclassOf<UUserWidget> ScoreWidgetClass;
     
-    // 위치 상수
+    // 위치 색상 상수
     static const FVector2D SCORE_TEXT_POS;
     static const FVector2D COMBO_TEXT_POS;
+    static const FLinearColor BRIGHT_YELLOW_COLOR;
     
     // 위젯 생성 함수
     UFUNCTION(BlueprintCallable, Category = "UI Score", meta = (WorldContext = "WorldContextObject"))
@@ -48,7 +49,8 @@ protected:
     UScoreWidgetAnimator* WidgetAnimator;
     
     // 점수 데이터
-    int32 PendingScoreGain;
+    int32 TotalScoreGain;  // 총 누적 점수 (계속 누적됨)
+    int32 CurrentScoreGain;  // 현재 표시되는 점수 (애니메이션당)
     float CurrentComboMultiplier;
     bool bScoreTextActive;
     
