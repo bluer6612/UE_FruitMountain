@@ -31,11 +31,8 @@ public:
     // 테스트용 함수
     UFUNCTION(BlueprintCallable, Category = "UI Score", meta = (WorldContext = "WorldContextObject"))
     static void ShowTestScore(UObject* WorldContextObject, int32 Score = 100);
-    
-protected:
-    // UUserWidget 오버라이드
-    virtual void NativeConstruct() override;
-    virtual void NativeDestruct() override;
+
+    UScoreDisplayWidget(const FObjectInitializer& ObjectInitializer);
     
     // 블루프린트에서 노출된 변수들
     UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
@@ -43,6 +40,11 @@ protected:
     
     UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
     UTextBlock* ComboMultiplierTextBlock;
+    
+protected:
+    // UUserWidget 오버라이드
+    virtual void NativeConstruct() override;
+    virtual void NativeDestruct() override;
     
     // 선택적: 외부 블루프린트 접근을 위한 함수들
     UFUNCTION(BlueprintCallable, Category="UI Score")

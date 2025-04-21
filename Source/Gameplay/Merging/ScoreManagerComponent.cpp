@@ -13,11 +13,42 @@ UScoreManagerComponent::UScoreManagerComponent()
     ComboCount = 0;
     ComboRemainingTime = 0.0f;
     bComboActive = false;
+    
+    // 위젯 초기화
+    ScoreWidgetInstance = nullptr;
+    bWidgetCreated = false;
 }
 
 void UScoreManagerComponent::BeginPlay()
 {
     Super::BeginPlay();
+    
+    // 게임 시작 시 위젯 확인
+    if (!ScoreWidgetInstance && GetWorld())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("BeginPlay: 위젯 초기화 시작"));
+        
+        // 이미 생성된 정적 인스턴스가 있는지 확인
+        ScoreWidgetInstance = UScoreDisplayWidget::Instance;
+        
+        // 없으면 새로 생성 시도
+        if (!ScoreWidgetInstance)
+        {
+            ScoreWidgetInstance = UScoreDisplayWidget::CreateScoreWidget(GetWorld());
+            if (ScoreWidgetInstance)
+            {
+                UE_LOG(LogTemp, Display, TEXT("BeginPlay: 점수 위젯 초기 생성 완료"));
+            }
+            else
+            {
+                UE_LOG(LogTemp, Error, TEXT("BeginPlay: 위젯 생성 실패 - 블루프린트를 확인하세요"));
+            }
+        }
+        else
+        {
+            UE_LOG(LogTemp, Display, TEXT("BeginPlay: 기존 위젯 인스턴스 사용"));
+        }
+    }
 }
 
 void UScoreManagerComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -88,20 +119,26 @@ int32 UScoreManagerComponent::AddScore(int32 BallType)
     // 7. 이벤트 발생
     OnScoreAdded.Broadcast(FinalScore, ComboCount, ComboMultiplier);
     
-    // UI에 점수 표시
-    UScoreDisplayWidget* ScoreWidget = UScoreDisplayWidget::Instance;
-    if (!ScoreWidget && GetWorld())
+    // UI에 점수 표시 - 간소화된 방법
+    if (!ScoreWidgetInstance)
     {
-        // 위젯이 없으면 생성
-        ScoreWidget = UScoreDisplayWidget::CreateScoreWidget(GetWorld());
-        UE_LOG(LogTemp, Warning, TEXT("점수 위젯 생성됨"));
+        // 정적 인스턴스가 있는지 확인만 함
+        ScoreWidgetInstance = UScoreDisplayWidget::Instance;
+        
+        // 로그만 출력하고 위젯 없이도 계속 진행
+        if (!ScoreWidgetInstance)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("점수 위젯이 없음 - 점수만 누적"));
+        }
     }
     
-    if (ScoreWidget)
+    // 위젯이 있을 때만 점수 표시 시도
+    if (IsValid(ScoreWidgetInstance))
     {
-        // 점수 표시 업데이트 - 로그 추가
-        UE_LOG(LogTemp, Warning, TEXT("점수 표시 함수 호출: %d점"), FinalScore);
-        ScoreWidget->DisplayScoreGain(FinalScore, ComboCount, ComboMultiplier);
+        UE_LOG(LogTemp, Display, TEXT("점수 표시: %d점 (콤보 %d, 배율 %.1f)"), 
+               FinalScore, ComboCount, ComboMultiplier);
+        
+        ScoreWidgetInstance->DisplayScoreGain(FinalScore, ComboCount, ComboMultiplier);
     }
     
     return FinalScore;
@@ -152,16 +189,20 @@ void UScoreManagerComponent::AddScoreStatic(UWorld* World, int32 BallType)
     // 컴포넌트 가져오기
     UScoreManagerComponent* ScoreManager = GameMode->FindComponentByClass<UScoreManagerComponent>();
     
-    // 없으면 생성
+    // 없으면 생성 및 등록
     if (!ScoreManager)
     {
-        UE_LOG(LogTemp, Warning, TEXT("AddScoreStatic: ScoreManagerComponent가 없어 새로 생성합니다."));
+        UE_LOG(LogTemp, Display, TEXT("AddScoreStatic: ScoreManagerComponent 새로 생성"));
         ScoreManager = NewObject<UScoreManagerComponent>(GameMode, UScoreManagerComponent::StaticClass());
         ScoreManager->RegisterComponent();
+        
+        // 컴포넌트 생성 직후 위젯도 초기화
+        ScoreManager->ScoreWidgetInstance = UScoreDisplayWidget::CreateScoreWidget(World);
+        ScoreManager->bWidgetCreated = true;
     }
     
     // 점수 추가 실행
-    int32 Score = ScoreManager->AddScore(BallType);
+    ScoreManager->AddScore(BallType);
 }
 
 void UScoreManagerComponent::ResetComboStatic(UWorld* World)

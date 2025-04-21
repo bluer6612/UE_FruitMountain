@@ -7,6 +7,7 @@
 #include "Actors/FruitBall.h"
 #include "Interface/HUD/FruitHUD.h"
 #include "Interface/UI/TextureDisplayWidget.h"
+#include "Interface/UI/ScoreDisplayWidget.h"
 #include "Gameplay/Physics/FruitTrajectoryHelper.h"
 #include "Gameplay/Merging/FruitMergeHelper.h"
 #include "Logging/LogMacros.h"
@@ -28,10 +29,8 @@ AUE_FruitMountainGameMode::AUE_FruitMountainGameMode()
 
     // Blueprint 없이 코드로 만든 PlateActor를 기본값으로 할당
     PlateClass = APlateActor::StaticClass();
-
+    
     FruitBallClass = AFruitBall::StaticClass();
-
-    ScoreManager = CreateDefaultSubobject<UScoreManagerComponent>(TEXT("ScoreManager"));
     
     UE_LOG(LogTemp, Log, TEXT("AUE_FruitMountainGameMode 생성자 호출됨"));
 }
@@ -43,11 +42,34 @@ void AUE_FruitMountainGameMode::BeginPlay()
     // 게임 시작 시 모든 과일 메시 사전 로드
     UFruitMergeHelper::PreloadAllFruitMeshes(GetWorld());
     
+    // UI 위젯 초기화 - TextureDisplayWidget과 ScoreDisplayWidget
     UTextureDisplayWidget::CreateDisplayWidget(this);
     
-    // 스코어 매니저 초기화
-    ScoreManager = NewObject<UScoreManagerComponent>(this, UScoreManagerComponent::StaticClass());
-    ScoreManager->RegisterComponent();
+    // UI 위젯 초기화 - 타이머를 사용하여 지연 초기화
+    FTimerHandle InitWidgetsTimerHandle;
+    GetWorldTimerManager().SetTimer(InitWidgetsTimerHandle, [this]()
+    {
+        // ScoreDisplayWidget 초기화 시도
+        UE_LOG(LogTemp, Warning, TEXT("GameMode: 점수 위젯 초기화 시도..."));
+        UScoreDisplayWidget* ScoreWidget = UScoreDisplayWidget::CreateScoreWidget(this);
+        
+        if (ScoreWidget)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("GameMode: 점수 위젯 초기화 성공"));
+            
+            // ScoreWidgetInstance 연결
+            if (ScoreManager)
+            {
+                ScoreManager->ScoreWidgetInstance = ScoreWidget;
+                ScoreManager->bWidgetCreated = true;
+                UE_LOG(LogTemp, Warning, TEXT("GameMode: ScoreManager-ScoreWidget 연결 완료"));
+            }
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("GameMode: 점수 위젯 초기화 실패 - 블루프린트 경로 확인 필요"));
+        }
+    }, 0.5f, false); // 0.5초 후 실행
 }
 
 void AUE_FruitMountainGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)

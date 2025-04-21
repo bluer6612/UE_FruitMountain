@@ -4,6 +4,9 @@
 #include "Components/ActorComponent.h"
 #include "ScoreManagerComponent.generated.h"
 
+// 전방 선언 추가
+class UScoreDisplayWidget;
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnScoreAddedSignature, int32, Score, int32, ComboCount, float, ComboMultiplier);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnComboEndedSignature, int32, FinalComboCount);
 
@@ -64,7 +67,16 @@ public:
     UFUNCTION(BlueprintPure, Category = "Score")
     float CalculateComboMultiplier() const;
 
+    // 위젯 인스턴스 직접 관리
+    UPROPERTY()
+    UScoreDisplayWidget* ScoreWidgetInstance;
+
+    // 위젯이 이미 생성되었는지 플래그
+    bool bWidgetCreated = false;
+
 protected:
     virtual void BeginPlay() override;
     virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+private:
 };

@@ -9,28 +9,38 @@
 UScoreDisplayWidget* UScoreDisplayWidget::Instance = nullptr;
 TSubclassOf<UUserWidget> UScoreDisplayWidget::ScoreWidgetClass = nullptr;
 
+// 기존 생성자 코드 그대로 유지
+UScoreDisplayWidget::UScoreDisplayWidget(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer)
+{
+    // 정적 인스턴스를 생성자에서 설정하지 않음 (NativeConstruct에서 설정)
+}
+
 UScoreDisplayWidget* UScoreDisplayWidget::CreateScoreWidget(UObject* WorldContextObject)
 {
     UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
     
-    // 1. World 확인 부분
     if (!World)
     {
+        UE_LOG(LogTemp, Error, TEXT("CreateScoreWidget: World가 유효하지 않음!"));
         return nullptr;
     }
     
-    // 블루프린트 클래스 로드 부분
+    // 블루프린트 클래스 로드 시 자세한 디버그
     if (!ScoreWidgetClass)
     {
-        // 블루프린트 위젯 클래스 로드 - 수정된 경로 적용
-        ScoreWidgetClass = LoadClass<UUserWidget>(nullptr, TEXT("/Game/UI/PlayLevel/BP_UI_Play_GetScore.BP_UI_Play_GetScore_C"));
+        FString BlueprintPath = TEXT("/Game/UI/PlayLevel/BP_UI_Play_GetScore.BP_UI_Play_GetScore_C");
+        UE_LOG(LogTemp, Warning, TEXT("블루프린트 로드 시도: %s"), *BlueprintPath);
         
-        // 2. ScoreWidgetClass가 없는 경우
+        ScoreWidgetClass = LoadClass<UUserWidget>(nullptr, *BlueprintPath);
+        
         if (!ScoreWidgetClass)
         {
-            UE_LOG(LogTemp, Error, TEXT("BP_UI_Play_GetScore 블루프린트를 찾을 수 없습니다!"));
+            UE_LOG(LogTemp, Error, TEXT("블루프린트를 찾을 수 없습니다! 경로를 확인하세요: %s"), *BlueprintPath);
             return nullptr;
         }
+        
+        UE_LOG(LogTemp, Display, TEXT("블루프린트 로드 성공: %s"), *ScoreWidgetClass->GetName());
     }
     
     if (Instance && IsValid(Instance))
@@ -50,7 +60,6 @@ UScoreDisplayWidget* UScoreDisplayWidget::CreateScoreWidget(UObject* WorldContex
     // 새 인스턴스 생성
     APlayerController* Controller = World->GetFirstPlayerController();
     
-    // 3. Controller 확인 부분
     if (!Controller)
     {
         return nullptr;
@@ -79,26 +88,24 @@ void UScoreDisplayWidget::NativeConstruct()
 {
     Super::NativeConstruct();
     
-    // 인스턴스 업데이트
+    // 인스턴스 업데이트 - 객체가 실제로 생성된 후에 설정
     Instance = this;
+    
+    UE_LOG(LogTemp, Warning, TEXT("ScoreDisplayWidget NativeConstruct 호출됨: %s"), *GetName());
     
     // ScoreTextBlock과 ComboMultiplierTextBlock은 이미 블루프린트에서 생성되어 있음
     
-    // 4. 텍스트 블록 유효성 검사
     if (!ScoreTextBlock || !ComboMultiplierTextBlock)
     {
         UE_LOG(LogTemp, Error, TEXT("ScoreDisplayWidget: 텍스트 블록 바인딩 실패!"));
         return;
     }
     
-    // 텍스트 스타일 및 위치 설정 - 하드코딩 대신 헬퍼 함수 사용
     FLinearColor LightYellow = FLinearColor(1.0f, 1.0f, 0.8f, 1.0f);
     
-    // 점수 텍스트 설정
     UUIHelper::SetupTextBlockStyle(ScoreTextBlock, LightYellow, 60, true);
     UUIHelper::SetScoreDisplayPosition(ScoreTextBlock, -20.0f, 120.0f, 200.0f, 80.0f);
     
-    // 콤보 텍스트 설정
     UUIHelper::SetupTextBlockStyle(ComboMultiplierTextBlock, LightYellow, 42, true);
     UUIHelper::SetScoreDisplayPosition(ComboMultiplierTextBlock, -20.0f, 170.0f, 180.0f, 70.0f);
     
@@ -120,7 +127,6 @@ void UScoreDisplayWidget::DisplayScoreGain(int32 Score, int32 ComboCount, float 
     UE_LOG(LogTemp, Warning, TEXT("DisplayScoreGain 호출됨: 점수=%d, 콤보=%d, 배율=%.1f"), 
            Score, ComboCount, ComboMultiplier);
     
-    // 5. DisplayScoreGain 함수 내 유효성 검사
     if (!IsValid(ScoreTextBlock) || !IsValid(ComboMultiplierTextBlock))
     {
         UE_LOG(LogTemp, Error, TEXT("텍스트 블록이 유효하지 않음!"));
@@ -133,21 +139,18 @@ void UScoreDisplayWidget::DisplayScoreGain(int32 Score, int32 ComboCount, float 
         return;
     }
     
-    // 점수 값 설정
     PendingScoreGain += Score;
     FString ScoreText = FString::Printf(TEXT("+%d"), PendingScoreGain);
     ScoreTextBlock->SetText(FText::FromString(ScoreText));
     ScoreTextBlock->SetVisibility(ESlateVisibility::HitTestInvisible);
     
-    // 기존 타이머 취소
     if (GetWorld()->GetTimerManager().IsTimerActive(ScoreAnimTimerHandle))
     {
         GetWorld()->GetTimerManager().ClearTimer(ScoreAnimTimerHandle);
     }
     
-    // 연쇄(콤보) 배율 표시
     CurrentComboMultiplier = ComboMultiplier;
-    if (ComboCount >= 2) // 2개 이상이면 콤보로 간주
+    if (ComboCount >= 2)
     {
         FString ComboText = FString::Printf(TEXT("x%.1f"), CurrentComboMultiplier);
         ComboMultiplierTextBlock->SetText(FText::FromString(ComboText));
@@ -158,10 +161,8 @@ void UScoreDisplayWidget::DisplayScoreGain(int32 Score, int32 ComboCount, float 
         ComboMultiplierTextBlock->SetVisibility(ESlateVisibility::Hidden);
     }
     
-    // 텍스트 활성화 표시
     bScoreTextActive = true;
     
-    // 점수 텍스트 애니메이션 - 2초 후 페이드 아웃
     GetWorld()->GetTimerManager().SetTimer(
         ScoreAnimTimerHandle, 
         this, 
@@ -170,31 +171,26 @@ void UScoreDisplayWidget::DisplayScoreGain(int32 Score, int32 ComboCount, float 
         false
     );
     
-    // 로그 추가
     UE_LOG(LogTemp, Warning, TEXT("점수 표시 설정 완료: '%s'"), *ScoreText);
 }
 
 void UScoreDisplayWidget::FadeOutScoreText()
 {
-    // 6. FadeOutScoreText 함수 내 유효성 검사
     if (!ScoreTextBlock || !ComboMultiplierTextBlock || !GetWorld())
     {
         return;
     }
     
-    // 텍스트를 점차 페이드 아웃하기 위한 구조
-    float FadeDuration = 1.0f; // 1초 동안 페이드 아웃
-    float FadeInterval = 0.05f; // 0.05초마다 업데이트
+    float FadeDuration = 1.0f;
+    float FadeInterval = 0.05f;
     int32 FadeSteps = FMath::RoundToInt(FadeDuration / FadeInterval);
     float FadeStep = 1.0f / FadeSteps;
     
-    // 페이드 아웃 함수를 반복적으로 호출
     FTimerDelegate FadeDelegate;
     FadeDelegate.BindLambda([this, FadeStep, FadeSteps]() {
         static int32 CurrentStep = 0;
         CurrentStep++;
         
-        // 점차 투명하게 만들기
         float Alpha = 1.0f - (CurrentStep * FadeStep);
         if (ScoreTextBlock)
         {
@@ -210,17 +206,14 @@ void UScoreDisplayWidget::FadeOutScoreText()
             ComboMultiplierTextBlock->SetColorAndOpacity(ComboColor);
         }
         
-        // 페이드 아웃 완료 후 초기화
         if (CurrentStep >= FadeSteps)
         {
             CurrentStep = 0;
             GetWorld()->GetTimerManager().ClearTimer(ScoreAnimTimerHandle);
             
-            // 텍스트 숨기기 및 초기화
             ScoreTextBlock->SetVisibility(ESlateVisibility::Hidden);
             ComboMultiplierTextBlock->SetVisibility(ESlateVisibility::Hidden);
             
-            // 불투명도 복원 (다음 사용을 위해)
             FLinearColor TextColor = ScoreTextBlock->GetColorAndOpacity().GetSpecifiedColor();
             TextColor.A = 1.0f;
             ScoreTextBlock->SetColorAndOpacity(TextColor);
@@ -229,7 +222,6 @@ void UScoreDisplayWidget::FadeOutScoreText()
             ComboColor.A = 1.0f;
             ComboMultiplierTextBlock->SetColorAndOpacity(ComboColor);
             
-            // 값 초기화
             PendingScoreGain = 0;
             bScoreTextActive = false;
         }
