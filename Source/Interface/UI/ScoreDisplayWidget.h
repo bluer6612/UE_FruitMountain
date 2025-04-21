@@ -28,7 +28,7 @@ public:
     UFUNCTION(BlueprintCallable, Category = "UI Score")
     void DisplayScoreGain(int32 Score, int32 ComboCount = 0, float ComboMultiplier = 1.0f);
     
-    // 테스트용 함수 - 블루프린트에서 직접 호출 가능
+    // 테스트용 함수
     UFUNCTION(BlueprintCallable, Category = "UI Score", meta = (WorldContext = "WorldContextObject"))
     static void ShowTestScore(UObject* WorldContextObject, int32 Score = 100);
     
@@ -37,7 +37,7 @@ protected:
     virtual void NativeConstruct() override;
     virtual void NativeDestruct() override;
     
-    // 블루프린트에서 생성된 위젯에 바인딩
+    // 블루프린트에서 노출된 변수들
     UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
     UTextBlock* ScoreTextBlock;
     
@@ -61,10 +61,6 @@ protected:
             ScoreTextBlock->SetFont(FontInfo);
         }
     }
-    
-    // 부모 컴포넌트
-    UPROPERTY()
-    class UCanvasPanel* RootCanvas;
     
     // 애니메이션 타이머 핸들
     FTimerHandle ScoreAnimTimerHandle;

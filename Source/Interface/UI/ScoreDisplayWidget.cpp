@@ -7,6 +7,7 @@
 
 // 정적 인스턴스 초기화
 UScoreDisplayWidget* UScoreDisplayWidget::Instance = nullptr;
+TSubclassOf<UUserWidget> UScoreDisplayWidget::ScoreWidgetClass = nullptr;
 
 UScoreDisplayWidget* UScoreDisplayWidget::CreateScoreWidget(UObject* WorldContextObject)
 {
@@ -72,7 +73,7 @@ void UScoreDisplayWidget::NativeConstruct()
     
     // 2-2. 텍스트 블록 스타일 설정
     // ScoreTextBlock 설정
-    ScoreTextBlock->SetColorAndOpacity(FLinearColor(1.0f, 1.0f, 0.8f, 1.0f)); // 연한 노란색으로 변경
+    ScoreTextBlock->SetColorAndOpacity(FLinearColor(1.0f, 1.0f, 0.8f, 1.0f)); // 연한 노란색
     ScoreTextBlock->SetFont(FSlateFontInfo(FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Bold.ttf"), 60)); // 크기 유지
     ScoreTextBlock->SetShadowOffset(FVector2D(2.0f, 2.0f));
     ScoreTextBlock->SetShadowColorAndOpacity(FLinearColor(0.0f, 0.0f, 0.0f, 0.5f));
@@ -106,7 +107,7 @@ void UScoreDisplayWidget::NativeConstruct()
         ComboTextSlot->SetAnchors(FAnchors(1.0f, 0.0f, 1.0f, 0.0f)); // 화면 우측 앵커
         ComboTextSlot->SetAlignment(FVector2D(1.0f, 0.5f)); // 우측 정렬
         ComboTextSlot->SetPosition(FVector2D(-20.0f, 170.0f)); // 점수 텍스트 아래
-        ComboTextSlot->SetSize(FVector2D(120.0f, 50.0f)); // 작은 크기
+        ComboTextSlot->SetSize(FVector2D(180.0f, 70.0f)); // 작은 크기
     }
     
     UE_LOG(LogTemp, Warning, TEXT("ScoreDisplayWidget: 위젯 초기화 완료"));
@@ -141,7 +142,7 @@ void UScoreDisplayWidget::DisplayScoreGain(int32 Score, int32 ComboCount, float 
     
     // 점수 값 설정
     PendingScoreGain += Score;
-    FString ScoreText = FString::Printf(TEXT("+%d 점"), PendingScoreGain);
+    FString ScoreText = FString::Printf(TEXT("+%d"), PendingScoreGain);
     ScoreTextBlock->SetText(FText::FromString(ScoreText));
     ScoreTextBlock->SetVisibility(ESlateVisibility::HitTestInvisible);
     
