@@ -17,25 +17,50 @@ public:
     // 정적 인스턴스 - 싱글톤 패턴
     static UScoreDisplayWidget* Instance;
     
+    // 위젯 클래스 참조 (블루프린트 위젯 클래스)
+    static TSubclassOf<UUserWidget> ScoreWidgetClass;
+    
     // 위젯 생성 헬퍼 함수
-    UFUNCTION(BlueprintCallable, Category = "UI|Score", meta = (WorldContext = "WorldContextObject"))
+    UFUNCTION(BlueprintCallable, Category = "UI Score", meta = (WorldContext = "WorldContextObject"))
     static UScoreDisplayWidget* CreateScoreWidget(UObject* WorldContextObject);
     
     // 점수 표시 함수
-    UFUNCTION(BlueprintCallable, Category = "UI|Score")
+    UFUNCTION(BlueprintCallable, Category = "UI Score")
     void DisplayScoreGain(int32 Score, int32 ComboCount = 0, float ComboMultiplier = 1.0f);
+    
+    // 테스트용 함수 - 블루프린트에서 직접 호출 가능
+    UFUNCTION(BlueprintCallable, Category = "UI Score", meta = (WorldContext = "WorldContextObject"))
+    static void ShowTestScore(UObject* WorldContextObject, int32 Score = 100);
     
 protected:
     // UUserWidget 오버라이드
     virtual void NativeConstruct() override;
     virtual void NativeDestruct() override;
     
-    // 텍스트 컴포넌트
-    UPROPERTY()
+    // 블루프린트에서 생성된 위젯에 바인딩
+    UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
     UTextBlock* ScoreTextBlock;
     
-    UPROPERTY()
+    UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
     UTextBlock* ComboMultiplierTextBlock;
+    
+    // 선택적: 외부 블루프린트 접근을 위한 함수들
+    UFUNCTION(BlueprintCallable, Category="UI Score")
+    void SetScoreTextColor(FLinearColor Color) { if(ScoreTextBlock) ScoreTextBlock->SetColorAndOpacity(Color); }
+    
+    UFUNCTION(BlueprintCallable, Category="UI Score")
+    void SetComboTextColor(FLinearColor Color) { if(ComboMultiplierTextBlock) ComboMultiplierTextBlock->SetColorAndOpacity(Color); }
+    
+    UFUNCTION(BlueprintCallable, Category="UI Score")
+    void SetScoreTextSize(int32 Size) 
+    { 
+        if(ScoreTextBlock)
+        {
+            FSlateFontInfo FontInfo = ScoreTextBlock->GetFont();
+            FontInfo.Size = Size;
+            ScoreTextBlock->SetFont(FontInfo);
+        }
+    }
     
     // 부모 컴포넌트
     UPROPERTY()

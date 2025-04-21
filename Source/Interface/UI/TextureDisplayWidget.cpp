@@ -102,17 +102,17 @@ void UTextureDisplayWidget::SetupAllImages()
 {
     // 화면 크기를 고려한 앵커 기반 위치 설정 + 개별 패딩값 적용
     SetupImageWithTexture(UI_Play_Score, EWidgetAnchor::TopLeft, 
-                         TEXT("/Game/Asset/UI/UI_Play_Score"), 
+                         TEXT("/Game/UI/PlayLevel/UI_Play_Score"), 
                          FVector2D(504, 253),
                          40.0f, 30.0f); // 왼쪽 상단 점수판
                          
     SetupImageWithTexture(UI_Play_FruitList, EWidgetAnchor::BottomLeft, 
-                         TEXT("/Game/Asset/UI/UI_Play_FruitList"), 
+                         TEXT("/Game/UI/PlayLevel/UI_Play_FruitList"), 
                          FVector2D(101, 762),
                          60.0f, 20.0f); // 왼쪽 하단 과일 목록
                          
     SetupImageWithTexture(UI_Play_NextFruit, EWidgetAnchor::TopRight, 
-                         TEXT("/Game/Asset/UI/UI_Play_NextFruit"), 
+                         TEXT("/Game/UI/PlayLevel/UI_Play_NextFruit"), 
                          FVector2D(301, 339),
                          120.0f, 60.0f); // 오른쪽 상단 다음 과일
 

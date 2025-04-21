@@ -7,6 +7,7 @@
 #include "Actors/FruitBall.h"
 #include "Interface/HUD/FruitHUD.h"
 #include "Interface/UI/TextureDisplayWidget.h"
+#include "Interface/UI/ScoreDisplayWidget.h"
 #include "Gameplay/Physics/FruitTrajectoryHelper.h"
 #include "Gameplay/Merging/FruitMergeHelper.h"
 #include "Logging/LogMacros.h"
@@ -44,6 +45,28 @@ void AUE_FruitMountainGameMode::BeginPlay()
     UFruitMergeHelper::PreloadAllFruitMeshes(GetWorld());
     
     UTextureDisplayWidget::CreateDisplayWidget(this);
+    
+    // 스코어 매니저 초기화
+    ScoreManager = NewObject<UScoreManagerComponent>(this, UScoreManagerComponent::StaticClass());
+    ScoreManager->RegisterComponent();
+    
+    // 테스트용 점수 위젯 생성 및 표시
+    UScoreDisplayWidget* ScoreWidget = UScoreDisplayWidget::CreateScoreWidget(GetWorld());
+    if (ScoreWidget)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("테스트용 점수 위젯 생성 성공"));
+        
+        // 0.5초 후 테스트 점수 표시 (게임이 완전히 로딩된 후)
+        FTimerHandle TestScoreHandle;
+        GetWorldTimerManager().SetTimer(TestScoreHandle, [ScoreWidget]() {
+            ScoreWidget->DisplayScoreGain(100, 3, 1.2f);
+            UE_LOG(LogTemp, Warning, TEXT("테스트 점수 표시 호출됨"));
+        }, 0.5f, false);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("점수 위젯 생성 실패"));
+    }
 }
 
 void AUE_FruitMountainGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
