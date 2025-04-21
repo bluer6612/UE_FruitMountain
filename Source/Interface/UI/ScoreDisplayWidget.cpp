@@ -13,8 +13,8 @@ UScoreDisplayWidget* UScoreDisplayWidget::Instance = nullptr;
 TSubclassOf<UUserWidget> UScoreDisplayWidget::ScoreWidgetClass = nullptr;
 
 // 정적 상수 초기화
-const FVector2D UScoreDisplayWidget::SCORE_TEXT_POS = FVector2D(650.0f, 90.0f);
-const FVector2D UScoreDisplayWidget::COMBO_TEXT_POS = FVector2D(675.0f, 165.0f);
+const FVector2D UScoreDisplayWidget::SCORE_TEXT_POS = FVector2D(650.0f, 75.0f);
+const FVector2D UScoreDisplayWidget::COMBO_TEXT_POS = FVector2D(690.0f, 135.0f);
 const FLinearColor UScoreDisplayWidget::BRIGHT_YELLOW_COLOR = FLinearColor(1.0f, 0.9f, 0.6f, 1.0f);
 
 UScoreDisplayWidget::UScoreDisplayWidget(const FObjectInitializer& ObjectInitializer)
@@ -93,8 +93,8 @@ void UScoreDisplayWidget::InitializeTextBlocks()
     }
     
     // 절대 좌표로 직접 지정
-    SetupTextBlock(ScoreTextBlock, BRIGHT_YELLOW_COLOR, 45, SCORE_TEXT_POS); 
-    SetupTextBlock(ComboMultiplierTextBlock, BRIGHT_YELLOW_COLOR, 40, COMBO_TEXT_POS);
+    SetupTextBlock(ScoreTextBlock, BRIGHT_YELLOW_COLOR, 48, SCORE_TEXT_POS); 
+    SetupTextBlock(ComboMultiplierTextBlock, BRIGHT_YELLOW_COLOR, 42, COMBO_TEXT_POS);
 
     // 초기에 텍스트 블록 숨기기
     ScoreTextBlock->SetVisibility(ESlateVisibility::Hidden);
@@ -137,6 +137,21 @@ void UScoreDisplayWidget::DisplayScoreGain(int32 Score, int32 ComboCount, float 
         return;
     }
     
+    // 총 점수는 계속 누적
+    TotalScoreGain += Score;
+    
+    // 콤보가 끊어진 경우 점수 초기화, 아니면 누적
+    if (ComboCount == 1 && CurrentComboMultiplier > 1.0f)
+    {
+        // 콤보가 끊어진 경우 (이전에 콤보 중이었다가 1로 떨어진 경우)
+        CurrentScoreGain = Score;
+    }
+    else
+    {
+        // 콤보가 유지되거나 증가하는 경우 - 점수 누적
+        CurrentScoreGain += Score;
+    }
+    
     // 이전 애니메이션 취소 및 텍스트 블록 속성 초기화
     if (WidgetAnimator)
     {
@@ -153,11 +168,7 @@ void UScoreDisplayWidget::DisplayScoreGain(int32 Score, int32 ComboCount, float 
         ComboMultiplierTextBlock->SetColorAndOpacity(BRIGHT_YELLOW_COLOR);
     }
     
-    // 점수 텍스트 업데이트
-    TotalScoreGain += Score;  // 총 점수는 계속 누적
-    CurrentScoreGain = Score;   // 현재 표시할 점수는 새로 받은 점수만
-    
-    // 현재 얻은 점수만 표시
+    // 누적 점수 표시
     FString ScoreText = FString::Printf(TEXT("+%d"), CurrentScoreGain);
     ScoreTextBlock->SetText(FText::FromString(ScoreText));
     ScoreTextBlock->SetVisibility(ESlateVisibility::HitTestInvisible);
@@ -166,7 +177,7 @@ void UScoreDisplayWidget::DisplayScoreGain(int32 Score, int32 ComboCount, float 
     CurrentComboMultiplier = ComboMultiplier;
     if (ComboCount >= 2)
     {
-        FString ComboText = FString::Printf(TEXT("x%.1f"), CurrentComboMultiplier);
+        FString ComboText = FString::Printf(TEXT("X%.1f"), CurrentComboMultiplier);
         ComboMultiplierTextBlock->SetText(FText::FromString(ComboText));
         ComboMultiplierTextBlock->SetVisibility(ESlateVisibility::HitTestInvisible);
     }
@@ -203,6 +214,19 @@ void UScoreDisplayWidget::DisplayScoreGain(int32 Score, int32 ComboCount, float 
     }
     
     UE_LOG(LogTemp, Warning, TEXT("점수 표시 설정 완료: '%s'"), *ScoreText);
+}
+
+void UScoreDisplayWidget::ResetComboDisplay()
+{
+    // 현재 콤보 관련 변수 초기화
+    CurrentScoreGain = 0;
+    CurrentComboMultiplier = 1.0f;
+    
+    // 콤보 텍스트 숨기기
+    if (ComboMultiplierTextBlock)
+    {
+        ComboMultiplierTextBlock->SetVisibility(ESlateVisibility::Hidden);
+    }
 }
 
 // 정적 함수 구현

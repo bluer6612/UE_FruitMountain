@@ -13,9 +13,9 @@ class UScoreDisplayWidget;
 struct FScoreAnimParams
 {
     float FrameInterval = 0.02f;    // 프레임 간 시간 간격
-    float AlphaStepSize = 0.05f;    // 투명도 감소량/프레임
+    float AlphaStepSize = 0.04f;    // 투명도 감소량/프레임
     float MoveStepSize = -2.0f;     // 이동 거리/프레임
-    int32 TotalSteps = 20;          // 총 애니메이션 스텝 수
+    int32 TotalSteps = 25;          // 총 애니메이션 스텝 수
 };
 
 UCLASS()
@@ -30,7 +30,7 @@ public:
     void SetTextBlocks(UTextBlock* InScoreText, UTextBlock* InComboText);
     
     // 페이드 아웃 애니메이션 시작
-    void StartFadeOutAnimation(UObject* WorldContextObject, float Delay = 1.0f);
+    void StartFadeOutAnimation(UObject* WorldContextObject, float Delay = 1.5f);
     
     // 애니메이션 취소 및 속성 초기화
     void CancelAnimation();

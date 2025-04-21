@@ -147,7 +147,7 @@ void UFruitMergeFeedbackHelper::StabilizeSingleFruit(AFruitBall* Fruit, float In
         FVector CenteringForce = FVector::ZeroVector;
         if (DistanceToCenter > PlateRadius * 0.5f)
         {
-            float CenteringStrength = FMath::Min(1.0f, DistanceToCenter / PlateRadius) * 10.0f;
+            float CenteringStrength = FMath::Min(1.0f, DistanceToCenter / PlateRadius) * 1.5f;
             CenteringForce = ToCenterXY.GetSafeNormal() * CenteringStrength;
         }
         
@@ -188,7 +188,7 @@ void UFruitMergeFeedbackHelper::StabilizeSingleFruit(AFruitBall* Fruit, float In
             // 중앙에서 멀리 있는 과일에 추가 힘 적용
             if (DistanceToCenter > PlateRadius * 0.4f)
             {
-                float CenteringStrength = FMath::Min(1.0f, DistanceToCenter / PlateRadius) * 5.0f * SizeFactor;
+                float CenteringStrength = FMath::Min(1.0f, DistanceToCenter / PlateRadius) * 1.5f * SizeFactor;
                 FVector StabilizingForce = ToCenterXY.GetSafeNormal() * CenteringStrength;
                 MeshComp->AddForce(StabilizingForce, NAME_None, true);
             }

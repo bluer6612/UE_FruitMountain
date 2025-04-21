@@ -34,6 +34,14 @@ public:
     // 점수 표시 함수
     UFUNCTION(BlueprintCallable, Category = "UI Score")
     void DisplayScoreGain(int32 Score, int32 ComboCount, float ComboMultiplier);
+
+    // 콤보 타이머가 끊어질 때 호출하는 함수
+    UFUNCTION(BlueprintCallable, Category = "UI Score")
+    void ResetComboDisplay();
+
+    // 인스턴스 유효성 검증 (외부에서 접근 가능하도록 public으로 변경)
+    UFUNCTION(BlueprintCallable, Category = "UI Score")
+    static bool IsInstanceValid();
     
 protected:
     virtual void NativeConstruct() override;
@@ -60,7 +68,6 @@ private:
     void SetupTextBlock(UTextBlock* TextBlock, FLinearColor Color, int32 FontSize, FVector2D Pos);
     
     // 유효성 검사 및 초기화 헬퍼
-    static bool IsInstanceValid();
     static APlayerController* GetValidPlayerController(UObject* WorldContextObject);
     static bool LoadWidgetClassIfNeeded();
 };

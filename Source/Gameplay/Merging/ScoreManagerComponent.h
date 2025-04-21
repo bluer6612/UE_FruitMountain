@@ -78,5 +78,6 @@ protected:
     virtual void BeginPlay() override;
     virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-private:
+    // 콤보 타이머가 만료되었을 때 호출되는 함수
+    void OnComboTimerExpired();
 };

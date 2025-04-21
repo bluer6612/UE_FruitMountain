@@ -68,10 +68,28 @@ void UScoreManagerComponent::TickComponent(float DeltaTime, ELevelTick TickType,
             // 콤보 종료 이벤트 발생
             OnComboEnded.Broadcast(ComboCount);
             
-            // 콤보 초기화
-            ResetCombo();
+            // 콤보 타이머 만료 처리 함수 호출
+            OnComboTimerExpired();
         }
     }
+}
+
+// 콤보 타이머 만료 처리 함수 구현
+void UScoreManagerComponent::OnComboTimerExpired()
+{
+    // 콤보 UI 리셋 (ScoreDisplayWidget이 있다면)
+    if (ScoreWidgetInstance)
+    {
+        ScoreWidgetInstance->ResetComboDisplay();
+    }
+    // 정적 인스턴스를 사용하는 경우를 위한 백업 코드
+    else if (UScoreDisplayWidget::Instance)
+    {
+        UScoreDisplayWidget::Instance->ResetComboDisplay();
+    }
+    
+    // 콤보 상태 초기화
+    ResetCombo();
 }
 
 int32 UScoreManagerComponent::AddScore(int32 BallType)
