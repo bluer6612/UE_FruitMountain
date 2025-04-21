@@ -14,6 +14,8 @@ class UE_FRUITMOUNTAIN_API UScoreDisplayWidget : public UUserWidget
     GENERATED_BODY()
     
 public:
+    UScoreDisplayWidget(const FObjectInitializer& ObjectInitializer); // 생성자
+
     // 정적 인스턴스 - 싱글톤 패턴
     static UScoreDisplayWidget* Instance;
     
@@ -27,12 +29,6 @@ public:
     // 점수 표시 함수
     UFUNCTION(BlueprintCallable, Category = "UI Score")
     void DisplayScoreGain(int32 Score, int32 ComboCount = 0, float ComboMultiplier = 1.0f);
-    
-    // 테스트용 함수
-    UFUNCTION(BlueprintCallable, Category = "UI Score", meta = (WorldContext = "WorldContextObject"))
-    static void ShowTestScore(UObject* WorldContextObject, int32 Score = 100);
-
-    UScoreDisplayWidget(const FObjectInitializer& ObjectInitializer);
     
     // 블루프린트에서 노출된 변수들
     UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
