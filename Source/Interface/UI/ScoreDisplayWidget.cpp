@@ -12,6 +12,8 @@ TSubclassOf<UUserWidget> UScoreDisplayWidget::ScoreWidgetClass = nullptr;
 UScoreDisplayWidget* UScoreDisplayWidget::CreateScoreWidget(UObject* WorldContextObject)
 {
     UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
+    
+    // 1. World 확인 부분
     if (!World)
     {
         return nullptr;
@@ -21,8 +23,9 @@ UScoreDisplayWidget* UScoreDisplayWidget::CreateScoreWidget(UObject* WorldContex
     if (!ScoreWidgetClass)
     {
         // 블루프린트 위젯 클래스 로드 - 수정된 경로 적용
-        ScoreWidgetClass = LoadClass<UUserWidget>(nullptr, TEXT("/Game/UI/PlayLevel/BP_UI_Play_GetScore.BP_UI_Play_GetScor"));
+        ScoreWidgetClass = LoadClass<UUserWidget>(nullptr, TEXT("/Game/UI/PlayLevel/BP_UI_Play_GetScore.BP_UI_Play_GetScore_C"));
         
+        // 2. ScoreWidgetClass가 없는 경우
         if (!ScoreWidgetClass)
         {
             UE_LOG(LogTemp, Error, TEXT("BP_UI_Play_GetScore 블루프린트를 찾을 수 없습니다!"));
@@ -30,7 +33,6 @@ UScoreDisplayWidget* UScoreDisplayWidget::CreateScoreWidget(UObject* WorldContex
         }
     }
     
-// 수정된 코드
     if (Instance && IsValid(Instance))
     {
         if (!Instance->IsInViewport())
@@ -47,6 +49,8 @@ UScoreDisplayWidget* UScoreDisplayWidget::CreateScoreWidget(UObject* WorldContex
 
     // 새 인스턴스 생성
     APlayerController* Controller = World->GetFirstPlayerController();
+    
+    // 3. Controller 확인 부분
     if (!Controller)
     {
         return nullptr;
@@ -79,6 +83,8 @@ void UScoreDisplayWidget::NativeConstruct()
     Instance = this;
     
     // ScoreTextBlock과 ComboMultiplierTextBlock은 이미 블루프린트에서 생성되어 있음
+    
+    // 4. 텍스트 블록 유효성 검사
     if (!ScoreTextBlock || !ComboMultiplierTextBlock)
     {
         UE_LOG(LogTemp, Error, TEXT("ScoreDisplayWidget: 텍스트 블록 바인딩 실패!"));
@@ -114,6 +120,7 @@ void UScoreDisplayWidget::DisplayScoreGain(int32 Score, int32 ComboCount, float 
     UE_LOG(LogTemp, Warning, TEXT("DisplayScoreGain 호출됨: 점수=%d, 콤보=%d, 배율=%.1f"), 
            Score, ComboCount, ComboMultiplier);
     
+    // 5. DisplayScoreGain 함수 내 유효성 검사
     if (!IsValid(ScoreTextBlock) || !IsValid(ComboMultiplierTextBlock))
     {
         UE_LOG(LogTemp, Error, TEXT("텍스트 블록이 유효하지 않음!"));
@@ -169,8 +176,11 @@ void UScoreDisplayWidget::DisplayScoreGain(int32 Score, int32 ComboCount, float 
 
 void UScoreDisplayWidget::FadeOutScoreText()
 {
+    // 6. FadeOutScoreText 함수 내 유효성 검사
     if (!ScoreTextBlock || !ComboMultiplierTextBlock || !GetWorld())
+    {
         return;
+    }
     
     // 텍스트를 점차 페이드 아웃하기 위한 구조
     float FadeDuration = 1.0f; // 1초 동안 페이드 아웃
