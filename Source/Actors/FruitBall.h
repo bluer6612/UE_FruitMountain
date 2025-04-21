@@ -76,6 +76,14 @@ public:
     UFUNCTION()
     bool HasCollidedBefore() const { return bHasCollided; }
     
+    // 투척 중인지 확인하는 함수
+    UFUNCTION(BlueprintCallable, Category = "Fruit|State")
+    bool IsBeingThrown() const { return bIsBeingThrown; }
+    
+    // 투척 상태 설정 함수
+    UFUNCTION(BlueprintCallable, Category = "Fruit|State")
+    void SetBeingThrown(bool bNewState) { bIsBeingThrown = bNewState; }
+
     // 기본 공 크기 (월드 스케일)
     static constexpr float BaseBallSize = 15.0f;
     
@@ -87,7 +95,6 @@ public:
 
     // 공의 최대 레벨
     static constexpr int MaxBallType = 11;
-
     // 떨어진 것으로 간주되는 Z 좌표 (접시보다 낮은 위치)
     static constexpr float FallThreshold = 80.f;
 
@@ -117,4 +124,8 @@ protected:
     
     // 게임오버 타이머 핸들
     FTimerHandle GameOverTimerHandle;
+
+    // 투척 중인지 여부를 나타내는 플래그
+    UPROPERTY(BlueprintReadOnly, Category = "Fruit|State")
+    bool bIsBeingThrown = false;
 };

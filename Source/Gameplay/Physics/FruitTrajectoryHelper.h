@@ -14,7 +14,7 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Trajectory")
     static void UpdateTrajectoryPath(class AFruitPlayerController* Controller, const FVector& StartLocation, bool bPersistent = true, int32 CustomTrajectoryID = 9999);
 
-    // 궤적 시각화 함수 - 공용으로 변경
+    // 궤적 시각화 함수
     UFUNCTION(BlueprintCallable, Category = "Trajectory")
     static void DrawTrajectoryPath(UWorld* World, const TArray<FVector>& Points, int32 TrajectoryID);
 

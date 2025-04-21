@@ -55,7 +55,7 @@ void UScoreWidgetAnimator::StartFadeOutAnimation(UObject* WorldContextObject, fl
     UWorld* World = WorldContextObject->GetWorld();
     if (World)
     {
-        // 타이머 함수 변경: 지연 후 ExecuteFadeOut 함수를 직접 호출
+        // 타이머 함수: 지연 후 ExecuteFadeOut 함수를 직접 호출
         FTimerDelegate DelayedStart;
         DelayedStart.BindUObject(this, &UScoreWidgetAnimator::ExecuteFadeOut);
         
