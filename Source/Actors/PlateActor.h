@@ -31,4 +31,7 @@ protected:
     
     // 접시 반경 계산 함수 (BeginPlay에서 호출)
     void CalculatePlateRadius();
+    
+    // 컴포넌트 찾기 도우미 함수
+    UStaticMeshComponent* FindPlateMeshComponent() const;
 };

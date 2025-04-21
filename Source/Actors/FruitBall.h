@@ -127,7 +127,7 @@ protected:
 
     // 투척 중인지 여부를 나타내는 플래그
     UPROPERTY(BlueprintReadOnly, Category = "Fruit State")
-    bool bIsBeingThrown = false;
+    bool bIsBeingThrown = true;
 
 private:
     // 접시 액터 캐싱 (성능 최적화)

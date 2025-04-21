@@ -74,16 +74,7 @@ void UFruitMergeFeedbackHelper::StabilizeFruits(UWorld* World, AFruitBall* Singl
         return;
     }
     
-    // 1. 단일 과일만 처리하는 경우
-    // SingleFruit가 투척 중이면 안정화하지 않음
-    if (SingleFruit && !SingleFruit->IsBeingThrown())
-    {
-        // 과일 안정화 로직 적용
-        StabilizeSingleFruit(SingleFruit, DampingMultiplier, bIsNewFruit);
-        return;
-    }
-    
-    // 2. 월드의 모든 과일 처리
+    // 항상 월드의 모든 과일 처리 (개별 과일 처리 로직 제거)
     TArray<AActor*> FoundFruits;
     UGameplayStatics::GetAllActorsOfClass(World, AFruitBall::StaticClass(), FoundFruits);
     
@@ -101,8 +92,11 @@ void UFruitMergeFeedbackHelper::StabilizeFruits(UWorld* World, AFruitBall* Singl
             continue;
         }
         
+        // SingleFruit와 동일한 과일이면 입력받은 bIsNewFruit 사용, 나머지는 false
+        bool bTreatAsNewFruit = (SingleFruit == Fruit) ? bIsNewFruit : false;
+        
         // 각 과일 안정화 처리
-        StabilizeSingleFruit(Fruit, DampingMultiplier, false);
+        StabilizeSingleFruit(Fruit, DampingMultiplier, bTreatAsNewFruit);
     }
 }
 
@@ -121,7 +115,7 @@ void UFruitMergeFeedbackHelper::StabilizeSingleFruit(AFruitBall* Fruit, float In
         return;
     }
     
-    // !!! 중요: 투척 중인 과일은 안정화하지 않음 !!!
+    // 투척 중인 과일은 안정화하지 않음
     if (Fruit->IsBeingThrown())
     {
         return;
@@ -147,7 +141,7 @@ void UFruitMergeFeedbackHelper::StabilizeSingleFruit(AFruitBall* Fruit, float In
         MeshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
         
         // 업워드 힘 + 중심 힘 적용을 위한 값 계산
-        float UpwardForce = FMath::Max(-20.0f, -5.0f - (FruitType * 0.5f));
+        float UpwardForce = FMath::Max(-20.0f, -12.5f - (FruitType * 0.5f));
         
         // 중앙으로 향하는 힘 계산
         FVector CenteringForce = FVector::ZeroVector;
@@ -159,7 +153,7 @@ void UFruitMergeFeedbackHelper::StabilizeSingleFruit(AFruitBall* Fruit, float In
         
         FVector FinalVelocity = FVector(CenteringForce.X, CenteringForce.Y, UpwardForce);
         
-        // 0.1초 후 충돌 및 물리 시뮬레이션 재활성화
+        // 잠시 후 충돌 및 물리 시뮬레이션 재활성화
         FTimerHandle CollisionHandle;
         World->GetTimerManager().SetTimer(CollisionHandle, 
             [WeakFruit=TWeakObjectPtr<AFruitBall>(Fruit), FinalVelocity]() 
@@ -215,7 +209,7 @@ void UFruitMergeFeedbackHelper::StabilizeSingleFruit(AFruitBall* Fruit, float In
                         MeshComp->SetAngularDamping(2.0f * SizeFactor);
                     }
                 }, 
-                0.5f, false);
+                0.75f, false);
         }
     }
 }

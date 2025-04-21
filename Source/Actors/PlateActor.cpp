@@ -79,3 +79,21 @@ void APlateActor::CalculatePlateRadius()
         UE_LOG(LogTemp, Warning, TEXT("접시 메시 컴포넌트를 찾을 수 없음"));
     }
 }
+
+// 태그로 접시 메시 컴포넌트 찾기
+UStaticMeshComponent* APlateActor::FindPlateMeshComponent() const
+{
+    TArray<UActorComponent*> Components;
+    GetComponents(UStaticMeshComponent::StaticClass(), Components);
+    
+    for (UActorComponent* Component : Components)
+    {
+        UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(Component);
+        if (MeshComp && MeshComp->ComponentHasTag(FName("PlateMesh")))
+        {
+            return MeshComp;
+        }
+    }
+    
+    return nullptr;
+}
