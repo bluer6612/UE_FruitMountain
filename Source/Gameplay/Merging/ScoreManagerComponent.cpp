@@ -1,6 +1,8 @@
 #include "ScoreManagerComponent.h"
 #include "Framework/UE_FruitMountainGameMode.h"
 #include "Kismet/GameplayStatics.h"
+#include "Interface/UI/TextureDisplayWidget.h"
+#include "Interface/UI/ScoreDisplayWidget.h"
 
 UScoreManagerComponent::UScoreManagerComponent()
 {
@@ -86,11 +88,18 @@ int32 UScoreManagerComponent::AddScore(int32 BallType)
     // 7. 이벤트 발생
     OnScoreAdded.Broadcast(FinalScore, ComboCount, ComboMultiplier);
     
-    // 8. 게임모드에 점수 업데이트 (필요시)
-    AUE_FruitMountainGameMode* GameMode = Cast<AUE_FruitMountainGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
-    if (GameMode)
+    // UI에 점수 표시
+    UScoreDisplayWidget* ScoreWidget = UScoreDisplayWidget::Instance;
+    if (!ScoreWidget && GetWorld())
     {
-        // GameMode->UpdateScore(CurrentScore);
+        // 위젯이 없으면 생성
+        ScoreWidget = UScoreDisplayWidget::CreateScoreWidget(GetWorld());
+    }
+    
+    if (ScoreWidget)
+    {
+        // 점수 표시 업데이트
+        ScoreWidget->DisplayScoreGain(FinalScore, ComboCount, ComboMultiplier);
     }
     
     return FinalScore;
@@ -150,10 +159,9 @@ void UScoreManagerComponent::AddScoreStatic(UWorld* World, int32 BallType)
     }
     
     // 점수 추가 실행
-    ScoreManager->AddScore(BallType);
+    int32 Score = ScoreManager->AddScore(BallType);
 }
 
-// 정적 콤보 초기화 함수
 void UScoreManagerComponent::ResetComboStatic(UWorld* World)
 {
     if (!World) return;
