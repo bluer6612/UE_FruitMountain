@@ -44,32 +44,14 @@ void AUE_FruitMountainGameMode::BeginPlay()
     
     // UI 위젯 초기화 - TextureDisplayWidget과 ScoreDisplayWidget
     UTextureDisplayWidget::CreateDisplayWidget(this);
-    
-    // UI 위젯 초기화 - 타이머를 사용하여 지연 초기화
-    FTimerHandle InitWidgetsTimerHandle;
-    GetWorldTimerManager().SetTimer(InitWidgetsTimerHandle, [this]()
+    UScoreDisplayWidget* ScoreWidget = UScoreDisplayWidget::CreateScoreWidget(this);
+
+    // ScoreWidgetInstance 연결
+    if (ScoreManager)
     {
-        // ScoreDisplayWidget 초기화 시도
-        UE_LOG(LogTemp, Warning, TEXT("GameMode: 점수 위젯 초기화 시도..."));
-        UScoreDisplayWidget* ScoreWidget = UScoreDisplayWidget::CreateScoreWidget(this);
-        
-        if (ScoreWidget)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("GameMode: 점수 위젯 초기화 성공"));
-            
-            // ScoreWidgetInstance 연결
-            if (ScoreManager)
-            {
-                ScoreManager->ScoreWidgetInstance = ScoreWidget;
-                ScoreManager->bWidgetCreated = true;
-                UE_LOG(LogTemp, Warning, TEXT("GameMode: ScoreManager-ScoreWidget 연결 완료"));
-            }
-        }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT("GameMode: 점수 위젯 초기화 실패 - 블루프린트 경로 확인 필요"));
-        }
-    }, 0.5f, false); // 0.5초 후 실행
+        ScoreManager->ScoreWidgetInstance = ScoreWidget;
+        ScoreManager->bWidgetCreated = true;
+    }
 }
 
 void AUE_FruitMountainGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)

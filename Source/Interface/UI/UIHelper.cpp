@@ -138,14 +138,17 @@ UCanvasPanelSlot* UUIHelper::SetScoreDisplayPosition(UTextBlock* TextBlock, floa
     UCanvasPanelSlot* TextSlot = Cast<UCanvasPanelSlot>(TextBlock->Slot);
     if (TextSlot)
     {
-        // 앵커 설정 (기본적으로 우측 앵커)
+        // 앵커 설정 - bRightAlign 매개변수로 결정
         TextSlot->SetAnchors(FAnchors(bRightAlign ? 1.0f : 0.0f, 0.0f, bRightAlign ? 1.0f : 0.0f, 0.0f));
         
         // 정렬 설정
         TextSlot->SetAlignment(FVector2D(bRightAlign ? 1.0f : 0.0f, 0.5f));
         
-        // 위치 및 크기 설정
-        TextSlot->SetPosition(FVector2D(PosX, PosY));
+        // 위치 설정 - 오른쪽 정렬인 경우 X가 음수여야 함
+        float AdjustedX = bRightAlign ? -PosX : PosX;
+        TextSlot->SetPosition(FVector2D(AdjustedX, PosY));
+        
+        // 크기 설정
         TextSlot->SetSize(FVector2D(Width, Height));
     }
     

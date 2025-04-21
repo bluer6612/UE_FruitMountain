@@ -88,12 +88,8 @@ void UScoreDisplayWidget::NativeConstruct()
 {
     Super::NativeConstruct();
     
-    // 인스턴스 업데이트 - 객체가 실제로 생성된 후에 설정
+    // 인스턴스 업데이트
     Instance = this;
-    
-    UE_LOG(LogTemp, Warning, TEXT("ScoreDisplayWidget NativeConstruct 호출됨: %s"), *GetName());
-    
-    // ScoreTextBlock과 ComboMultiplierTextBlock은 이미 블루프린트에서 생성되어 있음
     
     if (!ScoreTextBlock || !ComboMultiplierTextBlock)
     {
@@ -103,13 +99,15 @@ void UScoreDisplayWidget::NativeConstruct()
     
     FLinearColor LightYellow = FLinearColor(1.0f, 1.0f, 0.8f, 1.0f);
     
+    // UI_Play_Score의 오른쪽에 배치하기 위한 위치 설정 수정
+    // UI_Play_Score는 TopLeft에 (40, 30) 위치, 크기는 504x253
     UUIHelper::SetupTextBlockStyle(ScoreTextBlock, LightYellow, 60, true);
-    UUIHelper::SetScoreDisplayPosition(ScoreTextBlock, -20.0f, 120.0f, 200.0f, 80.0f);
+    UUIHelper::SetScoreDisplayPosition(ScoreTextBlock, 750.0f, 100.0f, 200.0f, 80.0f, false); // false = 오른쪽 정렬 아님
     
     UUIHelper::SetupTextBlockStyle(ComboMultiplierTextBlock, LightYellow, 42, true);
-    UUIHelper::SetScoreDisplayPosition(ComboMultiplierTextBlock, -20.0f, 170.0f, 180.0f, 70.0f);
+    UUIHelper::SetScoreDisplayPosition(ComboMultiplierTextBlock, 800.0f, 160.0f, 180.0f, 70.0f, false); // false = 오른쪽 정렬 아님
     
-    UE_LOG(LogTemp, Warning, TEXT("ScoreDisplayWidget: 위젯 초기화 완료"));
+    UE_LOG(LogTemp, Warning, TEXT("ScoreDisplayWidget: UI_Play_Score 오른쪽에 위치 설정 완료"));
 }
 
 void UScoreDisplayWidget::NativeDestruct()
