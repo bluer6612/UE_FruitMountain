@@ -8,23 +8,6 @@
 #include "Actors/PlateActor.h"
 #include "Actors/FruitBall.h"
 
-// 크기 계산 함수 - FruitBall 클래스 함수 사용
-float UFruitSpawnHelper::CalculateBallSize(int32 BallType)
-{
-    // FruitBall 클래스의 함수 사용 - 월드 스케일로 계산됨
-    float WorldSizeCM = AFruitBall::CalculateBallSize(BallType);
-    
-    // 언리얼 액터 스케일 반환 (100으로 나눔)
-    return WorldSizeCM / 100.0f;
-}
-
-// 질량 계산 함수 - FruitBall 클래스 함수 사용
-float UFruitSpawnHelper::CalculateBallMass(int32 BallType)
-{
-    // 직접 FruitBall 클래스의 함수 호출
-    return AFruitBall::CalculateBallMass(BallType);
-}
-
 // SpawnBall 함수 수정 - 기존 코드 유지
 AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, const FVector& Location, int32 BallType, bool bEnablePhysics)
 {
@@ -35,8 +18,8 @@ AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, const F
     }
 
     // 공 속성 계산 - 크기 및 질량 (FruitBall 클래스 기반)
-    float BallSize = CalculateBallSize(BallType); // 이미 액터 스케일로 변환됨 (1/100)
-    float BallMass = CalculateBallMass(BallType);
+    float BallSize = AFruitBall::CalculateBallSize(BallType) / 100.0f; // 언리얼 액터 스케일 반환 (100으로 나눔)
+    float BallMass = AFruitBall::CalculateBallMass(BallType);
 
     // 공 액터 스폰
     FActorSpawnParameters SpawnParams;

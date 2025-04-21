@@ -10,6 +10,8 @@
 #include "Gameplay/Physics/FruitTrajectoryHelper.h"
 #include "Gameplay/Fruit/FruitMergeHelper.h"
 #include "Logging/LogMacros.h"
+#include "Gameplay/Controller/FruitPlayerController.h"
+#include "Gameplay/Fruit/FruitUtilityHelper.h"
 
 #if WITH_EDITOR
 #include "Editor.h"
@@ -41,7 +43,7 @@ void AUE_FruitMountainGameMode::BeginPlay()
     Super::BeginPlay();
     
     // 게임 시작 시 모든 과일 메시 사전 로드
-    UFruitMergeHelper::PreloadAllFruitMeshes(GetWorld());
+    UFruitUtilityHelper::PreloadAllFruitMeshes(GetWorld());
     
     UTextureDisplayWidget::CreateDisplayWidget(this);
 }

@@ -6,6 +6,7 @@
 #include "Components/LineBatchComponent.h"
 #include "PhysicsEngine/PhysicsSettings.h"
 #include "Actors/FruitBall.h"
+#include "Gameplay/Fruit/FruitUtilityHelper.h"
 
 ULineBatchComponent* UFruitTrajectoryHelper::CustomLineBatcher = nullptr;
 
@@ -25,7 +26,7 @@ void UFruitTrajectoryHelper::UpdateTrajectoryPath(AFruitPlayerController* Contro
     FVector PlateCenter = Controller->PlateLocation;
     
     // 2. 공의 질량 계산
-    float BallMass = UFruitSpawnHelper::CalculateBallMass(Controller->CurrentBallType);
+    float BallMass = AFruitBall::CalculateBallMass(Controller->CurrentBallType);
     
     // 3. 물리 계산 결과 가져오기
     static FThrowPhysicsResult LastPhysicsResult; // 마지막 결과 저장용 정적 변수
