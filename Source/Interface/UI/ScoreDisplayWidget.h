@@ -29,7 +29,10 @@ public:
     // 점수 표시 함수
     UFUNCTION(BlueprintCallable, Category = "UI Score")
     void DisplayScoreGain(int32 Score, int32 ComboCount, float ComboMultiplier);
-    
+
+    static const FVector2D SCORE_TEXT_POS;
+    static const FVector2D COMBO_TEXT_POS;
+
 protected:
     virtual void NativeConstruct() override;
     virtual void NativeDestruct() override;
@@ -43,6 +46,13 @@ protected:
     UPROPERTY()
     UScoreWidgetAnimator* WidgetAnimator;
     
+    // 그림자 이미지 참조
+    UPROPERTY()
+    UImage* ScoreTextShadow;
+    
+    UPROPERTY()
+    UImage* ComboTextShadow;
+    
     // 점수 데이터
     int32 PendingScoreGain;
     float CurrentComboMultiplier;
@@ -54,7 +64,7 @@ protected:
 private:
     // 헬퍼 함수들
     void InitializeTextBlocks();
-    void SetupTextBlock(UTextBlock* TextBlock, FLinearColor Color, int32 FontSize, float PosX, float PosY);
+    void SetupTextBlock(UTextBlock* TextBlock, FLinearColor Color, int32 FontSize, FVector2D Pos);
     void AddHorizontalShadow(UTextBlock* TextBlock);
     
     // 유효성 검사 및 초기화 헬퍼

@@ -46,6 +46,9 @@ public:
     // 스코어 값 재설정
     void ResetScoreValues();
     
+    // 텍스트 블록 색상 및 위치 초기화
+    void ResetTextBlockProperties();
+    
 private:
     // 참조용 텍스트 블록
     UPROPERTY()

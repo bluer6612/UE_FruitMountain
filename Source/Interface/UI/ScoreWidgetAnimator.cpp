@@ -2,6 +2,7 @@
 #include "Components/CanvasPanelSlot.h"
 #include "TimerManager.h"
 #include "Engine/World.h"
+#include "ScoreDisplayWidget.h"
 
 UScoreWidgetAnimator::UScoreWidgetAnimator()
 {
@@ -28,8 +29,11 @@ FTextBlockPositions UScoreWidgetAnimator::GetTextBlockPositions() const
     FTextBlockPositions Positions;
     Positions.ScoreSlot = Cast<UCanvasPanelSlot>(ScoreTextBlock->Slot);
     Positions.ComboSlot = Cast<UCanvasPanelSlot>(ComboMultiplierTextBlock->Slot);
-    Positions.ScoreInitialPos = Positions.ScoreSlot ? Positions.ScoreSlot->GetPosition() : FVector2D(750.0f, 100.0f);
-    Positions.ComboInitialPos = Positions.ComboSlot ? Positions.ComboSlot->GetPosition() : FVector2D(800.0f, 200.0f);
+    
+    // 동일한 절대 좌표 사용
+    Positions.ScoreInitialPos = UScoreDisplayWidget::SCORE_TEXT_POS;
+    Positions.ComboInitialPos = UScoreDisplayWidget::COMBO_TEXT_POS;
+    
     return Positions;
 }
 
@@ -67,6 +71,7 @@ void UScoreWidgetAnimator::StartFadeOutAnimation(UObject* WorldContextObject, fl
     );
 }
 
+// 기존 CancelAnimation 함수 수정
 void UScoreWidgetAnimator::CancelAnimation()
 {
     if (!bAnimationActive || !ScoreTextBlock || !ComboMultiplierTextBlock)
@@ -80,7 +85,41 @@ void UScoreWidgetAnimator::CancelAnimation()
         World->GetTimerManager().ClearTimer(AnimTimerHandle);
     }
     
+    // 타이머 취소 시 텍스트 블록 속성 초기화
+    ResetTextBlockProperties();
+    
     bAnimationActive = false;
+}
+
+// 새 함수 추가: 텍스트 블록 속성 초기화
+void UScoreWidgetAnimator::ResetTextBlockProperties()
+{
+    FLinearColor OriginalColor = FLinearColor(1.0f, 0.7f, 0.4f, 1.0f);
+    
+    if (ScoreTextBlock)
+    {
+        // 색상 및 투명도 초기화
+        ScoreTextBlock->SetColorAndOpacity(OriginalColor);
+        
+        // 위치 초기화
+        if (UCanvasPanelSlot* ScoreSlot = Cast<UCanvasPanelSlot>(ScoreTextBlock->Slot))
+        {
+            // 정적 위치 값 사용
+            ScoreSlot->SetPosition(UScoreDisplayWidget::SCORE_TEXT_POS);
+        }
+    }
+    
+    if (ComboMultiplierTextBlock)
+    {
+        // 색상 및 투명도 초기화
+        ComboMultiplierTextBlock->SetColorAndOpacity(OriginalColor);
+        
+        // 위치 초기화
+        if (UCanvasPanelSlot* ComboSlot = Cast<UCanvasPanelSlot>(ComboMultiplierTextBlock->Slot))
+        {
+            ComboSlot->SetPosition(UScoreDisplayWidget::COMBO_TEXT_POS);
+        }
+    }
 }
 
 void UScoreWidgetAnimator::ResetScoreValues()
@@ -187,8 +226,33 @@ FTimerDelegate UScoreWidgetAnimator::CreateFadeDelegate(const FTextBlockPosition
             
             bAnimationActive = false;
             PendingScoreGain = 0;
+
+            // 애니메이션 종료 처리
+            ExecuteAnimationEnd();
         }
     });
     
     return FadeDelegate;
+}
+
+// ScoreWidgetAnimator.cpp의 애니메이션 종료 부분
+void UScoreWidgetAnimator::ExecuteAnimationEnd()
+{
+    // 텍스트 숨기기
+    if (ScoreTextBlock)
+    {
+        ScoreTextBlock->SetVisibility(ESlateVisibility::Hidden);
+    }
+    
+    if (ComboMultiplierTextBlock)
+    {
+        ComboMultiplierTextBlock->SetVisibility(ESlateVisibility::Hidden);
+    }
+    
+    // 그림자도 숨기기 - ScoreDisplayWidget의 함수 호출
+    UScoreDisplayWidget* OwnerWidget = Cast<UScoreDisplayWidget>(GetOuter());
+    if (OwnerWidget)
+    {
+        OwnerWidget->HideShadows();
+    }
 }
