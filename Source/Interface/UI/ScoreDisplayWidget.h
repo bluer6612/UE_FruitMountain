@@ -5,16 +5,16 @@
 #include "Components/TextBlock.h"
 #include "ScoreDisplayWidget.generated.h"
 
-/**
- * 점수 및 콤보 배율을 화면에 표시하는 위젯
- */
+// 전방 선언
+class UScoreWidgetAnimator;
+
 UCLASS()
 class UE_FRUITMOUNTAIN_API UScoreDisplayWidget : public UUserWidget
 {
     GENERATED_BODY()
     
 public:
-    UScoreDisplayWidget(const FObjectInitializer& ObjectInitializer); // 생성자
+    UScoreDisplayWidget(const FObjectInitializer& ObjectInitializer);
 
     // 정적 인스턴스 - 싱글톤 패턴
     static UScoreDisplayWidget* Instance;
@@ -28,46 +28,37 @@ public:
     
     // 점수 표시 함수
     UFUNCTION(BlueprintCallable, Category = "UI Score")
-    void DisplayScoreGain(int32 Score, int32 ComboCount = 0, float ComboMultiplier = 1.0f);
-    
-    // 블루프린트에서 노출된 변수들
-    UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-    UTextBlock* ScoreTextBlock;
-    
-    UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-    UTextBlock* ComboMultiplierTextBlock;
+    void DisplayScoreGain(int32 Score, int32 ComboCount, float ComboMultiplier);
     
 protected:
-    // UUserWidget 오버라이드
     virtual void NativeConstruct() override;
     virtual void NativeDestruct() override;
     
-    // 선택적: 외부 블루프린트 접근을 위한 함수들
-    UFUNCTION(BlueprintCallable, Category="UI Score")
-    void SetScoreTextColor(FLinearColor Color) { if(ScoreTextBlock) ScoreTextBlock->SetColorAndOpacity(Color); }
+    UPROPERTY(meta = (BindWidget))
+    UTextBlock* ScoreTextBlock;
     
-    UFUNCTION(BlueprintCallable, Category="UI Score")
-    void SetComboTextColor(FLinearColor Color) { if(ComboMultiplierTextBlock) ComboMultiplierTextBlock->SetColorAndOpacity(Color); }
+    UPROPERTY(meta = (BindWidget))
+    UTextBlock* ComboMultiplierTextBlock;
     
-    UFUNCTION(BlueprintCallable, Category="UI Score")
-    void SetScoreTextSize(int32 Size) 
-    { 
-        if(ScoreTextBlock)
-        {
-            FSlateFontInfo FontInfo = ScoreTextBlock->GetFont();
-            FontInfo.Size = Size;
-            ScoreTextBlock->SetFont(FontInfo);
-        }
-    }
+    UPROPERTY()
+    UScoreWidgetAnimator* WidgetAnimator;
     
-    // 애니메이션 타이머 핸들
+    // 점수 데이터
+    int32 PendingScoreGain;
+    float CurrentComboMultiplier;
+    bool bScoreTextActive;
+    
+    // 타이머 핸들
     FTimerHandle ScoreAnimTimerHandle;
     
-    // 점수 페이드 아웃 함수
-    void FadeOutScoreText();
+private:
+    // 헬퍼 함수들
+    void InitializeTextBlocks();
+    void SetupTextBlock(UTextBlock* TextBlock, FLinearColor Color, int32 FontSize, float PosX, float PosY);
+    void AddHorizontalShadow(UTextBlock* TextBlock);
     
-    // 새로 추가된 값을 기존 표시와 합치기 위한 변수
-    int32 PendingScoreGain = 0;
-    float CurrentComboMultiplier = 1.0f;
-    bool bScoreTextActive = false;
+    // 유효성 검사 및 초기화 헬퍼
+    static bool IsInstanceValid();
+    static APlayerController* GetValidPlayerController(UObject* WorldContextObject);
+    static bool LoadWidgetClassIfNeeded();
 };
