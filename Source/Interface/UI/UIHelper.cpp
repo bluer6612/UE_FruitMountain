@@ -1,7 +1,9 @@
 #include "UIHelper.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/Image.h"
+#include "Components/TextBlock.h"
 #include "Engine/Texture2D.h"
+#include "Components/Widget.h"
 
 void UUIHelper::SetAnchorForSlot(UCanvasPanelSlot* CanvasSlot, EWidgetAnchor Anchor, float PaddingX, float PaddingY)
 {
@@ -103,4 +105,49 @@ UTexture2D* UUIHelper::LoadAndApplyTexture(UImage* ImageWidget, const FString& T
     }
     
     return LoadedTexture;
+}
+
+void UUIHelper::SetupTextBlockStyle(UTextBlock* TextBlock, FLinearColor Color, int32 FontSize, bool bWithShadow, ESlateVisibility DefaultVisibility)
+{
+    if (!TextBlock)
+        return;
+    
+    // 색상 설정
+    TextBlock->SetColorAndOpacity(Color);
+    
+    // 폰트 설정
+    TextBlock->SetFont(FSlateFontInfo(FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Bold.ttf"), FontSize));
+    
+    // 그림자 설정
+    if (bWithShadow)
+    {
+        TextBlock->SetShadowOffset(FVector2D(2.0f, 2.0f));
+        TextBlock->SetShadowColorAndOpacity(FLinearColor(0.0f, 0.0f, 0.0f, 0.5f));
+    }
+    
+    // 기본 텍스트 및 가시성
+    TextBlock->SetText(FText::FromString(TEXT("")));
+    TextBlock->SetVisibility(DefaultVisibility);
+}
+
+UCanvasPanelSlot* UUIHelper::SetScoreDisplayPosition(UTextBlock* TextBlock, float PosX, float PosY, float Width, float Height, bool bRightAlign)
+{
+    if (!TextBlock)
+        return nullptr;
+    
+    UCanvasPanelSlot* TextSlot = Cast<UCanvasPanelSlot>(TextBlock->Slot);
+    if (TextSlot)
+    {
+        // 앵커 설정 (기본적으로 우측 앵커)
+        TextSlot->SetAnchors(FAnchors(bRightAlign ? 1.0f : 0.0f, 0.0f, bRightAlign ? 1.0f : 0.0f, 0.0f));
+        
+        // 정렬 설정
+        TextSlot->SetAlignment(FVector2D(bRightAlign ? 1.0f : 0.0f, 0.5f));
+        
+        // 위치 및 크기 설정
+        TextSlot->SetPosition(FVector2D(PosX, PosY));
+        TextSlot->SetSize(FVector2D(Width, Height));
+    }
+    
+    return TextSlot;
 }

@@ -64,51 +64,22 @@ void UScoreDisplayWidget::NativeConstruct()
     Instance = this;
     
     // ScoreTextBlock과 ComboMultiplierTextBlock은 이미 블루프린트에서 생성되어 있음
-    // 블루프린트에서 바인딩된 텍스트 블록이 존재하는지 확인
     if (!ScoreTextBlock || !ComboMultiplierTextBlock)
     {
-        UE_LOG(LogTemp, Error, TEXT("ScoreDisplayWidget: 텍스트 블록 바인딩 실패! 위젯 블루프린트에서 변수 이름이 정확한지 확인하세요."));
+        UE_LOG(LogTemp, Error, TEXT("ScoreDisplayWidget: 텍스트 블록 바인딩 실패!"));
         return;
     }
     
-    // 2-2. 텍스트 블록 스타일 설정
-    // ScoreTextBlock 설정
-    ScoreTextBlock->SetColorAndOpacity(FLinearColor(1.0f, 1.0f, 0.8f, 1.0f)); // 연한 노란색
-    ScoreTextBlock->SetFont(FSlateFontInfo(FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Bold.ttf"), 60)); // 크기 유지
-    ScoreTextBlock->SetShadowOffset(FVector2D(2.0f, 2.0f));
-    ScoreTextBlock->SetShadowColorAndOpacity(FLinearColor(0.0f, 0.0f, 0.0f, 0.5f));
-    ScoreTextBlock->SetText(FText::FromString(TEXT("")));
-    ScoreTextBlock->SetVisibility(ESlateVisibility::Hidden);
-
-    // ComboMultiplierTextBlock 설정 - 색상도 연한 노란색으로 통일
-    ComboMultiplierTextBlock->SetColorAndOpacity(FLinearColor(1.0f, 1.0f, 0.8f, 1.0f)); // 연한 노란색
-    ComboMultiplierTextBlock->SetFont(FSlateFontInfo(FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Bold.ttf"), 42)); // 약간 크기 증가
-    ComboMultiplierTextBlock->SetShadowOffset(FVector2D(2.0f, 2.0f));
-    ComboMultiplierTextBlock->SetShadowColorAndOpacity(FLinearColor(0.0f, 0.0f, 0.0f, 0.5f));
-    ComboMultiplierTextBlock->SetVisibility(ESlateVisibility::Hidden);
+    // 텍스트 스타일 및 위치 설정 - 하드코딩 대신 헬퍼 함수 사용
+    FLinearColor LightYellow = FLinearColor(1.0f, 1.0f, 0.8f, 1.0f);
     
-    // 2-3. 위치 설정 (CanvasPanelSlot 사용)
-    UCanvasPanelSlot* ScoreTextSlot = Cast<UCanvasPanelSlot>(ScoreTextBlock->Slot);
-    if (ScoreTextSlot)
-    {
-        // UI_Play_Score의 우측에 배치
-        ScoreTextSlot->SetAnchors(FAnchors(1.0f, 0.0f, 1.0f, 0.0f)); // 화면 우측 앵커
-        ScoreTextSlot->SetAlignment(FVector2D(1.0f, 0.5f)); // 우측 정렬
-        ScoreTextSlot->SetPosition(FVector2D(-20.0f, 120.0f)); // UI_Play_Score 우측에 20px 간격
-        ScoreTextSlot->SetSize(FVector2D(200.0f, 80.0f)); // 사이즈 설정
-        
-        UE_LOG(LogTemp, Warning, TEXT("ScoreDisplayWidget: 점수 텍스트 위치 설정 - UI_Play_Score 우측"));
-    }
+    // 점수 텍스트 설정
+    UUIHelper::SetupTextBlockStyle(ScoreTextBlock, LightYellow, 60, true);
+    UUIHelper::SetScoreDisplayPosition(ScoreTextBlock, -20.0f, 120.0f, 200.0f, 80.0f);
     
-    UCanvasPanelSlot* ComboTextSlot = Cast<UCanvasPanelSlot>(ComboMultiplierTextBlock->Slot);
-    if (ComboTextSlot)
-    {
-        // 점수 텍스트 아래에 배치
-        ComboTextSlot->SetAnchors(FAnchors(1.0f, 0.0f, 1.0f, 0.0f)); // 화면 우측 앵커
-        ComboTextSlot->SetAlignment(FVector2D(1.0f, 0.5f)); // 우측 정렬
-        ComboTextSlot->SetPosition(FVector2D(-20.0f, 170.0f)); // 점수 텍스트 아래
-        ComboTextSlot->SetSize(FVector2D(180.0f, 70.0f)); // 작은 크기
-    }
+    // 콤보 텍스트 설정
+    UUIHelper::SetupTextBlockStyle(ComboMultiplierTextBlock, LightYellow, 42, true);
+    UUIHelper::SetScoreDisplayPosition(ComboMultiplierTextBlock, -20.0f, 170.0f, 180.0f, 70.0f);
     
     UE_LOG(LogTemp, Warning, TEXT("ScoreDisplayWidget: 위젯 초기화 완료"));
 }
