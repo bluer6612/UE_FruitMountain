@@ -90,4 +90,9 @@ private:
 
     // Axis 입력으로 카메라 회전 처리 함수
     void RotateCamera(float Value);
+
+    // 카메라 회전 제어 관련 변수
+    float LastCameraRotateTime = 0.0f;  // 마지막으로 카메라 회전이 적용된 시간
+    float CameraRotateInterval = 0.02f; // 카메라 회전 업데이트 간격 (초)
+    float PendingCameraRotation = 0.0f; // 대기 중인 회전 값을 누적
 };

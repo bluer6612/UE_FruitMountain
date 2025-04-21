@@ -207,8 +207,25 @@ void AFruitPlayerController::RotateCamera(float Value)
     if (FMath::IsNearlyZero(Value))
         return;
     
+    // 현재 시간 가져오기
+    float CurrentTime = GetWorld()->GetTimeSeconds();
+    
+    // 입력값 누적
+    PendingCameraRotation += Value;
+    
+    // 마지막 업데이트 이후 충분한 시간이 지났는지 확인
+    if (CurrentTime - LastCameraRotateTime < CameraRotateInterval)
+    {
+        // 충분한 시간이 지나지 않았으면 종료
+        return;
+    }
+    
+    // 누적된 회전값 적용
+    float AccumulatedValue = PendingCameraRotation;
+    PendingCameraRotation = 0.0f; // 누적값 초기화
+    
     // 회전 속도 적용
-    float DeltaAngle = Value * RotateCameraSpeed * GetWorld()->GetDeltaSeconds();
+    float DeltaAngle = AccumulatedValue * RotateCameraSpeed * GetWorld()->GetDeltaSeconds();
     
     // 각도 업데이트
     CameraOrbitAngle += DeltaAngle;
@@ -229,6 +246,12 @@ void AFruitPlayerController::RotateCamera(float Value)
     {
         SetFruitRotation(PreviewBall);
     }
+    
+    // 현재 시간을 마지막 업데이트 시간으로 기록
+    LastCameraRotateTime = CurrentTime;
+    
+    // 디버그용 로그 (필요시)
+    // UE_LOG(LogTemp, Warning, TEXT("카메라 회전 실행: %f"), AccumulatedValue);
 }
 
 // 실제 업데이트 수행 함수 (무한 루프 방지 용으로 이중으로 거침)
