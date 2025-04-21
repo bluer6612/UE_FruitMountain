@@ -10,6 +10,7 @@ UScoreWidgetAnimator::UScoreWidgetAnimator()
     ComboMultiplierTextBlock = nullptr;
     PendingScoreGain = 0;
     CurrentComboMultiplier = 1.0f;
+    bScoreTextActive = false;
     bAnimationActive = false;
 }
 
@@ -94,32 +95,45 @@ void UScoreWidgetAnimator::CancelAnimation()
 // 새 함수 추가: 텍스트 블록 속성 초기화
 void UScoreWidgetAnimator::ResetTextBlockProperties()
 {
-    FLinearColor OriginalColor = FLinearColor(1.0f, 0.7f, 0.4f, 1.0f);
-    
     if (ScoreTextBlock)
     {
         // 색상 및 투명도 초기화
+        FLinearColor OriginalColor = FLinearColor(1.0f, 0.9f, 0.7f, 1.0f);
         ScoreTextBlock->SetColorAndOpacity(OriginalColor);
         
         // 위치 초기화
         if (UCanvasPanelSlot* ScoreSlot = Cast<UCanvasPanelSlot>(ScoreTextBlock->Slot))
         {
-            // 정적 위치 값 사용
-            ScoreSlot->SetPosition(UScoreDisplayWidget::SCORE_TEXT_POS);
+            // ScoreDisplayWidget의 상수 사용
+            UScoreDisplayWidget* OwnerWidget = Cast<UScoreDisplayWidget>(GetOuter());
+            if (OwnerWidget)
+            {
+                ScoreSlot->SetPosition(UScoreDisplayWidget::SCORE_TEXT_POS);
+            }
         }
     }
     
     if (ComboMultiplierTextBlock)
     {
         // 색상 및 투명도 초기화
+        FLinearColor OriginalColor = FLinearColor(1.0f, 0.9f, 0.7f, 1.0f);
         ComboMultiplierTextBlock->SetColorAndOpacity(OriginalColor);
         
         // 위치 초기화
         if (UCanvasPanelSlot* ComboSlot = Cast<UCanvasPanelSlot>(ComboMultiplierTextBlock->Slot))
         {
-            ComboSlot->SetPosition(UScoreDisplayWidget::COMBO_TEXT_POS);
+            UScoreDisplayWidget* OwnerWidget = Cast<UScoreDisplayWidget>(GetOuter());
+            if (OwnerWidget)
+            {
+                ComboSlot->SetPosition(UScoreDisplayWidget::COMBO_TEXT_POS);
+            }
         }
     }
+    
+    // 점수값도 초기화
+    PendingScoreGain = 0;
+    CurrentComboMultiplier = 1.0f;
+    bScoreTextActive = false;
 }
 
 void UScoreWidgetAnimator::ResetScoreValues()
@@ -212,22 +226,7 @@ FTimerDelegate UScoreWidgetAnimator::CreateFadeDelegate(const FTextBlockPosition
                 World->GetTimerManager().ClearTimer(AnimTimerHandle);
             }
             
-            // 텍스트 숨기기 및 원래 상태로 복원
-            ScoreTextBlock->SetVisibility(ESlateVisibility::Hidden);
-            ComboMultiplierTextBlock->SetVisibility(ESlateVisibility::Hidden);
-            
-            // 원래 위치 복원
-            if (Positions.ScoreSlot) Positions.ScoreSlot->SetPosition(Positions.ScoreInitialPos);
-            if (Positions.ComboSlot) Positions.ComboSlot->SetPosition(Positions.ComboInitialPos);
-            
-            // 불투명도 복원
-            ScoreTextBlock->SetColorAndOpacity(FLinearColor(1.0f, 0.9f, 0.7f, 1.0f));
-            ComboMultiplierTextBlock->SetColorAndOpacity(FLinearColor(1.0f, 0.9f, 0.7f, 1.0f));
-            
-            bAnimationActive = false;
-            PendingScoreGain = 0;
-
-            // 애니메이션 종료 처리
+            // 애니메이션 종료 함수 호출
             ExecuteAnimationEnd();
         }
     });
@@ -235,7 +234,6 @@ FTimerDelegate UScoreWidgetAnimator::CreateFadeDelegate(const FTextBlockPosition
     return FadeDelegate;
 }
 
-// ScoreWidgetAnimator.cpp의 애니메이션 종료 부분
 void UScoreWidgetAnimator::ExecuteAnimationEnd()
 {
     // 텍스트 숨기기
@@ -249,10 +247,5 @@ void UScoreWidgetAnimator::ExecuteAnimationEnd()
         ComboMultiplierTextBlock->SetVisibility(ESlateVisibility::Hidden);
     }
     
-    // 그림자도 숨기기 - ScoreDisplayWidget의 함수 호출
-    UScoreDisplayWidget* OwnerWidget = Cast<UScoreDisplayWidget>(GetOuter());
-    if (OwnerWidget)
-    {
-        OwnerWidget->HideShadows();
-    }
+    bAnimationActive = false;
 }

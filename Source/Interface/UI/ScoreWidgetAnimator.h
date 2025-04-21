@@ -6,6 +6,9 @@
 #include "Components/CanvasPanelSlot.h"
 #include "ScoreWidgetAnimator.generated.h"
 
+// 전방 선언
+class UScoreDisplayWidget;
+
 // 텍스트 블록 위치 정보
 struct FTextBlockPositions
 {
@@ -43,11 +46,11 @@ public:
     // 애니메이션 취소
     void CancelAnimation();
     
-    // 스코어 값 재설정
-    void ResetScoreValues();
-    
-    // 텍스트 블록 색상 및 위치 초기화
+    // 텍스트 블록 속성 초기화 (추가됨)
     void ResetTextBlockProperties();
+    
+    // 스코어 값 재설정 (추가됨)
+    void ResetScoreValues();
     
 private:
     // 참조용 텍스트 블록
@@ -60,9 +63,10 @@ private:
     // 타이머 핸들
     FTimerHandle AnimTimerHandle;
     
-    // 애니메이션 상태
+    // 애니메이션 상태 변수 추가
     int32 PendingScoreGain;
     float CurrentComboMultiplier;
+    bool bScoreTextActive;
     bool bAnimationActive;
     
     // 헬퍼 함수들
@@ -71,4 +75,7 @@ private:
     FAnimationParameters SetupAnimationParameters() const;
     FTimerDelegate CreateFadeDelegate(const FTextBlockPositions& Positions, const FAnimationParameters& Params);
     void ExecuteFadeOut();
+    
+    // 애니메이션 종료 처리 함수 (추가됨)
+    void ExecuteAnimationEnd();
 };
