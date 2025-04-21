@@ -27,11 +27,12 @@ protected:
     
     // 접시 반경 - FruitBall에서 사용됨
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Plate")
-    float PlateRadius = 300.0f;
+    float PlateRadius = 75.0f;
     
     // 접시 반경 계산 함수 (BeginPlay에서 호출)
     void CalculatePlateRadius();
-    
-    // 컴포넌트 찾기 도우미 함수
-    UStaticMeshComponent* FindPlateMeshComponent() const;
+
+    // 헤더 파일에 멤버 변수 선언
+    UPROPERTY()
+    UStaticMeshComponent* PlateMeshComponent;
 };

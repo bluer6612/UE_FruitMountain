@@ -122,8 +122,8 @@ void UScoreDisplayWidget::SetupTextBlock(UTextBlock* TextBlock, FLinearColor Col
 
 void UScoreDisplayWidget::DisplayScoreGain(int32 Score, int32 ComboCount, float ComboMultiplier)
 {
-    UE_LOG(LogTemp, Warning, TEXT("DisplayScoreGain 호출됨: 점수=%d, 콤보=%d, 배율=%.1f"), 
-           Score, ComboCount, ComboMultiplier);
+    //UE_LOG(LogTemp, Warning, TEXT("DisplayScoreGain 호출됨: 점수=%d, 콤보=%d, 배율=%.1f"), 
+    //       Score, ComboCount, ComboMultiplier);
     
     if (!ScoreTextBlock || !ComboMultiplierTextBlock)
     {
@@ -194,7 +194,7 @@ void UScoreDisplayWidget::DisplayScoreGain(int32 Score, int32 ComboCount, float 
         if (ScoreSlot->GetPosition() != SCORE_TEXT_POS)
         {
             ScoreSlot->SetPosition(SCORE_TEXT_POS);
-            UE_LOG(LogTemp, Warning, TEXT("점수 위치 재조정됨: (%.1f, %.1f)"), SCORE_TEXT_POS.X, SCORE_TEXT_POS.Y);
+            // UE_LOG(LogTemp, Warning, TEXT("점수 위치 재조정됨: (%.1f, %.1f)"), SCORE_TEXT_POS.X, SCORE_TEXT_POS.Y);
         }
     }
     
@@ -213,7 +213,7 @@ void UScoreDisplayWidget::DisplayScoreGain(int32 Score, int32 ComboCount, float 
         WidgetAnimator->StartFadeOutAnimation(this);
     }
     
-    UE_LOG(LogTemp, Warning, TEXT("점수 표시 설정 완료: '%s'"), *ScoreText);
+    // UE_LOG(LogTemp, Warning, TEXT("점수 표시 설정 완료: '%s'"), *ScoreText);
 }
 
 void UScoreDisplayWidget::ResetComboDisplay()

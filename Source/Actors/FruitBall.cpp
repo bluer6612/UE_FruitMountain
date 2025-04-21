@@ -134,7 +134,7 @@ void AFruitBall::Tick(float DeltaTime)
         float DistanceFromCenter = FruitXY.Size(); // 원점으로부터의 거리
         
         // PlateActor에서 반경 가져오기
-        float ActualPlateRadius = 300.0f; // 기본값
+        float ActualPlateRadius = 75.0f; // 기본값
         
         // PlateActor 찾기 시도
         APlateActor* PlateActor = GetPlateActor();
