@@ -5,7 +5,6 @@
 #include "Gameplay/Fruit/FruitSpawnHelper.h"
 #include "Kismet/GameplayStatics.h"
 #include "Actors/FruitBall.h"
-#include "Actors/PlateActor.h"
 
 void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
 {
@@ -23,7 +22,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
     }
     
     // 공 스폰 위치 계산
-    FVector SpawnLocation = APlateActor::CalculatePlateEdge(Controller->GetWorld(), Controller->CameraOrbitAngle);
+    FVector SpawnLocation = UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(Controller->GetWorld(), Controller->CameraOrbitAngle);
     
     if (SpawnLocation == FVector::ZeroVector)
     {
@@ -37,14 +36,6 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
     // 공 던지기 - 물리 헬퍼 활용하여 힘 적용
     if (SpawnedBall)
     {
-        // 투척 상태 설정 - 여기에 추가
-        AFruitBall* FruitBall = Cast<AFruitBall>(SpawnedBall);
-        if (FruitBall)
-        {
-            FruitBall->SetBeingThrown(true);
-            UE_LOG(LogTemp, Log, TEXT("과일 투척 상태로 설정: %s"), *SpawnedBall->GetName());
-        }
-
         UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(
             SpawnedBall->GetComponentByClass(UStaticMeshComponent::StaticClass()));
             
@@ -123,7 +114,7 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller, bo
     }
 
     // 공 위치 계산
-    FVector PreviewLocation = APlateActor::CalculatePlateEdge(Controller->GetWorld(), Controller->CameraOrbitAngle);
+    FVector PreviewLocation = UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(Controller->GetWorld(), Controller->CameraOrbitAngle);
     
     if (PreviewLocation == FVector::ZeroVector)
     {

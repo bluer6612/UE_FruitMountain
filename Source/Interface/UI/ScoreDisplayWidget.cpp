@@ -40,13 +40,6 @@ void UScoreDisplayWidget::NativeConstruct()
     // 애니메이터 생성
     WidgetAnimator = NewObject<UScoreWidgetAnimator>(this, UScoreWidgetAnimator::StaticClass());
     WidgetAnimator->SetTextBlocks(ScoreTextBlock, ComboMultiplierTextBlock);
-    
-    // 위치 초기화 확인 로그
-    if (ScoreTextBlock && Cast<UCanvasPanelSlot>(ScoreTextBlock->Slot))
-    {
-        FVector2D CurrentPos = Cast<UCanvasPanelSlot>(ScoreTextBlock->Slot)->GetPosition();
-        UE_LOG(LogTemp, Warning, TEXT("ScoreDisplayWidget: 최종 위치 확인 (%.1f, %.1f)"), CurrentPos.X, CurrentPos.Y);
-    }
 }
 
 void UScoreDisplayWidget::NativeDestruct()

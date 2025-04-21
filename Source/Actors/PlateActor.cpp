@@ -1,27 +1,54 @@
 #include "PlateActor.h"
 #include "Components/StaticMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
-
-// 정적 멤버 변수 초기화
-FVector APlateActor::LastSpawnPos = FVector::ZeroVector;
-float APlateActor::LastAngle = -999.0f;
+#include "UObject/ConstructorHelpers.h"
 
 APlateActor::APlateActor()
 {
     PrimaryActorTick.bCanEverTick = false;
-    
-    // 루트 컴포넌트 생성
     RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
+
+    // 테이블 에셋 로드 및 설정
+    static ConstructorHelpers::FObjectFinder<UStaticMesh> TableAsset(TEXT("/Game/Asset/Table"));
+    if (!TableAsset.Succeeded())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("TableAsset not found!"));
+        return;
+    }
+
+    // 테이블 메시 생성 및 설정
+    UStaticMeshComponent* TableMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("TableMesh"));
+    TableMesh->SetupAttachment(RootComponent);
+    TableMesh->SetStaticMesh(TableAsset.Object);
     
-    // 접시 메시 컴포넌트 생성
-    PlateMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PlateMesh"));
-    PlateMeshComponent->SetupAttachment(RootComponent);
+    // 테이블 위치, 크기, 충돌 설정
+    TableMesh->SetWorldScale3D(FVector(10.0f, 10.0f, 1.0f));
+    TableMesh->SetWorldLocation(FVector(0.0f, 0.0f, -10.0f));
+    TableMesh->SetCollisionProfileName(TEXT("BlockAll"));
     
-    // 기본 접시 반경 설정 (실제 계산은 BeginPlay에서)
-    PlateRadius = 300.0f;
+    // 컴포넌트에 태그 추가
+    TableMesh->ComponentTags.AddUnique(FName("Object"));
+
+    // 접시 에셋 로드 및 설정
+    static ConstructorHelpers::FObjectFinder<UStaticMesh> PlateAsset(TEXT("/Game/Asset/Plate1"));
+    if (!PlateAsset.Succeeded())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("PlateAsset not found!"));
+        return;
+    }
+
+    UStaticMeshComponent* PlateMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PlateMesh"));
+    PlateMesh->SetupAttachment(RootComponent);
+    PlateMesh->SetStaticMesh(PlateAsset.Object);
+    PlateMesh->SetWorldScale3D(PlateScale);
+    PlateMesh->SetWorldLocation(PlateLocation);
+    PlateMesh->SetCollisionProfileName(TEXT("BlockAll"));
     
-    // 이 액터에 "Plate" 태그 추가
-    Tags.Add("Plate");
+    // 컴포넌트에 태그 추가
+    PlateMesh->ComponentTags.AddUnique(FName("Object"));
+
+    // 액터에 태그 추가
+    Tags.Add(FName("Plate"));
 }
 
 void APlateActor::BeginPlay()
@@ -34,6 +61,8 @@ void APlateActor::BeginPlay()
 
 void APlateActor::CalculatePlateRadius()
 {
+    UStaticMeshComponent* PlateMeshComponent = FindPlateMeshComponent();
+    
     if (PlateMeshComponent)
     {
         FBox PlateBounds = PlateMeshComponent->Bounds.GetBox();
@@ -45,63 +74,8 @@ void APlateActor::CalculatePlateRadius()
         UE_LOG(LogTemp, Verbose, TEXT("접시 반경 계산됨: %.1f (X=%.1f, Y=%.1f)"),
             PlateRadius, PlateSize.X, PlateSize.Y);
     }
-}
-
-// 통합된 함수 구현 
-FVector APlateActor::CalculatePlateEdge(UWorld* World, float CameraAngle, APlateActor* PlateInstance)
-{
-    // 1. 액터 인스턴스 확보
-    APlateActor* PlateActor = PlateInstance;
-    
-    // 인스턴스가 없으면 World에서 찾기
-    if (!PlateActor && World)
+    else
     {
-        TArray<AActor*> PlateActors;
-        UGameplayStatics::GetAllActorsWithTag(World, FName("Plate"), PlateActors);
-        
-        if (PlateActors.Num() > 0)
-        {
-            PlateActor = Cast<APlateActor>(PlateActors[0]);
-        }
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("접시 액터를 찾을 수 없습니다."));
-            return FVector::ZeroVector;
-        }
+        UE_LOG(LogTemp, Warning, TEXT("접시 메시 컴포넌트를 찾을 수 없음"));
     }
-    
-    // 유효한 인스턴스가 없으면 에러
-    if (!PlateActor)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("유효한 접시 인스턴스가 없습니다."));
-        return FVector::ZeroVector;
-    }
-    
-    // 2. 이제 실제 계산 수행
-    // 접시 중심 위치 가져오기
-    FVector PlateCenter = PlateActor->GetActorLocation();
-    
-    // 전체 바운딩 박스 (높이 계산용)
-    FBox TotalBounds = PlateActor->GetComponentsBoundingBox();
-    
-    // 카메라 방향 벡터 계산
-    float RadianAngle = FMath::DegreesToRadians(CameraAngle);
-    FVector CameraDirection;
-    CameraDirection.X = FMath::Cos(RadianAngle);
-    CameraDirection.Y = FMath::Sin(RadianAngle);
-    CameraDirection.Z = 0.0f;
-    CameraDirection.Normalize();
-    
-    // 카메라 방향의 반대쪽 접시 가장자리 지점 계산 (카메라에서 가장 먼 곳)
-    FVector EdgePoint = PlateCenter + CameraDirection * PlateActor->PlateRadius;
-    
-    // 높이 조정 - 전체 구조물(테이블+접시) 위로, 공 크기를 고려한 오프셋 적용
-    float BallTypeOffset = 7.5f; // 추가 여유 높이
-    EdgePoint.Z = TotalBounds.Max.Z + BallTypeOffset;
-    
-    // 계산된 위치 저장 (카메라 회전 테스트용으로 지워도 됨)
-    LastSpawnPos = EdgePoint;
-    LastAngle = CameraAngle;
-    
-    return EdgePoint;
 }

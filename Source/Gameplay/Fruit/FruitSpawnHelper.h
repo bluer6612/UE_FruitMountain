@@ -14,6 +14,10 @@ class UE_FRUITMOUNTAIN_API UFruitSpawnHelper : public UBlueprintFunctionLibrary
 
 public:
     // 공 생성 함수
-    UFUNCTION(BlueprintCallable, Category="FruitSpawn")
+    UFUNCTION(BlueprintCallable, Category="Fruit Spawn")
     static class AActor* SpawnBall(class AFruitPlayerController* Controller, const FVector& Location, int32 BallType, bool bEnablePhysics);
+    
+    // 접시 가장자리 위치 계산 함수
+    UFUNCTION(BlueprintCallable, Category="Fruit Spawn")
+    static FVector CalculatePlateEdgeSpawnPosition(class UWorld* World, float CameraAngle = 0.f);
 };
