@@ -67,6 +67,14 @@ void AUE_FruitMountainGameMode::BeginPlay()
     {
         UE_LOG(LogTemp, Error, TEXT("점수 위젯 생성 실패"));
     }
+
+    // 게임 시작 2초 후 테스트 점수 표시
+    FTimerHandle TestScoreHandle;
+    GetWorldTimerManager().SetTimer(TestScoreHandle, [this]()
+    {
+        UE_LOG(LogTemp, Warning, TEXT("테스트 점수 표시 시도"));
+        UScoreDisplayWidget::ShowTestScore(GetWorld(), 999);
+    }, 2.0f, false);
 }
 
 void AUE_FruitMountainGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)

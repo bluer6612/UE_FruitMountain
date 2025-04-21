@@ -94,11 +94,13 @@ int32 UScoreManagerComponent::AddScore(int32 BallType)
     {
         // 위젯이 없으면 생성
         ScoreWidget = UScoreDisplayWidget::CreateScoreWidget(GetWorld());
+        UE_LOG(LogTemp, Warning, TEXT("점수 위젯 생성됨"));
     }
     
     if (ScoreWidget)
     {
-        // 점수 표시 업데이트
+        // 점수 표시 업데이트 - 로그 추가
+        UE_LOG(LogTemp, Warning, TEXT("점수 표시 함수 호출: %d점"), FinalScore);
         ScoreWidget->DisplayScoreGain(FinalScore, ComboCount, ComboMultiplier);
     }
     

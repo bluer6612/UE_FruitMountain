@@ -12,13 +12,16 @@ TSubclassOf<UUserWidget> UScoreDisplayWidget::ScoreWidgetClass = nullptr;
 UScoreDisplayWidget* UScoreDisplayWidget::CreateScoreWidget(UObject* WorldContextObject)
 {
     UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
-    if (!World) return nullptr;
+    if (!World)
+    {
+        return nullptr;
+    }
     
     // 블루프린트 클래스 로드 부분
     if (!ScoreWidgetClass)
     {
         // 블루프린트 위젯 클래스 로드 - 수정된 경로 적용
-        ScoreWidgetClass = LoadClass<UUserWidget>(nullptr, TEXT("/Game/UI/PlayLevel/BP_UI_Play_GetScore.BP_UI_Play_GetScore_C"));
+        ScoreWidgetClass = LoadClass<UUserWidget>(nullptr, TEXT("/Game/UI/PlayLevel/BP_UI_Play_GetScore.BP_UI_Play_GetScor"));
         
         if (!ScoreWidgetClass)
         {
@@ -27,12 +30,12 @@ UScoreDisplayWidget* UScoreDisplayWidget::CreateScoreWidget(UObject* WorldContex
         }
     }
     
-    // 인스턴스 유효성 검사
-    if (Instance && IsValid(Instance) && Instance->GetIsVisible())
+// 수정된 코드
+    if (Instance && IsValid(Instance))
     {
         if (!Instance->IsInViewport())
         {
-            Instance->AddToViewport(10001); // TextureDisplayWidget보다 높은 Z-order
+            Instance->AddToViewport(10001);
         }
         return Instance;
     }
@@ -44,13 +47,25 @@ UScoreDisplayWidget* UScoreDisplayWidget::CreateScoreWidget(UObject* WorldContex
 
     // 새 인스턴스 생성
     APlayerController* Controller = World->GetFirstPlayerController();
-    if (!Controller) return nullptr;
+    if (!Controller)
+    {
+        return nullptr;
+    }
     
-    Instance = CreateWidget<UScoreDisplayWidget>(Controller, UScoreDisplayWidget::StaticClass());
+    Instance = CreateWidget<UScoreDisplayWidget>(Controller, ScoreWidgetClass);
     if (Instance)
     {
         Instance->AddToViewport(10001);
-        UE_LOG(LogTemp, Display, TEXT("ScoreDisplayWidget: 새 인스턴스 생성 성공"));
+        Instance->SetVisibility(ESlateVisibility::HitTestInvisible); // 강제로 보이게 설정
+        
+        // 텍스트 블록도 강제로 표시
+        if (Instance->ScoreTextBlock)
+        {
+            Instance->ScoreTextBlock->SetVisibility(ESlateVisibility::HitTestInvisible);
+            Instance->ScoreTextBlock->SetText(FText::FromString(TEXT("+TEST")));
+        }
+        
+        UE_LOG(LogTemp, Warning, TEXT("ScoreDisplayWidget: 새 인스턴스 생성 및 강제 표시 설정"));
     }
     
     return Instance;
@@ -173,14 +188,14 @@ void UScoreDisplayWidget::FadeOutScoreText()
         float Alpha = 1.0f - (CurrentStep * FadeStep);
         if (ScoreTextBlock)
         {
-            FLinearColor TextColor = ScoreTextBlock->ColorAndOpacity.GetSpecifiedColor();
+            FLinearColor TextColor = ScoreTextBlock->GetColorAndOpacity().GetSpecifiedColor();
             TextColor.A = Alpha;
             ScoreTextBlock->SetColorAndOpacity(TextColor);
         }
         
         if (ComboMultiplierTextBlock)
         {
-            FLinearColor ComboColor = ComboMultiplierTextBlock->ColorAndOpacity.GetSpecifiedColor();
+            FLinearColor ComboColor = ComboMultiplierTextBlock->GetColorAndOpacity().GetSpecifiedColor();
             ComboColor.A = Alpha;
             ComboMultiplierTextBlock->SetColorAndOpacity(ComboColor);
         }
@@ -196,11 +211,11 @@ void UScoreDisplayWidget::FadeOutScoreText()
             ComboMultiplierTextBlock->SetVisibility(ESlateVisibility::Hidden);
             
             // 불투명도 복원 (다음 사용을 위해)
-            FLinearColor TextColor = ScoreTextBlock->ColorAndOpacity.GetSpecifiedColor();
+            FLinearColor TextColor = ScoreTextBlock->GetColorAndOpacity().GetSpecifiedColor();
             TextColor.A = 1.0f;
             ScoreTextBlock->SetColorAndOpacity(TextColor);
             
-            FLinearColor ComboColor = ComboMultiplierTextBlock->ColorAndOpacity.GetSpecifiedColor();
+            FLinearColor ComboColor = ComboMultiplierTextBlock->GetColorAndOpacity().GetSpecifiedColor();
             ComboColor.A = 1.0f;
             ComboMultiplierTextBlock->SetColorAndOpacity(ComboColor);
             
