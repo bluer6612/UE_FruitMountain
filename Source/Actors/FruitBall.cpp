@@ -171,6 +171,12 @@ void AFruitBall::OnBallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor
                        UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
     UFruitCollisionHelper::HandleBallHit(this, HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
+    
+    // 충돌 했으므로 투척 상태 해제
+    SetBeingThrown(false);
+    
+    // 충돌 경험 플래그 설정
+    SetHasCollided(true);
 }
 
 // 과일 타입에 맞는 메시 업데이트

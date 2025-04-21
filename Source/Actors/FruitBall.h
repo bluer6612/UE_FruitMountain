@@ -77,11 +77,11 @@ public:
     bool HasCollidedBefore() const { return bHasCollided; }
     
     // 투척 중인지 확인하는 함수
-    UFUNCTION(BlueprintCallable, Category = "Fruit|State")
+    UFUNCTION(BlueprintCallable, Category = "Fruit State")
     bool IsBeingThrown() const { return bIsBeingThrown; }
     
     // 투척 상태 설정 함수
-    UFUNCTION(BlueprintCallable, Category = "Fruit|State")
+    UFUNCTION(BlueprintCallable, Category = "Fruit State")
     void SetBeingThrown(bool bNewState) { bIsBeingThrown = bNewState; }
 
     // 기본 공 크기 (월드 스케일)
@@ -126,6 +126,6 @@ protected:
     FTimerHandle GameOverTimerHandle;
 
     // 투척 중인지 여부를 나타내는 플래그
-    UPROPERTY(BlueprintReadOnly, Category = "Fruit|State")
+    UPROPERTY(BlueprintReadOnly, Category = "Fruit State")
     bool bIsBeingThrown = false;
 };

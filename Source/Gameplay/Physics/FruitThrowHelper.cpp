@@ -5,6 +5,7 @@
 #include "Gameplay/Fruit/FruitSpawnHelper.h"
 #include "Kismet/GameplayStatics.h"
 #include "Actors/FruitBall.h"
+#include "Actors/PlateActor.h"
 
 void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
 {
@@ -22,7 +23,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
     }
     
     // 공 스폰 위치 계산
-    FVector SpawnLocation = UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(Controller->GetWorld(), Controller->CameraOrbitAngle);
+    FVector SpawnLocation = APlateActor::CalculatePlateEdge(Controller->GetWorld(), Controller->CameraOrbitAngle);
     
     if (SpawnLocation == FVector::ZeroVector)
     {
@@ -114,7 +115,7 @@ void UFruitThrowHelper::UpdatePreviewBall(AFruitPlayerController* Controller, bo
     }
 
     // 공 위치 계산
-    FVector PreviewLocation = UFruitSpawnHelper::CalculatePlateEdgeSpawnPosition(Controller->GetWorld(), Controller->CameraOrbitAngle);
+    FVector PreviewLocation = APlateActor::CalculatePlateEdge(Controller->GetWorld(), Controller->CameraOrbitAngle);
     
     if (PreviewLocation == FVector::ZeroVector)
     {

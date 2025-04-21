@@ -9,7 +9,10 @@
 // 병합 이펙트 재생
 void UFruitMergeFeedbackHelper::PlayMergeEffect(UWorld* World, const FVector& Location, int32 BallType)
 {
-    if (!World) return;
+    if (!World)
+    {
+        return;
+    }
     
     // 1. 시각적 효과 (블루프린트 액터)
     static TSubclassOf<AActor> MergeEffectClass = nullptr;
@@ -66,7 +69,10 @@ void UFruitMergeFeedbackHelper::PlayMergeEffect(UWorld* World, const FVector& Lo
 // 통합된 과일 안정화 함수
 void UFruitMergeFeedbackHelper::StabilizeFruits(UWorld* World, AFruitBall* SingleFruit, float DampingMultiplier, bool bIsNewFruit)
 {
-    if (!World) return;
+    if (!World)
+    {
+        return;
+    }
     
     // 1. 단일 과일만 처리하는 경우
     // SingleFruit가 투척 중이면 안정화하지 않음
@@ -84,10 +90,16 @@ void UFruitMergeFeedbackHelper::StabilizeFruits(UWorld* World, AFruitBall* Singl
     for (AActor* Actor : FoundFruits)
     {
         AFruitBall* Fruit = Cast<AFruitBall>(Actor);
-        if (!Fruit || !Fruit->GetMeshComponent()) continue;
+        if (!Fruit || !Fruit->GetMeshComponent())
+        {
+            continue;
+        }
         
-        // 미리보기 공이나 이미 병합 중인 과일 제외
-        if (Fruit->IsPreviewBall() || Fruit->IsMerging() || Fruit->IsBeingThrown()) continue;
+        // 미리보기 공이나 이미 병합, 투척 중인 과일 제외
+        if (Fruit->IsPreviewBall() || Fruit->IsMerging() || Fruit->IsBeingThrown())
+        {
+            continue;
+        }
         
         // 각 과일 안정화 처리
         StabilizeSingleFruit(Fruit, DampingMultiplier, false);
@@ -97,11 +109,17 @@ void UFruitMergeFeedbackHelper::StabilizeFruits(UWorld* World, AFruitBall* Singl
 // 단일 과일 안정화 작업을 수행하는 내부 함수
 void UFruitMergeFeedbackHelper::StabilizeSingleFruit(AFruitBall* Fruit, float InitialDampingMultiplier, bool bIsNewFruit)
 {
-    if (!Fruit || !Fruit->GetMeshComponent()) return;
+    if (!Fruit || !Fruit->GetMeshComponent())
+    {
+        return;
+    }
     
     UStaticMeshComponent* MeshComp = Fruit->GetMeshComponent();
     UWorld* World = Fruit->GetWorld();
-    if (!World) return;
+    if (!World)
+    {
+        return;
+    }
     
     // !!! 중요: 투척 중인 과일은 안정화하지 않음 !!!
     if (Fruit->IsBeingThrown())
@@ -111,6 +129,7 @@ void UFruitMergeFeedbackHelper::StabilizeSingleFruit(AFruitBall* Fruit, float In
     
     // 1. 크기 인자 계산
     int32 FruitType = Fruit->GetBallType();
+    float SizeFactor = FMath::Min(2.0f, 0.5f + (FruitType * 0.2f));
     
     // 2. 현재 위치 기반 중앙 방향 힘 계산
     FVector ToCenterXY = FVector::ZeroVector - Fruit->GetActorLocation();
