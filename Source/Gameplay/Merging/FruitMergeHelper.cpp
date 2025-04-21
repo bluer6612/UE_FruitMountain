@@ -56,27 +56,22 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
     UWorld* World = FruitA->GetWorld();
     if (!World) return;
     
+    // 이펙트 및 점수 처리
+    UFruitMergeFeedbackHelper::PlayMergeEffect(World, MergeLocation, TypeA);
+    UScoreManagerComponent::AddScoreStatic(World, TypeA);
+    
+    // 병합 위치 주변 과일들의 속도 감소 (폭발적 충돌 방지)
+    UFruitMergeFeedbackHelper::StabilizeFruits(World);
+    
     // 마지막 레벨 체크
     if (TypeA >= AFruitBall::MaxBallType)
     {
         UE_LOG(LogTemp, Warning, TEXT("병합 완료: 최대 레벨 과일 병합"));
-        UScoreManagerComponent::AddScoreStatic(World, TypeA);
-        UFruitMergeFeedbackHelper::PlayMergeEffect(World, MergeLocation, TypeA);
         
         FruitA->Destroy();
         FruitB->Destroy();
         return;
     }
-    
-    // 다음 레벨의 과일 생성
-    int32 NextType = TypeA + 1;
-    
-    // 이펙트 및 점수 처리
-    UFruitMergeFeedbackHelper::PlayMergeEffect(World, MergeLocation, TypeA);
-    UScoreManagerComponent::AddScoreStatic(World, NextType);
-    
-    // 병합 위치 주변 과일들의 속도 감소 (폭발적 충돌 방지)
-    UFruitMergeFeedbackHelper::StabilizeFruits(World);
     
     // 새 과일 생성 전에 기존 과일의 회전값 저장
     FRotator ExistingRotation = FruitA->GetActorRotation();
@@ -85,6 +80,9 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
     AFruitPlayerController* Controller = Cast<AFruitPlayerController>(UGameplayStatics::GetPlayerController(World, 0));
     if (Controller)
     {
+        // 다음 레벨의 과일 생성
+        int32 NextType = TypeA + 1;
+
         // 정확히 병합 위치에 생성
         AActor* SpawnedActor = UFruitSpawnHelper::SpawnBall(Controller, MergeLocation, NextType, true);
         AFruitBall* NewFruit = Cast<AFruitBall>(SpawnedActor);

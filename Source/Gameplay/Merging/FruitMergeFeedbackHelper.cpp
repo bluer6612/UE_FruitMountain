@@ -5,6 +5,7 @@
 #include "Actors/FruitBall.h"
 #include "Components/StaticMeshComponent.h"
 #include "Gameplay/Controller/FruitPlayerController.h"
+#include "Actors/PlateActor.h"
 
 // 병합 이펙트 재생
 void UFruitMergeFeedbackHelper::PlayMergeEffect(UWorld* World, const FVector& Location, int32 BallType)
@@ -73,7 +74,7 @@ void UFruitMergeFeedbackHelper::StabilizeFruits(UWorld* World, AFruitBall* Singl
     {
         return;
     }
-    
+        
     // 항상 월드의 모든 과일 처리 (개별 과일 처리 로직 제거)
     TArray<AActor*> FoundFruits;
     UGameplayStatics::GetAllActorsOfClass(World, AFruitBall::StaticClass(), FoundFruits);
@@ -94,18 +95,25 @@ void UFruitMergeFeedbackHelper::StabilizeFruits(UWorld* World, AFruitBall* Singl
         
         // SingleFruit와 동일한 과일이면 입력받은 bIsNewFruit 사용, 나머지는 false
         bool bTreatAsNewFruit = (SingleFruit == Fruit) ? bIsNewFruit : false;
-        
+                
         // 각 과일 안정화 처리
         StabilizeSingleFruit(Fruit, DampingMultiplier, bTreatAsNewFruit);
     }
 }
 
-// 단일 과일 안정화 작업을 수행하는 내부 함수
+// 단일 과일 안정화 작업을 수행하는 내부 함수 - 개선된 버전
 void UFruitMergeFeedbackHelper::StabilizeSingleFruit(AFruitBall* Fruit, float InitialDampingMultiplier, bool bIsNewFruit)
 {
     if (!Fruit || !Fruit->GetMeshComponent())
     {
         return;
+    }
+    
+    // 로그 추가 - bIsNewFruit가 true인 경우만 기록
+    if (bIsNewFruit)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("StabilizeSingleFruit - 신규 과일 처리: %s, 과일타입=%d"), 
+            *Fruit->GetName(), Fruit->GetBallType());
     }
     
     UStaticMeshComponent* MeshComp = Fruit->GetMeshComponent();
@@ -130,13 +138,19 @@ void UFruitMergeFeedbackHelper::StabilizeSingleFruit(AFruitBall* Fruit, float In
     ToCenterXY.Z = 0;
     
     float DistanceToCenter = ToCenterXY.Size();
-    float PlateRadius = 100.0f;
     
-    // 3. 새 과일 또는 기존 과일에 따라 다르게 처리
-    if (bIsNewFruit)
+    // 접시 반경 가져오기 (FruitBall에서 플레이트 액터 참조하도록 수정된 경우)
+    float PlateRadius = 100.0f;
+    APlateActor* PlateActor = Fruit->GetPlateActor();
+    if (PlateActor)
     {
-        // 새로 생성된 과일에 대한 특별 처리
-        // 물리 시뮬레이션과 충돌 함께 비활성화
+        PlateRadius = PlateActor->GetPlateRadius();
+    }    
+
+    // 3. 물리 시뮬레이션 중인지에 따라 다른 안정화 적용 (새 과일 여부 무시)
+    if (!MeshComp->IsSimulatingPhysics() || bIsNewFruit)
+    {
+        // 새로 생성된 과일처럼 취급
         MeshComp->SetSimulatePhysics(false);
         MeshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
         
@@ -175,41 +189,49 @@ void UFruitMergeFeedbackHelper::StabilizeSingleFruit(AFruitBall* Fruit, float In
     }
     else
     {
-        // 기존 과일 안정화 (물리 시뮬레이션은 유지)
-        if (MeshComp->IsSimulatingPhysics())
+        // 기존 과일 안정화 (물리 시뮬레이션 중인 과일)
+        FVector CurrentVel = MeshComp->GetPhysicsLinearVelocity();
+        
+        // 1. 빠르게 움직이는 과일은 더 많이 감속
+        float Speed = CurrentVel.Size();
+        float ReductionFactor = FMath::Min(0.25f, 0.05f * SizeFactor * (1.0f + Speed * 0.01f));
+        
+        // 2. 속도 감소 적용
+        MeshComp->SetPhysicsLinearVelocity(CurrentVel * (1.0f - ReductionFactor));
+        
+        // 3. 회전 속도도 감소
+        FVector AngVel = MeshComp->GetPhysicsAngularVelocityInDegrees();
+        MeshComp->SetPhysicsAngularVelocityInDegrees(AngVel * (1.0f - ReductionFactor));
+        
+        // 4. 중앙에서 멀리 있는 과일에만 중앙 방향 힘 적용
+        if (DistanceToCenter > PlateRadius * 0.4f)
         {
-            FVector CurrentVel = MeshComp->GetPhysicsLinearVelocity();
-            float ReductionFactor = 0.05f * SizeFactor;
-            MeshComp->SetPhysicsLinearVelocity(CurrentVel * (1.0f - ReductionFactor));
+            // 가장자리에 가까울수록 더 강한 힘 적용
+            float DistanceFactor = FMath::Min(3.0f, DistanceToCenter / PlateRadius);
+            float CenteringStrength = DistanceFactor * 1.5f * SizeFactor;
             
-            FVector AngVel = MeshComp->GetPhysicsAngularVelocityInDegrees();
-            MeshComp->SetPhysicsAngularVelocityInDegrees(AngVel * (1.0f - ReductionFactor));
-            
-            // 중앙에서 멀리 있는 과일에 추가 힘 적용
-            if (DistanceToCenter > PlateRadius * 0.4f)
-            {
-                float CenteringStrength = FMath::Min(1.0f, DistanceToCenter / PlateRadius) * 1.5f * SizeFactor;
-                FVector StabilizingForce = ToCenterXY.GetSafeNormal() * CenteringStrength;
-                MeshComp->AddForce(StabilizingForce, NAME_None, true);
-            }
-            
-            // 4. 감쇠 설정
-            MeshComp->SetLinearDamping(InitialDampingMultiplier * SizeFactor);
-            MeshComp->SetAngularDamping(InitialDampingMultiplier * SizeFactor);
-            
-            // 5. 감쇠 복원 타이머
-            FTimerHandle DampingTimerHandle;
-            World->GetTimerManager().SetTimer(DampingTimerHandle, 
-                [WeakFruit=TWeakObjectPtr<AFruitBall>(Fruit), SizeFactor]() 
-                {
-                    if (WeakFruit.IsValid() && WeakFruit->GetMeshComponent())
-                    {
-                        UStaticMeshComponent* MeshComp = WeakFruit->GetMeshComponent();
-                        MeshComp->SetLinearDamping(2.0f * SizeFactor);
-                        MeshComp->SetAngularDamping(2.0f * SizeFactor);
-                    }
-                }, 
-                0.75f, false);
+            // 힘 적용
+            FVector StabilizingForce = ToCenterXY.GetSafeNormal() * CenteringStrength;
+            MeshComp->AddForce(StabilizingForce, NAME_None, true);
         }
+        
+        // 5. 감쇠 설정
+        MeshComp->SetLinearDamping(InitialDampingMultiplier * SizeFactor);
+        MeshComp->SetAngularDamping(InitialDampingMultiplier * SizeFactor);
+        
+        // 6. 감쇠 복원 타이머 
+        float CapturedSizeFactor = SizeFactor;  // 람다 캡처용 복사
+        FTimerHandle DampingTimerHandle;
+        World->GetTimerManager().SetTimer(DampingTimerHandle, 
+            [WeakFruit=TWeakObjectPtr<AFruitBall>(Fruit), CapturedSizeFactor]() 
+            {
+                if (WeakFruit.IsValid() && WeakFruit->GetMeshComponent())
+                {
+                    UStaticMeshComponent* MeshComp = WeakFruit->GetMeshComponent();
+                    MeshComp->SetLinearDamping(2.0f * CapturedSizeFactor);
+                    MeshComp->SetAngularDamping(2.0f * CapturedSizeFactor);
+                }
+            }, 
+            0.75f, false);
     }
 }

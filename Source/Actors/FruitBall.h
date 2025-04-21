@@ -84,6 +84,10 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Fruit State")
     void SetBeingThrown(bool bNewState) { bIsBeingThrown = bNewState; }
 
+    // 접시 액터 찾기 - 필요할 때만 호출하여 성능 최적화
+    UFUNCTION(BlueprintCallable, Category = "Fruit Environment")
+    APlateActor* GetPlateActor() const;
+
     // 기본 공 크기 (월드 스케일)
     static constexpr float BaseBallSize = 15.0f;
     
@@ -133,7 +137,4 @@ private:
     // 접시 액터 캐싱 (성능 최적화)
     UPROPERTY()
     class APlateActor* CachedPlateActor;
-    
-    // 접시 액터 찾기 - 필요할 때만 호출하여 성능 최적화
-    APlateActor* GetPlateActor() const;
 };
