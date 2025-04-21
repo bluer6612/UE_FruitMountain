@@ -97,7 +97,7 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
             NewFruit->SetActorRotation(ExistingRotation);
             
             // 새 과일 물리 속성 설정
-            StabilizeFruitPhysics(NewFruit, 8.0f, true);
+            StabilizeFruits(World, NewFruit, 8.0f, true);
         }
         
         UE_LOG(LogTemp, Warning, TEXT("새 과일 생성 완료: 레벨=%d, 위치=%s"), 
@@ -109,16 +109,23 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
     FruitB->Destroy();
 }
 
-// 모든 과일 안정화 함수
-void UFruitMergeHelper::StabilizeFruits(UWorld* World)
+// 통합된 과일 안정화 함수 - 월드 전체 또는 단일 과일 모두 처리 가능
+void UFruitMergeHelper::StabilizeFruits(UWorld* World, AFruitBall* SingleFruit, float DampingMultiplier, bool bIsNewFruit)
 {
     if (!World) return;
     
-    // 현재 월드의 모든 과일 찾기
+    // 1. 단일 과일만 처리하는 경우
+    if (SingleFruit)
+    {
+        // 과일 안정화 로직 적용
+        StabilizeSingleFruit(SingleFruit, DampingMultiplier, bIsNewFruit);
+        return;
+    }
+    
+    // 2. 월드의 모든 과일 처리
     TArray<AActor*> FoundFruits;
     UGameplayStatics::GetAllActorsOfClass(World, AFruitBall::StaticClass(), FoundFruits);
     
-    // 모든 과일에 감속 적용
     for (AActor* Actor : FoundFruits)
     {
         AFruitBall* Fruit = Cast<AFruitBall>(Actor);
@@ -127,13 +134,13 @@ void UFruitMergeHelper::StabilizeFruits(UWorld* World)
         // 미리보기 공이나 이미 병합 중인 과일 제외
         if (Fruit->IsPreviewBall() || Fruit->IsMerging()) continue;
         
-        // 기존 과일 물리 속성 안정화
-        StabilizeFruitPhysics(Fruit, 20.0f, false);
+        // 각 과일 안정화 처리
+        StabilizeSingleFruit(Fruit, DampingMultiplier, false);
     }
 }
 
-// 과일 물리 속성 설정을 위한 통합 헬퍼 함수
-void UFruitMergeHelper::StabilizeFruitPhysics(AFruitBall* Fruit, float InitialDampingMultiplier, bool bIsNewFruit)
+// 실제 안정화 작업을 수행하는 내부 헬퍼 함수
+void UFruitMergeHelper::StabilizeSingleFruit(AFruitBall* Fruit, float InitialDampingMultiplier, bool bIsNewFruit)
 {
     if (!Fruit || !Fruit->GetMeshComponent()) return;
     
@@ -276,104 +283,57 @@ void UFruitMergeHelper::PlayMergeEffect(UWorld* World, const FVector& Location, 
     {
         // 블루프린트 액터 클래스 로드
         MergeEffectClass = LoadClass<AActor>(nullptr, TEXT("/Game/Particle/02_Blueprints/BP_Particle_Burst_Lvl_1.BP_Particle_Burst_Lvl_1_C"));
-    }
-    
-    if (MergeEffectClass)
-    {
-        // 블루프린트 액터 생성 (Z축으로 100 올림)
-        FVector ElevatedLocation = Location + FVector(0, 0, 10.0f);
         
-        FActorSpawnParameters SpawnParams;
-        SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-        
-        // 크기를 과일 레벨에 따라 조정
-        float EffectScale = 1.0f;
-        AActor* MergeEffect = World->SpawnActor<AActor>(
-            MergeEffectClass, 
-            ElevatedLocation,
-            FRotator::ZeroRotator, 
-            SpawnParams
-        );
-        
-        if (MergeEffect)
+        if (!MergeEffectClass)
         {
-            MergeEffect->SetActorScale3D(FVector(EffectScale));
-            
-            // 2초 후에 효과 제거
-            FTimerHandle DestroyTimerHandle;
-            World->GetTimerManager().SetTimer(
-                DestroyTimerHandle,
-                FTimerDelegate::CreateLambda([MergeEffect]() {
-                    if (IsValid(MergeEffect))
-                    {
-                        MergeEffect->Destroy();
-                    }
-                }),
-                2.0f,
-                false
-            );
+            UE_LOG(LogTemp, Error, TEXT("병합 이펙트 클래스를 로드할 수 없습니다"));
+            return;
         }
     }
     
-    // 2. 소리 효과
+    // 2. 이펙트 스폰
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    
+    AActor* SpawnedEffect = World->SpawnActor<AActor>(MergeEffectClass, Location, FRotator::ZeroRotator, SpawnParams);
+    if (SpawnedEffect)
+    {
+        // 과일 타입에 따라 이펙트 스케일 조정
+        float EffectScale = 1.0f + (BallType * 0.025f);
+        SpawnedEffect->SetActorScale3D(FVector(EffectScale, EffectScale, EffectScale));
+        
+        // 자동 삭제
+        SpawnedEffect->SetLifeSpan(1.5f);
+    }
+    
+    // 3. 사운드 효과 재생
     static USoundBase* MergeSound = nullptr;
     if (!MergeSound)
     {
-        // 사운드 에셋 로드 (게임에 맞는 경로로 수정 필요)
         MergeSound = LoadObject<USoundBase>(nullptr, TEXT("/Game/Sounds/S_FruitMerge"));
     }
     
     if (MergeSound)
     {
+        // 과일 크기에 따라 볼륨과 피치 조정
+        float VolumeMultiplier = FMath::Min(1.5f, 0.7f + (BallType * 0.1f));
+        float PitchMultiplier = FMath::Max(0.7f, 1.1f - (BallType * 0.05f)); // 큰 과일은 낮은 소리
+        
         UGameplayStatics::PlaySoundAtLocation(
-            World, MergeSound, Location, 
-            1.0f + (BallType * 0.1f),  // 볼륨 (레벨이 높을수록 더 큰 소리)
-            0.8f + (BallType * 0.05f)  // 피치 (레벨이 높을수록 더 높은 소리)
+            World, 
+            MergeSound, 
+            Location, 
+            VolumeMultiplier, 
+            PitchMultiplier
         );
     }
-}
-
-void UFruitMergeHelper::PreloadAllFruitMeshes(UWorld* World)
-{
-    UE_LOG(LogTemp, Display, TEXT("게임 에셋 사전 로드 시작..."));
     
-    // 1. 모든 과일 메시 미리 로드 (최대 레벨까지)
-    for (int32 i = 1; i <= AFruitBall::MaxBallType; i++)
+    // 4. 카메라 효과 (과일 크기에 따라 강도 조절)
+    APlayerController* PC = UGameplayStatics::GetPlayerController(World, 0);
+    if (PC && BallType >= 3) // 일정 크기 이상에서만 카메라 흔들림
     {
-        // 메시 경로 - 게임의 실제 경로와 일치하게 수정
-        FString MeshPath = FString::Printf(TEXT("/Game/Fruit/Meshes/Fruit%d.Fruit%d"), i, i);
-        
-        // 동기적 로딩 사용
-        UStaticMesh* FruitMesh = LoadObject<UStaticMesh>(nullptr, *MeshPath);
-        
-        if (FruitMesh)
-        {
-            // 메시가 완전히 로드되도록 보장
-            FruitMesh->ConditionalPostLoad();
-        }
+        // 과일 크기에 따라 흔들림 강도 증가
+        float ShakeScale = FMath::Min(1.0f, 0.2f + ((BallType - 3) * 0.1f));
+        PC->ClientStartCameraShake(UMatineeCameraShake::StaticClass(), ShakeScale);
     }
-    
-    // 2. 파티클 효과 미리 로드
-    TSubclassOf<AActor> PreloadParticleClass = LoadClass<AActor>(nullptr, TEXT("/Game/Particle/02_Blueprints/BP_Particle_Burst_Lvl_1.BP_Particle_Burst_Lvl_1_C"));
-    if (PreloadParticleClass && World)
-    {
-        FVector HiddenLocation = FVector(0, 0, -10000);
-        AActor* PreloadActor = World->SpawnActor<AActor>(PreloadParticleClass, HiddenLocation, FRotator::ZeroRotator);
-        if (PreloadActor)
-        {
-            PreloadActor->SetActorHiddenInGame(true);
-            PreloadActor->SetActorTickEnabled(false);
-            
-            FTimerHandle DestroyHandle;
-            World->GetTimerManager().SetTimer(DestroyHandle, [PreloadActor]() {
-                if(IsValid(PreloadActor)) PreloadActor->Destroy();
-            }, 0.1f, false);
-        }
-        
-    }
-    
-    // 3. 사운드도 미리 로드
-    USoundBase* PreloadSound = LoadObject<USoundBase>(nullptr, TEXT("/Game/Sounds/S_FruitMerge"));
-
-    UE_LOG(LogTemp, Display, TEXT("메시 및 사운드 사전 로드 완료"));
 }

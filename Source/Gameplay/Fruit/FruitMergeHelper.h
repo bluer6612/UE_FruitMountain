@@ -28,8 +28,12 @@ public:
     // 병합 이펙트 재생
     static void PlayMergeEffect(UWorld* World, const FVector& Location, int32 BallType);
     
-    // 병합 시 과일들을 안정화하는 함수
-    static void StabilizeFruitPhysicscs(AFruitBall* Fruit, float InitialDampingMultiplier, bool bIsNewFruit);
+    // 모든 과일 또는 단일 과일 안정화 (통합된 함수)
+    UFUNCTION(BlueprintCallable, Category = "Fruit|Physics")
+    static void StabilizeFruits(UWorld* World, AFruitBall* SingleFruit = nullptr, float DampingMultiplier = 20.0f, bool bIsNewFruit = false);
+    
+    // 단일 과일 물리 속성 안정화 (내부 헬퍼 함수)
+    static void StabilizeSingleFruit(AFruitBall* Fruit, float InitialDampingMultiplier, bool bIsNewFruit);
     
     // 연쇄 초기화 함수
     UFUNCTION(BlueprintCallable, Category = "Score")
