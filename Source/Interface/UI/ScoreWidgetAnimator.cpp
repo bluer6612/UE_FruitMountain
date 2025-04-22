@@ -138,7 +138,7 @@ FTimerDelegate UScoreWidgetAnimator::CreateFadeDelegate(const FVector2D& ScorePo
             }
         }
         
-        if (ComboMultiplierTextBlock && ComboMultiplierTextBlock->GetVisibility() == ESlateVisibility::HitTestInvisible)
+        if (ComboMultiplierTextBlock && ComboMultiplierTextBlock->IsVisible())
         {
             FLinearColor ComboColor = UScoreDisplayWidget::BRIGHT_YELLOW_COLOR;
             ComboColor.A = Alpha;
@@ -177,6 +177,15 @@ void UScoreWidgetAnimator::ExecuteFadeOut()
         return;
     }
     
+    // 텍스트 블록 표시 상태로 설정 (숨김 상태면 애니메이션이 적용되지 않음)
+    ScoreTextBlock->SetVisibility(ESlateVisibility::HitTestInvisible);
+    
+    // 콤보 텍스트가 있고 콤보가 활성화된 경우 표시 상태로 설정
+    if (ComboMultiplierTextBlock && ComboMultiplierTextBlock->GetText().ToString().Len() > 0)
+    {
+        ComboMultiplierTextBlock->SetVisibility(ESlateVisibility::HitTestInvisible);
+    }
+    
     // 애니메이션 파라미터 사용
     FScoreAnimParams Params = SetupAnimationParameters();
     
@@ -209,6 +218,7 @@ void UScoreWidgetAnimator::ExecuteFadeOut()
     }
 }
 
+// ExecuteAnimationEnd() 함수 수정
 void UScoreWidgetAnimator::ExecuteAnimationEnd()
 {
     // 텍스트 숨기기
@@ -224,4 +234,7 @@ void UScoreWidgetAnimator::ExecuteAnimationEnd()
     }
     
     bAnimationActive = false;
+    
+    // 애니메이션 종료 델리게이트 호출
+    OnAnimationEnd.Broadcast();
 }

@@ -3,6 +3,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Interface/UI/ScoreDisplayWidget.h"
 #include "Interface/UI/TotalScoreWidget.h"
+#include "ScoreWidgetAnimator.h"
 
 UScoreManagerComponent::UScoreManagerComponent()
 {
@@ -14,6 +15,7 @@ UScoreManagerComponent::UScoreManagerComponent()
     ComboCount = 0;
     ComboRemainingTime = 0.0f;
     bComboActive = false;
+    CurrentStackComboScore = 0;
     
     // 위젯 초기화
     ScoreWidgetInstance = nullptr;
@@ -90,18 +92,20 @@ void UScoreManagerComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 // 콤보 타이머 만료 처리 함수 구현
 void UScoreManagerComponent::OnComboTimerExpired()
 {
-    // 콤보 UI 리셋 (ScoreDisplayWidget이 있다면)
+    // ScoreWidgetInstance의 애니메이션 종료 시 총점 반영
     if (ScoreWidgetInstance)
     {
         ScoreWidgetInstance->ResetComboDisplay();
+        
+        // 애니메이션은 이미 진행 중이므로 추가 작업 없음
+        // 애니메이션 종료 시 OnScoreAnimationEnded에서 처리
     }
-    // 정적 인스턴스를 사용하는 경우를 위한 백업 코드
     else if (UScoreDisplayWidget::Instance)
     {
         UScoreDisplayWidget::Instance->ResetComboDisplay();
     }
     
-    // 콤보 상태 초기화
+    // 콤보 상태 초기화는 유지 (콤보 점수 초기화는 아직 하지 않음)
     ResetCombo();
 }
 
@@ -125,6 +129,8 @@ int32 UScoreManagerComponent::AddScore(int32 BallType)
         ComboCount = 1;
         bComboActive = true;
         ExtendComboTime();
+        // 새 콤보 시작 시 콤보 점수 초기화
+        CurrentStackComboScore = 0;
     }
     
     // 3. 연쇄 보너스 계산
@@ -133,12 +139,12 @@ int32 UScoreManagerComponent::AddScore(int32 BallType)
     // 4. 최종 점수 계산
     int32 FinalScore = FMath::RoundToInt(BaseScore * ComboMultiplier);
     
-    // 5. 점수 추가
+    // 5. 점수 추가 - 콤보 기간 동안 누적
     CurrentScore += FinalScore;
-    AddToTotalScore(FinalScore);
+    CurrentStackComboScore += FinalScore; // 콤보 중 점수 누적
     
     // 6. 로그 출력
-    int32 localComboCount = ComboCount; // 로컬 변수명 변경
+    int32 localComboCount = ComboCount;
     if (localComboCount >= 2)
     {
         UE_LOG(LogTemp, Warning, TEXT("%d연쇄 병합! 기본점수: %d, 보너스율: %.1f배, 최종점수: %d"),
@@ -158,7 +164,7 @@ int32 UScoreManagerComponent::AddScore(int32 BallType)
     return FinalScore;
 }
 
-void UScoreManagerComponent::UpdateWidgets(int32 Score, int32 LocalComboCount, float LocalComboMultiplier)
+void UScoreManagerComponent::UpdateWidgets(int32 Score, int32 ComboCount, float ComboMultiplier)
 {
     // 획득 점수 애니메이션 표시
     if (!ScoreWidgetInstance)
@@ -168,7 +174,15 @@ void UScoreManagerComponent::UpdateWidgets(int32 Score, int32 LocalComboCount, f
     
     if (IsValid(ScoreWidgetInstance))
     {
-        ScoreWidgetInstance->DisplayScoreGain(Score, LocalComboCount, LocalComboMultiplier);
+        ScoreWidgetInstance->DisplayScoreGain(Score, ComboCount, ComboMultiplier);
+        
+        // 애니메이션 종료 델리게이트 연결 (콤보 종료 시 총점 업데이트)
+        UScoreWidgetAnimator* Animator = ScoreWidgetInstance->GetWidgetAnimator();
+        if (Animator)
+        {
+            Animator->OnAnimationEnd.Clear(); // 기존 연결 제거
+            Animator->OnAnimationEnd.AddDynamic(this, &UScoreManagerComponent::OnScoreAnimationEnded);
+        }
     }
 }
 

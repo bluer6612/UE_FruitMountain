@@ -98,4 +98,8 @@ protected:
     
     // 위젯 업데이트 함수
     void UpdateWidgets(int32 Score, int32 ComboCount, float ComboMultiplier);
+
+private:
+    // 콤보 기간 동안 누적된 점수
+    int32 CurrentStackComboScore;
 };

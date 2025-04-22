@@ -194,6 +194,7 @@ void UScoreDisplayWidget::DisplayScoreGain(int32 Score, int32 ComboCount, float 
         FString ComboText = FString::Printf(TEXT("X%.1f"), CurrentComboMultiplier);
         ComboMultiplierTextBlock->SetText(FText::FromString(ComboText));
         ComboMultiplierTextBlock->SetVisibility(ESlateVisibility::HitTestInvisible);
+        ComboMultiplierTextBlock->SetColorAndOpacity(BRIGHT_YELLOW_COLOR); // 불투명도 초기화
     }
     else
     {

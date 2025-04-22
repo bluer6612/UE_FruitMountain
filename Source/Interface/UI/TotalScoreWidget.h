@@ -32,6 +32,14 @@ public:
     UFUNCTION(BlueprintCallable, Category = "UI Score")
     static UTotalScoreWidget* GetInstance() { return Instance; }
     
+    // 추가: 애니메이션과 함께 점수 업데이트
+    UFUNCTION(BlueprintCallable, Category = "UI Score")
+    void AnimateScoreIncrease(int32 NewScore);
+    
+    // 추가: 대기중인 점수 즉시 반영
+    UFUNCTION(BlueprintCallable, Category = "UI Score")
+    void ApplyPendingScore();
+    
 protected:
     virtual void NativeConstruct() override;
     virtual void NativeDestruct() override;
@@ -55,6 +63,29 @@ protected:
     static const FLinearColor SCORE_SHADOW_COLOR;
     
 private:
+    // 위젯 클래스 로드 헬퍼
+    static bool LoadWidgetClassIfNeeded();
+    
+    // 유효한 플레이어 컨트롤러 가져오기
+    static APlayerController* GetValidPlayerController(UObject* WorldContextObject);
+    
     // 텍스트 스타일 설정 함수
     void SetupTotalScoreTextStyle();
+    
+    // 위젯 위치 설정 함수
+    void PositionWidgetAboveScoreDisplay();
+    
+    // 점수 증가 애니메이션 관련 멤버 변수
+    UPROPERTY()
+    FTimerHandle ScoreAnimTimerHandle;
+    
+    int32 TargetScore;
+    int32 StartScore;
+    int32 PendingScore;
+    int32 AnimSteps;
+    int32 CurrentStep;
+    bool bAnimating;
+    
+    // 애니메이션 타이머 콜백
+    void UpdateScoreAnimation();
 };
