@@ -121,15 +121,13 @@ void UScoreManagerComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     Super::EndPlay(EndPlayReason);
     
-    // ComboSystem 정리
-    if (ComboSystem && ComboSystem->IsRooted())
+    // ComboSystem 정리 - RemoveFromRoot 대신 안전한 정리 함수 호출
+    if (ComboSystem && IsValid(ComboSystem))
     {
-        ComboSystem->RemoveFromRoot();
-        UE_LOG(LogTemp, Display, TEXT("EndPlay: ComboSystem 루트에서 제거"));
+        ComboSystem->SafeCleanup();
+        ComboSystem = nullptr;
+        UE_LOG(LogTemp, Display, TEXT("EndPlay: ComboSystem 안전하게 정리됨"));
     }
-    
-    // 참조 해제
-    ComboSystem = nullptr;
 }
 
 int32 UScoreManagerComponent::AddScore(int32 BallType)

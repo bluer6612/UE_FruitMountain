@@ -16,13 +16,35 @@ UComboSystem::UComboSystem()
     ScoreWidgetInstance = nullptr;
 }
 
-UComboSystem::~UComboSystem()
+void UComboSystem::BeginDestroy()
 {
-    // 루트에서 제거하여 메모리 누수 방지
-    if (IsRooted())
+    // GC가 시작되기 전에 안전하게 정리
+    SafeCleanup();
+    
+    Super::BeginDestroy();
+}
+
+// 안전한 정리 함수
+void UComboSystem::SafeCleanup()
+{
+    // 이미 정리되었는지 확인하는 정적 플래그
+    static bool bAlreadyCleaned = false;
+    
+    if (!bAlreadyCleaned)
     {
-        RemoveFromRoot();
-        UE_LOG(LogTemp, Display, TEXT("ComboSystem이 GC 보호에서 해제됨"));
+        // 루트에서 제거 시도 (GC와 충돌하지 않도록 조건부 확인)
+        if (HasAnyFlags(RF_RootSet))
+        {
+            UE_LOG(LogTemp, Display, TEXT("ComboSystem 정리: 루트에서 제거"));
+            RemoveFromRoot();
+        }
+        
+        // 데이터 정리
+        OnComboScoreFinalized.Clear();
+        OnComboUpdated.Clear();
+        
+        // 한 번만 실행되도록 플래그 설정
+        bAlreadyCleaned = true;
     }
 }
 
@@ -38,9 +60,10 @@ void UComboSystem::Initialize(UObject* InOwner, UScoreDisplayWidget* InScoreWidg
     }
 
     // ComboSystem 객체의 생명주기가 ScoreWidgetAnimator보다 짧을 경우 문제가 발생할 수 있음
-    if (!IsRooted())
+    // IsRooted() 대신 플래그 확인으로 변경
+    if (!HasAnyFlags(RF_RootSet))
     {
-        this->AddToRoot();  // 가비지 컬렉션(GC)에서 제외
+        this->AddToRoot();
         UE_LOG(LogTemp, Display, TEXT("ComboSystem이 GC로부터 보호됨"));
     }
 }
