@@ -35,10 +35,6 @@ public:
     // 충돌 이벤트 핸들러
     UFUNCTION()
     void OnBallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
-    
-    // 디버그 정보 표시 함수
-    UFUNCTION(BlueprintCallable, Category="Debug")
-    void DisplayDebugInfo();
 
     // 접근자 및 설정자
     UFUNCTION()

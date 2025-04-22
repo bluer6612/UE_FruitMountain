@@ -269,14 +269,3 @@ void AFruitBall::SetBallType(int32 NewBallType)
         UpdateFruitMesh(BallType);
     }
 }
-
-void AFruitBall::DisplayDebugInfo()
-{
-    if (GEngine)
-    {
-        // GetName() 대신 안전한 방법으로 이름 가져오기
-        FString ActorName = GetNameSafe(this);
-        FString DebugMsg = FString::Printf(TEXT("과일 ID: %s, 레벨: %d"), *ActorName, GetBallType());
-        GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, DebugMsg);
-    }
-}
