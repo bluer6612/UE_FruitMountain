@@ -20,45 +20,31 @@ void UFruitMergeFeedbackHelper::StabilizeFruits(UWorld* World, float DampingMult
     for (AActor* Actor : FoundFruits)
     {
         AFruitBall* Fruit = Cast<AFruitBall>(Actor);
-        if (!Fruit || !Fruit->GetMeshComponent())
-        {
-            continue;
-        }
         
         // 미리보기 공이나 이미 병합, 투척 중인 과일 제외
-        if (Fruit->IsPreviewBall() || Fruit->IsMerging() || Fruit->IsHasCollided())
+        if (Fruit->IsPreviewBall() || Fruit->IsMerging() || !Fruit->IsHasCollided())
         {
             continue;
         }
         
         // 각 과일 안정화 처리
-        StabilizeSingleFruit(Fruit, DampingMultiplier, bIsNewFruit);
+        StabilizeSingleFruit(Fruit, DampingMultiplier);
     }
 }
 
 // 통합된 안정화 처리 로직 (매개변수 간소화)
-void UFruitMergeFeedbackHelper::StabilizeSingleFruit(AFruitBall* Fruit, float DampingMultiplier, bool bIsNewFruit)
+void UFruitMergeFeedbackHelper::StabilizeSingleFruit(AFruitBall* Fruit, float DampingMultiplier)
 {
-    if (!Fruit || !Fruit->GetMeshComponent())
-    {
-        return;
-    }
-    
+    // 유효성 검사
     UStaticMeshComponent* MeshComp = Fruit->GetMeshComponent();
     UWorld* World = Fruit->GetWorld();
-    
-    if (!World || !MeshComp->IsSimulatingPhysics())
+    if (!MeshComp || !World)
     {
         return;
     }
-    
-    // 투척 중인 과일은 안정화를 덜 적용
-    bool bIsMoving = Fruit->IsHasCollided();
-    
-    // 1. 기본 물리 속성 안정화 - 모든 충돌에 적용
-    // 회전 감쇠 설정 (충돌 시 회전 빠르게 감소)
-    float AngularDampingValue = bIsMoving ? 5.0f : 10.0f; 
-    MeshComp->SetAngularDamping(AngularDampingValue);
+
+    // 1. 기본 물리 속성 안정화 - 안정화가 필요한 과일에만 적용
+    MeshComp->SetAngularDamping(10.0f);
     
     // 2. 타이머로 일정 시간 후 안정화 완화
     FTimerHandle StabilizeTimerHandle;
@@ -73,47 +59,42 @@ void UFruitMergeFeedbackHelper::StabilizeSingleFruit(AFruitBall* Fruit, float Da
         },
         1.0f, false);
     
-    // 새 과일이거나 중심에서 멀리 있는 경우만 추가 안정화 적용
-    if (!bIsMoving || bIsNewFruit)
+    // 3. 중심 위치 계산
+    FVector PlateCenter = FVector::ZeroVector;
+    APlateActor* PlateActor = Fruit->GetPlateActor();
+    if (PlateActor)
     {
-        // 3. 크기 인자 계산
+        PlateCenter = PlateActor->GetActorLocation();
+    }
+    
+    // 4. 과일에서 중심까지 방향
+    FVector ToCenterXY = PlateCenter - Fruit->GetActorLocation();
+    ToCenterXY.Z = 0; // 수평 방향만 고려
+    
+    // 5. 중심으로부터 거리 계산
+    float DistanceToCenter = ToCenterXY.Size();
+    float PlateRadius = PlateActor ? PlateActor->GetPlateRadius() : 75.0f;
+    
+    // 6. 중심에서 너무 멀리 있는 과일의 경우 안정화 강화
+    if (DistanceToCenter > PlateRadius * 0.7f)
+    {
+        // 7. 크기 인자 계산
         int32 FruitType = Fruit->GetBallType();
         float SizeFactor = FMath::Min(2.0f, 0.5f + (FruitType * 0.2f));
         
-        // 4. 중심 위치 계산
-        FVector PlateCenter = FVector::ZeroVector;
-        APlateActor* PlateActor = Fruit->GetPlateActor();
-        if (PlateActor)
+        ToCenterXY.Normalize();
+        float ForceMultiplier = FMath::Min(5.0f, DampingMultiplier * SizeFactor);
+        
+        // 8. 중심 방향으로 약한 힘 적용 (접시 중앙으로 과일 유도)
+        FVector CenterForce = ToCenterXY * ForceMultiplier * MeshComp->GetMass() * 2.0f;
+        MeshComp->AddForce(CenterForce, NAME_None, true);
+        
+        // 9. 수직 속도 약간 감소 (과일 튀어오름 감소)
+        FVector Velocity = MeshComp->GetPhysicsLinearVelocity();
+        if (Velocity.Z > 0)
         {
-            PlateCenter = PlateActor->GetActorLocation();
-            PlateCenter.Z += 10.0f; // 약간 위로 조정
-        }
-        
-        // 5. 과일에서 중심까지 방향
-        FVector ToCenterXY = PlateCenter - Fruit->GetActorLocation();
-        ToCenterXY.Z = 0; // 수평 방향만 고려
-        
-        // 6. 중심으로부터 거리 계산
-        float DistanceToCenter = ToCenterXY.Size();
-        float PlateRadius = PlateActor ? PlateActor->GetPlateRadius() : 75.0f;
-        
-        // 7. 중심에서 너무 멀리 있는 과일의 경우 안정화 강화
-        if (DistanceToCenter > PlateRadius * 0.7f)
-        {
-            ToCenterXY.Normalize();
-            float ForceMultiplier = FMath::Min(5.0f, DampingMultiplier * SizeFactor);
-            
-            // 8. 중심 방향으로 약한 힘 적용 (접시 중앙으로 과일 유도)
-            FVector CenterForce = ToCenterXY * ForceMultiplier * MeshComp->GetMass() * 50.0f;
-            MeshComp->AddForce(CenterForce, NAME_None, true);
-            
-            // 9. 수직 속도 약간 감소 (과일 튀어오름 감소)
-            FVector Velocity = MeshComp->GetPhysicsLinearVelocity();
-            if (Velocity.Z > 0)
-            {
-                Velocity.Z *= 0.5f;
-                MeshComp->SetPhysicsLinearVelocity(Velocity, false);
-            }
+            Velocity.Z *= 0.5f;
+            MeshComp->SetPhysicsLinearVelocity(Velocity, false);
         }
     }
 }

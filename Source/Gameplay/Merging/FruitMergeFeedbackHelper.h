@@ -20,8 +20,7 @@ public:
     
     // 단일 과일 안정화 - 모든 충돌 유형에 대해 통합된 로직
     UFUNCTION(BlueprintCallable, Category = "Fruit Feedback")
-    static void StabilizeSingleFruit(AFruitBall* Fruit, float DampingMultiplier = 3.0f, 
-                                    bool bIsNewFruit = false);
+    static void StabilizeSingleFruit(AFruitBall* Fruit, float DampingMultiplier = 3.0f);
 
     // 병합 이펙트 재생
     UFUNCTION(BlueprintCallable, Category = "Fruit Feedback")

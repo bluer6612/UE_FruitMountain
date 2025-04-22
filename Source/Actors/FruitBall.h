@@ -116,7 +116,7 @@ public:
     static constexpr int MaxBallType = 11;
 
     // 떨어진 것으로 간주되는 Z 좌표
-    static constexpr float FallThreshold = 100.f;
+    static constexpr float FallThreshold = 90.f;
 
     // 미리보기 공 여부 플래그
     UPROPERTY()

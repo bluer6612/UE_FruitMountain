@@ -77,7 +77,6 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
                 Controller->GetWorld(), SpawnLocation, PlateCenter, RoundedAngle, ActualMass);
             
             // 이 시점에서 힘과 방향이 확정
-            // 카메라 회전과 무관하게 항상 동일해야 함
             
             // 물리적으로 더 정확한 초기화 방법
             MeshComp->SetPhysicsLinearVelocity(FVector::ZeroVector, false); // 현재 속도 초기화
