@@ -86,15 +86,19 @@ void UFruitMergeFeedbackHelper::StabilizeSingleFruit(AFruitBall* Fruit, float Da
         float ForceMultiplier = FMath::Min(5.0f, DampingMultiplier * SizeFactor);
         
         // 8. 중심 방향으로 약한 힘 적용 (접시 중앙으로 과일 유도)
-        FVector CenterForce = ToCenterXY * ForceMultiplier * MeshComp->GetMass() * 2.0f;
+        FVector CenterForce = ToCenterXY * ForceMultiplier * MeshComp->GetMass() * 0.25f;
         MeshComp->AddForce(CenterForce, NAME_None, true);
         
-        // 9. 수직 속도 약간 감소 (과일 튀어오름 감소)
+        // 9. 수직 속도 감소 (과일 튀어오름 감소)
         FVector Velocity = MeshComp->GetPhysicsLinearVelocity();
         if (Velocity.Z > 0)
         {
-            Velocity.Z *= 0.5f;
+            Velocity.Z *= 0.1f;  // (90% 감소)
             MeshComp->SetPhysicsLinearVelocity(Velocity, false);
+            
+            // 추가적으로 하향 힘 적용하여 빠르게 안정화
+            FVector DownForce = FVector(0, 0, -1) * MeshComp->GetMass() * 30.0f;
+            MeshComp->AddForce(DownForce, NAME_None, true);
         }
     }
 }
