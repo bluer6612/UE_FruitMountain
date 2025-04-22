@@ -27,14 +27,8 @@ void UComboSystem::Initialize(UObject* InOwner, UScoreDisplayWidget* InScoreWidg
         ScoreWidgetInstance = UScoreDisplayWidget::Instance;
     }
 
-    // ComboSystem 객체의 생명주기가 ScoreWidgetAnimator보다 짧을 경우 문제가 발생
-    // 콤보 시스템 생성 - 객체 생존 보장을 위한 방법
-    ComboSystem = NewObject<UComboSystem>(this, UComboSystem::StaticClass(), NAME_None, RF_Transactional);  // RF_Transactional 플래그 추가
-    if (ComboSystem)
-    {
-        // GC로부터 보호
-        ComboSystem->AddToRoot();  // 가비지 컬렉션에서 제외
-    }
+    // ComboSystem 객체의 생명주기가 ScoreWidgetAnimator보다 짧을 경우 문제가 발생할 수 있음
+    this->AddToRoot();  // 가비지 컬렉션에서 제외
 }
 
 void UComboSystem::Tick(float DeltaTime)
@@ -111,8 +105,9 @@ int32 UComboSystem::CalculateFinalScore(int32 BallType)
     return FinalScore;
 }
 
-void UComboSystem::StartScoreTextAnimation(int32 Score, int32 ComboCount, float ComboMultiplier)
+void UComboSystem::StartScoreTextAnimation(int32 Score, int32 LocalComboCount, float LocalComboMultiplier)
 {
+    // 유효성 검사
     if (!ScoreWidgetInstance)
     {
         UE_LOG(LogTemp, Error, TEXT("ScoreDisplayWidget이 null입니다"));
@@ -120,36 +115,28 @@ void UComboSystem::StartScoreTextAnimation(int32 Score, int32 ComboCount, float 
     }
     
     // 스코어 위젯에 점수 표시 요청
-    ScoreWidgetInstance->DisplayScoreGain(Score, ComboCount, ComboMultiplier);
+    ScoreWidgetInstance->DisplayScoreGain(Score, LocalComboCount, LocalComboMultiplier);
     
     // 애니메이션 종료 시 콜백 등록
     UScoreWidgetAnimator* Animator = ScoreWidgetInstance->GetWidgetAnimator();
     if (Animator)
     {
-        // 여기서 문제 발생 가능성이 높음
-        Animator->OnAnimationEnd.Clear(); // 기존 연결 제거
+        UE_LOG(LogTemp, Display, TEXT("애니메이션 델리게이트 바인딩 시작"));
         
-        // 바인딩 전에 객체 유효성 확인
-        if (!this || this->IsPendingKill())
+        // 기존 바인딩 제거
+        Animator->OnAnimationEnd.Clear();
+        
+        // AddLambda 대신 AddDynamic 사용
+        // OnScoreAnimationEnded 함수가 UFUNCTION()으로 선언되어 있어야 함
+        Animator->OnAnimationEnd.AddDynamic(this, &UComboSystem::OnScoreAnimationEnded);
+        
+        if (Animator->OnAnimationEnd.IsBound())
         {
-            UE_LOG(LogTemp, Error, TEXT("ComboSystem 객체가 유효하지 않습니다"));
-            return;
-        }
-        
-        // 디버깅 로그 추가
-        UE_LOG(LogTemp, Display, TEXT("애니메이션 종료 델리게이트 바인딩 시도"));
-        
-        // AddDynamic 대신 AddUObject 사용 시도
-        Animator->OnAnimationEnd.AddUObject(this, &UComboSystem::OnScoreAnimationEnded);
-        
-        // 바인딩 확인
-        if (!Animator->OnAnimationEnd.IsBound())
-        {
-            UE_LOG(LogTemp, Error, TEXT("델리게이트 바인딩 실패"));
+            UE_LOG(LogTemp, Display, TEXT("애니메이션 델리게이트 바인딩 성공"));
         }
         else
         {
-            UE_LOG(LogTemp, Display, TEXT("델리게이트 바인딩 성공"));
+            UE_LOG(LogTemp, Error, TEXT("애니메이션 델리게이트 바인딩 실패"));
         }
     }
     else

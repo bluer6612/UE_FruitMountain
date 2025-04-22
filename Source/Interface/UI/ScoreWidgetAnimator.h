@@ -5,8 +5,7 @@
 #include "Components/TextBlock.h"
 #include "ScoreWidgetAnimator.generated.h"
 
-// 델리게이트 선언이 올바른지 확인
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnScoreAnimationEndDelegate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FScoreAnimationEndDelegate);
 
 // 애니메이션 구성을 위한 파라미터 구조체
 USTRUCT()
@@ -43,7 +42,7 @@ public:
     
     // 애니메이션 완료 델리게이트
     UPROPERTY(BlueprintAssignable, Category = "Score Animation")
-    FOnScoreAnimationEndDelegate OnAnimationEnd;
+    FScoreAnimationEndDelegate OnAnimationEnd;
     
 protected:
     // 텍스트 블록

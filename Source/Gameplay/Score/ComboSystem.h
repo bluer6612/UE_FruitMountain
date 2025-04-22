@@ -8,14 +8,11 @@
 class UScoreDisplayWidget;
 class UScoreWidgetAnimator;
 
-// 콤보 관련 델리게이트 정의
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnComboEndedSignature, int32, FinalComboCount);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnComboUpdatedSignature, int32, ComboCount, float, ComboMultiplier, int32, ComboScore);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnComboScoreFinalizedSignature, int32, FinalComboScore);
+// 콤보 관련 델리게이트 정의 - 네임스페이스 활용
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FComboEndedSignature, int32, FinalComboCount);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FComboUpdatedSignature, int32, ComboCount, float, ComboMultiplier, int32, ComboScore);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FComboScoreFinalizedSignature, int32, FinalComboScore);
 
-/**
- * 콤보 시스템 - 콤보 카운트, 타이머, 점수 계산을 관리
- */
 UCLASS()
 class UE_FRUITMOUNTAIN_API UComboSystem : public UObject
 {
@@ -45,15 +42,15 @@ public:
     // 점수 계산 및 관리
     int32 CalculateFinalScore(int32 BallType);
     
-    // 델리게이트
+    // 델리게이트 - 이름 변경하여 중복 방지
     UPROPERTY(BlueprintAssignable, Category = "Combo")
-    FOnComboEndedSignature OnComboEnded;
+    FComboEndedSignature OnComboEnded;
     
     UPROPERTY(BlueprintAssignable, Category = "Combo")
-    FOnComboUpdatedSignature OnComboUpdated;
+    FComboUpdatedSignature OnComboUpdated;
     
     UPROPERTY(BlueprintAssignable, Category = "Combo")
-    FOnComboScoreFinalizedSignature OnComboScoreFinalized;
+    FComboScoreFinalizedSignature OnComboScoreFinalized;
     
     // 게터 함수
     FORCEINLINE int32 GetComboCount() const { return ComboCount; }
@@ -93,7 +90,7 @@ private:
     void OnComboTimerExpired();
     
     // 애니메이션 종료 콜백
-    UFUNCTION()  // 여기에 반드시 UFUNCTION 매크로가 있어야 함
+    UFUNCTION()
     void OnScoreAnimationEnded();
     
     // 텍스트 애니메이션 시작

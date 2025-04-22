@@ -9,7 +9,8 @@ class UScoreDisplayWidget;
 class UTotalScoreWidget;
 class UComboSystem;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnScoreAddedSignature, int32, Score, int32, ComboCount, float, ComboMultiplier);
+// ScoreManager 전용 델리게이트
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FScoreAddedSignature, int32, Score, int32, ComboCount, float, ComboMultiplier);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnComboEndedSignature, int32, FinalComboCount);
 
 UCLASS(ClassGroup=(Gameplay), meta=(BlueprintSpawnableComponent))
@@ -34,7 +35,7 @@ public:
     
     // 점수 관련 이벤트
     UPROPERTY(BlueprintAssignable, Category = "Events")
-    FOnScoreAddedSignature OnScoreAdded;
+    FScoreAddedSignature OnScoreAdded;
     
     UPROPERTY(BlueprintAssignable, Category = "Events")
     FOnComboEndedSignature OnComboEnded;

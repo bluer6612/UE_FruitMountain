@@ -4,7 +4,7 @@
 #include "Interface/UI/ScoreDisplayWidget.h"
 #include "Interface/UI/TotalScoreWidget.h"
 #include "Interface/UI/ScoreWidgetAnimator.h"
-#include "Gameplay/Score/ComboSystem.h"
+#include "ComboSystem.h"
 
 UScoreManagerComponent::UScoreManagerComponent()
 {
@@ -71,8 +71,8 @@ void UScoreManagerComponent::BeginPlay()
 
 void UScoreManagerComponent::InitializeComboSystem()
 {
-    // 콤보 시스템 생성
-    ComboSystem = NewObject<UComboSystem>(this, UComboSystem::StaticClass());
+    // 콤보 시스템 생성 - RF_Transactional 플래그 추가로 객체 생존 보장
+    ComboSystem = NewObject<UComboSystem>(this, UComboSystem::StaticClass(), NAME_None, RF_Transactional);
     if (!ComboSystem)
     {
         UE_LOG(LogTemp, Error, TEXT("콤보 시스템 생성 실패"));
@@ -83,9 +83,27 @@ void UScoreManagerComponent::InitializeComboSystem()
     ComboSystem->Initialize(this, ScoreWidgetInstance);
     ComboSystem->SetComboTimeLimit(ComboTimeLimit);
     
-    // 콤보 시스템 이벤트 등록
-    ComboSystem->OnComboScoreFinalized.AddDynamic(this, &UScoreManagerComponent::OnComboScoreFinalized);
-    ComboSystem->OnComboUpdated.AddDynamic(this, &UScoreManagerComponent::OnComboUpdated);
+    // 이벤트 연결 전 디버깅 로그
+    UE_LOG(LogTemp, Display, TEXT("콤보 시스템 이벤트 등록 시작"));
+    
+    // 콤보 시스템 이벤트 등록 - 바인딩 전 객체 유효성 재확인
+    if (IsValid(ComboSystem))
+    {
+        ComboSystem->OnComboScoreFinalized.AddDynamic(this, &UScoreManagerComponent::OnComboScoreFinalized);
+        ComboSystem->OnComboUpdated.AddDynamic(this, &UScoreManagerComponent::OnComboUpdated);
+        
+        // 바인딩 성공 여부 확인
+        bool bScoreFinalized = ComboSystem->OnComboScoreFinalized.IsBound();
+        bool bComboUpdated = ComboSystem->OnComboUpdated.IsBound();
+        
+        UE_LOG(LogTemp, Display, TEXT("콤보 이벤트 바인딩 결과: OnComboScoreFinalized=%s, OnComboUpdated=%s"), 
+              bScoreFinalized ? TEXT("성공") : TEXT("실패"),
+              bComboUpdated ? TEXT("성공") : TEXT("실패"));
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("이벤트 등록 실패: 콤보 시스템이 유효하지 않음"));
+    }
 }
 
 void UScoreManagerComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
