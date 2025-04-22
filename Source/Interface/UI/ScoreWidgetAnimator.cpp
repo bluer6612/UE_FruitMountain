@@ -85,7 +85,7 @@ void UScoreWidgetAnimator::CancelAnimation()
     if (bAnimationActive && IsValid(ScoreTextBlock) && ScoreTextBlock->GetWorld())
     {
         ScoreTextBlock->GetWorld()->GetTimerManager().ClearTimer(AnimTimerHandle);
-        UE_LOG(LogTemp, Display, TEXT("진행 중인 애니메이션 취소"));
+        //UE_LOG(LogTemp, Display, TEXT("진행 중인 애니메이션 취소"));
     }
     
     // 애니메이션 상태 초기화

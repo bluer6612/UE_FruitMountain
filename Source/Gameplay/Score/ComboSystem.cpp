@@ -55,7 +55,7 @@ void UComboSystem::Tick(float DeltaTime)
         // 콤보 타임 종료
         if (ComboRemainingTime <= 0.0f)
         {
-            UE_LOG(LogTemp, Display, TEXT("콤보 시간 종료! 최종 콤보 카운트: %d"), ComboCount);
+            //UE_LOG(LogTemp, Display, TEXT("콤보 시간 종료! 최종 콤보 카운트: %d"), ComboCount);
             
             // 콤보 종료 이벤트 발생
             OnComboEnded.Broadcast(ComboCount);

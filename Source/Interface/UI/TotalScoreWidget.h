@@ -16,6 +16,9 @@ class UE_FRUITMOUNTAIN_API UTotalScoreWidget : public UUserWidget
 public:
     UTotalScoreWidget(const FObjectInitializer& ObjectInitializer);
     
+    // 위치 상수 - UI_Play_Score 위에 겹치도록 설정
+    static const FVector2D TOTALSCORE_TEXT_POS;
+    
     // 총점 업데이트 함수
     UFUNCTION(BlueprintCallable, Category = "UI Score")
     void UpdateTotalScore(int32 NewScore);
@@ -52,15 +55,19 @@ protected:
     UPROPERTY(BlueprintReadOnly, Category = "UI Score")
     int32 CurrentTotalScore;
     
+    // 현재 표시 점수
+    UPROPERTY()
+    int32 CurrentDisplayScore = 0;
+    
+    // 목표 점수
+    UPROPERTY()
+    int32 TargetScore = 0;
+    
     // 위젯 클래스 참조
     static TSubclassOf<UUserWidget> TotalScoreWidgetClass;
     
     // 싱글톤 인스턴스
     static UTotalScoreWidget* Instance;
-    
-    // 색상 상수
-    static const FLinearColor SCORE_BROWN_COLOR;
-    static const FLinearColor SCORE_SHADOW_COLOR;
     
 private:
     // 위젯 클래스 로드 헬퍼
@@ -79,7 +86,6 @@ private:
     UPROPERTY()
     FTimerHandle ScoreAnimTimerHandle;
     
-    int32 TargetScore;
     int32 StartScore;
     int32 PendingScore;
     int32 AnimSteps;

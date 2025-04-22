@@ -160,8 +160,6 @@ void UScoreManagerComponent::OnComboScoreFinalized(int32 FinalComboScore)
         
         // 애니메이션과 함께 총점 업데이트
         TotalScoreWidgetInstance->AnimateScoreIncrease(NewTotalScore);
-        
-        UE_LOG(LogTemp, Display, TEXT("콤보 점수 반영 완료: 총점 %d"), NewTotalScore);
     }
 }
 
