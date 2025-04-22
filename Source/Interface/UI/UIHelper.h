@@ -86,7 +86,48 @@ public:
         UObject* WorldContextObject, 
         const FString& BlueprintPath, 
         int32 ZOrder = 10,
-        ESlateVisibility Visibility = ESlateVisibility::HitTestInvisible);
+        ESlateVisibility Visibility = ESlateVisibility::HitTestInvisible)
+    {
+        // 기존 유효 인스턴스 확인
+        if (Instance && IsValid(Instance) && Instance->IsInViewport())
+        {
+            return Instance;
+        }
+        
+        // 기존 인스턴스가 무효하면 null로 설정
+        if (Instance)
+        {
+            Instance = nullptr;
+        }
+        
+        // 플레이어 컨트롤러 가져오기
+        APlayerController* Controller = GetValidPlayerController(WorldContextObject);
+        if (!Controller)
+        {
+            return nullptr;
+        }
+        
+        // 위젯 클래스 로드
+        if (!WidgetClass)
+        {
+            WidgetClass = LoadClass<UUserWidget>(nullptr, *BlueprintPath);
+            if (!WidgetClass)
+            {
+                UE_LOG(LogTemp, Error, TEXT("CreateSingletonWidget: 블루프린트를 찾을 수 없습니다: %s"), *BlueprintPath);
+                return nullptr;
+            }
+        }
+        
+        // 인스턴스 생성 및 뷰포트에 추가
+        Instance = CreateWidget<T>(Controller, WidgetClass);
+        if (Instance)
+        {
+            Instance->AddToViewport(ZOrder);
+            Instance->SetVisibility(Visibility);
+        }
+        
+        return Instance;
+    }
         
     // 특정 위젯 유효성 검사 함수
     template<class T>
@@ -114,62 +155,18 @@ TSubclassOf<UUserWidget> UUIHelper::LoadWidgetClassIfNeeded(TSubclassOf<UUserWid
     return WidgetClass;
 }
 
-// 싱글톤 위젯 생성 템플릿 함수
-template<class T>
-T* UUIHelper::CreateSingletonWidget(
-    T*& Instance, 
-    TSubclassOf<UUserWidget>& WidgetClass, 
-    UObject* WorldContextObject, 
-    const FString& BlueprintPath, 
-    int32 ZOrder,
-    ESlateVisibility Visibility)
-{
-    // 기존 유효 인스턴스 확인
-    if (Instance && IsWidgetInstanceValid(Instance))
-    {
-        return Instance;
-    }
-    
-    // 기존 인스턴스가 무효하면 null로 설정
-    if (Instance)
-    {
-        Instance = nullptr;
-    }
-    
-    // 플레이어 컨트롤러 가져오기
-    APlayerController* Controller = GetValidPlayerController(WorldContextObject);
-    if (!Controller)
-    {
-        UE_LOG(LogTemp, Error, TEXT("CreateSingletonWidget: 유효한 PlayerController를 찾을 수 없습니다"));
-        return nullptr;
-    }
-    
-    // 위젯 클래스 로드
-    if (!LoadWidgetClassIfNeeded<T>(WidgetClass, BlueprintPath))
-    {
-        UE_LOG(LogTemp, Error, TEXT("CreateSingletonWidget: 위젯 클래스 로드 실패"));
-        return nullptr;
-    }
-    
-    // 인스턴스 생성 및 뷰포트에 추가
-    Instance = CreateWidget<T>(Controller, WidgetClass);
-    if (Instance)
-    {
-        Instance->AddToViewport(ZOrder);
-        Instance->SetVisibility(Visibility);
-        UE_LOG(LogTemp, Log, TEXT("CreateSingletonWidget: %s 위젯 인스턴스 생성 성공"), *BlueprintPath);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("CreateSingletonWidget: 위젯 인스턴스 생성 실패"));
-    }
-    
-    return Instance;
-}
-
 // 위젯 유효성 검사 템플릿 함수
 template<class T>
 bool UUIHelper::IsWidgetInstanceValid(T* Instance)
 {
     return Instance && IsValid(Instance) && Instance->IsInViewport();
+}
+
+// 템플릿 함수는 헤더 내에 전체 구현이 포함되어야 함
+template<class T>
+static T* CreateSingletonWidget(T*& Instance, TSubclassOf<UUserWidget>& WidgetClass, 
+                              UObject* WorldContextObject, const FString& BlueprintPath, 
+                              int32 ZOrder = 10, ESlateVisibility Visibility = ESlateVisibility::HitTestInvisible)
+{
+    // 전체 구현...
 }

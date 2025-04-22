@@ -11,15 +11,28 @@ UTextureDisplayWidget* UTextureDisplayWidget::Instance = nullptr;
 
 UTextureDisplayWidget* UTextureDisplayWidget::CreateDisplayWidget(UObject* WorldContextObject)
 {
-    // UIHelper를 사용한 싱글톤 위젯 생성
-    static const FString BlueprintPath = TEXT("UTextureDisplayWidget");  // 사용자 정의 클래스 자체를 사용
-    return UUIHelper::CreateSingletonWidget<UTextureDisplayWidget>(
-        Instance, 
-        TSubclassOf<UUserWidget>(UTextureDisplayWidget::StaticClass()), 
-        WorldContextObject, 
-        BlueprintPath, 
-        10000, 
-        ESlateVisibility::SelfHitTestInvisible);
+    // 기존 인스턴스가 있으면 재사용
+    if (Instance && IsValid(Instance) && Instance->IsInViewport())
+    {
+        return Instance;
+    }
+    
+    // 플레이어 컨트롤러 가져오기
+    APlayerController* PC = UUIHelper::GetValidPlayerController(WorldContextObject);
+    if (!PC)
+    {
+        return nullptr;
+    }
+    
+    // 인스턴스 생성
+    Instance = CreateWidget<UTextureDisplayWidget>(PC, UTextureDisplayWidget::StaticClass());
+    if (Instance)
+    {
+        Instance->AddToViewport(10000);
+        Instance->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+    }
+    
+    return Instance;
 }
 
 // 추가: 위젯 소멸 시 정적 인스턴스 초기화

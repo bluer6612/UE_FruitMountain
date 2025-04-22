@@ -116,7 +116,7 @@ int32 UScoreManagerComponent::AddScore(int32 BallType)
     if (bComboActive)
     {
         // 기존 콤보 연장
-        ComboCount++;
+        ComboCount += 1;
         ExtendComboTime();
     }
     else
@@ -138,10 +138,11 @@ int32 UScoreManagerComponent::AddScore(int32 BallType)
     AddToTotalScore(FinalScore);
     
     // 6. 로그 출력
-    if (ComboCount >= 2)
+    int32 localComboCount = ComboCount; // 로컬 변수명 변경
+    if (localComboCount >= 2)
     {
         UE_LOG(LogTemp, Warning, TEXT("%d연쇄 병합! 기본점수: %d, 보너스율: %.1f배, 최종점수: %d"),
-               ComboCount, BaseScore, ComboMultiplier, FinalScore);
+               localComboCount, BaseScore, ComboMultiplier, FinalScore);
     }
     else
     {
@@ -149,15 +150,15 @@ int32 UScoreManagerComponent::AddScore(int32 BallType)
     }
     
     // 7. 이벤트 발생
-    OnScoreAdded.Broadcast(FinalScore, ComboCount, ComboMultiplier);
+    OnScoreAdded.Broadcast(FinalScore, localComboCount, ComboMultiplier);
     
     // 8. UI 업데이트
-    UpdateWidgets(FinalScore, ComboCount, ComboMultiplier);
+    UpdateWidgets(FinalScore, localComboCount, ComboMultiplier);
     
     return FinalScore;
 }
 
-void UScoreManagerComponent::UpdateWidgets(int32 Score, int32 ComboCount, float ComboMultiplier)
+void UScoreManagerComponent::UpdateWidgets(int32 Score, int32 LocalComboCount, float LocalComboMultiplier)
 {
     // 획득 점수 애니메이션 표시
     if (!ScoreWidgetInstance)
@@ -167,7 +168,7 @@ void UScoreManagerComponent::UpdateWidgets(int32 Score, int32 ComboCount, float 
     
     if (IsValid(ScoreWidgetInstance))
     {
-        ScoreWidgetInstance->DisplayScoreGain(Score, ComboCount, ComboMultiplier);
+        ScoreWidgetInstance->DisplayScoreGain(Score, LocalComboCount, LocalComboMultiplier);
     }
 }
 
@@ -273,9 +274,4 @@ void UScoreManagerComponent::AddToTotalScore(int32 ScoreToAdd)
     {
         TotalScoreWidgetInstance->UpdateTotalScore(TotalScore);
     }
-}
-
-int32 UScoreManagerComponent::GetTotalScore() const
-{
-    return TotalScore;
 }

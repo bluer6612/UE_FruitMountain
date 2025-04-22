@@ -54,9 +54,40 @@ void UScoreDisplayWidget::NativeDestruct()
 
 UScoreDisplayWidget* UScoreDisplayWidget::CreateScoreWidget(UObject* WorldContextObject)
 {
-    // UIHelper를 사용한 싱글톤 위젯 생성
     static const FString BlueprintPath = TEXT("/Game/UI/PlayLevel/BP_UI_Play_GetScore.BP_UI_Play_GetScore_C");
-    return UUIHelper::CreateSingletonWidget<UScoreDisplayWidget>(Instance, ScoreWidgetClass, WorldContextObject, BlueprintPath, 10001);
+    
+    // 이미 인스턴스가 있는지 확인
+    if (Instance && IsValid(Instance) && Instance->IsInViewport())
+    {
+        return Instance;
+    }
+    
+    // 플레이어 컨트롤러 확인
+    APlayerController* PC = UUIHelper::GetValidPlayerController(WorldContextObject);
+    if (!PC)
+    {
+        return nullptr;
+    }
+    
+    // 위젯 클래스 로드
+    if (!ScoreWidgetClass)
+    {
+        ScoreWidgetClass = LoadClass<UUserWidget>(nullptr, *BlueprintPath);
+        if (!ScoreWidgetClass)
+        {
+            return nullptr;
+        }
+    }
+    
+    // 인스턴스 생성
+    Instance = CreateWidget<UScoreDisplayWidget>(PC, ScoreWidgetClass);
+    if (Instance)
+    {
+        Instance->AddToViewport(10001);
+        Instance->SetVisibility(ESlateVisibility::HitTestInvisible);
+    }
+    
+    return Instance;
 }
 
 void UScoreDisplayWidget::InitializeTextBlocks()

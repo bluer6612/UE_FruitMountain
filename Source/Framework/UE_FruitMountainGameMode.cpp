@@ -49,19 +49,19 @@ void AUE_FruitMountainGameMode::BeginPlay()
     UTotalScoreWidget* TotalScoreWidget = UTotalScoreWidget::CreateTotalScoreWidget(this);
 
     // ScoreManager 컴포넌트 가져오기 또는 생성
-    UScoreManagerComponent* ScoreManager = FindComponentByClass<UScoreManagerComponent>();
-    if (!ScoreManager)
+    UScoreManagerComponent* ScoreManagerComp = FindComponentByClass<UScoreManagerComponent>();
+    if (!ScoreManagerComp)
     {
-        ScoreManager = NewObject<UScoreManagerComponent>(this, UScoreManagerComponent::StaticClass());
-        ScoreManager->RegisterComponent();
+        ScoreManagerComp = NewObject<UScoreManagerComponent>(this, UScoreManagerComponent::StaticClass());
+        ScoreManagerComp->RegisterComponent();
     }
     
     // 위젯 연결
-    if (ScoreManager)
+    if (ScoreManagerComp)
     {
-        ScoreManager->ScoreWidgetInstance = ScoreWidget;
-        ScoreManager->TotalScoreWidgetInstance = TotalScoreWidget;
-        ScoreManager->bWidgetCreated = true;
+        ScoreManagerComp->ScoreWidgetInstance = ScoreWidget;
+        ScoreManagerComp->TotalScoreWidgetInstance = TotalScoreWidget;
+        ScoreManagerComp->bWidgetCreated = true;
     }
 }
 
