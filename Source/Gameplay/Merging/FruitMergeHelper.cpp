@@ -5,85 +5,106 @@
 #include "Gameplay/Controller/FruitPlayerController.h"
 #include "FruitMergeFeedbackHelper.h"
 #include "Gameplay/Score/ScoreManagerComponent.h"
+#include "Engine/StaticMesh.h"
 
-void UFruitMergeHelper::TryMergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& CollisionPoint)
+void UFruitMergeHelper::RegisterCollisionHandlers(AFruitBall* Fruit)
 {
-    if (!FruitA || !FruitB) {
-        UE_LOG(LogTemp, Error, TEXT("TryMergeFruits: 과일 참조가 유효하지 않음"));
+    if (!Fruit || !Fruit->GetMeshComponent())
+    {
+        UE_LOG(LogTemp, Error, TEXT("UFruitMergeHelper: 유효하지 않은 과일 또는 메시 컴포넌트"));
+        return;
+    }
+
+    // 미리보기 과일 체크 (추가 안전장치)
+    if (Fruit->bIsPreviewBall)
+    {
+        return;
+    }
+
+    // 충돌 이벤트에 연결
+    Fruit->GetMeshComponent()->OnComponentHit.AddDynamic(Fruit, &AFruitBall::OnBallHit);
+    //UE_LOG(LogTemp, Log, TEXT("과일 충돌 핸들러 등록 완료: %s"), *Fruit->GetName());
+}
+
+void UFruitMergeHelper::ProcessFruitCollision(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& CollisionPoint)
+{
+    // 유효성 검사
+    if (!FruitA || !FruitB)
+    {
         return;
     }
     
-    // 미리보기 공 체크 - 둘 중 하나라도 미리보기 공이면 병합하지 않음
-    if (FruitA->IsPreviewBall() || FruitB->IsPreviewBall()) {
-        UE_LOG(LogTemp, Verbose, TEXT("미리보기 공과의 충돌 무시"));
+    // 1. 병합 제외 조건 확인 (빠른 실패)
+    
+    // 미리보기 공 체크
+    if (FruitA->IsPreviewBall() || FruitB->IsPreviewBall())
+    {
         return;
     }
     
-    // 두 과일의 타입 가져오기
+    // 이미 병합 중인 과일 체크
+    if (FruitA->IsMerging() || FruitB->IsMerging())
+    {
+        return;
+    }
+    
+    // 타입이 다른 과일 체크
     int32 TypeA = FruitA->GetBallType();
     int32 TypeB = FruitB->GetBallType();
-    
-    // 타입이 서로 다르면 병합하지 않음
-    if (TypeA != TypeB) {
-        return; 
-    }
-    
-    // 이미 병합 중인 과일이면 무시
-    if (FruitA->IsMerging() || FruitB->IsMerging()) {
-        UE_LOG(LogTemp, Warning, TEXT("이미 병합중인 과일이 있음"));
+    if (TypeA != TypeB)
+    {
         return;
     }
     
-    // 두 과일 모두 병합 상태로 설정
+    // 2. 병합 실행 (모든 조건 통과)
+    
+    // 병합 상태 설정
     FruitA->SetMerging(true);
     FruitB->SetMerging(true);
     
-    // 병합 처리 수행
+    // 병합 실행
     MergeFruits(FruitA, FruitB, CollisionPoint);
 }
 
 void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& MergeLocation)
 {
-    if (!FruitA || !FruitB) {
-        UE_LOG(LogTemp, Error, TEXT("MergeFruits: 과일 참조가 유효하지 않음"));
+    if (!FruitA || !FruitB)
+    {
         return;
     }
     
-    // 두 과일의 타입 가져오기
-    int32 TypeA = FruitA->GetBallType();
-    int32 TypeB = FruitB->GetBallType();
-    
     UWorld* World = FruitA->GetWorld();
-    if (!World) return;
+    if (!World)
+    {
+        return;
+    }
     
-    // 이펙트 및 점수 처리
-    UFruitMergeFeedbackHelper::PlayMergeEffect(World, MergeLocation, TypeA);
-    UScoreManagerComponent::AddScoreStatic(World, TypeA);
+    // 1. 피드백 및 점수 처리
+    int32 FruitType = FruitA->GetBallType();
+    UFruitMergeFeedbackHelper::PlayMergeEffect(World, MergeLocation, FruitType);
+    UScoreManagerComponent::AddScoreStatic(World, FruitType);
     
-    // 병합 위치 주변 과일들의 속도 감소 (폭발적 충돌 방지)
+    // 2. 주변 물리 안정화 (폭발적 충돌 방지)
     UFruitMergeFeedbackHelper::StabilizeFruits(World);
     
-    // 마지막 레벨 체크
-    if (TypeA >= AFruitBall::MaxBallType)
+    // 3. 최대 레벨 확인
+    if (FruitType >= AFruitBall::MaxBallType)
     {
-        UE_LOG(LogTemp, Warning, TEXT("병합 완료: 최대 레벨 과일 병합"));
-        
+        // 최대 레벨이면 두 과일만 제거하고 종료
         FruitA->Destroy();
         FruitB->Destroy();
         return;
     }
     
-    // 새 과일 생성 전에 기존 과일의 회전값 저장
+    // 4. 새 과일 생성
     FRotator ExistingRotation = FruitA->GetActorRotation();
+    int32 NextType = FruitType + 1;
     
-    // 새 과일 생성
+    // 플레이어 컨트롤러를 통한 생성
     AFruitPlayerController* Controller = Cast<AFruitPlayerController>(UGameplayStatics::GetPlayerController(World, 0));
     if (Controller)
     {
-        // 다음 레벨의 과일 생성
-        int32 NextType = TypeA + 1;
-
-        // 정확히 병합 위치에 생성
+        // 새 과일 스폰
         AActor* SpawnedActor = UFruitSpawnHelper::SpawnBall(Controller, MergeLocation, NextType, true);
         AFruitBall* NewFruit = Cast<AFruitBall>(SpawnedActor);
         
@@ -94,7 +115,7 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
             NewFruit->SetActorRotation(ExistingRotation);
             
             // 새 과일 물리 속성 설정
-            UFruitMergeFeedbackHelper::StabilizeFruits(World, NewFruit, 8.0f, true);
+            UFruitMergeFeedbackHelper::StabilizeFruits(World, 8.0f, true);
         }
         
         UE_LOG(LogTemp, Warning, TEXT("새 과일 생성 완료: 레벨=%d, 위치=%s"), 

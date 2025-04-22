@@ -167,7 +167,8 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
             // 수직 성분 보정 - 강화
             float VerticalAdjust = 1.25f; // 1.0f에서 1.25f로 증가
 
-            if (BaseResult.UseAngle > 45.0f) {
+            if (BaseResult.UseAngle > 45.0f)
+            {
                 // 각도가 높을 때도 수직 성분 유지
                 VerticalAdjust = FMath::Lerp(1.25f, 1.2f, (BaseResult.UseAngle - 45.0f) / 15.0f);
             }
@@ -193,7 +194,8 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
             Result.LaunchVelocity = Result.LaunchDirection * Result.InitialSpeed;
             
             // 조정이 의미있는 수준일 때만 로그 출력
-            if (HorizontalBoost > 1.01f || SpeedBoost > 1.01f || VerticalAdjust < 0.99f) {
+            if (HorizontalBoost > 1.01f || SpeedBoost > 1.01f || VerticalAdjust < 0.99f)
+            {
                 // UE_LOG(LogTemp, Warning, TEXT("궤적 자연스러운 보정: 수평=%.1f%%, 수직=%.1f%%, 속도=%.1f%% (거리오차: %.1f, 각도: %.1f)"),
                 //        HorizontalBoost * 100.0f, VerticalAdjust * 100.0f, SpeedBoost * 100.0f, 
                 //        XYDistance, BaseResult.UseAngle);

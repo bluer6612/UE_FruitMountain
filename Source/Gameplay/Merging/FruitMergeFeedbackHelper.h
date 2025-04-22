@@ -4,8 +4,9 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "FruitMergeFeedbackHelper.generated.h"
 
-class UWorld;
+class UPrimitiveComponent;
 class AFruitBall;
+class APlateActor;
 
 UCLASS()
 class UE_FRUITMOUNTAIN_API UFruitMergeFeedbackHelper : public UBlueprintFunctionLibrary
@@ -13,14 +14,16 @@ class UE_FRUITMOUNTAIN_API UFruitMergeFeedbackHelper : public UBlueprintFunction
     GENERATED_BODY()
     
 public:
+    // 여러 과일 안정화 처리 (단일 과일도 처리 가능)
+    UFUNCTION(BlueprintCallable, Category = "Fruit Feedback")
+    static void StabilizeFruits(UWorld* World, float DampingMultiplier = 3.0f, bool bIsNewFruit = false);
+    
+    // 단일 과일 안정화 - 모든 충돌 유형에 대해 통합된 로직
+    UFUNCTION(BlueprintCallable, Category = "Fruit Feedback")
+    static void StabilizeSingleFruit(AFruitBall* Fruit, float DampingMultiplier = 3.0f, 
+                                    bool bIsNewFruit = false);
+
     // 병합 이펙트 재생
     UFUNCTION(BlueprintCallable, Category = "Fruit Feedback")
     static void PlayMergeEffect(UWorld* World, const FVector& Location, int32 BallType);
-    
-    // 통합된 과일 안정화 함수
-    UFUNCTION(BlueprintCallable, Category = "Fruit Physics")
-    static void StabilizeFruits(UWorld* World, AFruitBall* SingleFruit = nullptr, float DampingMultiplier = 20.0f, bool bIsNewFruit = false);
-    
-    // 단일 과일 물리 속성 안정화 (내부 헬퍼 함수)
-    static void StabilizeSingleFruit(AFruitBall* Fruit, float InitialDampingMultiplier, bool bIsNewFruit);
 };

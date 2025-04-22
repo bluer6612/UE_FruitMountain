@@ -22,7 +22,10 @@ public:
     
     // 공 크기 getter 함수 - 외부에서 공 크기 접근용
     UFUNCTION(BlueprintCallable, Category="Ball Properties")
-    float GetBaseBallSize() const { return BaseBallSize; }
+    float GetBaseBallSize() const
+    {
+        return BaseBallSize;
+    }
     
     // 공 크기 계산 (정적 함수로 구현)
     UFUNCTION(BlueprintCallable, Category="Fruit")
@@ -38,23 +41,41 @@ public:
 
     // 접근자 및 설정자
     UFUNCTION()
-    int32 GetBallType() const { return BallType; }
+    int32 GetBallType() const
+    {
+        return BallType;
+    }
 
     UFUNCTION()
-    void SetMerging(bool bMerging) { bIsBeingMerged = bMerging; }
+    void SetMerging(bool bMerging)
+    {
+        bIsBeingMerged = bMerging;
+    }
 
     UFUNCTION()
-    bool IsMerging() const { return bIsBeingMerged; }
+    bool IsMerging() const
+    {
+        return bIsBeingMerged;
+    }
 
     UFUNCTION()
-    UStaticMeshComponent* GetMeshComponent() const { return MeshComponent; }
+    UStaticMeshComponent* GetMeshComponent() const
+    {
+        return MeshComponent;
+    }
     
     // 접근자/설정자
     UFUNCTION()
-    void SetIsPreviewBall(bool bPreview) { bIsPreviewBall = bPreview; }
+    void SetIsPreviewBall(bool bPreview)
+    {
+        bIsPreviewBall = bPreview;
+    }
     
     UFUNCTION()
-    bool IsPreviewBall() const { return bIsPreviewBall; }
+    bool IsPreviewBall() const
+    {
+        return bIsPreviewBall;
+    }
     
     // 과일 타입에 맞는 메시 업데이트 함수
     UFUNCTION()
@@ -66,11 +87,17 @@ public:
     
     // 충돌 경험 여부 설정
     UFUNCTION()
-    void SetHasCollided(bool bNewValue) { bHasCollided = bNewValue; }
+    void SetHasCollided(bool bNewValue)
+    {
+        bHasCollided = bNewValue;
+    }
     
     // 충돌 경험 여부 확인
     UFUNCTION()
-    bool IsHasCollided() const { return bHasCollided; }
+    bool IsHasCollided() const
+    {
+        return bHasCollided;
+    }
 
     // 접시 액터 찾기 - 필요할 때만 호출하여 성능 최적화
     UFUNCTION(BlueprintCallable, Category = "Fruit Environment")
@@ -87,8 +114,9 @@ public:
 
     // 공의 최대 레벨
     static constexpr int MaxBallType = 11;
-    // 떨어진 것으로 간주되는 Z 좌표 (접시보다 낮은 위치)
-    static constexpr float FallThreshold = 80.f;
+
+    // 떨어진 것으로 간주되는 Z 좌표
+    static constexpr float FallThreshold = 100.f;
 
     // 미리보기 공 여부 플래그
     UPROPERTY()

@@ -1,11 +1,10 @@
 #include "FruitBall.h"
 #include "Components/StaticMeshComponent.h"
-#include "Gameplay/Merging/FruitCollisionHelper.h"
 #include "Gameplay/Merging/FruitMergeHelper.h"
+#include "Gameplay/Merging/FruitMergeFeedbackHelper.h"
 #include "Engine/StaticMesh.h"
 #include "Gameplay/Controller/FruitPlayerController.h"
 #include "Kismet/GameplayStatics.h"
-#include "Interface/HUD/FruitHUD.h"
 #include "System/Camera/CameraOrbitFunctionLibrary.h"
 #include "Gameplay/Physics/FruitTrajectoryHelper.h"
 #include "PlateActor.h"
@@ -215,17 +214,37 @@ void AFruitBall::Tick(float DeltaTime)
     }
 }
 
-void AFruitBall::OnBallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, 
-                       UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+void AFruitBall::OnBallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, 
+                       FVector NormalImpulse, const FHitResult& Hit)
 {
-    // 충돌 시 상태 업데이트 (처음 충돌한 경우에만)
+    // 충돌 경험 업데이트
     if (!bHasCollided)
     {
-        // 충돌 상태 업데이트 = 더 이상 투척 중이 아님
         bHasCollided = true;
     }
 
-    UFruitCollisionHelper::HandleBallHit(this, HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
+    // 모든 충돌에 대해 안정화 적용 (접시 구분 없음)
+    if (HitComponent && HitComponent->IsSimulatingPhysics())
+    {
+        // 충돌 강도에 따라 감쇠 정도 조절
+        float ImpactForce = NormalImpulse.Size();
+        float DampingMultiplier = FMath::Clamp(ImpactForce / 100.0f, 2.0f, 10.0f);
+        
+        // 통합된 안정화 함수 호출
+        UFruitMergeFeedbackHelper::StabilizeSingleFruit(this, DampingMultiplier);
+    }
+
+    // 접시와의 충돌인지 확인
+    if (OtherActor && !(OtherActor->ActorHasTag("Plate")))
+    {
+        // 과일-과일 충돌인 경우 병합 처리
+        AFruitBall* OtherFruit = Cast<AFruitBall>(OtherActor);
+        if (OtherFruit)
+        {
+            // 과일 충돌 처리 (병합 로직으로 바로 연결)
+            UFruitMergeHelper::ProcessFruitCollision(this, OtherFruit, Hit.ImpactPoint);
+        }
+    }
 }
 
 // 과일 타입에 맞는 메시 업데이트

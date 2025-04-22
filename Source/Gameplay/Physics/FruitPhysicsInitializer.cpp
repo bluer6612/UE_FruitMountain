@@ -130,12 +130,14 @@ void UFruitPhysicsInitializer::CalculateAdjustedTarget(const FPhysicsInitData& I
     Result.DistanceRatio *= AngleFactor;
     
     // 기존 코드 유지 (접시 높이, 거리 기반 보정)
-    if (Result.PlateTopHeight > 30.0f) {
+    if (Result.PlateTopHeight > 30.0f)
+    {
         float HeightFactor = (Result.PlateTopHeight - 30.0f) / 20.0f;
         Result.DistanceRatio *= (1.0f - 0.04f * HeightFactor);
     }
     
-    if (Result.HorizontalDistance > 300.0f) {
+    if (Result.HorizontalDistance > 300.0f)
+    {
         Result.DistanceRatio *= (0.9f - 0.1f * FMath::Min((Result.HorizontalDistance - 300.0f) / 200.0f, 0.3f));
     }
     

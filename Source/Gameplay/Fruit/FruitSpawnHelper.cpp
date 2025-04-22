@@ -1,14 +1,13 @@
 #include "FruitSpawnHelper.h"
-#include "Gameplay/Merging/FruitCollisionHelper.h"
-#include "Gameplay/Controller/FruitPlayerController.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/PrimitiveComponent.h"
+#include "Gameplay/Controller/FruitPlayerController.h"
+#include "Gameplay/Merging/FruitMergeHelper.h"
 #include "Actors/PlateActor.h"
 #include "Actors/FruitBall.h"
 
-// SpawnBall 함수 수정 - 기존 코드 유지
 AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, const FVector& Location, int32 BallType, bool bEnablePhysics)
 {
     if (!Controller || !Controller->FruitBallClass)
@@ -47,7 +46,7 @@ AActor* UFruitSpawnHelper::SpawnBall(AFruitPlayerController* Controller, const F
             // 여기서 직접 충돌 핸들러 등록 (미리보기 공이 아닐 때만)
             if (!FruitBall->bIsPreviewBall)
             {
-                UFruitCollisionHelper::RegisterCollisionHandlers(FruitBall);
+                UFruitMergeHelper::RegisterCollisionHandlers(FruitBall);
             }
             
             // 질량 설정 - 실제 과일일 경우만

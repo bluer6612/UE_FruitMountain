@@ -65,7 +65,10 @@ public:
     FORCEINLINE int32 GetCurrentComboScore() const { return CurrentComboScore; }
     
     // 콤보 설정 함수
-    FORCEINLINE void SetComboTimeLimit(float NewLimit) { ComboTimeLimit = NewLimit; }
+    FORCEINLINE void SetComboTimeLimit(float NewLimit)
+    {
+        ComboTimeLimit = NewLimit;
+    }
     
 private:
     // 콤보 관련 변수

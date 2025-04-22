@@ -13,15 +13,19 @@ class UE_FRUITMOUNTAIN_API UFruitMergeHelper : public UBlueprintFunctionLibrary
     GENERATED_BODY()
     
 public:
-    // 과일 병합 시도
-    UFUNCTION(BlueprintCallable, Category="Fruit Merge")
-    static void TryMergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& CollisionPoint);
-    
-    // 과일 병합 수행
-    UFUNCTION(BlueprintCallable, Category="Fruit Merge")
-    static void MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& MergeLocation);
+    // 충돌 이벤트 관리
+    UFUNCTION(BlueprintCallable, Category = "Fruit Merging")
+    static void RegisterCollisionHandlers(AFruitBall* Fruit);
 
-    // 모든 과일 메시를 미리 로드
-    UFUNCTION(BlueprintCallable, Category = "Fruit")
+    // 과일 충돌 처리 및 병합 조건 검사
+    UFUNCTION(BlueprintCallable, Category = "Fruit Merging")
+    static void ProcessFruitCollision(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& CollisionPoint);
+    
+    // 실제 병합 수행 (기존 함수)
+    UFUNCTION(BlueprintCallable, Category = "Fruit Merging")
+    static void MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& MergeLocation);
+    
+    // 모든 메시 사전 로드 (기존 함수)
+    UFUNCTION(BlueprintCallable, Category = "Fruit Merging")
     static void PreloadAllFruitMeshes(UWorld* World);
 };

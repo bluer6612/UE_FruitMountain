@@ -41,7 +41,10 @@ public:
     
     // 정적 인스턴스 반환 함수
     UFUNCTION(BlueprintCallable, Category = "UI Score")
-    static UTotalScoreWidget* GetInstance() { return Instance; }
+    static UTotalScoreWidget* GetInstance()
+    {
+        return Instance;
+    }
     
 protected:
     virtual void NativeConstruct() override;
