@@ -117,6 +117,21 @@ void UScoreManagerComponent::TickComponent(float DeltaTime, ELevelTick TickType,
     }
 }
 
+void UScoreManagerComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    Super::EndPlay(EndPlayReason);
+    
+    // ComboSystem 정리
+    if (ComboSystem && ComboSystem->IsRooted())
+    {
+        ComboSystem->RemoveFromRoot();
+        UE_LOG(LogTemp, Display, TEXT("EndPlay: ComboSystem 루트에서 제거"));
+    }
+    
+    // 참조 해제
+    ComboSystem = nullptr;
+}
+
 int32 UScoreManagerComponent::AddScore(int32 BallType)
 {
     if (!ComboSystem)

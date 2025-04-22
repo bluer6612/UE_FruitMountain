@@ -16,6 +16,16 @@ UComboSystem::UComboSystem()
     ScoreWidgetInstance = nullptr;
 }
 
+UComboSystem::~UComboSystem()
+{
+    // 루트에서 제거하여 메모리 누수 방지
+    if (IsRooted())
+    {
+        RemoveFromRoot();
+        UE_LOG(LogTemp, Display, TEXT("ComboSystem이 GC 보호에서 해제됨"));
+    }
+}
+
 void UComboSystem::Initialize(UObject* InOwner, UScoreDisplayWidget* InScoreWidget)
 {
     OwnerObject = InOwner;
@@ -28,7 +38,11 @@ void UComboSystem::Initialize(UObject* InOwner, UScoreDisplayWidget* InScoreWidg
     }
 
     // ComboSystem 객체의 생명주기가 ScoreWidgetAnimator보다 짧을 경우 문제가 발생할 수 있음
-    this->AddToRoot();  // 가비지 컬렉션에서 제외
+    if (!IsRooted())
+    {
+        this->AddToRoot();  // 가비지 컬렉션(GC)에서 제외
+        UE_LOG(LogTemp, Display, TEXT("ComboSystem이 GC로부터 보호됨"));
+    }
 }
 
 void UComboSystem::Tick(float DeltaTime)
@@ -126,13 +140,17 @@ void UComboSystem::StartScoreTextAnimation(int32 Score, int32 LocalComboCount, f
         // 기존 바인딩 제거
         Animator->OnAnimationEnd.Clear();
         
-        // AddLambda 대신 AddDynamic 사용
-        // OnScoreAnimationEnded 함수가 UFUNCTION()으로 선언되어 있어야 함
+        // AddDynamic 사용 (OnScoreAnimationEnded 함수가 UFUNCTION()으로 선언되어 있어야 함)
         Animator->OnAnimationEnd.AddDynamic(this, &UComboSystem::OnScoreAnimationEnded);
         
+        // 바인딩 확인
         if (Animator->OnAnimationEnd.IsBound())
         {
             UE_LOG(LogTemp, Display, TEXT("애니메이션 델리게이트 바인딩 성공"));
+            
+            // 중요: 여기서 실제 페이드아웃 트리거 추가
+            // 짧은 지연 후 페이드 아웃 시작
+            Animator->StartFadeOutAnimation(this, 1.0f);
         }
         else
         {

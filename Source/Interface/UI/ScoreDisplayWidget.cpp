@@ -139,51 +139,36 @@ void UScoreDisplayWidget::SetupTextBlock(UTextBlock* TextBlock, FLinearColor Col
 
 void UScoreDisplayWidget::DisplayScoreGain(int32 Score, int32 ComboCount, float ComboMultiplier)
 {
-    if (!ScoreTextBlock || !ComboMultiplierTextBlock)
+    if (!ScoreTextBlock || !ComboMultiplierTextBlock || !WidgetAnimator)
     {
-        UE_LOG(LogTemp, Error, TEXT("텍스트 블록이 유효하지 않음!"));
+        UE_LOG(LogTemp, Error, TEXT("DisplayScoreGain: 위젯 구성요소가 null입니다"));
         return;
     }
     
-    if (!GetWorld())
-    {
-        UE_LOG(LogTemp, Error, TEXT("World를 가져올 수 없음!"));
-        return;
-    }
-    
-    // 총 점수는 계속 누적
-    TotalScoreGain += Score;
-    
-    // 콤보가 끊어진 경우 점수 초기화, 아니면 누적
-    if (ComboCount == 1 && CurrentComboMultiplier > 1.0f)
-    {
-        // 콤보가 끊어진 경우 (이전에 콤보 중이었다가 1로 떨어진 경우)
-        CurrentScoreGain = Score;
-    }
-    else
-    {
-        // 콤보가 유지되거나 증가하는 경우 - 점수 누적
-        CurrentScoreGain += Score;
-    }
-    
-    // 이전 애니메이션 취소 및 텍스트 블록 속성 초기화
+    // 기존 애니메이션 취소
     if (WidgetAnimator)
     {
         WidgetAnimator->CancelAnimation();
     }
     
-    // 색상 및 투명도 명시적으로 초기화
-    if (ScoreTextBlock)
+    // 텍스트 블록 위치 리셋
+    UCanvasPanelSlot* ScoreSlot = Cast<UCanvasPanelSlot>(ScoreTextBlock->Slot);
+    if (ScoreSlot)
     {
-        ScoreTextBlock->SetColorAndOpacity(BRIGHT_YELLOW_COLOR);
-    }
-    if (ComboMultiplierTextBlock)
-    {
-        ComboMultiplierTextBlock->SetColorAndOpacity(BRIGHT_YELLOW_COLOR);
+        ScoreSlot->SetPosition(SCORE_TEXT_POS);
     }
     
-    // 누적 점수 표시
-    FString ScoreText = FString::Printf(TEXT("+%d"), CurrentScoreGain);
+    UCanvasPanelSlot* ComboSlot = Cast<UCanvasPanelSlot>(ComboMultiplierTextBlock->Slot);
+    if (ComboSlot)
+    {
+        ComboSlot->SetPosition(COMBO_TEXT_POS);
+    }
+    
+    // 투명도 초기화 (완전 불투명)
+    ScoreTextBlock->SetColorAndOpacity(FLinearColor::White);
+    
+    // 점수 텍스트 업데이트
+    FString ScoreText = FString::Printf(TEXT("+%d"), Score);
     ScoreTextBlock->SetText(FText::FromString(ScoreText));
     ScoreTextBlock->SetVisibility(ESlateVisibility::HitTestInvisible);
     
@@ -194,38 +179,20 @@ void UScoreDisplayWidget::DisplayScoreGain(int32 Score, int32 ComboCount, float 
         FString ComboText = FString::Printf(TEXT("X%.1f"), CurrentComboMultiplier);
         ComboMultiplierTextBlock->SetText(FText::FromString(ComboText));
         ComboMultiplierTextBlock->SetVisibility(ESlateVisibility::HitTestInvisible);
-        ComboMultiplierTextBlock->SetColorAndOpacity(BRIGHT_YELLOW_COLOR); // 불투명도 초기화
+        ComboMultiplierTextBlock->SetColorAndOpacity(BRIGHT_YELLOW_COLOR);
     }
     else
     {
+        ComboMultiplierTextBlock->SetText(FText::GetEmpty());
         ComboMultiplierTextBlock->SetVisibility(ESlateVisibility::Hidden);
     }
     
-    // 애니메이션 시작 전에 텍스트 블록 위치 재확인
-    UCanvasPanelSlot* ScoreSlot = Cast<UCanvasPanelSlot>(ScoreTextBlock->Slot);
-    if (ScoreSlot)
-    {
-        // 올바른 위치에 있는지 확인하고, 필요하면 강제로 설정
-        if (ScoreSlot->GetPosition() != SCORE_TEXT_POS)
-        {
-            ScoreSlot->SetPosition(SCORE_TEXT_POS);
-        }
-    }
+    // 디버그 로그
+    UE_LOG(LogTemp, Display, TEXT("점수 표시: %d (콤보: %d, 배율: %.1f)"), 
+           Score, ComboCount, ComboMultiplier);
     
-    UCanvasPanelSlot* ComboSlot = Cast<UCanvasPanelSlot>(ComboMultiplierTextBlock->Slot);
-    if (ComboSlot)
-    {
-        if (ComboSlot->GetPosition() != COMBO_TEXT_POS)
-        {
-            ComboSlot->SetPosition(COMBO_TEXT_POS);
-        }
-    }
-    
-    // 애니메이션 시작
-    if (WidgetAnimator)
-    {
-        WidgetAnimator->StartFadeOutAnimation(this);
-    }
+    // 중요: 페이드아웃은 여기서 시작하지 않음 (ComboSystem에서 바인딩 후 시작하도록 변경)
+    bScoreTextActive = true;
 }
 
 void UScoreDisplayWidget::ResetComboDisplay()

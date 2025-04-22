@@ -21,6 +21,9 @@ class UE_FRUITMOUNTAIN_API UComboSystem : public UObject
 public:
     UComboSystem();
     
+    // 소멸자 추가
+    ~UComboSystem();
+    
     // 초기화 함수
     void Initialize(UObject* InOwner, UScoreDisplayWidget* InScoreWidget);
     
