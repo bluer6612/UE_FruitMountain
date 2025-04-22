@@ -88,16 +88,13 @@ void UFruitMergeFeedbackHelper::StabilizeFruits(UWorld* World, AFruitBall* Singl
         }
         
         // 미리보기 공이나 이미 병합, 투척 중인 과일 제외
-        if (Fruit->IsPreviewBall() || Fruit->IsMerging() || Fruit->IsBeingThrown())
+        if (Fruit->IsPreviewBall() || Fruit->IsMerging() || Fruit->IsHasCollided())
         {
             continue;
         }
         
-        // SingleFruit와 동일한 과일이면 입력받은 bIsNewFruit 사용, 나머지는 false
-        bool bTreatAsNewFruit = (SingleFruit == Fruit) ? bIsNewFruit : false;
-                
         // 각 과일 안정화 처리
-        StabilizeSingleFruit(Fruit, DampingMultiplier, bTreatAsNewFruit);
+        StabilizeSingleFruit(Fruit, DampingMultiplier, Fruit->bHasCollided);
     }
 }
 
@@ -124,7 +121,7 @@ void UFruitMergeFeedbackHelper::StabilizeSingleFruit(AFruitBall* Fruit, float In
     }
     
     // 투척 중인 과일은 안정화하지 않음
-    if (Fruit->IsBeingThrown())
+    if (Fruit->IsHasCollided())
     {
         return;
     }

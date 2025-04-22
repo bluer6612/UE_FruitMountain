@@ -9,7 +9,7 @@ UTotalScoreWidget* UTotalScoreWidget::Instance = nullptr;
 TSubclassOf<UUserWidget> UTotalScoreWidget::TotalScoreWidgetClass = nullptr;
 
 // 색상 상수 정의
-const FLinearColor UTotalScoreWidget::SCORE_BROWN_COLOR = FLinearColor(0.6f, 0.3f, 0.05f, 1.0f); // 갈색
+const FLinearColor UTotalScoreWidget::SCORE_BROWN_COLOR = FLinearColor(0.9f, 0.7f, 0.05f, 1.0f); // 갈색
 const FLinearColor UTotalScoreWidget::SCORE_SHADOW_COLOR = FLinearColor(0.0f, 0.0f, 0.0f, 0.7f); // 반투명 검은색
 
 UTotalScoreWidget::UTotalScoreWidget(const FObjectInitializer& ObjectInitializer)

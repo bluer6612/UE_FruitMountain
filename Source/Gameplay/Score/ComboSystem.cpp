@@ -135,8 +135,6 @@ void UComboSystem::StartScoreTextAnimation(int32 Score, int32 LocalComboCount, f
     UScoreWidgetAnimator* Animator = ScoreWidgetInstance->GetWidgetAnimator();
     if (Animator)
     {
-        UE_LOG(LogTemp, Display, TEXT("애니메이션 델리게이트 바인딩 시작"));
-        
         // 기존 바인딩 제거
         Animator->OnAnimationEnd.Clear();
         
@@ -146,15 +144,11 @@ void UComboSystem::StartScoreTextAnimation(int32 Score, int32 LocalComboCount, f
         // 바인딩 확인
         if (Animator->OnAnimationEnd.IsBound())
         {
-            UE_LOG(LogTemp, Display, TEXT("애니메이션 델리게이트 바인딩 성공"));
+            //UE_LOG(LogTemp, Display, TEXT("애니메이션 델리게이트 바인딩 성공"));
             
             // 중요: 여기서 실제 페이드아웃 트리거 추가
             // 짧은 지연 후 페이드 아웃 시작
             Animator->StartFadeOutAnimation(this, 1.0f);
-        }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT("애니메이션 델리게이트 바인딩 실패"));
         }
     }
     else
@@ -191,7 +185,7 @@ void UComboSystem::OnScoreAnimationEnded()
         OnComboScoreFinalized.Broadcast(CurrentComboScore);
         
         // 로그 출력
-        UE_LOG(LogTemp, Display, TEXT("콤보 점수 최종화: %d"), CurrentComboScore);
+        //UE_LOG(LogTemp, Display, TEXT("콤보 점수 최종화: %d"), CurrentComboScore);
         
         // 콤보 점수 초기화
         CurrentComboScore = 0;

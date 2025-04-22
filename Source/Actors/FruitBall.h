@@ -74,15 +74,7 @@ public:
     
     // 충돌 경험 여부 확인
     UFUNCTION()
-    bool HasCollidedBefore() const { return bHasCollided; }
-    
-    // 투척 중인지 확인하는 함수
-    UFUNCTION(BlueprintCallable, Category = "Fruit State")
-    bool IsBeingThrown() const { return bIsBeingThrown; }
-    
-    // 투척 상태 설정 함수
-    UFUNCTION(BlueprintCallable, Category = "Fruit State")
-    void SetBeingThrown(bool bNewState) { bIsBeingThrown = bNewState; }
+    bool IsHasCollided() const { return bHasCollided; }
 
     // 접시 액터 찾기 - 필요할 때만 호출하여 성능 최적화
     UFUNCTION(BlueprintCallable, Category = "Fruit Environment")
@@ -108,11 +100,11 @@ public:
 
     // 병합 중인지 여부
     UPROPERTY()
-    bool bIsBeingMerged;
+    bool bIsBeingMerged = false;
     
     // 충돌 경험 여부 트래킹
     UPROPERTY()
-    bool bHasCollided = false;
+    bool bHasCollided = true;
     
     // 현재 과일 레벨
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Fruit")
@@ -128,10 +120,6 @@ protected:
     
     // 게임오버 타이머 핸들
     FTimerHandle GameOverTimerHandle;
-
-    // 투척 중인지 여부를 나타내는 플래그
-    UPROPERTY(BlueprintReadOnly, Category = "Fruit State")
-    bool bIsBeingThrown = true;
 
 private:
     // 접시 액터 캐싱 (성능 최적화)

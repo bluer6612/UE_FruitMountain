@@ -34,9 +34,6 @@ void UScoreWidgetAnimator::StartFadeOutAnimation(UObject* WorldContextObject, fl
         UE_LOG(LogTemp, Error, TEXT("ScoreTextBlock이 유효하지 않습니다"));
         return;
     }
-
-    // 디버그 로그 추가
-    UE_LOG(LogTemp, Display, TEXT("StartFadeOutAnimation 호출됨, 딜레이: %.2f"), Delay);
     
     // 기존 애니메이션 취소
     CancelAnimation();
@@ -73,8 +70,8 @@ void UScoreWidgetAnimator::StartFadeOutAnimation(UObject* WorldContextObject, fl
         World->GetTimerManager().SetTimer(AnimTimerHandle, DelayedStart, Delay, false);
         bAnimationActive = true;
         
-        UE_LOG(LogTemp, Display, TEXT("애니메이션 타이머 설정 완료, 타이머 핸들 유효: %s"), 
-               AnimTimerHandle.IsValid() ? TEXT("예") : TEXT("아니오"));
+        //UE_LOG(LogTemp, Display, TEXT("애니메이션 타이머 설정 완료, 타이머 핸들 유효: %s"), 
+        //       AnimTimerHandle.IsValid() ? TEXT("예") : TEXT("아니오"));
     }
     else
     {
@@ -141,37 +138,44 @@ FTimerDelegate UScoreWidgetAnimator::CreateFadeDelegate(const FVector2D& ScorePo
         CurrentAnimStep++;
         
         // 매개변수화된 상수 사용하여 애니메이션 값 계산
-        float Alpha = 1.0f - (CurrentAnimStep * Params.AlphaStepSize);
+        // 동일한 알파 값 사용 - 정확하게 동일한 페이드아웃 속도 보장
+        float Alpha = FMath::Max(1.0f - (CurrentAnimStep * Params.AlphaStepSize), 0.0f);
         float CurrentMoveX = CurrentAnimStep * Params.MoveStepSize;
         
         // ScoreTextBlock 애니메이션
-        FLinearColor TextColor = FLinearColor::White;
-        TextColor.A = Alpha;
-        ScoreTextBlock->SetColorAndOpacity(TextColor);
+        FLinearColor ScoreColor = FLinearColor::White;
+        ScoreColor.A = Alpha;
+        ScoreTextBlock->SetColorAndOpacity(ScoreColor);
         
         if (UCanvasPanelSlot* ScoreSlot = Cast<UCanvasPanelSlot>(ScoreTextBlock->Slot))
         {
             ScoreSlot->SetPosition(FVector2D(ScorePos.X - CurrentMoveX, ScorePos.Y));
         }
         
-        // ComboMultiplierTextBlock 애니메이션 - IsVisible() 조건 제거
+        // ComboMultiplierTextBlock 애니메이션 - 텍스트가 있는 경우만 처리
         if (ComboMultiplierTextBlock && !ComboMultiplierTextBlock->GetText().IsEmpty())
         {
+            // 점수 텍스트와 정확히 동일한 알파 값 사용
             FLinearColor ComboColor = UScoreDisplayWidget::BRIGHT_YELLOW_COLOR;
-            ComboColor.A = Alpha;
+            ComboColor.A = Alpha; // ScoreColor와 동일한 알파 값
             ComboMultiplierTextBlock->SetColorAndOpacity(ComboColor);
             
             if (UCanvasPanelSlot* ComboSlot = Cast<UCanvasPanelSlot>(ComboMultiplierTextBlock->Slot))
             {
+                // 점수 텍스트와 동일한 이동 거리 적용
                 ComboSlot->SetPosition(FVector2D(ComboPos.X - CurrentMoveX, ComboPos.Y));
             }
+        }
+        
+        // 디버깅 - 알파 값 확인 (가끔만 출력)
+        if (CurrentAnimStep % 5 == 0)
+        {
+            UE_LOG(LogTemp, Verbose, TEXT("애니메이션 스텝 %d: 알파 %.2f"), CurrentAnimStep, Alpha);
         }
         
         // 애니메이션 종료 체크
         if (CurrentAnimStep >= Params.TotalSteps)
         {
-            UE_LOG(LogTemp, Display, TEXT("페이드 아웃 애니메이션 완료"));
-            
             // 타이머 중지
             ScoreTextBlock->GetWorld()->GetTimerManager().ClearTimer(AnimTimerHandle);
             
@@ -185,8 +189,6 @@ FTimerDelegate UScoreWidgetAnimator::CreateFadeDelegate(const FVector2D& ScorePo
 
 void UScoreWidgetAnimator::ExecuteFadeOut()
 {
-    UE_LOG(LogTemp, Display, TEXT("ExecuteFadeOut 호출됨"));
-
     if (!ScoreTextBlock || !ScoreTextBlock->GetWorld())
     {
         UE_LOG(LogTemp, Error, TEXT("ExecuteFadeOut: ScoreTextBlock 또는 World가 유효하지 않음"));
@@ -231,9 +233,6 @@ void UScoreWidgetAnimator::ExecuteFadeOut()
         Params.FrameInterval, 
         true
     );
-    
-    UE_LOG(LogTemp, Display, TEXT("페이드 애니메이션 시작: 총 단계 %d, 간격 %.3f초"), 
-           Params.TotalSteps, Params.FrameInterval);
 }
 
 // ExecuteAnimationEnd() 함수 수정

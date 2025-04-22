@@ -36,6 +36,13 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
     // 공 던지기 - 물리 헬퍼 활용하여 힘 적용
     if (SpawnedBall)
     {
+        // 새로 던지는 과일은 충돌 경험이 없는 상태로 설정
+        AFruitBall* FruitBall = Cast<AFruitBall>(SpawnedBall);
+        if (FruitBall)
+        {
+            FruitBall->SetHasCollided(false);
+        }
+
         UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(
             SpawnedBall->GetComponentByClass(UStaticMeshComponent::StaticClass()));
             

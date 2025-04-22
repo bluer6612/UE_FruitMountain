@@ -44,9 +44,6 @@ void UFruitCollisionHelper::HandleBallHit(AFruitBall* Fruit, UPrimitiveComponent
                      UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
     if (!Fruit) return;
-
-    // 충돌 경험 설정
-    Fruit->SetHasCollided(true);
     
     // 접시와의 충돌인지 확인
     if (OtherActor && (OtherActor->ActorHasTag("Plate")))
