@@ -32,8 +32,8 @@ void UComboSystem::SafeCleanup()
     
     if (!bAlreadyCleaned)
     {
-        // 루트에서 제거 시도 (GC와 충돌하지 않도록 조건부 확인)
-        if (HasAnyFlags(RF_RootSet))
+        // ComboSystem 객체의 생명주기가 ScoreWidgetAnimator보다 짧을 경우 문제가 발생할 수 있음
+        if (IsRooted())
         {
             UE_LOG(LogTemp, Display, TEXT("ComboSystem 정리: 루트에서 제거"));
             RemoveFromRoot();
@@ -59,9 +59,8 @@ void UComboSystem::Initialize(UObject* InOwner, UScoreDisplayWidget* InScoreWidg
         ScoreWidgetInstance = UScoreDisplayWidget::Instance;
     }
 
-    // ComboSystem 객체의 생명주기가 ScoreWidgetAnimator보다 짧을 경우 문제가 발생할 수 있음
-    // IsRooted() 대신 플래그 확인으로 변경
-    if (!HasAnyFlags(RF_RootSet))
+    // HasAnyFlags(RF_RootSet) 대신 IsRooted() 함수 사용
+    if (!IsRooted())
     {
         this->AddToRoot();
         UE_LOG(LogTemp, Display, TEXT("ComboSystem이 GC로부터 보호됨"));
