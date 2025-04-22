@@ -5,6 +5,7 @@
 #include "Components/TextBlock.h"
 #include "ScoreWidgetAnimator.generated.h"
 
+// 델리게이트 선언이 올바른지 확인
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnScoreAnimationEndDelegate);
 
 // 애니메이션 구성을 위한 파라미터 구조체

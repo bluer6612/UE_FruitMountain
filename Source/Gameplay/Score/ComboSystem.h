@@ -93,7 +93,7 @@ private:
     void OnComboTimerExpired();
     
     // 애니메이션 종료 콜백
-    UFUNCTION()
+    UFUNCTION()  // 여기에 반드시 UFUNCTION 매크로가 있어야 함
     void OnScoreAnimationEnded();
     
     // 텍스트 애니메이션 시작
