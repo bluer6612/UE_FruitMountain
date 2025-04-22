@@ -21,7 +21,7 @@ UScoreDisplayWidget::UScoreDisplayWidget(const FObjectInitializer& ObjectInitial
     : Super(ObjectInitializer)
 {
     TotalScoreGain = 0;
-    CurrentScoreGain = 0;  // 새 변수 초기화
+    CurrentScoreGain = 0;
     CurrentComboMultiplier = 1.0f;
     bScoreTextActive = false;
     WidgetAnimator = nullptr;
@@ -54,34 +54,9 @@ void UScoreDisplayWidget::NativeDestruct()
 
 UScoreDisplayWidget* UScoreDisplayWidget::CreateScoreWidget(UObject* WorldContextObject)
 {
-    // 기존 유효 인스턴스 확인
-    if (IsInstanceValid())
-    {
-        return Instance;
-    }
-    
-    // 플레이어 컨트롤러 가져오기
-    APlayerController* Controller = GetValidPlayerController(WorldContextObject);
-    if (!Controller)
-    {
-        return nullptr;
-    }
-    
-    // 위젯 클래스 로드
-    if (!LoadWidgetClassIfNeeded())
-    {
-        return nullptr;
-    }
-    
-    // 인스턴스 생성 및 뷰포트에 추가
-    Instance = CreateWidget<UScoreDisplayWidget>(Controller, ScoreWidgetClass);
-    if (Instance)
-    {
-        Instance->AddToViewport(10001);
-        Instance->SetVisibility(ESlateVisibility::HitTestInvisible);
-    }
-    
-    return Instance;
+    // UIHelper를 사용한 싱글톤 위젯 생성
+    static const FString BlueprintPath = TEXT("/Game/UI/PlayLevel/BP_UI_Play_GetScore.BP_UI_Play_GetScore_C");
+    return UUIHelper::CreateSingletonWidget<UScoreDisplayWidget>(Instance, ScoreWidgetClass, WorldContextObject, BlueprintPath, 10001);
 }
 
 void UScoreDisplayWidget::InitializeTextBlocks()
@@ -103,10 +78,21 @@ void UScoreDisplayWidget::InitializeTextBlocks()
     UE_LOG(LogTemp, Warning, TEXT("ScoreDisplayWidget: 텍스트 블록 위치 절대좌표로 설정됨"));
 }
 
+// SetupTextBlock 함수도 UIHelper 함수 사용으로 간소화
 void UScoreDisplayWidget::SetupTextBlock(UTextBlock* TextBlock, FLinearColor Color, int32 FontSize, FVector2D Pos)
 {
     // 스타일 설정
-    UUIHelper::SetupTextBlockStyle(TextBlock, Color, FontSize, true);
+    UUIHelper::SetupTextBlockStyle(
+        TextBlock, 
+        Color, 
+        FontSize, 
+        true,                              // 그림자 사용
+        FLinearColor(0.0f, 0.0f, 0.0f, 0.5f),  // 그림자 색상
+        FVector2D(1.5f, 1.5f),            // 그림자 오프셋
+        true,                              // 볼드체
+        false,                             // 자동 줄바꿈 안함
+        ESlateVisibility::Hidden           // 초기에 숨김
+    );
     
     // 위치 설정
     UCanvasPanelSlot* TextSlot = Cast<UCanvasPanelSlot>(TextBlock->Slot);
@@ -116,15 +102,12 @@ void UScoreDisplayWidget::SetupTextBlock(UTextBlock* TextBlock, FLinearColor Col
         TextSlot->SetAlignment(FVector2D::ZeroVector);
         TextSlot->SetPosition(Pos);
         TextSlot->SetSize(FVector2D(TextBlock == ScoreTextBlock ? 200.0f : 180.0f, 
-                               TextBlock == ScoreTextBlock ? 80.0f : 70.0f));
+                           TextBlock == ScoreTextBlock ? 80.0f : 70.0f));
     }
 }
 
 void UScoreDisplayWidget::DisplayScoreGain(int32 Score, int32 ComboCount, float ComboMultiplier)
 {
-    //UE_LOG(LogTemp, Warning, TEXT("DisplayScoreGain 호출됨: 점수=%d, 콤보=%d, 배율=%.1f"), 
-    //       Score, ComboCount, ComboMultiplier);
-    
     if (!ScoreTextBlock || !ComboMultiplierTextBlock)
     {
         UE_LOG(LogTemp, Error, TEXT("텍스트 블록이 유효하지 않음!"));
@@ -194,7 +177,6 @@ void UScoreDisplayWidget::DisplayScoreGain(int32 Score, int32 ComboCount, float 
         if (ScoreSlot->GetPosition() != SCORE_TEXT_POS)
         {
             ScoreSlot->SetPosition(SCORE_TEXT_POS);
-            // UE_LOG(LogTemp, Warning, TEXT("점수 위치 재조정됨: (%.1f, %.1f)"), SCORE_TEXT_POS.X, SCORE_TEXT_POS.Y);
         }
     }
     
@@ -212,8 +194,6 @@ void UScoreDisplayWidget::DisplayScoreGain(int32 Score, int32 ComboCount, float 
     {
         WidgetAnimator->StartFadeOutAnimation(this);
     }
-    
-    // UE_LOG(LogTemp, Warning, TEXT("점수 표시 설정 완료: '%s'"), *ScoreText);
 }
 
 void UScoreDisplayWidget::ResetComboDisplay()
@@ -232,39 +212,5 @@ void UScoreDisplayWidget::ResetComboDisplay()
 // 정적 함수 구현
 bool UScoreDisplayWidget::IsInstanceValid()
 {
-    return Instance && IsValid(Instance) && Instance->IsInViewport();
-}
-
-APlayerController* UScoreDisplayWidget::GetValidPlayerController(UObject* WorldContextObject)
-{
-    UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
-    if (!World) {
-        UE_LOG(LogTemp, Error, TEXT("GetValidPlayerController: World가 유효하지 않음!"));
-        return nullptr;
-    }
-    
-    APlayerController* Controller = World->GetFirstPlayerController();
-    if (!Controller) {
-        UE_LOG(LogTemp, Error, TEXT("GetValidPlayerController: PlayerController가 유효하지 않음!"));
-        return nullptr;
-    }
-    
-    return Controller;
-}
-
-bool UScoreDisplayWidget::LoadWidgetClassIfNeeded()
-{
-    if (ScoreWidgetClass) {
-        return true;
-    }
-    
-    static const TCHAR* BlueprintPath = TEXT("/Game/UI/PlayLevel/BP_UI_Play_GetScore.BP_UI_Play_GetScore_C");
-    ScoreWidgetClass = LoadClass<UUserWidget>(nullptr, BlueprintPath);
-    
-    if (!ScoreWidgetClass) {
-        UE_LOG(LogTemp, Error, TEXT("블루프린트를 찾을 수 없습니다: %s"), BlueprintPath);
-        return false;
-    }
-    
-    return true;
+    return UUIHelper::IsWidgetInstanceValid(Instance);
 }

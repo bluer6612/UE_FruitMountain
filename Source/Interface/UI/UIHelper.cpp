@@ -4,6 +4,7 @@
 #include "Components/TextBlock.h"
 #include "Engine/Texture2D.h"
 #include "Components/Widget.h"
+#include "Kismet/GameplayStatics.h"
 
 void UUIHelper::SetAnchorForSlot(UCanvasPanelSlot* CanvasSlot, EWidgetAnchor Anchor, float PaddingX, float PaddingY)
 {
@@ -107,26 +108,50 @@ UTexture2D* UUIHelper::LoadAndApplyTexture(UImage* ImageWidget, const FString& T
     return LoadedTexture;
 }
 
-void UUIHelper::SetupTextBlockStyle(UTextBlock* TextBlock, FLinearColor Color, int32 FontSize, bool bWithShadow, ESlateVisibility DefaultVisibility)
+// SetupTextBlockStyle 함수 구현 확장
+void UUIHelper::SetupTextBlockStyle(
+    UTextBlock* TextBlock, 
+    FLinearColor Color,
+    int32 FontSize, 
+    bool bWithShadow,
+    FLinearColor ShadowColor,
+    FVector2D ShadowOffset,
+    bool bBold,
+    bool bAutoWrapText,
+    ESlateVisibility DefaultVisibility)
 {
     if (!TextBlock)
+    {
+        UE_LOG(LogTemp, Error, TEXT("SetupTextBlockStyle: TextBlock이 null입니다."));
         return;
+    }
+    
+    // 폰트 설정
+    FSlateFontInfo FontInfo = TextBlock->GetFont();
+    FontInfo.Size = FontSize;
+    
+    // 볼드체 설정
+    if (bBold)
+    {
+        FontInfo.TypefaceFontName = "Bold";
+    }
+    
+    TextBlock->SetFont(FontInfo);
     
     // 색상 설정
     TextBlock->SetColorAndOpacity(Color);
     
-    // 폰트 설정
-    TextBlock->SetFont(FSlateFontInfo(FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Bold.ttf"), FontSize));
-    
     // 그림자 설정
     if (bWithShadow)
     {
-        TextBlock->SetShadowOffset(FVector2D(2.0f, 2.0f));
-        TextBlock->SetShadowColorAndOpacity(FLinearColor(0.0f, 0.0f, 0.0f, 0.5f));
+        TextBlock->SetShadowColorAndOpacity(ShadowColor);
+        TextBlock->SetShadowOffset(ShadowOffset);
     }
     
-    // 기본 텍스트 및 가시성
-    TextBlock->SetText(FText::FromString(TEXT("")));
+    // 자동 줄바꿈 설정
+    TextBlock->SetAutoWrapText(bAutoWrapText);
+    
+    // 기본 가시성 설정
     TextBlock->SetVisibility(DefaultVisibility);
 }
 
@@ -153,4 +178,23 @@ UCanvasPanelSlot* UUIHelper::SetScoreDisplayPosition(UTextBlock* TextBlock, floa
     }
     
     return TextSlot;
+}
+
+APlayerController* UUIHelper::GetValidPlayerController(UObject* WorldContextObject)
+{
+    UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
+    if (!World)
+    {
+        UE_LOG(LogTemp, Error, TEXT("GetValidPlayerController: World가 유효하지 않음!"));
+        return nullptr;
+    }
+    
+    APlayerController* Controller = World->GetFirstPlayerController();
+    if (!Controller)
+    {
+        UE_LOG(LogTemp, Error, TEXT("GetValidPlayerController: PlayerController가 유효하지 않음!"));
+        return nullptr;
+    }
+    
+    return Controller;
 }

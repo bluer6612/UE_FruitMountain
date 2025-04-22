@@ -11,41 +11,15 @@ UTextureDisplayWidget* UTextureDisplayWidget::Instance = nullptr;
 
 UTextureDisplayWidget* UTextureDisplayWidget::CreateDisplayWidget(UObject* WorldContextObject)
 {
-    UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
-    if (!World) return nullptr;
-    
-    // 인스턴스 유효성 검사 강화 - IsValid 함수만 사용하여 단순화
-    if (Instance && IsValid(Instance) && Instance->GetIsVisible())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("TextureDisplayWidget: 유효한 기존 인스턴스 재사용"));
-        if (!Instance->IsInViewport())
-        {
-            Instance->AddToViewport(10000);
-        }
-        return Instance;
-    }
-    else
-    {
-        // 기존 인스턴스가 무효하면 null로 설정
-        if (Instance)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("TextureDisplayWidget: 무효한 인스턴스 폐기"));
-            Instance = nullptr;
-        }
-    }
-
-    // 새 인스턴스 생성
-    APlayerController* Controller = World->GetFirstPlayerController();
-    if (!Controller) return nullptr;
-    
-    Instance = CreateWidget<UTextureDisplayWidget>(Controller, UTextureDisplayWidget::StaticClass());
-    if (Instance)
-    {
-        Instance->AddToViewport(10000);
-        UE_LOG(LogTemp, Warning, TEXT("TextureDisplayWidget: 새 인스턴스 생성 성공"));
-    }
-    
-    return Instance;
+    // UIHelper를 사용한 싱글톤 위젯 생성
+    static const FString BlueprintPath = TEXT("UTextureDisplayWidget");  // 사용자 정의 클래스 자체를 사용
+    return UUIHelper::CreateSingletonWidget<UTextureDisplayWidget>(
+        Instance, 
+        TSubclassOf<UUserWidget>(UTextureDisplayWidget::StaticClass()), 
+        WorldContextObject, 
+        BlueprintPath, 
+        10000, 
+        ESlateVisibility::SelfHitTestInvisible);
 }
 
 // 추가: 위젯 소멸 시 정적 인스턴스 초기화

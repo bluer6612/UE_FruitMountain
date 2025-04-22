@@ -4,8 +4,9 @@
 #include "Components/ActorComponent.h"
 #include "ScoreManagerComponent.generated.h"
 
-// 전방 선언 추가
+// 전방 선언
 class UScoreDisplayWidget;
+class UTotalScoreWidget;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnScoreAddedSignature, int32, Score, int32, ComboCount, float, ComboMultiplier);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnComboEndedSignature, int32, FinalComboCount);
@@ -21,6 +22,10 @@ public:
     // 게임 점수 관련 변수
     UPROPERTY(BlueprintReadOnly, Category = "Score")
     int32 CurrentScore;
+    
+    // 총점 관련 변수
+    UPROPERTY(BlueprintReadOnly, Category = "Score")
+    int32 TotalScore;
     
     // 콤보 관련 변수
     UPROPERTY(BlueprintReadOnly, Category = "Combo")
@@ -67,9 +72,19 @@ public:
     UFUNCTION(BlueprintPure, Category = "Score")
     float CalculateComboMultiplier() const;
 
+    // 총점 관련 함수
+    UFUNCTION(BlueprintCallable, Category = "Score")
+    void AddToTotalScore(int32 ScoreToAdd);
+    
+    UFUNCTION(BlueprintPure, Category = "Score")
+    int32 GetTotalScore() const { return TotalScore; }
+
     // 위젯 인스턴스 직접 관리
     UPROPERTY()
     UScoreDisplayWidget* ScoreWidgetInstance;
+
+    UPROPERTY()
+    UTotalScoreWidget* TotalScoreWidgetInstance;
 
     // 위젯이 이미 생성되었는지 플래그
     bool bWidgetCreated = false;
@@ -80,4 +95,7 @@ protected:
 
     // 콤보 타이머가 만료되었을 때 호출되는 함수
     void OnComboTimerExpired();
+    
+    // 위젯 업데이트 함수
+    void UpdateWidgets(int32 Score, int32 ComboCount, float ComboMultiplier);
 };

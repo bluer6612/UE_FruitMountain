@@ -140,7 +140,7 @@ void UFruitMergeFeedbackHelper::StabilizeSingleFruit(AFruitBall* Fruit, float In
     float DistanceToCenter = ToCenterXY.Size();
     
     // 접시 반경 가져오기 (FruitBall에서 플레이트 액터 참조하도록 수정된 경우)
-    float PlateRadius = 100.0f;
+    float PlateRadius = 75.f;
     APlateActor* PlateActor = Fruit->GetPlateActor();
     if (PlateActor)
     {

@@ -8,6 +8,7 @@
 #include "Interface/HUD/FruitHUD.h"
 #include "Interface/UI/TextureDisplayWidget.h"
 #include "Interface/UI/ScoreDisplayWidget.h"
+#include "Interface/UI/TotalScoreWidget.h" // TotalScoreWidget 헤더 추가
 #include "Gameplay/Physics/FruitTrajectoryHelper.h"
 #include "Gameplay/Merging/FruitMergeHelper.h"
 #include "Logging/LogMacros.h"
@@ -42,14 +43,24 @@ void AUE_FruitMountainGameMode::BeginPlay()
     // 게임 시작 시 모든 과일 메시 사전 로드
     UFruitMergeHelper::PreloadAllFruitMeshes(GetWorld());
     
-    // UI 위젯 초기화 - TextureDisplayWidget과 ScoreDisplayWidget
-    UTextureDisplayWidget::CreateDisplayWidget(this);
+    // UI 위젯 초기화 - UIHelper 사용
+    UTextureDisplayWidget* TextureWidget = UTextureDisplayWidget::CreateDisplayWidget(this);
     UScoreDisplayWidget* ScoreWidget = UScoreDisplayWidget::CreateScoreWidget(this);
+    UTotalScoreWidget* TotalScoreWidget = UTotalScoreWidget::CreateTotalScoreWidget(this);
 
-    // ScoreWidgetInstance 연결
+    // ScoreManager 컴포넌트 가져오기 또는 생성
+    UScoreManagerComponent* ScoreManager = FindComponentByClass<UScoreManagerComponent>();
+    if (!ScoreManager)
+    {
+        ScoreManager = NewObject<UScoreManagerComponent>(this, UScoreManagerComponent::StaticClass());
+        ScoreManager->RegisterComponent();
+    }
+    
+    // 위젯 연결
     if (ScoreManager)
     {
         ScoreManager->ScoreWidgetInstance = ScoreWidget;
+        ScoreManager->TotalScoreWidgetInstance = TotalScoreWidget;
         ScoreManager->bWidgetCreated = true;
     }
 }

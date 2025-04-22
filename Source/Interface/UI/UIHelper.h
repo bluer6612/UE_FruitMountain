@@ -4,6 +4,7 @@
 #include "UObject/NoExportTypes.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/Widget.h"
+#include "Blueprint/UserWidget.h"
 #include "UIHelper.generated.h"
 
 // 위젯 위치 열거형 - 이미지 변수명과 동기화
@@ -47,11 +48,16 @@ public:
     
     // 텍스트 블록 스타일 설정 헬퍼 함수
     UFUNCTION(BlueprintCallable, Category = "UI Helper")
-    static void SetupTextBlockStyle(UTextBlock* TextBlock, 
-                                    FLinearColor Color = FLinearColor(1.0f, 1.0f, 0.8f, 1.0f),
-                                    int32 FontSize = 42, 
-                                    bool bWithShadow = true,
-                                    ESlateVisibility DefaultVisibility = ESlateVisibility::Hidden);
+    static void SetupTextBlockStyle(
+        UTextBlock* TextBlock, 
+        FLinearColor Color = FLinearColor(1.0f, 1.0f, 0.8f, 1.0f),
+        int32 FontSize = 42, 
+        bool bWithShadow = true,
+        FLinearColor ShadowColor = FLinearColor(0.0f, 0.0f, 0.0f, 0.7f),
+        FVector2D ShadowOffset = FVector2D(2.0f, 2.0f),
+        bool bBold = false,
+        bool bAutoWrapText = true,
+        ESlateVisibility DefaultVisibility = ESlateVisibility::HitTestInvisible);
     
     // 텍스트 블록 위치 설정 헬퍼 함수
     UFUNCTION(BlueprintCallable, Category = "UI Helper")
@@ -61,4 +67,109 @@ public:
                                                    float Width = 200.0f,
                                                    float Height = 80.0f,
                                                    bool bRightAlign = true);
+                                                   
+    // 새로운 위젯 생성 통합 헬퍼 함수들 추가
+    
+    // 유효한 플레이어 컨트롤러 가져오기 (공통 함수)
+    UFUNCTION(BlueprintCallable, Category = "UI Helper")
+    static APlayerController* GetValidPlayerController(UObject* WorldContextObject);
+    
+    // 위젯 클래스 로드 함수
+    template<class T>
+    static TSubclassOf<UUserWidget> LoadWidgetClassIfNeeded(TSubclassOf<UUserWidget>& WidgetClass, const FString& BlueprintPath);
+    
+    // 싱글톤 위젯 생성 및 관리 템플릿 함수 (인스턴스 관리용)
+    template<class T>
+    static T* CreateSingletonWidget(
+        T*& Instance, 
+        TSubclassOf<UUserWidget>& WidgetClass, 
+        UObject* WorldContextObject, 
+        const FString& BlueprintPath, 
+        int32 ZOrder = 10,
+        ESlateVisibility Visibility = ESlateVisibility::HitTestInvisible);
+        
+    // 특정 위젯 유효성 검사 함수
+    template<class T>
+    static bool IsWidgetInstanceValid(T* Instance);
 };
+
+// 템플릿 함수 구현
+
+// 위젯 클래스 로드 템플릿 함수
+template<class T>
+TSubclassOf<UUserWidget> UUIHelper::LoadWidgetClassIfNeeded(TSubclassOf<UUserWidget>& WidgetClass, const FString& BlueprintPath)
+{
+    if (WidgetClass)
+    {
+        return WidgetClass;
+    }
+    
+    WidgetClass = LoadClass<UUserWidget>(nullptr, *BlueprintPath);
+    
+    if (!WidgetClass)
+    {
+        UE_LOG(LogTemp, Error, TEXT("블루프린트를 찾을 수 없습니다: %s"), *BlueprintPath);
+    }
+    
+    return WidgetClass;
+}
+
+// 싱글톤 위젯 생성 템플릿 함수
+template<class T>
+T* UUIHelper::CreateSingletonWidget(
+    T*& Instance, 
+    TSubclassOf<UUserWidget>& WidgetClass, 
+    UObject* WorldContextObject, 
+    const FString& BlueprintPath, 
+    int32 ZOrder,
+    ESlateVisibility Visibility)
+{
+    // 기존 유효 인스턴스 확인
+    if (Instance && IsWidgetInstanceValid(Instance))
+    {
+        return Instance;
+    }
+    
+    // 기존 인스턴스가 무효하면 null로 설정
+    if (Instance)
+    {
+        Instance = nullptr;
+    }
+    
+    // 플레이어 컨트롤러 가져오기
+    APlayerController* Controller = GetValidPlayerController(WorldContextObject);
+    if (!Controller)
+    {
+        UE_LOG(LogTemp, Error, TEXT("CreateSingletonWidget: 유효한 PlayerController를 찾을 수 없습니다"));
+        return nullptr;
+    }
+    
+    // 위젯 클래스 로드
+    if (!LoadWidgetClassIfNeeded<T>(WidgetClass, BlueprintPath))
+    {
+        UE_LOG(LogTemp, Error, TEXT("CreateSingletonWidget: 위젯 클래스 로드 실패"));
+        return nullptr;
+    }
+    
+    // 인스턴스 생성 및 뷰포트에 추가
+    Instance = CreateWidget<T>(Controller, WidgetClass);
+    if (Instance)
+    {
+        Instance->AddToViewport(ZOrder);
+        Instance->SetVisibility(Visibility);
+        UE_LOG(LogTemp, Log, TEXT("CreateSingletonWidget: %s 위젯 인스턴스 생성 성공"), *BlueprintPath);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("CreateSingletonWidget: 위젯 인스턴스 생성 실패"));
+    }
+    
+    return Instance;
+}
+
+// 위젯 유효성 검사 템플릿 함수
+template<class T>
+bool UUIHelper::IsWidgetInstanceValid(T* Instance)
+{
+    return Instance && IsValid(Instance) && Instance->IsInViewport();
+}

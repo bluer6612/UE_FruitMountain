@@ -39,7 +39,7 @@ public:
     UFUNCTION(BlueprintCallable, Category = "UI Score")
     void ResetComboDisplay();
 
-    // 인스턴스 유효성 검증 (외부에서 접근 가능하도록 public으로 변경)
+    // 인스턴스 유효성 검증
     UFUNCTION(BlueprintCallable, Category = "UI Score")
     static bool IsInstanceValid();
     
@@ -57,7 +57,7 @@ protected:
     UScoreWidgetAnimator* WidgetAnimator;
     
     // 점수 데이터
-    int32 TotalScoreGain;  // 총 누적 점수 (계속 누적됨)
+    int32 TotalScoreGain;  // 총 누적 점수 (애니메이션당)
     int32 CurrentScoreGain;  // 현재 표시되는 점수 (애니메이션당)
     float CurrentComboMultiplier;
     bool bScoreTextActive;
@@ -66,8 +66,4 @@ private:
     // 헬퍼 함수
     void InitializeTextBlocks();
     void SetupTextBlock(UTextBlock* TextBlock, FLinearColor Color, int32 FontSize, FVector2D Pos);
-    
-    // 유효성 검사 및 초기화 헬퍼
-    static APlayerController* GetValidPlayerController(UObject* WorldContextObject);
-    static bool LoadWidgetClassIfNeeded();
 };
