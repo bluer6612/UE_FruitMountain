@@ -40,7 +40,7 @@ public:
     // 애니메이션 취소 함수
     void CancelAnimation();
     
-    // 애니메이션 완료 델리게이트 추가
+    // 애니메이션 완료 델리게이트
     UPROPERTY(BlueprintAssignable, Category = "Score Animation")
     FOnScoreAnimationEndDelegate OnAnimationEnd;
     

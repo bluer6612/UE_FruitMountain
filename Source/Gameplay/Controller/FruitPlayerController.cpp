@@ -65,7 +65,6 @@ void AFruitPlayerController::BeginPlay()
         }
     });
 
-    // 미리보기 공 생성 시 회전까지 적용되도록 true 매개변수 추가
     CurrentBallType = FMath::RandRange(1, AFruitBall::RandomBallTypeMax);
     UpdatePreviewBallWithDebounce();
 

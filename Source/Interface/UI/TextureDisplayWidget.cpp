@@ -35,7 +35,7 @@ UTextureDisplayWidget* UTextureDisplayWidget::CreateDisplayWidget(UObject* World
     return Instance;
 }
 
-// 추가: 위젯 소멸 시 정적 인스턴스 초기화
+// 위젯 소멸 시 정적 인스턴스 초기화
 void UTextureDisplayWidget::NativeDestruct()
 {
     Super::NativeDestruct();
@@ -55,7 +55,7 @@ void UTextureDisplayWidget::NativeConstruct()
 
     static bool bAlreadyConstructed = false;
     
-    // 루트 캔버스 가져오기 (null 체크 추가)
+    // 루트 캔버스 가져오기 (null 체크)
     if (WidgetTree and bAlreadyConstructed)
     {
         Canvas = Cast<UCanvasPanel>(GetRootWidget());
@@ -146,7 +146,7 @@ void UTextureDisplayWidget::SetImageTexture(EWidgetImageType Position, const FSt
     SetupImageWithTexture(*TargetImagePtr, Anchor, TexturePath, CustomSize, PaddingX, PaddingY);
 }
 
-// 앵커 기반 이미지 설정 함수 - 패딩 매개변수 추가
+// 앵커 기반 이미지 설정 함수 - 패딩 매개변수
 void UTextureDisplayWidget::SetupImageWithTexture(UImage*& ImageWidget, EWidgetAnchor Anchor, const FString& TexturePath, const FVector2D& CustomSize, float PaddingX, float PaddingY)
 {
     if (!Canvas)

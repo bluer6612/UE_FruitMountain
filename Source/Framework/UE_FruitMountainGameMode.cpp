@@ -8,7 +8,7 @@
 #include "Interface/HUD/FruitHUD.h"
 #include "Interface/UI/TextureDisplayWidget.h"
 #include "Interface/UI/ScoreDisplayWidget.h"
-#include "Interface/UI/TotalScoreWidget.h" // TotalScoreWidget 헤더 추가
+#include "Interface/UI/TotalScoreWidget.h"
 #include "Gameplay/Physics/FruitTrajectoryHelper.h"
 #include "Gameplay/Merging/FruitMergeHelper.h"
 #include "Logging/LogMacros.h"
@@ -94,6 +94,7 @@ void AUE_FruitMountainGameMode::StartPlay()
             {
                 // 스폰된 액터에 "Plate" 태그 추가
                 NewPlate->Tags.Add(FName("Plate"));
+                
                 UE_LOG(LogTemp, Log, TEXT("접시 액터가 생성되었습니다."));
             }
             else

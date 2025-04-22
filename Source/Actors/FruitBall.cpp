@@ -112,7 +112,7 @@ APlateActor* AFruitBall::GetPlateActor() const
     return nullptr;
 }
 
-// Tick 함수 수정 - 떨어짐 감지 시 카메라 이동 및 슬로우 모션 추가
+// Tick 함수 - 떨어짐 감지 시 카메라 이동 및 슬로우 모션
 void AFruitBall::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);

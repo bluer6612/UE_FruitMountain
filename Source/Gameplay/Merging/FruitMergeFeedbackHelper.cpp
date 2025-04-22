@@ -1,7 +1,7 @@
 #include "FruitMergeFeedbackHelper.h"
 #include "Kismet/GameplayStatics.h"
 #include "Framework/UE_FruitMountainGameMode.h"
-#include "Gameplay/Merging/ScoreManagerComponent.h"
+#include "Gameplay/Score/ScoreManagerComponent.h"
 #include "Actors/FruitBall.h"
 #include "Components/StaticMeshComponent.h"
 #include "Gameplay/Controller/FruitPlayerController.h"

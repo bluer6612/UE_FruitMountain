@@ -170,7 +170,7 @@ void UTotalScoreWidget::UpdateTotalScore(int32 NewScore)
     }
 }
 
-// 새로 추가된 함수: 애니메이션과 함께 점수 증가
+// 애니메이션과 함께 점수 증가
 void UTotalScoreWidget::AnimateScoreIncrease(int32 NewScore)
 {
     if (!GetWorld())

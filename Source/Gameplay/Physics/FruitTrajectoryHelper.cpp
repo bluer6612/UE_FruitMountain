@@ -82,7 +82,7 @@ void UFruitTrajectoryHelper::DrawTrajectoryPath(UWorld* World, const TArray<FVec
         // 새로운 액터 생성
         AActor* LineActor = World->SpawnActor<AActor>();
         
-        // 액터에 라인 배처 추가
+        // 액터에 라인 배처
         CustomLineBatcher = NewObject<ULineBatchComponent>(LineActor);
         CustomLineBatcher->RegisterComponent();
         
@@ -154,7 +154,7 @@ TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(UWorld* World,
     // 중요: 충돌 채널 설정 - WorldStatic만 검사하고 물체(FruitBall)은 무시
     PredictParams.TraceChannel = ECC_WorldStatic;
     
-    // 중요: 과일 공 무시 설정 추가
+    // 중요: 과일 공 무시 설정
     PredictParams.ActorsToIgnore.Empty();
     
     // 모든 FruitBall 찾아서 무시 목록에 추가
@@ -183,7 +183,7 @@ TArray<FVector> UFruitTrajectoryHelper::CalculateTrajectoryPoints(UWorld* World,
     return TrajectoryPoints;
 }
 
-// 벡터 좌표 반올림 헬퍼 함수 추가
+// 벡터 좌표 반올림 헬퍼 함수
 FVector UFruitTrajectoryHelper::RoundVector(const FVector& InVector, int32 DecimalPlaces)
 {
     float Multiplier = FMath::Pow(10.0f, (float)DecimalPlaces);
@@ -194,7 +194,7 @@ FVector UFruitTrajectoryHelper::RoundVector(const FVector& InVector, int32 Decim
     );
 }
 
-// 궤적 시스템 초기화 함수 추가
+// 궤적 시스템 초기화 함수
 void UFruitTrajectoryHelper::ResetTrajectorySystem()
 {
     // 라인 배처 사용중인 액터 정리

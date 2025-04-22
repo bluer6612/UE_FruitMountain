@@ -35,7 +35,7 @@ void AFruitHUD::CreateAndAddWidgets()
             // 뷰포트에 추가
             TextureWidget->AddToViewport(9999); // HUD보다 아래에 위치하도록
             
-            // 로그 추가
+            // 로그
             UE_LOG(LogTemp, Warning, TEXT("FruitHUD: TextureDisplayWidget 생성 및 뷰포트 추가 완료"));
             
             // 이미지 설정 함수 호출

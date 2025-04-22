@@ -32,11 +32,11 @@ public:
     UFUNCTION(BlueprintCallable, Category = "UI Score")
     static UTotalScoreWidget* GetInstance() { return Instance; }
     
-    // 추가: 애니메이션과 함께 점수 업데이트
+    // 애니메이션과 함께 점수 업데이트
     UFUNCTION(BlueprintCallable, Category = "UI Score")
     void AnimateScoreIncrease(int32 NewScore);
     
-    // 추가: 대기중인 점수 즉시 반영
+    // 대기중인 점수 즉시 반영
     UFUNCTION(BlueprintCallable, Category = "UI Score")
     void ApplyPendingScore();
     
@@ -58,7 +58,7 @@ protected:
     // 싱글톤 인스턴스
     static UTotalScoreWidget* Instance;
     
-    // 색상 상수 추가
+    // 색상 상수
     static const FLinearColor SCORE_BROWN_COLOR;
     static const FLinearColor SCORE_SHADOW_COLOR;
     

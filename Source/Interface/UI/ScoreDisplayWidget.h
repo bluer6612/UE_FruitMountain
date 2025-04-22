@@ -43,7 +43,7 @@ public:
     UFUNCTION(BlueprintCallable, Category = "UI Score")
     static bool IsInstanceValid();
 
-    // 애니메이터 접근 함수 추가
+    // 애니메이터 접근 함수
     UFUNCTION(BlueprintCallable, Category = "UI Score")
     UScoreWidgetAnimator* GetWidgetAnimator() const { return WidgetAnimator; }
     

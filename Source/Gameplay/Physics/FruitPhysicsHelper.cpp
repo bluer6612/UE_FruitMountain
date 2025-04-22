@@ -35,13 +35,13 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     // 7-1. 기본 속도값 설정
     float BaseSpeed = 250.0f;
     
-    // 7-4. 질량에 따른 속도 보정 추가
+    // 7-4. 질량에 따른 속도 보정
     float MassCompensationFactor = FMath::Sqrt(BallMass / AFruitBall::DensityFactor);
     
     // 7-5. 최종 초기 속도 계산 - 질량 보정 반영
     Result.InitialSpeed = BaseSpeed * MassCompensationFactor;
     
-    // 7-6. 디버그 로깅 추가
+    // 7-6. 디버그 로깅
     // UE_LOG(LogTemp, Log, TEXT("질량 보정 계수: %.2f (질량: %.1f)"), MassCompensationFactor, BallMass);
     
     // 7-7. 물리 시뮬레이션 안정성을 위한 범위 제한
@@ -101,7 +101,7 @@ FThrowPhysicsResult UFruitPhysicsHelper::CalculateThrowPhysics(UWorld* World, co
     ValidateParams.StartLocation = StartLocation;
     ValidateParams.LaunchVelocity = Result.LaunchVelocity;
     ValidateParams.bTraceWithCollision = true;  // 충돌 활성화
-    ValidateParams.ProjectileRadius = 5.0f;     // 과일 반경 추가
+    ValidateParams.ProjectileRadius = 5.0f;     // 과일 반경
     ValidateParams.SimFrequency = 30;           // 더 정밀한 시뮬레이션
     ValidateParams.MaxSimTime = 3.0f;           // 3초로 제한 (접시 도달 충분)
     ValidateParams.OverrideGravityZ = -BaseResult.Gravity;

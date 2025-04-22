@@ -6,7 +6,7 @@
 
 class AFruitPlayerController;
 
-// 물리 계산 결과를 담을 구조체 추가
+// 물리 계산 결과를 담을 구조체
 USTRUCT(BlueprintType)
 struct FThrowPhysicsResult
 {

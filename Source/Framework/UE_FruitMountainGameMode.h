@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "Gameplay/Merging/ScoreManagerComponent.h"
+#include "Gameplay/Score/ScoreManagerComponent.h"
 #include "UE_FruitMountainGameMode.generated.h"
 
 class APlateActor;

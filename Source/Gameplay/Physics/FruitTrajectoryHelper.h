@@ -22,7 +22,7 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Trajectory")
     static TArray<FVector> CalculateTrajectoryPoints(UWorld* World, const FVector& StartLocation, const FVector& TargetLocation, float ThrowAngle, float BallMass);
 
-    // 궤적 시각화 시스템 초기화 함수 추가
+    // 궤적 시각화 시스템 초기화 함수
     static void ResetTrajectorySystem();
 
 private:

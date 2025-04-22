@@ -108,7 +108,7 @@ void UFruitPhysicsInitializer::CalculateDirectionAndDistance(const FPhysicsInitD
     
     Result.DirectionToTarget = DirectionToPlate;
     
-    // 디버그 로깅 추가
+    // 디버그 로깅
     //UE_LOG(LogTemp, Verbose, TEXT("방향 계산: 거리=%.1f, 높이차=%.1f, 방향=%s"),
     //       Result.HorizontalDistance, Result.HeightDifference, *Result.DirectionToTarget.ToString());
 }
@@ -144,7 +144,7 @@ void UFruitPhysicsInitializer::CalculateAdjustedTarget(const FPhysicsInitData& I
     Result.AdjustedTarget = InitData.StartLocation + Result.DirectionToTarget * AdjustedDistance;
     Result.AdjustedTarget.Z = Result.PlateTopHeight;
     
-    // 로깅 추가
+    // 로깅
     //UE_LOG(LogTemp, Warning, TEXT("타겟 조정: 각도=%.1f°, 거리비율=%.3f (각도계수=%.2f)"),
     //       Result.UseAngle, Result.DistanceRatio, AngleFactor);
 }
@@ -155,14 +155,14 @@ void UFruitPhysicsInitializer::CalculateLaunchDirection(const FPhysicsInitData& 
     // 수평 방향 계산
     FVector HorizontalDir = FVector(Result.DirectionToTarget.X, Result.DirectionToTarget.Y, 0.0f).GetSafeNormal();
     
-    // 각도에 따른 높이 계수 계산 - 추가로 20% 더 증가
+    // 각도에 따른 높이 계수 계산
     Result.HeightFactor = FMath::GetMappedRangeValueClamped(
         FVector2D(UFruitPhysicsHelper::MinThrowAngle, 50.0f),
-        FVector2D(0.36f, 1.8f),  // 0.3f->0.36f, 1.5f->1.8f (추가 20% 증가)
+        FVector2D(0.36f, 1.8f),  // 0.3f->0.36f, 1.5f->1.8f
         Result.UseAngle
     );
     
-    // 수직/수평 성분 계산 - 수직 성분 추가 20% 증가 (총 44% 증가)
+    // 수직/수평 성분 계산
     Result.VerticalMultiplier = FMath::Sin(Result.ThrowAngleRad) * Result.HeightFactor * 1.44f; // 1.2f -> 1.44f
     Result.HorizontalMultiplier = FMath::Cos(Result.ThrowAngleRad);
     

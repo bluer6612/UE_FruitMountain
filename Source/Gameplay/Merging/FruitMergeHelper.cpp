@@ -4,7 +4,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Gameplay/Controller/FruitPlayerController.h"
 #include "FruitMergeFeedbackHelper.h"
-#include "ScoreManagerComponent.h" // 이 헤더 파일 추가
+#include "Gameplay/Score/ScoreManagerComponent.h"
 
 void UFruitMergeHelper::TryMergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& CollisionPoint)
 {
@@ -13,7 +13,7 @@ void UFruitMergeHelper::TryMergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, c
         return;
     }
     
-    // 미리보기 공 체크 추가 - 둘 중 하나라도 미리보기 공이면 병합하지 않음
+    // 미리보기 공 체크 - 둘 중 하나라도 미리보기 공이면 병합하지 않음
     if (FruitA->IsPreviewBall() || FruitB->IsPreviewBall()) {
         UE_LOG(LogTemp, Verbose, TEXT("미리보기 공과의 충돌 무시"));
         return;

@@ -67,8 +67,6 @@ public:
                                                    float Width = 200.0f,
                                                    float Height = 80.0f,
                                                    bool bRightAlign = true);
-                                                   
-    // 새로운 위젯 생성 통합 헬퍼 함수들 추가
     
     // 유효한 플레이어 컨트롤러 가져오기 (공통 함수)
     UFUNCTION(BlueprintCallable, Category = "UI Helper")

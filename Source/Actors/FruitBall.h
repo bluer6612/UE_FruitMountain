@@ -40,7 +40,7 @@ public:
     UFUNCTION(BlueprintCallable, Category="Debug")
     void DisplayDebugInfo();
 
-    // 접근자 및 설정자 추가
+    // 접근자 및 설정자
     UFUNCTION()
     int32 GetBallType() const { return BallType; }
 
@@ -53,7 +53,7 @@ public:
     UFUNCTION()
     UStaticMeshComponent* GetMeshComponent() const { return MeshComponent; }
     
-    // 접근자/설정자 추가
+    // 접근자/설정자
     UFUNCTION()
     void SetIsPreviewBall(bool bPreview) { bIsPreviewBall = bPreview; }
     

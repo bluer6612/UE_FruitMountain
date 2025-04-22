@@ -83,7 +83,7 @@ public:
     // 물리 초기화 통합 함수 - 섹션 0~6 모두 처리
     static FPhysicsBaseResult InitializePhysics(const FPhysicsInitData& InitData);
     
-    // 캐시 결과 업데이트 함수 추가
+    // 캐시 결과 업데이트 함수
     static void UpdateCachedResult(const FPhysicsInitData& InitData, const FThrowPhysicsResult& Result, float CurrentTime);
     
 private:
