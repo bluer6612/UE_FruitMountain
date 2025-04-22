@@ -8,6 +8,7 @@
 
 // 정적 멤버 초기화
 UTotalScoreWidget* UTotalScoreWidget::Instance = nullptr;
+TSubclassOf<UUserWidget> UTotalScoreWidget::TotalScoreWidgetClass = nullptr;
 
 // UI_Play_Score 위젯 위에 겹치게 위치 설정
 const FVector2D UTotalScoreWidget::TOTALSCORE_TEXT_POS = FVector2D(292.0f, 120.0f);
@@ -28,6 +29,12 @@ void UTotalScoreWidget::NativeConstruct()
 {
     Super::NativeConstruct();
     
+    // 기존 인스턴스가 있으면 정리
+    if (Instance && Instance != this)
+    {
+        Instance->RemoveFromParent();
+    }
+    
     // 인스턴스 설정
     Instance = this;
     
@@ -42,7 +49,7 @@ void UTotalScoreWidget::NativeConstruct()
             
             // 크기와 정렬 설정
             ScoreSlot->SetSize(FVector2D(300.0f, 60.0f));
-            ScoreSlot->SetAlignment(FVector2D(0.5f, 0.5f)); // 중앙 정렬
+            ScoreSlot->SetAlignment(FVector2D(0.0f, 0.5f)); // 왼쪽 정렬 (수직으로는 중앙)
         }
         
         // 초기 텍스트 설정
@@ -50,7 +57,11 @@ void UTotalScoreWidget::NativeConstruct()
         
         // 폰트 크기와 스타일 설정
         TotalScoreTextBlock->SetColorAndOpacity(FLinearColor(0.35f, 0.2f, 0.05f, 1.0f)); // 어두운 갈색
-        TotalScoreTextBlock->SetFont(FSlateFontInfo(TotalScoreTextBlock->GetFont().FontObject, 36.0f));
+
+        // FSlateFontInfo 생성자 문법 수정
+        FSlateFontInfo FontInfo = TotalScoreTextBlock->GetFont();
+        FontInfo.Size = 36.0f;
+        TotalScoreTextBlock->SetFont(FontInfo);
     }
 }
 
@@ -64,7 +75,7 @@ void UTotalScoreWidget::NativeDestruct()
         GetWorld()->GetTimerManager().ClearTimer(ScoreAnimTimerHandle);
     }
     
-    // 인스턴스 정리
+    // 인스턴스 정리 - 명시적으로 참조 제거
     if (Instance == this)
     {
         Instance = nullptr;
@@ -96,6 +107,7 @@ UTotalScoreWidget* UTotalScoreWidget::CreateTotalScoreWidget(UObject* WorldConte
     Instance = CreateWidget<UTotalScoreWidget>(PC, TotalScoreWidgetClass);
     if (Instance)
     {
+        // 먼저 뷰포트에 추가
         Instance->AddToViewport(10);
     }
     
@@ -142,6 +154,13 @@ void UTotalScoreWidget::AnimateScoreIncrease(int32 NewTotalScore)
         return;
     }
     
+    // 기존 애니메이션 취소
+    if (bAnimating && GetWorld())
+    {
+        GetWorld()->GetTimerManager().ClearTimer(ScoreAnimTimerHandle);
+        bAnimating = false;
+    }
+    
     // 기존 점수와 목표 점수 설정
     CurrentDisplayScore = FCString::Atoi(*TotalScoreTextBlock->GetText().ToString());
     TargetScore = NewTotalScore;
@@ -153,35 +172,55 @@ void UTotalScoreWidget::AnimateScoreIncrease(int32 NewTotalScore)
         UWorld* World = GetWorld();
         if (World)
         {
+            // 약한 참조로 람다 함수 캡처 - GC 안전성 확보
+            TWeakObjectPtr<UTotalScoreWidget> WeakThis(this);
+            
             FTimerDelegate ScoreTickDelegate;
-            ScoreTickDelegate.BindLambda([this]()
+            ScoreTickDelegate.BindLambda([WeakThis]()
             {
-                // 점수를 매 프레임마다 조금씩 증가
-                int32 Increment = FMath::Max(1, (TargetScore - CurrentDisplayScore) / 10);
-                CurrentDisplayScore = FMath::Min(TargetScore, CurrentDisplayScore + Increment);
+                // 약한 참조를 통해 유효성 검사
+                if (!WeakThis.IsValid())
+                {
+                    return;
+                }
                 
-                // 텍스트 업데이트
-                TotalScoreTextBlock->SetText(FText::FromString(FString::FromInt(CurrentDisplayScore)));
+                UTotalScoreWidget* Self = WeakThis.Get();
+                
+                // 점수를 매 프레임마다 조금씩 증가
+                int32 Increment = FMath::Max(1, (Self->TargetScore - Self->CurrentDisplayScore) / 10);
+                Self->CurrentDisplayScore = FMath::Min(Self->TargetScore, Self->CurrentDisplayScore + Increment);
+                
+                // 텍스트 업데이트 - 천 단위 구분자 추가
+                FNumberFormattingOptions NumberFormat;
+                NumberFormat.UseGrouping = true;
+                Self->TotalScoreTextBlock->SetText(FText::AsNumber(Self->CurrentDisplayScore, &NumberFormat));
                 
                 // 목표 점수에 도달하면 타이머 종료
-                if (CurrentDisplayScore >= TargetScore)
+                if (Self->CurrentDisplayScore >= Self->TargetScore)
                 {
-                    GetWorld()->GetTimerManager().ClearTimer(ScoreAnimTimerHandle);
+                    if (Self->GetWorld())
+                    {
+                        Self->GetWorld()->GetTimerManager().ClearTimer(Self->ScoreAnimTimerHandle);
+                        Self->bAnimating = false;
+                    }
                 }
                 
                 // 숫자가 변할 때 약간의 크기 애니메이션도 적용
-                float Scale = 1.0f + (0.2f * (float)(CurrentDisplayScore - TargetScore) / (float)TargetScore);
-                TotalScoreTextBlock->SetRenderScale(FVector2D(Scale, Scale));
+                float Scale = 1.0f + (0.1f * (float)(Self->TargetScore - Self->CurrentDisplayScore) / (float)Self->TargetScore);
+                Self->TotalScoreTextBlock->SetRenderScale(FVector2D(Scale, Scale));
             });
             
             // 0.02초마다 업데이트
+            bAnimating = true;
             World->GetTimerManager().SetTimer(ScoreAnimTimerHandle, ScoreTickDelegate, 0.02f, true);
         }
     }
     else
     {
         // 즉시 업데이트
-        TotalScoreTextBlock->SetText(FText::FromString(FString::FromInt(NewTotalScore)));
+        FNumberFormattingOptions NumberFormat;
+        NumberFormat.UseGrouping = true;
+        TotalScoreTextBlock->SetText(FText::AsNumber(NewTotalScore, &NumberFormat));
     }
 }
 

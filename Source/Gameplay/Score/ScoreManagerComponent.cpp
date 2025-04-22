@@ -52,7 +52,7 @@ void UScoreManagerComponent::BeginPlay()
     if (!TotalScoreWidgetInstance && GetWorld())
     {
         // 이미 생성된 정적 인스턴스가 있는지 확인
-        TotalScoreWidgetInstance = UTotalScoreWidget::GetInstance();
+        TotalScoreWidgetInstance = UTotalScoreWidget::Instance;
         
         // 없으면 새로 생성 시도
         if (!TotalScoreWidgetInstance)
@@ -236,7 +236,7 @@ void UScoreManagerComponent::AddToTotalScore(int32 ScoreToAdd)
     // TotalScoreWidget을 통해 총점 UI 업데이트
     if (!TotalScoreWidgetInstance)
     {
-        TotalScoreWidgetInstance = UTotalScoreWidget::GetInstance();
+        TotalScoreWidgetInstance = UTotalScoreWidget::Instance;
     }
     
     if (TotalScoreWidgetInstance)

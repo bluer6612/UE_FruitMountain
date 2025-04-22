@@ -19,79 +19,69 @@ public:
     // 위치 상수 - UI_Play_Score 위에 겹치도록 설정
     static const FVector2D TOTALSCORE_TEXT_POS;
     
+    // 정적 인스턴스 - 싱글톤 패턴
+    static UTotalScoreWidget* Instance;
+    static TSubclassOf<UUserWidget> TotalScoreWidgetClass;
+    
+    // 위젯 생성 함수
+    UFUNCTION(BlueprintCallable, Category = "UI Score", meta = (WorldContext = "WorldContextObject"))
+    static UTotalScoreWidget* CreateTotalScoreWidget(UObject* WorldContextObject);
+    
     // 총점 업데이트 함수
     UFUNCTION(BlueprintCallable, Category = "UI Score")
     void UpdateTotalScore(int32 NewScore);
     
-    // 현재 총점 반환 함수
+    // 점수 증가 애니메이션 함수
     UFUNCTION(BlueprintCallable, Category = "UI Score")
-    int32 GetTotalScore() const { return CurrentTotalScore; }
-    
-    // 인스턴스 생성 함수
-    UFUNCTION(BlueprintCallable, Category = "UI Score", meta = (WorldContext = "WorldContextObject"))
-    static UTotalScoreWidget* CreateTotalScoreWidget(UObject* WorldContextObject);
-    
-    // 인스턴스 접근자
-    UFUNCTION(BlueprintCallable, Category = "UI Score")
-    static UTotalScoreWidget* GetInstance() { return Instance; }
-    
-    // 애니메이션과 함께 점수 업데이트
-    UFUNCTION(BlueprintCallable, Category = "UI Score")
-    void AnimateScoreIncrease(int32 NewScore);
+    void AnimateScoreIncrease(int32 NewTotalScore);
     
     // 대기중인 점수 즉시 반영
     UFUNCTION(BlueprintCallable, Category = "UI Score")
     void ApplyPendingScore();
     
+    // 정적 인스턴스 반환 함수
+    UFUNCTION(BlueprintCallable, Category = "UI Score")
+    static UTotalScoreWidget* GetInstance() { return Instance; }
+    
 protected:
     virtual void NativeConstruct() override;
     virtual void NativeDestruct() override;
     
-    // 총점 텍스트 블록 - 블루프린트에서 바인딩
+    // 텍스트 블록 변수 추가 - 누락되었던 부분
     UPROPERTY(meta = (BindWidget))
-    UTextBlock* CurrentTotalScoreTextBlock;
+    UTextBlock* TotalScoreTextBlock;
     
-    // 현재 총점
-    UPROPERTY(BlueprintReadOnly, Category = "UI Score")
-    int32 CurrentTotalScore;
-    
-    // 현재 표시 점수
-    UPROPERTY()
-    int32 CurrentDisplayScore = 0;
-    
-    // 목표 점수
-    UPROPERTY()
-    int32 TargetScore = 0;
-    
-    // 위젯 클래스 참조
-    static TSubclassOf<UUserWidget> TotalScoreWidgetClass;
-    
-    // 싱글톤 인스턴스
-    static UTotalScoreWidget* Instance;
-    
-private:
     // 위젯 클래스 로드 헬퍼
     static bool LoadWidgetClassIfNeeded();
     
-    // 유효한 플레이어 컨트롤러 가져오기
+    // 유효한 플레이어 컨트롤러 획득
     static APlayerController* GetValidPlayerController(UObject* WorldContextObject);
     
-    // 텍스트 스타일 설정 함수
-    void SetupTotalScoreTextStyle();
-    
-    // 위젯 위치 설정 함수
-    void PositionWidgetAboveScoreDisplay();
-    
-    // 점수 증가 애니메이션 관련 멤버 변수
+    // 애니메이션 관련 변수들
     UPROPERTY()
-    FTimerHandle ScoreAnimTimerHandle;
+    int32 CurrentTotalScore;
     
+    UPROPERTY()
+    int32 CurrentDisplayScore;
+    
+    UPROPERTY()
+    int32 TargetScore;
+    
+    UPROPERTY()
     int32 StartScore;
+    
+    UPROPERTY()
     int32 PendingScore;
+    
+    UPROPERTY()
     int32 AnimSteps;
+    
+    UPROPERTY()
     int32 CurrentStep;
+    
+    UPROPERTY()
     bool bAnimating;
     
-    // 애니메이션 타이머 콜백
-    void UpdateScoreAnimation();
+    // 애니메이션 타이머 핸들
+    FTimerHandle ScoreAnimTimerHandle;
 };
