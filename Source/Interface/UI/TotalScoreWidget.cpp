@@ -56,11 +56,11 @@ void UTotalScoreWidget::NativeConstruct()
         TotalScoreTextBlock->SetText(FText::FromString(TEXT("0")));
         
         // 폰트 크기와 스타일 설정
-        TotalScoreTextBlock->SetColorAndOpacity(FLinearColor(0.35f, 0.2f, 0.05f, 1.0f)); // 어두운 갈색
+        TotalScoreTextBlock->SetColorAndOpacity(FLinearColor(0.15f, 0.075f, 0.05f, 1.0f)); // 어두운 갈색
 
         // FSlateFontInfo 생성자 문법 수정
         FSlateFontInfo FontInfo = TotalScoreTextBlock->GetFont();
-        FontInfo.Size = 36.0f;
+        FontInfo.Size = 45.0f;
         TotalScoreTextBlock->SetFont(FontInfo);
     }
 }
