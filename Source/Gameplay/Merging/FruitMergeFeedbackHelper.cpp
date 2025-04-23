@@ -23,12 +23,12 @@ void UFruitMergeFeedbackHelper::StabilizeFruits(UWorld* World, const FVector& Ce
     Radius = FMath::Max(Radius, 100.0f);
     
     // 대상 과일이 있는 경우 (병합 후 새 과일) 특별 처리
-    if (TargetFruit && TargetFruit->GetMeshComponent())
+    if (TargetFruit && TargetFruit->GetMeshComponent() && !TargetFruit->bHasCollided)
     {
         UStaticMeshComponent* MeshComp = TargetFruit->GetMeshComponent();
         
-        // 1. 새 과일에 감쇠값 적용
-        MeshComp->SetAngularDamping(4.0f);
+        // 1. 새 과일에 높은 감쇠값 적용
+        MeshComp->SetAngularDamping(8.0f);
         MeshComp->SetLinearDamping(2.0f);
         
         // 2. 속도 초기화
@@ -52,7 +52,7 @@ void UFruitMergeFeedbackHelper::StabilizeFruits(UWorld* World, const FVector& Ce
         }
         
         AFruitBall* Fruit = Cast<AFruitBall>(Actor);
-        if (!Fruit || Fruit->IsMerging() || Fruit->IsPreviewBall())
+        if (!Fruit || Fruit->IsMerging() || Fruit->IsPreviewBall() || !Fruit->bHasCollided)
         {
             continue;
         }
@@ -81,7 +81,7 @@ void UFruitMergeFeedbackHelper::StabilizeFruits(UWorld* World, const FVector& Ce
                 float PushForce = FMath::Max(400.0f * DistanceFactor, 100.0f);
                 
                 // 3. 약간 위쪽으로 들어올리는 성분 추가 (쌓인 과일이 넘어지지 않도록)
-                PushDirection.Z += 0.01f;
+                PushDirection.Z += 0.3f;
                 PushDirection.Normalize();
                 
                 // 4. 부드러운 밀어내기 적용
