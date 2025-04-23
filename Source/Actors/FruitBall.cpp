@@ -231,6 +231,13 @@ void AFruitBall::OnBallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor
         float ImpactForce = NormalImpulse.Size();
         float DampingMultiplier = FMath::Clamp(ImpactForce / 100.0f, 2.0f, 10.0f);
         
+        // 작은 모션을 위한 최소한의 감쇠 적용 (완전히 무시하는 것이 아니라 영향력 최소화)
+        HitComponent->SetAngularDamping(0.5f);
+        HitComponent->SetLinearDamping(0.1f);
+                    
+        // 충돌 경험 업데이트
+        bHasCollided = true;
+        
         // 통합 안정화 함수 호출
         UFruitMergeFeedbackHelper::StabilizeFruits(
             GetWorld(),         // 월드
@@ -240,8 +247,27 @@ void AFruitBall::OnBallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor
             BallType           // 과일 타입
         );
 
-        // 충돌 경험 업데이트
-        bHasCollided = true;
+        // 던지기 상태는 일정 시간 후 해제하도록 설정
+        UWorld* World = GetWorld();
+        if (World)
+        {
+            // 이미 실행 중인 타이머 제거
+            World->GetTimerManager().ClearTimer(CollisionFlagTimerHandle);
+            
+            // 1초 후 던지기 상태 해제하는 타이머 설정
+            World->GetTimerManager().SetTimer(
+                CollisionFlagTimerHandle,
+                [this]()
+                {
+                    // 타이머 만료 시 던지기 상태 해제
+                    bIsThrowing = false;
+                    
+                    UE_LOG(LogTemp, Verbose, TEXT("과일 던지기 상태 해제: %s"), *GetName());
+                },
+                1.0f, // 1초 지연
+                false // 반복 없음
+            );
+        }
     }
 
     // 접시와의 충돌인지 확인

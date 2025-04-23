@@ -23,7 +23,7 @@ void UFruitMergeFeedbackHelper::StabilizeFruits(UWorld* World, const FVector& Ce
     Radius = FMath::Max(Radius, 100.0f);
     
     // 대상 과일이 있는 경우 (병합 후 새 과일) 특별 처리
-    if (TargetFruit && TargetFruit->GetMeshComponent() && !TargetFruit->bHasCollided)
+    if (TargetFruit && TargetFruit->GetMeshComponent() && !TargetFruit->IsThrowingInProgress())
     {
         UStaticMeshComponent* MeshComp = TargetFruit->GetMeshComponent();
         
@@ -52,7 +52,7 @@ void UFruitMergeFeedbackHelper::StabilizeFruits(UWorld* World, const FVector& Ce
         }
         
         AFruitBall* Fruit = Cast<AFruitBall>(Actor);
-        if (!Fruit || Fruit->IsMerging() || Fruit->IsPreviewBall() || !Fruit->bHasCollided)
+        if (!Fruit || Fruit->IsMerging() || Fruit->IsPreviewBall() || !Fruit->IsThrowingInProgress())
         {
             continue;
         }

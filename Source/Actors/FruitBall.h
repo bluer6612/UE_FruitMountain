@@ -64,13 +64,6 @@ public:
         return MeshComponent;
     }
     
-    // 접근자/설정자
-    UFUNCTION()
-    void SetIsPreviewBall(bool bPreview)
-    {
-        bIsPreviewBall = bPreview;
-    }
-    
     UFUNCTION()
     bool IsPreviewBall() const
     {
@@ -103,6 +96,20 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Fruit Environment")
     APlateActor* GetPlateActor() const;
 
+    // 던지기 진행 상태 설정
+    UFUNCTION()
+    void SetThrowingInProgress(bool bInProgress)
+    {
+        bIsThrowing = bInProgress;
+    }
+
+    // 던지기 진행 상태 확인
+    UFUNCTION()
+    bool IsThrowingInProgress() const
+    {
+        return bIsThrowing;
+    }
+
     // 기본 공 크기 (월드 스케일)
     static constexpr float BaseBallSize = 15.0f;
     
@@ -129,6 +136,10 @@ public:
     // 충돌 경험 여부 트래킹
     UPROPERTY()
     bool bHasCollided = true;
+
+    // 현재 던지는 중인지 여부
+    UPROPERTY()
+    bool bIsThrowing = false;
     
     // 현재 과일 레벨
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Fruit")
@@ -149,4 +160,7 @@ private:
     // 접시 액터 캐싱 (성능 최적화)
     UPROPERTY()
     class APlateActor* CachedPlateActor;
+
+    // 충돌 상태 업데이트용 타이머
+    FTimerHandle CollisionFlagTimerHandle;
 };

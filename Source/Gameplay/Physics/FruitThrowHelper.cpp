@@ -41,6 +41,7 @@ void UFruitThrowHelper::ThrowFruit(AFruitPlayerController* Controller)
         if (FruitBall)
         {
             FruitBall->SetHasCollided(false);
+            FruitBall->SetThrowingInProgress(true);
         }
 
         UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(
