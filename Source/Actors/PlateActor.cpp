@@ -30,8 +30,15 @@ APlateActor::APlateActor()
         PlateMeshComponent->SetStaticMesh(PlateAsset.Object);
         PlateMeshComponent->SetWorldScale3D(PlateScale);
         PlateMeshComponent->SetWorldLocation(PlateLocation);
+        
+        // 충돌 설정 강화
         PlateMeshComponent->SetCollisionProfileName(TEXT("BlockAll"));
+        PlateMeshComponent->SetCollisionResponseToAllChannels(ECR_Block);
+        PlateMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
         PlateMeshComponent->ComponentTags.AddUnique(FName("Object"));
+        
+        // CCD 활성화 (터널링 방지)
+        PlateMeshComponent->SetUseCCD(true);
     }
     
     // 액터에 태그 추가

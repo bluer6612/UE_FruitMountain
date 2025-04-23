@@ -5,7 +5,6 @@
 #include "TimerManager.h"
 #include "Actors/PlateActor.h"
 
-// 통합된 안정화 함수
 void UFruitMergeFeedbackHelper::StabilizeFruits(UWorld* World, const FVector& Center, float DampingMultiplier, AFruitBall* TargetFruit, int32 FruitType)
 {
     if (!World)
@@ -13,33 +12,39 @@ void UFruitMergeFeedbackHelper::StabilizeFruits(UWorld* World, const FVector& Ce
         return;
     }
 
-    // 과일 타입에 따라 안정화 반경 계산
-    float BaseFruitRadius = AFruitBall::CalculateBallSize(FruitType);
-    
-    // 과일 크기의 3배로 영향 반경 설정 (큰 과일은 더 넓은 영향 반경)
-    float Radius = BaseFruitRadius * 3.0f;
-    
-    // 최소 반경 보장
+    // 과일 크기에 따라 안정화 반경 계산
+    float Radius = AFruitBall::CalculateBallSize(FruitType) * 3.0f;
     Radius = FMath::Max(Radius, 100.0f);
     
-    // 대상 과일이 있는 경우 (병합 후 새 과일) 특별 처리
+    // 물리 속성 복원을 위해 필요한 정보 저장
+    TArray<TWeakObjectPtr<AFruitBall>> FruitsToRestore;
+    TMap<TWeakObjectPtr<AFruitBall>, float> OriginalMasses;
+    
+    // 1. 대상 과일이 있는 경우 (병합 후 새 과일) 특별 처리
     if (TargetFruit && TargetFruit->GetMeshComponent() && !TargetFruit->IsThrowingInProgress())
     {
         UStaticMeshComponent* MeshComp = TargetFruit->GetMeshComponent();
         
-        // 1. 새 과일에 높은 감쇠값 적용
+        // 물리 시뮬레이션 활성화 보장
+        if (!MeshComp->IsSimulatingPhysics())
+        {
+            MeshComp->SetSimulatePhysics(true);
+        }
+        
+        // 원본 질량 저장
+        OriginalMasses.Add(TargetFruit, MeshComp->GetMass());
+        FruitsToRestore.Add(TargetFruit);
+        
+        // 높은 감쇠값 적용
         MeshComp->SetAngularDamping(8.0f);
         MeshComp->SetLinearDamping(2.0f);
         
-        // 2. 속도 초기화
+        // 속도 초기화
         MeshComp->SetPhysicsLinearVelocity(FVector::ZeroVector);
         MeshComp->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
-        
-        // 3. 타이머로 감쇠값 복원
-        ResetDamping(TargetFruit, 1.2f);
     }
     
-    // 주변 과일 검색
+    // 2. 주변 과일 검색
     TArray<AActor*> NearbyFruits;
     UGameplayStatics::GetAllActorsOfClass(World, AFruitBall::StaticClass(), NearbyFruits);
     
@@ -52,7 +57,7 @@ void UFruitMergeFeedbackHelper::StabilizeFruits(UWorld* World, const FVector& Ce
         }
         
         AFruitBall* Fruit = Cast<AFruitBall>(Actor);
-        if (!Fruit || Fruit->IsMerging() || Fruit->IsPreviewBall() || !Fruit->IsThrowingInProgress())
+        if (!Fruit || Fruit->IsMerging() || Fruit->IsPreviewBall() || Fruit->IsThrowingInProgress())
         {
             continue;
         }
@@ -68,62 +73,78 @@ void UFruitMergeFeedbackHelper::StabilizeFruits(UWorld* World, const FVector& Ce
                 continue;
             }
             
-            // 거리에 따른 효과 강도 계산 (가까울수록 강함)
+            // 물리 시뮬레이션 활성화 보장
+            if (!MeshComp->IsSimulatingPhysics())
+            {
+                MeshComp->SetSimulatePhysics(true);
+                
+                // 활성화 직후 잠시 대기
+                FPlatformProcess::Sleep(0.01f);
+            }
+
+            // 원래 질량 저장
+            float OriginalMass = MeshComp->GetMass();
+            OriginalMasses.Add(Fruit, OriginalMass);
+            FruitsToRestore.Add(Fruit);
+            
+            // 거리에 따른 요소 계산
             float DistanceFactor = FMath::Clamp(1.0f - Distance/Radius, 0.2f, 1.0f);
             
-            // 대상 과일이 없을 경우 (병합 전) - 밀어내기 효과 적용
+            // 1. 질량 증가
+            float MassMultiplier = 1.0f + (2.0f * DistanceFactor);  // 4배에서 3배로 감소
+            MeshComp->SetMassOverrideInKg("", OriginalMass * MassMultiplier, true);
+            
+            // 2. 밀어내기 효과 조정
             if (TargetFruit == nullptr)
             {
-                // 1. 중심에서 과일 방향으로 벡터 계산
                 FVector PushDirection = (Fruit->GetActorLocation() - Center).GetSafeNormal();
                 
-                // 2. 거리에 따른 힘 계산 (가까울수록 강하게)
-                float PushForce = FMath::Max(400.0f * DistanceFactor, 100.0f);
+                float PushForce = FMath::Max(300.0f * DistanceFactor, 100.0f);
                 
-                // 3. 약간 위쪽으로 들어올리는 성분 추가 (쌓인 과일이 넘어지지 않도록)
-                PushDirection.Z += 0.3f;
+                PushDirection.Z += 0.2f;
                 PushDirection.Normalize();
                 
-                // 4. 부드러운 밀어내기 적용
                 MeshComp->AddImpulse(PushDirection * PushForce);
             }
             
-            // 공통: 감쇠 적용 및 복원 타이머 설정
+            // 3. 감쇠 적용
             float AdjustedDamping = DampingMultiplier * DistanceFactor;
             MeshComp->SetAngularDamping(5.0f * AdjustedDamping);
             MeshComp->SetLinearDamping(1.5f * AdjustedDamping);
-            
-            // 타이머로 감쇠 설정 복원
-            ResetDamping(Fruit, 1.0f);
         }
     }
-}
-
-// 내부 타이머 함수 - 감쇠 값 복원
-void UFruitMergeFeedbackHelper::ResetDamping(TWeakObjectPtr<AFruitBall> Fruit, float Delay)
-{
-    if (!Fruit.IsValid() || !Fruit->GetWorld())
-    {
-        return;
-    }
     
-    FTimerHandle TimerHandle;
-    Fruit->GetWorld()->GetTimerManager().SetTimer(
-        TimerHandle,
-        [WeakFruit=Fruit]()
-        {
-            if (WeakFruit.IsValid() && WeakFruit->GetMeshComponent())
+    // 3. 모든 물리 속성을 직접 복원하는 타이머 설정 (인라인으로 처리)
+    if (FruitsToRestore.Num() > 0)
+    {
+        FTimerHandle RestoreTimerHandle;
+        World->GetTimerManager().SetTimer(
+            RestoreTimerHandle,
+            [FruitsToRestore, OriginalMasses]()
             {
-                // 기본 감쇠값 복원
-                WeakFruit->GetMeshComponent()->SetAngularDamping(2.0f);
-                WeakFruit->GetMeshComponent()->SetLinearDamping(0.5f);
-            }
-        },
-        Delay,
-        false
-    );
+                for (const TWeakObjectPtr<AFruitBall>& WeakFruit : FruitsToRestore)
+                {
+                    if (WeakFruit.IsValid() && WeakFruit->GetMeshComponent())
+                    {
+                        UStaticMeshComponent* MeshComp = WeakFruit->GetMeshComponent();
+                        
+                        // 원래 질량으로 복원
+                        if (OriginalMasses.Contains(WeakFruit))
+                        {
+                            MeshComp->SetMassOverrideInKg("", OriginalMasses[WeakFruit], true);
+                        }
+                        
+                        // 감쇠값 복원 (기본값으로)
+                        MeshComp->SetAngularDamping(2.0f);
+                        MeshComp->SetLinearDamping(0.5f);
+                    }
+                }
+            },
+            1.0f, // 1초 후 복원
+            false
+        );
+    }
 }
-
 
 // 병합 이펙트 재생
 void UFruitMergeFeedbackHelper::PlayMergeEffect(UWorld* World, const FVector& Location, int32 BallType)

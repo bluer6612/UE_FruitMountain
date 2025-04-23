@@ -133,9 +133,6 @@ void AFruitPlayerController::ThrowFruit()
     {
         return;
     }
-
-    // 던지기 시작 표시
-    bIsThrowingInProgress = true;
     
     // 미리보기 공 숨기기 - 제거하되 즉시 실제 공 생성
     if (PreviewBall)
@@ -143,6 +140,14 @@ void AFruitPlayerController::ThrowFruit()
         PreviewBall->Destroy();
         PreviewBall = nullptr;
     }
+    else
+    {
+        // 미리보기 공이 없으면
+        return;
+    }
+
+    // 던지기 시작 표시
+    bIsThrowingInProgress = true;
     
     // 입력 비활성화 - 던지는 동안 모든 조작 막기
     DisableInput(this);

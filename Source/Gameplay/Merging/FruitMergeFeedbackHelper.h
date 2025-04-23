@@ -25,8 +25,4 @@ public:
     // 병합 이펙트 재생
     UFUNCTION(BlueprintCallable, Category = "Fruit Feedback")
     static void PlayMergeEffect(UWorld* World, const FVector& Location, int32 BallType);
-    
-private:
-    // 내부 타이머 함수 - 감쇠 값 복원
-    static void ResetDamping(TWeakObjectPtr<AFruitBall> Fruit, float Delay = 1.0f);
 };

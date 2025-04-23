@@ -69,6 +69,15 @@ void AFruitBall::BeginPlay()
         
         // 과일 메시 업데이트 (BeginPlay에서 현재 BallType으로 업데이트)
         UpdateFruitMesh(BallType);
+
+        // 연속 충돌 감지 활성화
+        MeshComponent->SetEnableGravity(true);
+        MeshComponent->SetSimulatePhysics(true);
+        MeshComponent->SetNotifyRigidBodyCollision(true);
+        MeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+        
+        // CCD 활성화 - 터널링 방지
+        MeshComponent->SetUseCCD(true);
     }
 }
 
