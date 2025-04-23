@@ -148,8 +148,13 @@ void AFruitBall::Tick(float DeltaTime)
             UE_LOG(LogTemp, Warning, TEXT("과일이 접시 바깥으로 떨어짐: %s (위치: X=%.1f, Y=%.1f, Z=%.1f, 거리=%.1f)"), 
                 *GetName(), CurrentLocation.X, CurrentLocation.Y, CurrentLocation.Z, DistanceFromCenter);
             
-            // Tick 비활성화
-            SetActorTickEnabled(false);
+            // 모든 과일의 Tick 비활성화 (새로운 코드)
+            TArray<AActor*> AllFruits;
+            UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFruitBall::StaticClass(), AllFruits);
+            for (AActor* Actor : AllFruits)
+            {
+                Actor->SetActorTickEnabled(false);
+            }
             
             // 이미 슬로우 모션 처리 중인지 확인
             if (!bSlowMotionActive)
@@ -167,7 +172,7 @@ void AFruitBall::Tick(float DeltaTime)
                 FVector CurrentVelocity = MeshComponent->GetPhysicsLinearVelocity();
                 MeshComponent->SetPhysicsLinearVelocity(CurrentVelocity * 0.1f);
                 
-                // 3. 카메라를 과일 쪽으로 이동 (기존 코드와 동일)
+                // 3. 카메라를 과일 쪽으로 이동
                 APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0);
                 AFruitPlayerController* FruitController = Cast<AFruitPlayerController>(PC);
 
@@ -180,12 +185,15 @@ void AFruitBall::Tick(float DeltaTime)
                         FruitController->PreviewBall = nullptr;
                     }
                     
-                    // 궤적 표시 제거 - 실제 구현된 방식으로 호출
+                    // 궤적 표시 제거
                     UFruitTrajectoryHelper::ResetTrajectorySystem();
                     
                     // 컨트롤러 입력 정지
                     FruitController->DisableInput(PC);
                     FruitController->bIsThrowingInProgress = false; // 던지기 상태 해제
+                    
+                    // 미리보기 공 생성 방지
+                    FruitController->bGameOver = true; // 게임 오버 상태로 설정
                     
                     // 카메라 이동
                     UCameraOrbitFunctionLibrary::MoveViewToFallingFruit(FruitController, GetActorLocation(), FRotator::ZeroRotator);

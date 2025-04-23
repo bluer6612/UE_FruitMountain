@@ -13,6 +13,14 @@ UScoreWidgetAnimator::UScoreWidgetAnimator()
     CurrentAnimStep = 0;
 }
 
+void UScoreWidgetAnimator::BeginDestroy()
+{
+    // 모든 애니메이션 취소 및 참조 해제
+    CancelAnimation();
+    
+    Super::BeginDestroy();
+}
+
 // 애니메이션 파라미터 설정 함수
 FScoreAnimParams UScoreWidgetAnimator::SetupAnimationParameters() const
 {
@@ -79,18 +87,19 @@ void UScoreWidgetAnimator::StartFadeOutAnimation(UObject* WorldContextObject, fl
     }
 }
 
+// 애니메이션 취소 메소드 보강
 void UScoreWidgetAnimator::CancelAnimation()
 {
-    // 현재 활성화된 애니메이션 타이머 정리
-    if (bAnimationActive && IsValid(ScoreTextBlock) && ScoreTextBlock->GetWorld())
+    if (bAnimationActive && ScoreTextBlock && ScoreTextBlock->GetWorld())
     {
         ScoreTextBlock->GetWorld()->GetTimerManager().ClearTimer(AnimTimerHandle);
-        //UE_LOG(LogTemp, Display, TEXT("진행 중인 애니메이션 취소"));
+        bAnimationActive = false;
+        CurrentAnimStep = 0;
+        
+        // 모든 약한 참조 해제
+        ScoreTextBlock = nullptr;
+        ComboMultiplierTextBlock = nullptr;
     }
-    
-    // 애니메이션 상태 초기화
-    bAnimationActive = false;
-    CurrentAnimStep = 0;
 }
 
 void UScoreWidgetAnimator::ResetTextBlockProperties()

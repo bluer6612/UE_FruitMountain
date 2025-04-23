@@ -50,6 +50,7 @@ public:
 protected:
     virtual void NativeConstruct() override;
     virtual void NativeDestruct() override;
+    virtual void BeginDestroy() override;
     
     UPROPERTY(meta = (BindWidget))
     UTextBlock* ScoreTextBlock;

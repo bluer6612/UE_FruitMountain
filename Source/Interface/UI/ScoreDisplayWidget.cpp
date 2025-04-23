@@ -46,6 +46,15 @@ void UScoreDisplayWidget::NativeDestruct()
 {
     Super::NativeDestruct();
     
+    // 애니메이터 정리
+    if (WidgetAnimator)
+    {
+        // 모든 대리자 초기화
+        WidgetAnimator->CancelAnimation();
+        WidgetAnimator = nullptr;
+    }
+    
+    // 인스턴스 참조 해제
     if (Instance == this)
     {
         Instance = nullptr;
@@ -88,6 +97,17 @@ UScoreDisplayWidget* UScoreDisplayWidget::CreateScoreWidget(UObject* WorldContex
     }
     
     return Instance;
+}
+
+void UScoreDisplayWidget::BeginDestroy()
+{
+    // 정적 인스턴스 참조 해제 (중요)
+    if (Instance == this)
+    {
+        Instance = nullptr;
+    }
+    
+    Super::BeginDestroy();
 }
 
 void UScoreDisplayWidget::InitializeTextBlocks()

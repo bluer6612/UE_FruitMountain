@@ -30,6 +30,7 @@ class UE_FRUITMOUNTAIN_API UScoreWidgetAnimator : public UObject
     
 public:
     UScoreWidgetAnimator();
+    virtual void BeginDestroy() override;
     
     // 애니메이션에 사용될 텍스트 블록 설정
     void SetTextBlocks(UTextBlock* InScoreText, UTextBlock* InComboText);

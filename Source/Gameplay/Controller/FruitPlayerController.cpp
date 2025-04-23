@@ -122,7 +122,7 @@ void AFruitPlayerController::GameOver()
             // 현재 레벨 재시작
             //UGameplayStatics::OpenLevel(GetWorld(), FName(*GetWorld()->GetName()));
         },
-        3.0f,
+        5.0f,
         false
     );
 }
@@ -130,10 +130,12 @@ void AFruitPlayerController::GameOver()
 // 과일 던지기 함수 수정
 void AFruitPlayerController::ThrowFruit()
 {
-    // 이미 던지는 중이면 무시 - static 변수 대신 멤버 변수 사용
-    if (bIsThrowingInProgress)
+    // 게임 오버 상태거나 이미 던지는 중이면 취소
+    if (bIsGameOver || bIsThrowingInProgress)
+    {
         return;
-    
+    }
+
     // 던지기 시작 표시
     bIsThrowingInProgress = true;
     

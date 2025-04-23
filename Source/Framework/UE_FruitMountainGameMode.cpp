@@ -67,10 +67,24 @@ void AUE_FruitMountainGameMode::BeginPlay()
 
 void AUE_FruitMountainGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+    Super::EndPlay(EndPlayReason);
+    
+    // UI 위젯 인스턴스 정리
+    if (UScoreDisplayWidget::IsInstanceValid())
+    {
+        UScoreDisplayWidget* ScoreWidget = UScoreDisplayWidget::Instance;
+        if (ScoreWidget)
+        {
+            // 명시적으로 뷰포트에서 제거
+            ScoreWidget->RemoveFromParent();
+            UScoreDisplayWidget::Instance = nullptr;
+        }
+    }
+    
+    // 여기에 다른 정적 인스턴스 정리 코드 추가
+
     // 종료 시점에 정리
     UFruitTrajectoryHelper::ResetTrajectorySystem();
-    
-    Super::EndPlay(EndPlayReason);
 }
 
 void AUE_FruitMountainGameMode::StartPlay()
