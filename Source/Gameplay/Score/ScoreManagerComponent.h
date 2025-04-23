@@ -73,6 +73,13 @@ public:
     UFUNCTION(BlueprintPure, Category = "Combo")
     UComboSystem* GetComboSystem() const { return ComboSystem; }
 
+    // 콤보 시스템 이벤트 핸들러
+    UFUNCTION()
+    void OnComboScoreFinalized(int32 FinalComboScore);
+    
+    UFUNCTION()
+    void OnComboUpdated(int32 ComboCount, float ComboMultiplier);
+
 protected:
     virtual void BeginPlay() override;
     virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -85,11 +92,4 @@ private:
     
     // 콤보 시스템 초기화 함수
     void InitializeComboSystem();
-    
-    // 콤보 시스템 이벤트 핸들러
-    UFUNCTION()
-    void OnComboScoreFinalized(int32 FinalComboScore);
-    
-    UFUNCTION()
-    void OnComboUpdated(int32 ComboCount, float ComboMultiplier, int32 ComboScore);
 };

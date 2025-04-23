@@ -161,8 +161,11 @@ void UScoreManagerComponent::OnComboScoreFinalized(int32 FinalComboScore)
     }
 }
 
-void UScoreManagerComponent::OnComboUpdated(int32 ComboCount, float ComboMultiplier, int32 ComboScore)
+void UScoreManagerComponent::OnComboUpdated(int32 ComboCount, float ComboMultiplier)
 {
+    // 콤보 점수는 별도로 계산하거나 필요 없는 경우 0으로 설정
+    int32 ComboScore = 0; // 필요에 따라 계산 로직 구현
+    
     // 점수 추가 이벤트 발생 (UI나 다른 시스템에서 활용할 수 있음)
     OnScoreAdded.Broadcast(ComboScore, ComboCount, ComboMultiplier);
 }
