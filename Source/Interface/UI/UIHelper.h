@@ -51,10 +51,7 @@ public:
     static void SetupTextBlockStyle(
         UTextBlock* TextBlock, 
         FLinearColor Color = FLinearColor(1.0f, 1.0f, 0.8f, 1.0f),
-        int32 FontSize = 42, 
-        bool bWithShadow = true,
-        FLinearColor ShadowColor = FLinearColor(0.0f, 0.0f, 0.0f, 0.7f),
-        FVector2D ShadowOffset = FVector2D(2.0f, 2.0f),
+        int32 FontSize = 42,
         bool bBold = false,
         bool bAutoWrapText = true,
         ESlateVisibility DefaultVisibility = ESlateVisibility::HitTestInvisible);

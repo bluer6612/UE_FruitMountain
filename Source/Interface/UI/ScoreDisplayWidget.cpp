@@ -109,23 +109,19 @@ void UScoreDisplayWidget::InitializeTextBlocks()
     UE_LOG(LogTemp, Warning, TEXT("ScoreDisplayWidget: 텍스트 블록 위치 절대좌표로 설정됨"));
 }
 
-// SetupTextBlock 함수도 UIHelper 함수 사용으로 간소화
 void UScoreDisplayWidget::SetupTextBlock(UTextBlock* TextBlock, FLinearColor Color, int32 FontSize, FVector2D Pos)
 {
     // 스타일 설정
     UUIHelper::SetupTextBlockStyle(
         TextBlock, 
         Color, 
-        FontSize, 
-        true,                              // 그림자 사용
-        FLinearColor(0.0f, 0.0f, 0.0f, 0.5f),  // 그림자 색상
-        FVector2D(1.5f, 1.5f),            // 그림자 오프셋
+        FontSize,
         true,                              // 볼드체
         false,                             // 자동 줄바꿈 안함
         ESlateVisibility::Hidden           // 초기에 숨김
     );
     
-    // 위치 설정
+    // 위치 설정 (기존 코드 유지)
     UCanvasPanelSlot* TextSlot = Cast<UCanvasPanelSlot>(TextBlock->Slot);
     if (TextSlot)
     {

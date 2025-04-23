@@ -24,7 +24,7 @@ void UScoreWidgetAnimator::SetTextBlocks(UTextBlock* InScoreText, UTextBlock* In
 {
     ScoreTextBlock = InScoreText;
     ComboMultiplierTextBlock = InComboText;
-}
+    }
 
 void UScoreWidgetAnimator::StartFadeOutAnimation(UObject* WorldContextObject, float Delay)
 {
@@ -143,34 +143,28 @@ FTimerDelegate UScoreWidgetAnimator::CreateFadeDelegate(const FVector2D& ScorePo
         float CurrentMoveX = CurrentAnimStep * Params.MoveStepSize;
         
         // ScoreTextBlock 애니메이션
-        FLinearColor ScoreColor = FLinearColor::White;
+        FSlateColor CurrentScoreColor = ScoreTextBlock->GetColorAndOpacity();
+        FLinearColor ScoreColor = CurrentScoreColor.GetSpecifiedColor();
         ScoreColor.A = Alpha;
-        ScoreTextBlock->SetColorAndOpacity(ScoreColor);
+        ScoreTextBlock->SetColorAndOpacity(FSlateColor(ScoreColor));
         
         if (UCanvasPanelSlot* ScoreSlot = Cast<UCanvasPanelSlot>(ScoreTextBlock->Slot))
         {
             ScoreSlot->SetPosition(FVector2D(ScorePos.X - CurrentMoveX, ScorePos.Y));
         }
         
-        // ComboMultiplierTextBlock 애니메이션 - 텍스트가 있는 경우만 처리
-        if (ComboMultiplierTextBlock && !ComboMultiplierTextBlock->GetText().IsEmpty())
+        // ComboMultiplierTextBlock 애니메이션 - 항상 동일한 알파와 이동 적용
+        if (ComboMultiplierTextBlock)
         {
-            // 점수 텍스트와 정확히 동일한 알파 값 사용
-            FLinearColor ComboColor = UScoreDisplayWidget::BRIGHT_YELLOW_COLOR;
-            ComboColor.A = Alpha; // ScoreColor와 동일한 알파 값
-            ComboMultiplierTextBlock->SetColorAndOpacity(ComboColor);
+            FSlateColor CurrentComboColor = ComboMultiplierTextBlock->GetColorAndOpacity();
+            FLinearColor ComboColor = CurrentComboColor.GetSpecifiedColor();
+            ComboColor.A = Alpha;
+            ComboMultiplierTextBlock->SetColorAndOpacity(FSlateColor(ComboColor));
             
             if (UCanvasPanelSlot* ComboSlot = Cast<UCanvasPanelSlot>(ComboMultiplierTextBlock->Slot))
             {
-                // 점수 텍스트와 동일한 이동 거리 적용
                 ComboSlot->SetPosition(FVector2D(ComboPos.X - CurrentMoveX, ComboPos.Y));
             }
-        }
-        
-        // 디버깅 - 알파 값 확인 (가끔만 출력)
-        if (CurrentAnimStep % 5 == 0)
-        {
-            UE_LOG(LogTemp, Verbose, TEXT("애니메이션 스텝 %d: 알파 %.2f"), CurrentAnimStep, Alpha);
         }
         
         // 애니메이션 종료 체크

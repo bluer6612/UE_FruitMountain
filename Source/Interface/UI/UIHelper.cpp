@@ -108,14 +108,10 @@ UTexture2D* UUIHelper::LoadAndApplyTexture(UImage* ImageWidget, const FString& T
     return LoadedTexture;
 }
 
-// SetupTextBlockStyle 함수 구현 확장
 void UUIHelper::SetupTextBlockStyle(
     UTextBlock* TextBlock, 
     FLinearColor Color,
-    int32 FontSize, 
-    bool bWithShadow,
-    FLinearColor ShadowColor,
-    FVector2D ShadowOffset,
+    int32 FontSize,
     bool bBold,
     bool bAutoWrapText,
     ESlateVisibility DefaultVisibility)
@@ -140,13 +136,6 @@ void UUIHelper::SetupTextBlockStyle(
     
     // 색상 설정
     TextBlock->SetColorAndOpacity(Color);
-    
-    // 그림자 설정
-    if (bWithShadow)
-    {
-        TextBlock->SetShadowColorAndOpacity(ShadowColor);
-        TextBlock->SetShadowOffset(ShadowOffset);
-    }
     
     // 자동 줄바꿈 설정
     TextBlock->SetAutoWrapText(bAutoWrapText);
