@@ -30,15 +30,8 @@ APlateActor::APlateActor()
         PlateMeshComponent->SetStaticMesh(PlateAsset.Object);
         PlateMeshComponent->SetWorldScale3D(PlateScale);
         PlateMeshComponent->SetWorldLocation(PlateLocation);
-        
-        // 충돌 설정 강화
         PlateMeshComponent->SetCollisionProfileName(TEXT("BlockAll"));
-        PlateMeshComponent->SetCollisionResponseToAllChannels(ECR_Block);
-        PlateMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
         PlateMeshComponent->ComponentTags.AddUnique(FName("Object"));
-        
-        // CCD 활성화 (터널링 방지)
-        PlateMeshComponent->SetUseCCD(true);
     }
     
     // 액터에 태그 추가
@@ -62,7 +55,7 @@ void APlateActor::CalculatePlateRadius()
         FVector PlateSize = PlateBounds.GetSize();
         
         // 접시만의 반지름 계산 (X, Y 중 큰 값의 절반)
-        PlateRadius = FMath::Max(PlateSize.X, PlateSize.Y) * 0.475f; // 약간 여유를 두고 0.475배
+        PlateRadius = FMath::Max(PlateSize.X, PlateSize.Y) * 0.4625f; // 약간 여유를 두고 0.4625배
         
         UE_LOG(LogTemp, Warning, TEXT("접시 반경 계산됨: %.1f (X=%.1f, Y=%.1f)"),
             PlateRadius, PlateSize.X, PlateSize.Y);
