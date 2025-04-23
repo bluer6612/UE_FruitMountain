@@ -174,6 +174,12 @@ void AFruitPlayerController::ThrowFruit()
 // 새로운 각도 조정 함수 (축 매핑용)
 void AFruitPlayerController::AdjustAngle(float Value)
 {
+    // 게임 오버 상태면 취소
+    if (bIsGameOver)
+    {
+        return;
+    }
+
     if (FMath::Abs(Value) < KINDA_SMALL_NUMBER)
         return;
     
@@ -203,6 +209,12 @@ void AFruitPlayerController::AdjustAngle(float Value)
 // 카메라 회전 처리 함수 - 과일 회전 보정 수정
 void AFruitPlayerController::RotateCamera(float Value)
 {
+    // 게임 오버 상태면 취소
+    if (bIsGameOver)
+    {
+        return;
+    }
+
     if (FMath::IsNearlyZero(Value))
         return;
     
@@ -256,6 +268,12 @@ void AFruitPlayerController::RotateCamera(float Value)
 // 실제 업데이트 수행 함수 (무한 루프 방지 용으로 이중으로 거침)
 void AFruitPlayerController::ExecutePreviewBallUpdate()
 {
+    // 게임 오버 상태면 취소
+    if (bIsGameOver)
+    {
+        return;
+    }
+    
     bPreviewBallUpdatePending = false;
     
     // 공 위치 업데이트 (회전은 별도 처리)

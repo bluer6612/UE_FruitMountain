@@ -66,65 +66,100 @@ void UFruitMergeHelper::ProcessFruitCollision(AFruitBall* FruitA, AFruitBall* Fr
     MergeFruits(FruitA, FruitB, CollisionPoint);
 }
 
-void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& MergeLocation)
+void UFruitMergeHelper::MergeFruits(AFruitBall* Fruit1, AFruitBall* Fruit2, const FVector& ImpactPoint)
 {
-    if (!FruitA || !FruitB)
+    if (!Fruit1 || !Fruit2)
     {
         return;
     }
     
-    UWorld* World = FruitA->GetWorld();
+    UWorld* World = Fruit1->GetWorld();
     if (!World)
     {
         return;
     }
     
-    // 1. 피드백 및 점수 처리
-    int32 FruitType = FruitA->GetBallType();
-    UFruitMergeFeedbackHelper::PlayMergeEffect(World, MergeLocation, FruitType);
-    UScoreManagerComponent::AddScoreStatic(World, FruitType);
-    
-    // 2. 주변 물리 안정화 (폭발적 충돌 방지)
-    UFruitMergeFeedbackHelper::StabilizeFruits(World);
-    
-    // 3. 최대 레벨 확인
-    if (FruitType >= AFruitBall::MaxBallType)
+    // 병합 위치 계산 (충돌 지점 또는 두 과일의 중간점)
+    FVector MergeLocation = ImpactPoint;
+    if (MergeLocation == FVector::ZeroVector)
     {
-        // 최대 레벨이면 두 과일만 제거하고 종료
-        FruitA->Destroy();
-        FruitB->Destroy();
-        return;
+        MergeLocation = (Fruit1->GetActorLocation() + Fruit2->GetActorLocation()) * 0.5f;
     }
     
-    // 4. 새 과일 생성
-    FRotator ExistingRotation = FruitA->GetActorRotation();
-    int32 NextType = FruitType + 1;
+    int32 CurrentType = Fruit1->GetBallType();
     
-    // 플레이어 컨트롤러를 통한 생성
-    AFruitPlayerController* Controller = Cast<AFruitPlayerController>(UGameplayStatics::GetPlayerController(World, 0));
-    if (Controller)
+    // 1. 병합 전 주변 과일 공간 확보 - 통합 함수 호출
+    UFruitMergeFeedbackHelper::StabilizeFruits(
+        World,             // 월드
+        MergeLocation,     // 병합 위치
+        3.0f,              // 기본 감쇠 계수
+        nullptr,           // 대상 과일 없음 (병합 전)
+        CurrentType + 1    // 새 과일 타입
+    );
+    
+    // 약간의 딜레이 (0.1초) 후 실제 병합 진행
+    FTimerHandle MergeTimerHandle;
+    World->GetTimerManager().SetTimer(MergeTimerHandle, [=]()
     {
-        // 새 과일 스폰
-        AActor* SpawnedActor = UFruitSpawnHelper::SpawnBall(Controller, MergeLocation, NextType, true);
-        AFruitBall* NewFruit = Cast<AFruitBall>(SpawnedActor);
+        // 1. 피드백 및 점수 처리
+        UFruitMergeFeedbackHelper::PlayMergeEffect(World, MergeLocation, CurrentType);
+        UScoreManagerComponent::AddScoreStatic(World, CurrentType);
         
-        // 생성된 과일에 자연스러운 움직임 적용
-        if (NewFruit && NewFruit->GetMeshComponent())
+        // 2. 주변 물리 안정화 (폭발적 충돌 방지)
+        UFruitMergeFeedbackHelper::StabilizeFruits(
+            World,             // 월드
+            MergeLocation,     // 병합 위치
+            5.0f,              // 높은 감쇠 계수 (병합 후)
+            nullptr,           // 대상 과일 없음
+            CurrentType        // 현재 과일 타입
+        );
+        
+        // 3. 최대 레벨 확인
+        if (CurrentType >= AFruitBall::MaxBallType)
         {
-            // 기존 과일의 회전각 적용
-            NewFruit->SetActorRotation(ExistingRotation);
-            
-            // 주변 과일 안정화
-            UFruitMergeFeedbackHelper::StabilizeFruits(World, 8.0f);
+            // 최대 레벨이면 두 과일만 제거하고 종료
+            Fruit1->Destroy();
+            Fruit2->Destroy();
+            return;
         }
         
-        UE_LOG(LogTemp, Warning, TEXT("새 과일 생성 완료: 레벨=%d, 위치=%s"), 
-               NextType, *MergeLocation.ToString());
-    }
-    
-    // 기존 과일들 제거
-    FruitA->Destroy();
-    FruitB->Destroy();
+        // 4. 새 과일 생성
+        FRotator ExistingRotation = Fruit1->GetActorRotation();
+        int32 NextType = CurrentType + 1;
+        
+        // 플레이어 컨트롤러를 통한 생성
+        AFruitPlayerController* Controller = Cast<AFruitPlayerController>(UGameplayStatics::GetPlayerController(World, 0));
+        if (Controller)
+        {
+            // 새 과일 스폰
+            AActor* SpawnedActor = UFruitSpawnHelper::SpawnBall(Controller, MergeLocation, NextType, true);
+            AFruitBall* NewFruit = Cast<AFruitBall>(SpawnedActor);
+            
+            // 생성된 과일에 자연스러운 움직임 적용
+            if (NewFruit && NewFruit->GetMeshComponent())
+            {
+                // 기존 과일의 회전각 적용
+                NewFruit->SetActorRotation(ExistingRotation);
+                
+                // 병합 후 안정화
+                UFruitMergeFeedbackHelper::StabilizeFruits(
+                    World,             // 월드
+                    MergeLocation,     // 병합 위치
+                    5.0f,              // 높은 감쇠 계수 (병합 후)
+                    NewFruit,          // 생성된 새 과일
+                    NextType           // 새 과일 타입
+                );
+            }
+            
+            UE_LOG(LogTemp, Warning, TEXT("새 과일 생성 완료: 레벨=%d, 위치=%s"), 
+                   NextType, *MergeLocation.ToString());
+        }
+        
+        // 기존 과일들 제거
+        Fruit1->Destroy();
+        Fruit2->Destroy();
+        
+    }, 0.1f, false);
 }
 
 // 모든 메시 사전 로드

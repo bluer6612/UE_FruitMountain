@@ -230,8 +230,14 @@ void AFruitBall::OnBallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor
         float ImpactForce = NormalImpulse.Size();
         float DampingMultiplier = FMath::Clamp(ImpactForce / 100.0f, 2.0f, 10.0f);
         
-        // 통합된 안정화 함수 호출
-        UFruitMergeFeedbackHelper::StabilizeFruits(GetWorld(), DampingMultiplier);
+        // 통합 안정화 함수 호출
+        UFruitMergeFeedbackHelper::StabilizeFruits(
+            GetWorld(),         // 월드
+            GetActorLocation(), // 충돌 위치
+            DampingMultiplier,  // 감쇠 계수
+            this,               // 충돌한 과일
+            BallType           // 과일 타입
+        );
     }
 
     // 접시와의 충돌인지 확인
