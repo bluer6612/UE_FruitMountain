@@ -218,24 +218,20 @@ void AFruitBall::Tick(float DeltaTime)
     }
 }
 
-void AFruitBall::OnBallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, 
-                       FVector NormalImpulse, const FHitResult& Hit)
+void AFruitBall::OnBallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-    // 충돌 경험 업데이트
-    if (!bHasCollided)
-    {
-        bHasCollided = true;
-    }
-
     // 모든 충돌에 대해 안정화 적용 (접시 구분 없음)
-    if (HitComponent && HitComponent->IsSimulatingPhysics())
+    if (!bHasCollided && HitComponent && HitComponent->IsSimulatingPhysics())
     {
+        // 충돌 경험 업데이트
+        bHasCollided = true;
+
         // 충돌 강도에 따라 감쇠 정도 조절
         float ImpactForce = NormalImpulse.Size();
         float DampingMultiplier = FMath::Clamp(ImpactForce / 100.0f, 2.0f, 10.0f);
         
         // 통합된 안정화 함수 호출
-        UFruitMergeFeedbackHelper::StabilizeSingleFruit(this, DampingMultiplier);
+        UFruitMergeFeedbackHelper::StabilizeFruits(GetWorld(), DampingMultiplier);
     }
 
     // 접시와의 충돌인지 확인

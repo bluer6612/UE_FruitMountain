@@ -114,8 +114,8 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, cons
             // 기존 과일의 회전각 적용
             NewFruit->SetActorRotation(ExistingRotation);
             
-            // 새 과일 물리 속성 설정
-            UFruitMergeFeedbackHelper::StabilizeFruits(World, 8.0f, true);
+            // 주변 과일 안정화
+            UFruitMergeFeedbackHelper::StabilizeFruits(World, 8.0f);
         }
         
         UE_LOG(LogTemp, Warning, TEXT("새 과일 생성 완료: 레벨=%d, 위치=%s"), 

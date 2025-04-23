@@ -40,12 +40,6 @@ void UComboSystem::Initialize(UObject* InOwner, UScoreDisplayWidget* InScoreWidg
     {
         ScoreWidgetInstance = UScoreDisplayWidget::Instance;
     }
-
-    if (!IsRooted())
-    {
-        this->AddToRoot();
-        UE_LOG(LogTemp, Display, TEXT("ComboSystem이 GC로부터 보호됨"));
-    }
 }
 
 void UComboSystem::Tick(float DeltaTime)
