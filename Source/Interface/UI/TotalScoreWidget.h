@@ -54,7 +54,6 @@ protected:
     virtual void NativeConstruct() override;
     virtual void NativeDestruct() override;
     
-    // 텍스트 블록 변수 추가 - 누락되었던 부분
     UPROPERTY(meta = (BindWidget))
     UTextBlock* TotalScoreTextBlock;
     

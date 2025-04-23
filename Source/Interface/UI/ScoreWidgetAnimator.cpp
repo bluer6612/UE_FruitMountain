@@ -205,9 +205,6 @@ void UScoreWidgetAnimator::AnimateScoreText(int32 Score, float Delay)
     ScoreTextBlock->SetText(FText::FromString(ScoreText));
     ScoreTextBlock->SetColorAndOpacity(UScoreDisplayWidget::BRIGHT_YELLOW_COLOR);
     ScoreTextBlock->SetVisibility(ESlateVisibility::HitTestInvisible);
-    
-    // 디버그 로그 추가
-    UE_LOG(LogTemp, Display, TEXT("AnimateScoreText: %s"), *ScoreText);
 }
 
 void UScoreWidgetAnimator::AnimateComboText(int32 ComboCount, float ComboMultiplier, float Delay)

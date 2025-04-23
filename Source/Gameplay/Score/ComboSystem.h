@@ -11,7 +11,6 @@ class UScoreWidgetAnimator;
 // 콤보 관련 델리게이트 정의
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FComboEndedSignature, int32, FinalComboCount);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FComboScoreFinalizedSignature, int32, FinalComboScore);
-// OnComboUpdated 델리게이트 추가
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnComboUpdated, int32, ComboCount, float, ComboMultiplier);
 
 UCLASS()
@@ -48,11 +47,10 @@ public:
     UPROPERTY(BlueprintAssignable, Category = "Combo")
     FComboScoreFinalizedSignature OnComboScoreFinalized;
     
-    // OnComboUpdated 델리게이트 멤버 추가
+    // OnComboUpdated 델리게이트 멤버
     UPROPERTY(BlueprintAssignable, Category = "Combo")
     FOnComboUpdated OnComboUpdated;
     
-    // SafeCleanup 함수 추가
     UFUNCTION()
     void SafeCleanup();
     
