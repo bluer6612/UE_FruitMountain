@@ -232,8 +232,8 @@ void AFruitBall::OnBallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor
         float DampingMultiplier = FMath::Clamp(ImpactForce / 100.0f, 2.0f, 10.0f);
         
         // 작은 모션을 위한 최소한의 감쇠 적용 (완전히 무시하는 것이 아니라 영향력 최소화)
-        HitComponent->SetAngularDamping(0.5f);
-        HitComponent->SetLinearDamping(0.1f);
+        HitComponent->SetAngularDamping(3.f);
+        HitComponent->SetLinearDamping(3.f);
                     
         // 충돌 경험 업데이트
         bHasCollided = true;
