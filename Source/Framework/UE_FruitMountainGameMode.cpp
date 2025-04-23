@@ -69,21 +69,52 @@ void AUE_FruitMountainGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason
 {
     Super::EndPlay(EndPlayReason);
     
-    // UI 위젯 인스턴스 정리
+    // 모든 UI 위젯 정리 (기존 코드를 확장)
+    
+    // 1. ScoreDisplayWidget 정리 
     if (UScoreDisplayWidget::IsInstanceValid())
     {
         UScoreDisplayWidget* ScoreWidget = UScoreDisplayWidget::Instance;
         if (ScoreWidget)
         {
-            // 명시적으로 뷰포트에서 제거
             ScoreWidget->RemoveFromParent();
             UScoreDisplayWidget::Instance = nullptr;
         }
     }
     
-    // 여기에 다른 정적 인스턴스 정리 코드 추가
-
-    // 종료 시점에 정리
+    // 2. TextureDisplayWidget 정리
+    if (UTextureDisplayWidget::IsInstanceValid())
+    {
+        UTextureDisplayWidget* TextureWidget = UTextureDisplayWidget::Instance;
+        if (TextureWidget)
+        {
+            TextureWidget->RemoveFromParent();
+            UTextureDisplayWidget::Instance = nullptr;
+        }
+    }
+    
+    // 3. TotalScoreWidget 정리
+    if (UTotalScoreWidget::IsInstanceValid())
+    {
+        UTotalScoreWidget* TotalScoreWidget = UTotalScoreWidget::Instance;
+        if (TotalScoreWidget)
+        {
+            TotalScoreWidget->RemoveFromParent();
+            UTotalScoreWidget::Instance = nullptr;
+        }
+    }
+    
+    // 4. 스코어 매니저 참조 해제
+    UScoreManagerComponent* ScoreManagerComp = FindComponentByClass<UScoreManagerComponent>();
+    if (ScoreManagerComp)
+    {
+        // 위젯 참조 해제
+        ScoreManagerComp->ScoreWidgetInstance = nullptr;
+        ScoreManagerComp->TotalScoreWidgetInstance = nullptr;
+        ScoreManagerComp->bWidgetCreated = false;
+    }
+    
+    // 5. 배처 및 시스템 정리
     UFruitTrajectoryHelper::ResetTrajectorySystem();
 }
 

@@ -19,7 +19,7 @@ public:
     void GameOver();
     
     // 게임 중지 상태 추적
-    UPROPERTY()
+    UPROPERTY(BlueprintReadWrite, Category = "Game Flow")
     bool bIsGameOver = false;
 
     // 던질 공(과일) 액터의 클래스, 에디터에서 지정 (예: 블루프린트 클래스)

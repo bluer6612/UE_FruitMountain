@@ -236,3 +236,8 @@ void UTotalScoreWidget::ApplyPendingScore()
     
     UpdateTotalScore(PendingScore);
 }
+
+bool UTotalScoreWidget::IsInstanceValid()
+{
+    return Instance != nullptr && IsValid(Instance);
+}

@@ -85,6 +85,11 @@ void UTextureDisplayWidget::NativeConstruct()
     }
 }
 
+bool UTextureDisplayWidget::IsInstanceValid()
+{
+    return Instance != nullptr && IsValid(Instance);
+}
+
 void UTextureDisplayWidget::SetupAllImages()
 {
     // 화면 크기를 고려한 앵커 기반 위치 설정 + 개별 패딩값 적용

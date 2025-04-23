@@ -35,6 +35,10 @@ public:
     UFUNCTION(BlueprintCallable, Category="UI")
     void SetImageTexture(EWidgetImageType Position, const FString& TexturePath, const FVector2D& CustomSize = FVector2D(0, 0), float PaddingX = 20.0f, float PaddingY = 20.0f);
     
+    // 인스턴스 유효성 확인
+    UFUNCTION(BlueprintCallable, Category = "UI|Texture")
+    static bool IsInstanceValid();
+
 protected:
     // 이미지 컴포넌트
     UPROPERTY()

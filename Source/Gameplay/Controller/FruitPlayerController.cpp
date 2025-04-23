@@ -17,6 +17,9 @@ AFruitPlayerController::AFruitPlayerController()
     CameraOrbitRadius = 110.f;
 
     CurrentBallType = 1;
+
+    // 게임 오버 상태 초기화
+    bIsGameOver = false;
 }
 
 void AFruitPlayerController::BeginPlay()
@@ -94,11 +97,6 @@ void AFruitPlayerController::SetupInputComponent()
 
 void AFruitPlayerController::GameOver()
 {
-    // 이미 게임오버 상태면 중복 처리 방지
-    if (bIsGameOver) return;
-    
-    bIsGameOver = true;
-    
     // 게임 일시정지 (선택사항)
     // SetPause(true);
     

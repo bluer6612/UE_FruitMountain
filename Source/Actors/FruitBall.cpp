@@ -193,7 +193,7 @@ void AFruitBall::Tick(float DeltaTime)
                     FruitController->bIsThrowingInProgress = false; // 던지기 상태 해제
                     
                     // 미리보기 공 생성 방지
-                    FruitController->bGameOver = true; // 게임 오버 상태로 설정
+                    FruitController->bIsGameOver = true; // 게임 오버 상태로 설정
                     
                     // 카메라 이동
                     UCameraOrbitFunctionLibrary::MoveViewToFallingFruit(FruitController, GetActorLocation(), FRotator::ZeroRotator);

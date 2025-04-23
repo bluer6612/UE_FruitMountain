@@ -46,6 +46,10 @@ public:
         return Instance;
     }
     
+    // 인스턴스 유효성 확인 함수
+    UFUNCTION(BlueprintCallable, Category = "UI|Score")
+    static bool IsInstanceValid();
+    
 protected:
     virtual void NativeConstruct() override;
     virtual void NativeDestruct() override;
