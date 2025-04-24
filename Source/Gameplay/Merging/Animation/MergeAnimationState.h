@@ -6,6 +6,19 @@
 
 class AFruitBall;
 
+// 애니메이션 관련 상수 정의
+namespace MergeAnimConstants
+{
+    // 기본 애니메이션 지속 시간 (초)
+    constexpr float DEFAULT_ANIMATION_DURATION = 0.1f;
+    
+    // 애니메이션 업데이트 간격 (초)
+    constexpr float ANIMATION_UPDATE_INTERVAL = 0.005f;
+    
+    // 애니메이션 완료 후 후처리 지연 시간 (초)
+    constexpr float POST_ANIMATION_DELAY = 0.1f;
+}
+
 // 병합 애니메이션의 상태를 관리하는 UObject 클래스
 UCLASS()
 class UE_FRUITMOUNTAIN_API UMergeAnimationState : public UObject
@@ -17,7 +30,7 @@ public:
     UMergeAnimationState();
     
     // 초기화 함수
-    void Initialize(AFruitBall* InFruit1, AFruitBall* InFruit2, const FVector& InMergeLocation, int32 InNextBallType, float InAnimDuration = 0.1f);
+    void Initialize(AFruitBall* InFruit1, AFruitBall* InFruit2, const FVector& InMergeLocation, int32 InNextBallType);
     
     // 애니메이션 틱 함수
     UFUNCTION()

@@ -6,6 +6,7 @@
 #include "FruitMergeStabilizer.h"
 #include "Engine/StaticMesh.h"
 #include "Gameplay/Merging/Animation/MergeAnimator.h"
+#include "Gameplay/Merging/Animation/MergeAnimationState.h"
 
 void UFruitMergeHelper::RegisterCollisionHandlers(AFruitBall* Fruit)
 {
@@ -114,7 +115,7 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* Fruit1, AFruitBall* Fruit2, cons
     );
     
     // 애니메이션 시작
-    UMergeAnimator::AnimateMerge(Fruit1, Fruit2, MergeLocation, NextType, 0.15f);
+    UMergeAnimator::AnimateMerge(Fruit1, Fruit2, MergeLocation, NextType, MergeAnimConstants::DEFAULT_ANIMATION_DURATION);
 }
 
 // 모든 메시 사전 로드

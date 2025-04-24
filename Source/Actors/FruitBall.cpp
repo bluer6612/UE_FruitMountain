@@ -1,7 +1,5 @@
 #include "FruitBall.h"
 #include "Components/StaticMeshComponent.h"
-#include "Gameplay/Merging/Core/FruitMergeHelper.h"
-#include "Gameplay/Merging/Core/FruitMergeStabilizer.h"
 #include "Engine/StaticMesh.h"
 #include "Gameplay/Controller/FruitPlayerController.h"
 #include "Kismet/GameplayStatics.h"
@@ -9,6 +7,8 @@
 #include "Gameplay/Physics/FruitTrajectoryHelper.h"
 #include "PlateActor.h"
 #include "Gameplay/Merging/Animation/MergeAnimator.h"
+#include "Gameplay/Merging/Core/FruitMergeHelper.h"
+#include "Gameplay/Merging/Core/FruitMergeStabilizer.h"
 #include "Gameplay/Merging/Core/MergeController.h" 
 
 AFruitBall::AFruitBall()

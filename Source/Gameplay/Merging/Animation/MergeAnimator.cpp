@@ -63,7 +63,7 @@ FTimerHandle UMergeAnimator::AnimateMerge(AFruitBall* Fruit1, AFruitBall* Fruit2
         AnimState->AddToRoot();
         
         // 애니메이션 초기화 및 시작
-        AnimState->Initialize(Fruit1, Fruit2, MergeLocation, NextBallType, AnimDuration);
+        AnimState->Initialize(Fruit1, Fruit2, MergeLocation, NextBallType);
         
         // 애니메이션 완료 여부를 주기적으로 확인
         FTimerHandle CleanupTimerHandle;

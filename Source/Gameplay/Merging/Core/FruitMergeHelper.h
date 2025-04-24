@@ -28,8 +28,4 @@ public:
     // 모든 메시 사전 로드 (기존 함수)
     UFUNCTION(BlueprintCallable, Category = "Fruit Merging")
     static void PreloadAllFruitMeshes(UWorld* World);
-    
-    // 병합 이펙트 재생
-    UFUNCTION(BlueprintCallable, Category = "Fruit Feedback")
-    static void PlayMergeEffect(UWorld* World, const FVector& Location, int32 BallType);
 };

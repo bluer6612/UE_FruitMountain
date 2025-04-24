@@ -11,7 +11,7 @@
 UMergeAnimationState::UMergeAnimationState()
     : NextBallType(0)
     , CurrentBallType(0)
-    , AnimDuration(0.15f)
+    , AnimDuration(MergeAnimConstants::DEFAULT_ANIMATION_DURATION)
     , ElapsedTime(0.0f)
     , bIsInitialized(false)
     , bIsCompleted(false)
@@ -19,7 +19,7 @@ UMergeAnimationState::UMergeAnimationState()
 {
 }
 
-void UMergeAnimationState::Initialize(AFruitBall* InFruit1, AFruitBall* InFruit2, const FVector& InMergeLocation, int32 InNextBallType, float InAnimDuration)
+void UMergeAnimationState::Initialize(AFruitBall* InFruit1, AFruitBall* InFruit2, const FVector& InMergeLocation, int32 InNextBallType)
 {
     // 유효성 검사
     if (!InFruit1 || !InFruit2 || !IsValid(InFruit1) || !IsValid(InFruit2))
@@ -33,7 +33,7 @@ void UMergeAnimationState::Initialize(AFruitBall* InFruit1, AFruitBall* InFruit2
     Fruit2 = InFruit2;
     MergeLocation = InMergeLocation;
     NextBallType = InNextBallType;
-    AnimDuration = InAnimDuration;
+    AnimDuration = MergeAnimConstants::DEFAULT_ANIMATION_DURATION;
     CurrentBallType = InFruit1->GetBallType();
     
     // 초기 스케일 저장
@@ -68,8 +68,7 @@ void UMergeAnimationState::Initialize(AFruitBall* InFruit1, AFruitBall* InFruit2
     UWorld* World = GetWorld();
     if (World)
     {
-        World->GetTimerManager().SetTimer(AnimTimerHandle, 
-            this, &UMergeAnimationState::UpdateAnimation, 0.005f, true);
+        World->GetTimerManager().SetTimer(AnimTimerHandle, this, &UMergeAnimationState::UpdateAnimation, MergeAnimConstants::ANIMATION_UPDATE_INTERVAL, true);
     }
 }
 
@@ -87,7 +86,7 @@ void UMergeAnimationState::UpdateAnimation()
     }
     
     // 경과 시간 증가
-    ElapsedTime += 0.005f; 
+    ElapsedTime += MergeAnimConstants::ANIMATION_UPDATE_INTERVAL;
     float Progress = FMath::Clamp(ElapsedTime / AnimDuration, 0.0f, 1.0f);
     
     // 스케일 업데이트
@@ -121,7 +120,8 @@ void UMergeAnimationState::UpdateAnimation()
         
         // 후처리 타이머 설정
         World->GetTimerManager().SetTimer(PostAnimTimerHandle,
-            this, &UMergeAnimationState::FinishAnimation, 0.1f, false);
+            this, &UMergeAnimationState::FinishAnimation, 
+            MergeAnimConstants::POST_ANIMATION_DELAY, false); // 상수 사용
     }
 }
 
