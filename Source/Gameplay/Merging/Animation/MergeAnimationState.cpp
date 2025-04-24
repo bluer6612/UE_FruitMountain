@@ -6,6 +6,7 @@
 #include "Gameplay/Fruit/FruitSpawnHelper.h"
 #include "Gameplay/Merging/Core/MergeController.h"
 #include "Gameplay/Merging/Core/FruitMergeHelper.h"
+#include "Gameplay\Score\ScoreManagerComponent.h"
 
 UMergeAnimationState::UMergeAnimationState()
     : NextBallType(0)
@@ -127,8 +128,10 @@ void UMergeAnimationState::FinishAnimation()
         return;
     }
     
+    AFruitBall* CurrentNewFruit = NewFruit.Get();
+
     // 최종 스케일 명시적으로 설정
-    if (AFruitBall* CurrentNewFruit = NewFruit.Get())
+    if (CurrentNewFruit != nullptr)
     {
         // 타입에 맞는 정확한 최종 크기 설정
         float FinalScale = AFruitBall::CalculateBallSize(NextBallType) / 100.0f; // UE 스케일로 변환
@@ -147,6 +150,9 @@ void UMergeAnimationState::FinishAnimation()
     {
         MergeController->SetMergeInProgress(false);
     }
+
+    // 점수 처리
+    UScoreManagerComponent::AddScoreStatic(World, CurrentNewFruit->GetBallType() - 1);
     
     //UE_LOG(LogTemp, Display, TEXT("병합 후 처리 완료: 새 병합 가능 상태"));
     

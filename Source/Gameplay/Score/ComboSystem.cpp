@@ -82,19 +82,17 @@ int32 UComboSystem::CalculateFinalScore(int32 BallType)
         CurrentComboScore = 0;
     }
     
-    // 3. 연쇄 보너스 계산
+    // 3. 점수 누적
+    CurrentComboScore += BaseScore;
+
+    // 4. 콤보 계산 (텍스트 표시용)
     float ComboMultiplier = CalculateComboMultiplier();
+    int ComboMultiplierScore = FMath::RoundToInt(CurrentComboScore * ComboMultiplier);
     
-    // 4. 최종 점수 계산
-    int32 FinalScore = FMath::RoundToInt(BaseScore * ComboMultiplier);
+    // 5. UI 업데이트
+    DisplayScoreAnimation(ComboMultiplierScore, ComboCount, ComboMultiplier);
     
-    // 5. 콤보 점수 누적
-    CurrentComboScore += FinalScore;
-    
-    // 6. UI 업데이트
-    DisplayScoreAnimation(FinalScore, ComboCount, ComboMultiplier);
-    
-    return FinalScore;
+    return BaseScore;
 }
 
 void UComboSystem::DisplayScoreAnimation(int32 Score, int32 LocalComboCount, float LocalComboMultiplier)
@@ -137,10 +135,19 @@ void UComboSystem::OnComboTimerExpired()
 
 void UComboSystem::OnAnimationCompleted()
 {
-    // 콤보 점수 최종화
+    // 콤보 점수에 연쇄 보너스를 최종적으로 한 번만 적용
     if (CurrentComboScore > 0)
     {
-        OnComboScoreFinalized.Broadcast(CurrentComboScore);
+        // 현재 연쇄 보너스 계산
+        float ComboMultiplier = CalculateComboMultiplier();
+        
+        // 누적된 기본 점수에 연쇄 보너스를 한 번만 적용
+        int32 FinalScore = FMath::RoundToInt(CurrentComboScore * ComboMultiplier);
+        
+        //UE_LOG(LogTemp, Warning, TEXT("콤보 최종화: 기본 점수(%d) x 연쇄 보너스(%.1f) = %d"), CurrentComboScore, ComboMultiplier, FinalScore);
+        
+        // 최종 점수 브로드캐스트
+        OnComboScoreFinalized.Broadcast(FinalScore);
         CurrentComboScore = 0;
     }
 }
@@ -171,7 +178,7 @@ void UComboSystem::ExtendComboTime()
 
 int32 UComboSystem::CalculateBaseScore(int32 BallType) const
 {
-// 등차수열의 합 공식: n*(n+1)/2
+    // 등차수열의 합 공식: n*(n+1)/2
     return (BallType * (BallType + 1)) / 2;
 }
 
@@ -182,7 +189,7 @@ float UComboSystem::CalculateComboMultiplier() const
         return 1.0f;
     }
     
-// 연쇄 보너스 계산 (2연쇄: 1.1배, 4연쇄: 1.2배, 6연쇄: 1.3배, ...)
+    // 연쇄 보너스 계산 (2연쇄: 1.1배, 4연쇄: 1.2배, 6연쇄: 1.3배, ...)
     int32 BonusTiers = ComboCount / 2;
     return 1.0f + (BonusTiers * 0.1f);
 }
