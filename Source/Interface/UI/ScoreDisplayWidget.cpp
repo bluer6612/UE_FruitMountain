@@ -5,7 +5,7 @@
 #include "Blueprint/WidgetTree.h"
 #include "Components/Image.h"
 #include "Components/PanelWidget.h"
-#include "UIHelper.h"
+#include "UIWidgetUtility.h"
 #include "ScoreWidgetAnimator.h"
 
 // 정적 인스턴스 초기화
@@ -72,7 +72,7 @@ UScoreDisplayWidget* UScoreDisplayWidget::CreateScoreWidget(UObject* WorldContex
     }
     
     // 플레이어 컨트롤러 확인
-    APlayerController* PC = UUIHelper::GetValidPlayerController(WorldContextObject);
+    APlayerController* PC = UUIWidgetUtility::GetValidPlayerController(WorldContextObject);
     if (!PC)
     {
         return nullptr;
@@ -132,7 +132,7 @@ void UScoreDisplayWidget::InitializeTextBlocks()
 void UScoreDisplayWidget::SetupTextBlock(UTextBlock* TextBlock, FLinearColor Color, int32 FontSize, FVector2D Pos)
 {
     // 스타일 설정
-    UUIHelper::SetupTextBlockStyle(
+    UUIWidgetUtility::SetupTextBlockStyle(
         TextBlock, 
         Color, 
         FontSize,
@@ -198,10 +198,4 @@ void UScoreDisplayWidget::ResetComboDisplay()
     {
         ComboMultiplierTextBlock->SetVisibility(ESlateVisibility::Hidden);
     }
-}
-
-// 정적 함수 구현
-bool UScoreDisplayWidget::IsInstanceValid()
-{
-    return UUIHelper::IsWidgetInstanceValid(Instance);
 }

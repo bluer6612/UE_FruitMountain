@@ -5,7 +5,7 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Components/Widget.h"
 #include "Blueprint/UserWidget.h"
-#include "UIHelper.generated.h"
+#include "UIWidgetUtility.generated.h"
 
 // 앵커 위치 열거형
 UENUM(BlueprintType)
@@ -26,7 +26,7 @@ class UTexture2D;
 class UTextBlock;
 
 UCLASS()
-class UE_FRUITMOUNTAIN_API UUIHelper : public UObject
+class UE_FRUITMOUNTAIN_API UUIWidgetUtility : public UObject
 {
     GENERATED_BODY()
     
@@ -121,7 +121,7 @@ public:
 
 // 위젯 클래스 로드 템플릿 함수
 template<class T>
-TSubclassOf<UUserWidget> UUIHelper::LoadWidgetClassIfNeeded(TSubclassOf<UUserWidget>& WidgetClass, const FString& BlueprintPath)
+TSubclassOf<UUserWidget> UUIWidgetUtility::LoadWidgetClassIfNeeded(TSubclassOf<UUserWidget>& WidgetClass, const FString& BlueprintPath)
 {
     if (WidgetClass)
     {
@@ -140,7 +140,7 @@ TSubclassOf<UUserWidget> UUIHelper::LoadWidgetClassIfNeeded(TSubclassOf<UUserWid
 
 // 위젯 유효성 검사 템플릿 함수
 template<class T>
-bool UUIHelper::IsWidgetInstanceValid(T* Instance)
+bool UUIWidgetUtility::IsWidgetInstanceValid(T* Instance)
 {
     return Instance && IsValid(Instance) && Instance->IsInViewport();
 }

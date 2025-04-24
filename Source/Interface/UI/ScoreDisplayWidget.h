@@ -15,9 +15,6 @@ class UE_FRUITMOUNTAIN_API UScoreDisplayWidget : public UUserWidget
     
 public:
     UScoreDisplayWidget(const FObjectInitializer& ObjectInitializer);
-
-    // 정적 인스턴스 - 싱글톤 패턴
-    static UScoreDisplayWidget* Instance;
     
     // 위젯 클래스 참조
     static TSubclassOf<UUserWidget> ScoreWidgetClass;
@@ -39,15 +36,11 @@ public:
     UFUNCTION(BlueprintCallable, Category = "UI Score")
     void ResetComboDisplay();
 
-    // 인스턴스 유효성 검증
-    UFUNCTION(BlueprintCallable, Category = "UI Score")
-    static bool IsInstanceValid();
-
     // 애니메이터 접근 함수
     UFUNCTION(BlueprintCallable, Category = "UI Score")
     UScoreWidgetAnimator* GetWidgetAnimator() const { return WidgetAnimator; }
 
-    static UTotalScoreWidget* GetInstance()
+    static UScoreDisplayWidget* GetInstance()
     {
         return Instance;
     }
@@ -83,7 +76,7 @@ protected:
     bool bScoreTextActive;
 
 protected:
-    static UTotalScoreWidget* Instance;
+    static UScoreDisplayWidget* Instance;
     
 private:
     // 헬퍼 함수

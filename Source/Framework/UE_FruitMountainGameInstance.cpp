@@ -1,5 +1,5 @@
 #include "UE_FruitMountainGameInstance.h"
-#include "Interface/UI/TextureDisplayWidget.h"
+#include "Interface/UI/UIWidgetRenderer.h"
 
 UUE_FruitMountainGameInstance::UUE_FruitMountainGameInstance()
 {
@@ -15,11 +15,11 @@ void UUE_FruitMountainGameInstance::Init()
 void UUE_FruitMountainGameInstance::CheckPersistentUI()
 {
     // GetWorld()를 사용해 WorldContextObject 전달
-    UTextureDisplayWidget::CreateDisplayWidget(GetWorld());
+    UUIWidgetRenderer::CreateDisplayWidget(GetWorld());
 }
 
 void UUE_FruitMountainGameInstance::ShowFruitUIWidget()
 {
     // GetWorld()를 사용해 WorldContextObject 전달
-    UTextureDisplayWidget::CreateDisplayWidget(GetWorld());
+    UUIWidgetRenderer::CreateDisplayWidget(GetWorld());
 }

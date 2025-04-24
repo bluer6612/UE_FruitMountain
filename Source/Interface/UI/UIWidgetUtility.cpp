@@ -1,4 +1,4 @@
-#include "UIHelper.h"
+#include "UIWidgetUtility.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
@@ -6,7 +6,7 @@
 #include "Components/Widget.h"
 #include "Kismet/GameplayStatics.h"
 
-void UUIHelper::SetAnchorForSlot(UCanvasPanelSlot* CanvasSlot, EWidgetAnchor Anchor, float PaddingX, float PaddingY)
+void UUIWidgetUtility::SetAnchorForSlot(UCanvasPanelSlot* CanvasSlot, EWidgetAnchor Anchor, float PaddingX, float PaddingY)
 {
     if (!CanvasSlot) return;
     
@@ -57,7 +57,7 @@ void UUIHelper::SetAnchorForSlot(UCanvasPanelSlot* CanvasSlot, EWidgetAnchor Anc
     }
 }
 
-void UUIHelper::SetupTextBlockStyle(
+void UUIWidgetUtility::SetupTextBlockStyle(
     UTextBlock* TextBlock, 
     FLinearColor Color,
     int32 FontSize,
@@ -93,7 +93,7 @@ void UUIHelper::SetupTextBlockStyle(
     TextBlock->SetVisibility(DefaultVisibility);
 }
 
-UCanvasPanelSlot* UUIHelper::SetScoreDisplayPosition(UTextBlock* TextBlock, float PosX, float PosY, float Width, float Height, bool bRightAlign)
+UCanvasPanelSlot* UUIWidgetUtility::SetScoreDisplayPosition(UTextBlock* TextBlock, float PosX, float PosY, float Width, float Height, bool bRightAlign)
 {
     if (!TextBlock)
         return nullptr;
@@ -118,7 +118,7 @@ UCanvasPanelSlot* UUIHelper::SetScoreDisplayPosition(UTextBlock* TextBlock, floa
     return TextSlot;
 }
 
-APlayerController* UUIHelper::GetValidPlayerController(UObject* WorldContextObject)
+APlayerController* UUIWidgetUtility::GetValidPlayerController(UObject* WorldContextObject)
 {
     UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
     if (!World)

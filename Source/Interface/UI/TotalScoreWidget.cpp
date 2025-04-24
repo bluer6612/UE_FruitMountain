@@ -1,10 +1,10 @@
 #include "TotalScoreWidget.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Blueprint/WidgetTree.h"
-#include "UIHelper.h"
+#include "UIWidgetUtility.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
-#include "TextureDisplayWidget.h"
+#include "UIWidgetRenderer.h"
 
 // 정적 멤버 초기화
 UTotalScoreWidget* UTotalScoreWidget::Instance = nullptr;
@@ -102,7 +102,7 @@ UTotalScoreWidget* UTotalScoreWidget::CreateTotalScoreWidget(UObject* WorldConte
         return nullptr;
     }
     
-    APlayerController* Controller = UUIHelper::GetValidPlayerController(WorldContextObject);
+    APlayerController* Controller = UUIWidgetUtility::GetValidPlayerController(WorldContextObject);
     if (!Controller)
     {
         UE_LOG(LogTemp, Error, TEXT("TotalScoreWidget: 유효한 플레이어 컨트롤러가 없습니다"));
@@ -234,9 +234,4 @@ void UTotalScoreWidget::ApplyPendingScore()
     }
     
     UpdateTotalScore(PendingScore);
-}
-
-bool UTotalScoreWidget::IsInstanceValid()
-{
-    return Instance != nullptr && IsValid(Instance);
 }

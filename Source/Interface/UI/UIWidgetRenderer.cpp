@@ -1,4 +1,4 @@
-#include "TextureDisplayWidget.h"
+#include "UIWidgetRenderer.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
@@ -9,9 +9,9 @@
 #include "Engine/StreamableManager.h"
 
 // 정적 인스턴스 초기화
-UTextureDisplayWidget* UTextureDisplayWidget::Instance = nullptr;
+UUIWidgetRenderer* UUIWidgetRenderer::Instance = nullptr;
 
-UTextureDisplayWidget* UTextureDisplayWidget::CreateDisplayWidget(UObject* WorldContextObject)
+UUIWidgetRenderer* UUIWidgetRenderer::CreateDisplayWidget(UObject* WorldContextObject)
 {
     // 기존 인스턴스가 있으면 재사용
     if (Instance && IsValid(Instance) && Instance->IsInViewport())
@@ -20,14 +20,14 @@ UTextureDisplayWidget* UTextureDisplayWidget::CreateDisplayWidget(UObject* World
     }
     
     // 플레이어 컨트롤러 가져오기
-    APlayerController* PC = UUIHelper::GetValidPlayerController(WorldContextObject);
+    APlayerController* PC = UUIWidgetUtility::GetValidPlayerController(WorldContextObject);
     if (!PC)
     {
         return nullptr;
     }
     
     // 인스턴스 생성
-    Instance = CreateWidget<UTextureDisplayWidget>(PC, UTextureDisplayWidget::StaticClass());
+    Instance = CreateWidget<UUIWidgetRenderer>(PC, UUIWidgetRenderer::StaticClass());
     if (Instance)
     {
         Instance->AddToViewport(10000);
@@ -38,19 +38,19 @@ UTextureDisplayWidget* UTextureDisplayWidget::CreateDisplayWidget(UObject* World
 }
 
 // 위젯 소멸 시 정적 인스턴스 초기화
-void UTextureDisplayWidget::NativeDestruct()
+void UUIWidgetRenderer::NativeDestruct()
 {
     Super::NativeDestruct();
     
     // 이 위젯이 현재 싱글톤 인스턴스인 경우에만 초기화
     if (Instance == this)
     {
-        UE_LOG(LogTemp, Warning, TEXT("TextureDisplayWidget: 인스턴스 소멸, 정적 참조 초기화"));
+        UE_LOG(LogTemp, Warning, TEXT("UIWidgetRenderer: 인스턴스 소멸, 정적 참조 초기화"));
         Instance = nullptr;
     }
 }
 
-void UTextureDisplayWidget::NativeConstruct()
+void UUIWidgetRenderer::NativeConstruct()
 {
     Super::NativeConstruct();
     
@@ -62,11 +62,11 @@ void UTextureDisplayWidget::NativeConstruct()
         if (Canvas)
         {
             WidgetTree->RootWidget = Canvas;
-            UE_LOG(LogTemp, Warning, TEXT("TextureDisplayWidget: 새 루트 캔버스 생성"));
+            UE_LOG(LogTemp, Warning, TEXT("UIWidgetRenderer: 새 루트 캔버스 생성"));
         }
         else
         {
-            UE_LOG(LogTemp, Error, TEXT("TextureDisplayWidget: 캔버스 생성 실패!"));
+            UE_LOG(LogTemp, Error, TEXT("UIWidgetRenderer: 캔버스 생성 실패!"));
         }
     }
     
@@ -80,12 +80,12 @@ void UTextureDisplayWidget::NativeConstruct()
     SetupAllImages();
 }
 
-bool UTextureDisplayWidget::IsInstanceValid()
+bool UUIWidgetRenderer::IsInstanceValid()
 {
     return Instance != nullptr && IsValid(Instance);
 }
 
-void UTextureDisplayWidget::SetupAllImages()
+void UUIWidgetRenderer::SetupAllImages()
 {
     PrepareUIWidget(EWidgetImageType::UI_Play_Score, 
                    TEXT("/Game/UI/PlayLevel/UI_Play_Score"), 
@@ -99,10 +99,10 @@ void UTextureDisplayWidget::SetupAllImages()
                    TEXT("/Game/UI/PlayLevel/UI_Play_NextFruit"), 
                    FVector2D(301, 339), 120.0f, 60.0f);
 
-    UE_LOG(LogTemp, Warning, TEXT("TextureDisplayWidget: 위젯 이미지 설정 완료"));
+    UE_LOG(LogTemp, Warning, TEXT("UIWidgetRenderer: 위젯 이미지 설정 완료"));
 }
 
-void UTextureDisplayWidget::PrepareUIWidget(EWidgetImageType ImageType, const FString& TexturePath, const FVector2D& CustomSize, float PaddingX, float PaddingY)
+void UUIWidgetRenderer::PrepareUIWidget(EWidgetImageType ImageType, const FString& TexturePath, const FVector2D& CustomSize, float PaddingX, float PaddingY)
 {
     // 이미지 참조와 앵커 정보 결정
     UImage** TargetImagePtr = nullptr;
@@ -141,12 +141,12 @@ void UTextureDisplayWidget::PrepareUIWidget(EWidgetImageType ImageType, const FS
 }
 
 // 직접 참조로 이미지 설정
-void UTextureDisplayWidget::RenderUIImage(UImage*& ImageWidget, EWidgetAnchor Anchor, const FString& TexturePath, const FVector2D& CustomSize, float PaddingX, float PaddingY)
+void UUIWidgetRenderer::RenderUIImage(UImage*& ImageWidget, EWidgetAnchor Anchor, const FString& TexturePath, const FVector2D& CustomSize, float PaddingX, float PaddingY)
 {
     // 캔버스 체크
     if (!Canvas)
     {
-        UE_LOG(LogTemp, Error, TEXT("TextureDisplayWidget: 캔버스가 없음!"));
+        UE_LOG(LogTemp, Error, TEXT("UIWidgetRenderer: 캔버스가 없음!"));
         return;
     }
     
@@ -161,7 +161,7 @@ void UTextureDisplayWidget::RenderUIImage(UImage*& ImageWidget, EWidgetAnchor An
     ImageWidget = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass());
     if (!ImageWidget)
     {
-        UE_LOG(LogTemp, Error, TEXT("TextureDisplayWidget: 이미지 위젯 생성 실패!"));
+        UE_LOG(LogTemp, Error, TEXT("UIWidgetRenderer: 이미지 위젯 생성 실패!"));
         return;
     }
     
@@ -203,7 +203,7 @@ void UTextureDisplayWidget::RenderUIImage(UImage*& ImageWidget, EWidgetAnchor An
         ImageWidget->SetColorAndOpacity(FLinearColor::White);
         
         ImageSlot->SetSize(FinalSize);
-        UUIHelper::SetAnchorForSlot(ImageSlot, Anchor, PaddingX, PaddingY);
+        UUIWidgetUtility::SetAnchorForSlot(ImageSlot, Anchor, PaddingX, PaddingY);
         
         UE_LOG(LogTemp, Display, TEXT("이미지 위젯 설정 완료: %s"), *TexturePath);
     }
@@ -235,13 +235,13 @@ void UTextureDisplayWidget::RenderUIImage(UImage*& ImageWidget, EWidgetAnchor An
             if (TextSlot)
             {
                 TextSlot->SetSize(CustomSize);
-                UUIHelper::SetAnchorForSlot(TextSlot, Anchor, PaddingX, PaddingY);
+                UUIWidgetUtility::SetAnchorForSlot(TextSlot, Anchor, PaddingX, PaddingY);
                 TextSlot->SetAlignment(FVector2D(0.5f, 0.5f));
             }
         }
         
         ImageSlot->SetSize(CustomSize);
-        UUIHelper::SetAnchorForSlot(ImageSlot, Anchor, PaddingX, PaddingY);
+        UUIWidgetUtility::SetAnchorForSlot(ImageSlot, Anchor, PaddingX, PaddingY);
         
         UE_LOG(LogTemp, Warning, TEXT("텍스처 로드 실패: %s"), *TexturePath);
     }

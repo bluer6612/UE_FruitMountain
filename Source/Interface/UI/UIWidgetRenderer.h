@@ -2,8 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "UIHelper.h"
-#include "TextureDisplayWidget.generated.h"
+#include "UIWidgetUtility.h"
+#include "UIWidgetRenderer.generated.h"
 
 UENUM(BlueprintType)
 enum class EWidgetImageType : uint8
@@ -21,14 +21,14 @@ class UImage;
  * 싱글톤 패턴으로 구현되어 하나의 인스턴스만 유지
  */
 UCLASS()
-class UE_FRUITMOUNTAIN_API UTextureDisplayWidget : public UUserWidget
+class UE_FRUITMOUNTAIN_API UUIWidgetRenderer : public UUserWidget
 {
     GENERATED_BODY()
     
 public:
     /** 위젯 인스턴스 생성 또는 기존 인스턴스 반환 */
     UFUNCTION(BlueprintCallable, Category = "UI TextureDisplay", meta = (WorldContext = "WorldContextObject"))
-    static UTextureDisplayWidget* CreateDisplayWidget(UObject* WorldContextObject);
+    static UUIWidgetRenderer* CreateDisplayWidget(UObject* WorldContextObject);
     
     /** 인스턴스가 유효한지 확인 */
     UFUNCTION(BlueprintCallable, Category = "UI TextureDisplay")
@@ -36,7 +36,7 @@ public:
     
     /** Instance에 접근할 수 있는 getter 추가 */
     UFUNCTION(BlueprintCallable, Category = "UI TextureDisplay")
-    static UTextureDisplayWidget* GetInstance()
+    static UUIWidgetRenderer* GetInstance()
     {
         return Instance;
     }
@@ -78,7 +78,7 @@ protected:
     virtual void NativeDestruct() override;
     
     /** 싱글톤 인스턴스 */
-    static UTextureDisplayWidget* Instance;
+    static UUIWidgetRenderer* Instance;
     
 private:
     /** 루트 캔버스 패널 */

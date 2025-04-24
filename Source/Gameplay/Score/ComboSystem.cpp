@@ -38,7 +38,7 @@ void UComboSystem::Initialize(UObject* InOwner, UScoreDisplayWidget* InScoreWidg
     // 스코어 위젯이 없으면 기본 인스턴스 사용
     if (!ScoreWidgetInstance)
     {
-        ScoreWidgetInstance = UScoreDisplayWidget::Instance;
+        ScoreWidgetInstance = UScoreDisplayWidget::GetInstance();
     }
 }
 

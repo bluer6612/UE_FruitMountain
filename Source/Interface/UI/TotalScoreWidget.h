@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/TextBlock.h"
-#include "Interface/UI/UIHelper.h" // UIHelper 헤더 추가
+#include "Interface/UI/UIWidgetUtility.h" // UIWidgetUtility 헤더 추가
 #include "TotalScoreWidget.generated.h"
 
 /**
@@ -48,7 +48,10 @@ public:
     
     // 인스턴스 유효성 확인 함수
     UFUNCTION(BlueprintCallable, Category = "UI Score")
-    static bool IsInstanceValid();
+    static bool IsInstanceValid()
+    {
+        return Instance != nullptr && IsValid(Instance);
+    }
     
     static void ClearInstance()
     {

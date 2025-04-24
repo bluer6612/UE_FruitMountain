@@ -6,7 +6,7 @@
 #include "Actors/PlayerPawn.h"
 #include "Actors/FruitBall.h"
 #include "Interface/HUD/FruitHUD.h"
-#include "Interface/UI/TextureDisplayWidget.h"
+#include "Interface/UI/UIWidgetRenderer.h"
 #include "Interface/UI/ScoreDisplayWidget.h"
 #include "Interface/UI/TotalScoreWidget.h"
 #include "Gameplay/Physics/FruitTrajectoryHelper.h"
@@ -44,7 +44,7 @@ void AUE_FruitMountainGameMode::BeginPlay()
     UFruitMergeHelper::PreloadAllFruitMeshes(GetWorld());
     
     // UI 위젯 초기화
-    UTextureDisplayWidget* TextureWidget = UTextureDisplayWidget::CreateDisplayWidget(this);
+    UUIWidgetRenderer* TextureWidget = UUIWidgetRenderer::CreateDisplayWidget(this);
     UScoreDisplayWidget* ScoreWidget = UScoreDisplayWidget::CreateScoreWidget(this);
     UTotalScoreWidget* TotalScoreWidget = UTotalScoreWidget::CreateTotalScoreWidget(this);
 
@@ -82,14 +82,14 @@ void AUE_FruitMountainGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason
         }
     }
     
-    // 2. TextureDisplayWidget 정리
-    if (UTextureDisplayWidget::IsInstanceValid())
+    // 2. UIWidgetRenderer 정리
+    if (UUIWidgetRenderer::IsInstanceValid())
     {
-        UTextureDisplayWidget* TextureWidget = UTextureDisplayWidget::GetInstance();
+        UUIWidgetRenderer* TextureWidget = UUIWidgetRenderer::GetInstance();
         if (TextureWidget)
         {
             TextureWidget->RemoveFromParent();
-            UTextureDisplayWidget::ClearInstance();
+            UUIWidgetRenderer::ClearInstance();
         }
     }
     

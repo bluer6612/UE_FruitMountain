@@ -1,7 +1,7 @@
 #include "FruitHUD.h"
 #include "Engine/Canvas.h"
 #include "Blueprint/UserWidget.h"
-#include "Interface/UI/TextureDisplayWidget.h"
+#include "Interface/UI/UIWidgetRenderer.h"
 
 AFruitHUD::AFruitHUD()
 {
@@ -28,15 +28,15 @@ void AFruitHUD::CreateAndAddWidgets()
             TextureWidget = nullptr;
         }
         
-        // TextureDisplayWidget 생성
-        TextureWidget = CreateWidget<UTextureDisplayWidget>(Controller, UTextureDisplayWidget::StaticClass());
+        // UIWidgetRenderer 생성
+        TextureWidget = CreateWidget<UUIWidgetRenderer>(Controller, UUIWidgetRenderer::StaticClass());
         if (TextureWidget)
         {
             // 뷰포트에 추가
             TextureWidget->AddToViewport(9999); // HUD보다 아래에 위치하도록
             
             // 로그
-            UE_LOG(LogTemp, Warning, TEXT("FruitHUD: TextureDisplayWidget 생성 및 뷰포트 추가 완료"));
+            UE_LOG(LogTemp, Warning, TEXT("FruitHUD: UIWidgetRenderer 생성 및 뷰포트 추가 완료"));
             
             // 이미지 설정 함수 호출
             TextureWidget->SetupAllImages();
@@ -65,7 +65,7 @@ void AFruitHUD::CreateAndAddWidgets()
         }
         else
         {
-            UE_LOG(LogTemp, Error, TEXT("FruitHUD: TextureDisplayWidget 생성 실패"));
+            UE_LOG(LogTemp, Error, TEXT("FruitHUD: UIWidgetRenderer 생성 실패"));
         }
     }
 }
