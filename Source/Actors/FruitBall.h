@@ -47,7 +47,7 @@ public:
     }
 
     UFUNCTION()
-    void SetMerging(bool bMerging)
+    void SetIsMerging(bool bMerging)
     {
         bIsMerging = bMerging;
     }

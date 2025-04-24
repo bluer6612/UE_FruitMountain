@@ -86,8 +86,8 @@ void UFruitMergeHelper::ProcessFruitCollision(AFruitBall* FruitA, AFruitBall* Fr
 void UFruitMergeHelper::MergeFruits(AFruitBall* Fruit1, AFruitBall* Fruit2, const FVector& ImpactPoint)
 {
     // 병합 플래그 설정 (유효성 검사는 이미 ProcessFruitCollision에서 완료됨)
-    Fruit1->SetMerging(true);
-    Fruit2->SetMerging(true);
+    Fruit1->SetIsMerging(true);
+    Fruit2->SetIsMerging(true);
     
     UWorld* World = Fruit1->GetWorld();
     if (!World)

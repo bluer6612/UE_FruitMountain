@@ -6,6 +6,7 @@
 #include "Gameplay/Fruit/FruitSpawnHelper.h"
 #include "FruitMergeFeedbackHelper.h"
 #include "MergeAnimator.h"
+#include "MergeController.h"
 
 UMergeAnimationState::UMergeAnimationState()
     : NextBallType(0)
@@ -108,6 +109,10 @@ void UMergeAnimationState::UpdateAnimation()
         {
             CurrentNewFruit->GetMeshComponent()->SetSimulatePhysics(true);
             CurrentNewFruit->GetMeshComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+            
+            // 중요: 병합 관련 플래그 재설정
+            CurrentNewFruit->SetIsMerging(false);
+            CurrentNewFruit->SetHasCollided(true);  // 충돌 경험 설정
         }
         
         UE_LOG(LogTemp, Display, TEXT("병합 애니메이션 완료"));
@@ -135,6 +140,9 @@ void UMergeAnimationState::FinishAnimation()
         // 타입에 맞는 정확한 최종 크기 설정
         float FinalScale = AFruitBall::CalculateBallSize(NextBallType) / 100.0f; // UE 스케일로 변환
         CurrentNewFruit->SetActorScale3D(FVector(FinalScale));
+        
+        // 중요: 새 과일의 충돌 처리를 위한 플래그 설정
+        CurrentNewFruit->SetHasCollided(true); // 이 함수는 FruitBall에 추가해야 함
     }
     
     // 효과 실행
@@ -142,6 +150,13 @@ void UMergeAnimationState::FinishAnimation()
     
     // 전역 병합 상태 해제
     UMergeAnimator::SetGlobalMergeInProgress(false);
+    
+    // MergeController의 상태도 함께 초기화 (중요: 추가된 부분)
+    AMergeController* MergeController = AMergeController::Get(World);
+    if (MergeController)
+    {
+        MergeController->CompleteMerge();
+    }
     
     UE_LOG(LogTemp, Display, TEXT("병합 후처리 완료: 새 병합 가능 상태"));
     
@@ -202,7 +217,13 @@ void UMergeAnimationState::SpawnNewFruit()
             {
                 NewBall->GetMeshComponent()->SetSimulatePhysics(false);
                 NewBall->GetMeshComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+                
+                // 중요: 다음 충돌 이벤트가 제대로 작동하도록 설정
+                NewBall->GetMeshComponent()->SetNotifyRigidBodyCollision(true);
             }
+            
+            // 병합 관련 플래그 초기화
+            NewBall->SetIsMerging(false);  // 이 함수는 FruitBall에 추가해야 함
         }
     }
 }
