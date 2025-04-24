@@ -85,9 +85,16 @@ void UFruitMergeHelper::ProcessFruitCollision(AFruitBall* FruitA, AFruitBall* Fr
 
 void UFruitMergeHelper::MergeFruits(AFruitBall* Fruit1, AFruitBall* Fruit2, const FVector& ImpactPoint)
 {
-    // 병합 플래그 설정 (유효성 검사는 이미 ProcessFruitCollision에서 완료됨)
-    Fruit1->SetIsMerging(true);
-    Fruit2->SetIsMerging(true);
+    // 병합 위치 계산
+    FVector MergeLocation = ImpactPoint;
+    if (MergeLocation == FVector::ZeroVector)
+    {
+        MergeLocation = (Fruit1->GetActorLocation() + Fruit2->GetActorLocation()) * 0.5f;
+    }
+    
+    // 다음 과일 타입 계산 (1단계 업그레이드)
+    int32 CurrentType = Fruit1->GetBallType();
+    int32 NextType = CurrentType + 1;
     
     UWorld* World = Fruit1->GetWorld();
     if (!World)
@@ -95,27 +102,17 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* Fruit1, AFruitBall* Fruit2, cons
         return;
     }
     
-    // 병합 위치 계산 (충돌 지점 또는 두 과일의 중간점)
-    FVector MergeLocation = ImpactPoint;
-    if (MergeLocation == FVector::ZeroVector)
+    // MergeController를 통해 병합 처리 (UMergeAnimator 대신)
+    AMergeController* MergeController = AMergeController::Get(World);
+    if (!MergeController)
     {
-        MergeLocation = (Fruit1->GetActorLocation() + Fruit2->GetActorLocation()) * 0.5f;
+        return;
     }
     
-    int32 CurrentType = Fruit1->GetBallType();
-    int32 NextType = CurrentType + 1;
+    UFruitMergeStabilizer::StabilizeFruits(World, MergeLocation, 3.0f, nullptr, NextType);
     
-    // 1. 병합 전 주변 과일 공간 확보
-    UFruitMergeStabilizer::StabilizeFruits(
-        World,
-        MergeLocation,
-        3.0f,
-        nullptr,
-        NextType
-    );
-    
-    // 애니메이션 시작
-    UMergeAnimator::AnimateMerge(Fruit1, Fruit2, MergeLocation, NextType, MergeAnimConstants::DEFAULT_ANIMATION_DURATION);
+    // 병합 애니메이션 시작 - 직접 MergeController 사용
+    MergeController->AnimateMerge(Fruit1, Fruit2, MergeLocation, NextType);
 }
 
 // 모든 메시 사전 로드

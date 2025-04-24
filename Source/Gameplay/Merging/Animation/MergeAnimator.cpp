@@ -1,122 +1,53 @@
 #include "MergeAnimator.h"
-#include "MergeAnimationState.h"
-#include "Actors/FruitBall.h"
-#include "Components/StaticMeshComponent.h"
-#include "TimerManager.h"
-#include "Gameplay/Merging/Core/FruitMergeHelper.h"
-#include "Gameplay/Merging/Core/FruitMergeStabilizer.h"
-#include "Kismet/GameplayStatics.h"
-#include "Gameplay/Controller/FruitPlayerController.h"
-#include "Gameplay/Fruit/FruitSpawnHelper.h"
 #include "Gameplay/Merging/Core/MergeController.h"
 
-bool UMergeAnimator::bAnimationCompletionInProgress = false;
+// 호환성을 위한 리디렉션 함수들
+FTimerHandle UMergeAnimator::AnimateMerge(AFruitBall* Fruit1, AFruitBall* Fruit2, const FVector& MergeLocation, int32 NextBallType, float AnimDuration)
+{
+    // MergeController로 모든 호출 리디렉션
+    UWorld* World = Fruit1 ? Fruit1->GetWorld() : nullptr;
+    if (!World)
+    {
+        return FTimerHandle();
+    }
+    
+    AMergeController* Controller = AMergeController::Get(World);
+    if (!Controller)
+    {
+        return FTimerHandle();
+    }
+    
+    return Controller->AnimateMerge(Fruit1, Fruit2, MergeLocation, NextBallType, AnimDuration);
+}
 
 bool UMergeAnimator::IsGlobalMergeInProgress()
 {
-    UWorld* World = GEngine->GetWorldContexts()[0].World();
-    if (World)
+    // 첫 번째 월드 컨텍스트 확인
+    UWorld* World = GEngine->GetWorldContexts().Num() > 0 ? 
+                   GEngine->GetWorldContexts()[0].World() : nullptr;
+    
+    if (!World)
     {
-        AMergeController* MergeController = AMergeController::Get(World);
-        if (MergeController)
-        {
-            return MergeController->IsMergeInProgress();
-        }
+        return false;
     }
-    return false;
+    
+    AMergeController* Controller = AMergeController::Get(World);
+    return Controller ? Controller->IsMergeInProgress() : false;
 }
 
 void UMergeAnimator::SetGlobalMergeInProgress(bool bInProgress)
 {
-    UWorld* World = GEngine->GetWorldContexts()[0].World();
-    if (World)
-    {
-        AMergeController* MergeController = AMergeController::Get(World);
-        if (MergeController)
-        {
-            MergeController->SetMergeInProgress(bInProgress);
-        }
-    }
-}
-
-FTimerHandle UMergeAnimator::AnimateMerge(AFruitBall* Fruit1, AFruitBall* Fruit2, const FVector& MergeLocation, int32 NextBallType, float AnimDuration)
-{
-    // 이미 병합 중이면 중단
-    if (IsGlobalMergeInProgress())
-    {
-        return FTimerHandle();
-    }
+    UWorld* World = GEngine->GetWorldContexts().Num() > 0 ? 
+                   GEngine->GetWorldContexts()[0].World() : nullptr;
     
-    // 병합 시작 - 전역 플래그 설정
-    SetGlobalMergeInProgress(true);
-    
-    // 기본 유효성 검사
-    if (!Fruit1 || !Fruit2 || !IsValid(Fruit1) || !IsValid(Fruit2))
-    {
-        SetGlobalMergeInProgress(false);
-        return FTimerHandle();
-    }
-
-    UWorld* World = Fruit1->GetWorld();
     if (!World)
     {
-        SetGlobalMergeInProgress(false);
-        return FTimerHandle();
+        return;
     }
     
-    // UObject 애니메이션 상태 생성
-    UMergeAnimationState* AnimState = NewObject<UMergeAnimationState>();
-    if (AnimState)
+    AMergeController* Controller = AMergeController::Get(World);
+    if (Controller)
     {
-        // GC에서 제거되지 않도록 루트에 추가
-        AnimState->AddToRoot();
-        
-        // 애니메이션 초기화 및 시작
-        AnimState->Initialize(Fruit1, Fruit2, MergeLocation, NextBallType);
-        
-        // 애니메이션 완료 여부를 주기적으로 확인
-        FTimerHandle CleanupTimerHandle;
-        World->GetTimerManager().SetTimer(CleanupTimerHandle, [AnimState]() {
-            if (AnimState->IsCompleted())
-            {
-                // 완료되면 GC 허용
-                AnimState->RemoveFromRoot();
-            }
-        }, 0.5f, false);
+        Controller->SetMergeInProgress(bInProgress);
     }
-    
-    // 비어 있는 타이머 핸들 반환 (이전과 호환성 유지)
-    return FTimerHandle();
-}
-
-float UMergeAnimator::CalculateAnimationScale(float Progress, bool IsGrowing)
-{
-    if (IsGrowing)
-    {
-        // 단순하게: 0.1에서 1.0으로 선형 증가
-        return 0.1f + Progress * 0.9f;
-    }
-    else
-    {
-        // 단순하게: 1.0에서 0.1로 선형 감소
-        return 1.0f - (Progress * 0.9f);
-    }
-}
-
-void UMergeAnimator::CleanupMergeAnimation(UWorld* World, FTimerHandle& TimerHandle, float* ElapsedTimePtr)
-{
-    // 타이머가 활성화되어 있으면 중지
-    if (World && World->GetTimerManager().TimerExists(TimerHandle))
-    {
-        World->GetTimerManager().ClearTimer(TimerHandle);
-    }
-    
-    // 할당된 메모리 해제
-    if (ElapsedTimePtr)
-    {
-        delete ElapsedTimePtr;
-    }
-    
-    // 전역 병합 상태 해제 - MergeController 사용
-    SetGlobalMergeInProgress(false);
 }

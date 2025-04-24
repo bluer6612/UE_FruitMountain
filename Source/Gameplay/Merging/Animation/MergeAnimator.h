@@ -14,16 +14,7 @@ class UE_FRUITMOUNTAIN_API UMergeAnimator : public UObject
     
 public:
     // 병합 애니메이션 시작
-    static FTimerHandle AnimateMerge(AFruitBall* Fruit1, AFruitBall* Fruit2, 
-                                    const FVector& MergeLocation, 
-                                    int32 NextBallType, 
-                                    float AnimDuration);
-    
-    // 애니메이션 정리 함수 - 매개변수 수정
-    static void CleanupMergeAnimation(UWorld* World, FTimerHandle& TimerHandle, float* ElapsedTimePtr);
-    
-    // 애니메이션 스케일 계산
-    static float CalculateAnimationScale(float Progress, bool bIsGrowing = true);
+    static FTimerHandle AnimateMerge(AFruitBall* Fruit1, AFruitBall* Fruit2, const FVector& MergeLocation, int32 NextBallType, float AnimDuration);
     
     // 전역 병합 상태 확인
     static bool IsGlobalMergeInProgress();
