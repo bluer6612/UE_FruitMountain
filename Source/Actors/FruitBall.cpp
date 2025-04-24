@@ -6,7 +6,6 @@
 #include "System/Camera/CameraOrbitFunctionLibrary.h"
 #include "Gameplay/Physics/FruitTrajectoryHelper.h"
 #include "PlateActor.h"
-#include "Gameplay/Merging/Core/FruitMergeHelper.h"
 #include "Gameplay/Merging/Core/FruitMergeStabilizer.h"
 #include "Gameplay/Merging/Core/MergeController.h" 
 

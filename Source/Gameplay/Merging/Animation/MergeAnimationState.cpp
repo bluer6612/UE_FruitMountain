@@ -4,7 +4,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "Gameplay/Controller/FruitPlayerController.h"
 #include "Gameplay/Fruit/FruitSpawnHelper.h"
-#include "Gameplay/Merging/Core/FruitMergeStabilizer.h"
 #include "Gameplay/Merging/Core/MergeController.h"
 #include "Gameplay/Merging/Core/FruitMergeHelper.h"
 
@@ -54,7 +53,7 @@ void UMergeAnimationState::Initialize(AFruitBall* InFruit1, AFruitBall* InFruit2
     }
     
     // 새 과일 생성
-    SpawnNewFruit();
+    SpawnNewMergingFruit();
     
     // 초기화 완료
     bIsInitialized = true;
@@ -136,7 +135,7 @@ void UMergeAnimationState::FinishAnimation()
         CurrentNewFruit->SetActorScale3D(FVector(FinalScale));
         
         // 중요: 새 과일의 충돌 처리를 위한 플래그 설정
-        CurrentNewFruit->SetHasCollided(true); // 이 함수는 FruitBall에 추가해야 함
+        CurrentNewFruit->SetHasCollided(true);
     }
     
     // 효과 실행
@@ -172,7 +171,7 @@ void UMergeAnimationState::Cleanup()
     bIsCleanedUp = true;
 }
 
-void UMergeAnimationState::SpawnNewFruit()
+void UMergeAnimationState::SpawnNewMergingFruit()
 {
     UWorld* World = GetWorld();
     if (!World)
@@ -214,7 +213,7 @@ void UMergeAnimationState::SpawnNewFruit()
             }
             
             // 병합 관련 플래그 초기화
-            NewBall->SetIsMerging(false);  // 이 함수는 FruitBall에 추가해야 함
+            NewBall->SetIsMerging(false);
         }
     }
 }

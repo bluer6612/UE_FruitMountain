@@ -88,7 +88,7 @@ private:
     bool bIsCleanedUp;
     
     // 필요한 유틸리티 함수
-    void SpawnNewFruit();
+    void SpawnNewMergingFruit();
     void UpdateFruitScale(float Progress);
     void DestroyOriginalFruits();
     
