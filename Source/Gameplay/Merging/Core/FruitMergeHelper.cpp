@@ -3,10 +3,9 @@
 #include "Gameplay/Fruit/FruitSpawnHelper.h"
 #include "Kismet/GameplayStatics.h"
 #include "Gameplay/Controller/FruitPlayerController.h"
-#include "FruitMergeFeedbackHelper.h"
-#include "Gameplay/Score/ScoreManagerComponent.h"
+#include "FruitMergeStabilizer.h"
 #include "Engine/StaticMesh.h"
-#include "MergeAnimator.h"
+#include "Gameplay/Merging/Animation/MergeAnimator.h"
 
 void UFruitMergeHelper::RegisterCollisionHandlers(AFruitBall* Fruit)
 {
@@ -106,7 +105,7 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* Fruit1, AFruitBall* Fruit2, cons
     int32 NextType = CurrentType + 1;
     
     // 1. 병합 전 주변 과일 공간 확보
-    UFruitMergeFeedbackHelper::StabilizeFruits(
+    UFruitMergeStabilizer::StabilizeFruits(
         World,
         MergeLocation,
         3.0f,

@@ -5,7 +5,6 @@
 #include "MergeController.generated.h"
 
 class AFruitBall;
-class UMergeAnimationManager;
 
 // 과일 병합 프로세스를 관리하는 컨트롤러
 UCLASS()
@@ -28,11 +27,13 @@ public:
     UFUNCTION(BlueprintCallable, Category="Merge System")
     bool IsMergeInProgress() const;
     
-    // 병합 완료 처리 함수 추가
+    // 병합 완료 처리 함수
     void CompleteMerge();
     
-    // 틱 이벤트
-    virtual void Tick(float DeltaTime) override;
+    // 병합 이펙트 재생 함수
+    UFUNCTION(BlueprintCallable, Category = "Fruit Merging")
+    static void PlayMergeEffect(UWorld* World, const FVector& Location, int32 BallType);
+    
 
 protected:
     virtual void BeginPlay() override;

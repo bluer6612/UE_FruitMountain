@@ -1,7 +1,7 @@
 #include "MergeController.h"
 #include "Actors/FruitBall.h"
 #include "FruitMergeHelper.h"
-#include "MergeAnimator.h"
+#include "Gameplay/Merging/Animation/MergeAnimator.h"
 #include "Kismet/GameplayStatics.h"
 
 AMergeController* AMergeController::Instance = nullptr;
@@ -97,9 +97,59 @@ void AMergeController::CompleteMerge()
     bMergeInProgress = false;
 }
 
-void AMergeController::Tick(float DeltaTime)
+// 병합 이펙트 재생
+void AMergeController::PlayMergeEffect(UWorld* World, const FVector& Location, int32 BallType)
 {
-    Super::Tick(DeltaTime);
+    if (!World)
+    {
+        return;
+    }
     
-    // 추가 로직이 필요한 경우 여기에 구현
+    // 1. 시각적 효과 (블루프린트 액터)
+    static TSubclassOf<AActor> MergeEffectClass = nullptr;
+    if (!MergeEffectClass)
+    {
+        // 블루프린트 액터 클래스 로드
+        MergeEffectClass = LoadClass<AActor>(nullptr, TEXT("/Game/Particle/02_Blueprints/BP_Particle_Burst_Lvl_1.BP_Particle_Burst_Lvl_1_C"));
+        
+        if (!MergeEffectClass)
+        {
+            UE_LOG(LogTemp, Error, TEXT("병합 이펙트 클래스를 로드할 수 없습니다"));
+            return;
+        }
+    }
+    
+    // 2. 이펙트 스폰
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    
+    AActor* SpawnedEffect = World->SpawnActor<AActor>(MergeEffectClass, Location, FRotator::ZeroRotator, SpawnParams);
+    if (SpawnedEffect)
+    {
+        // 과일 타입에 따라 이펙트 스케일 조정
+        float EffectScale = 1.0f + (BallType * 0.025f);
+        SpawnedEffect->SetActorScale3D(FVector(EffectScale, EffectScale, EffectScale));
+        
+        // 자동 삭제
+        SpawnedEffect->SetLifeSpan(1.5f);
+    }
+    
+    // 3. 사운드 효과 재생
+    static USoundBase* MergeSound = nullptr;
+    //static USoundBase* MergeSound = LoadObject<USoundBase>(nullptr, TEXT("/Game/Sounds/S_FruitMerge"));
+    
+    if (MergeSound)
+    {
+        // 과일 크기에 따라 볼륨과 피치 조정
+        float VolumeMultiplier = FMath::Min(1.5f, 0.7f + (BallType * 0.1f));
+        float PitchMultiplier = FMath::Max(0.7f, 1.1f - (BallType * 0.05f)); // 큰 과일은 낮은 소리
+        
+        UGameplayStatics::PlaySoundAtLocation(
+            World, 
+            MergeSound, 
+            Location, 
+            VolumeMultiplier, 
+            PitchMultiplier
+        );
+    }
 }

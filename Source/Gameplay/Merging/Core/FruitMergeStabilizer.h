@@ -2,17 +2,17 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
-#include "FruitMergeFeedbackHelper.generated.h"
+#include "FruitMergeStabilizer.generated.h"
 
 class AFruitBall;
 
 UCLASS()
-class UE_FRUITMOUNTAIN_API UFruitMergeFeedbackHelper : public UBlueprintFunctionLibrary
+class UE_FRUITMOUNTAIN_API UFruitMergeStabilizer : public UBlueprintFunctionLibrary
 {
     GENERATED_BODY()
     
 public:
-    // 통합된 안정화 함수 - PrepareSpaceForMerge와 StabilizeAfterMerge 기능 포함
+    // 통합된 안정화 함수
     UFUNCTION(BlueprintCallable, Category = "Fruit Feedback")
     static void StabilizeFruits(
         UWorld* World,                      // 월드 컨텍스트
@@ -21,8 +21,4 @@ public:
         AFruitBall* TargetFruit = nullptr,  // 특정 대상 과일 (병합 후 새 과일)
         int32 FruitType = 1                // 과일 타입 (크기 계산용)
     );
-    
-    // 병합 이펙트 재생
-    UFUNCTION(BlueprintCallable, Category = "Fruit Feedback")
-    static void PlayMergeEffect(UWorld* World, const FVector& Location, int32 BallType);
 };

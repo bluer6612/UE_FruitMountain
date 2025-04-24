@@ -4,9 +4,9 @@
 #include "Kismet/GameplayStatics.h"
 #include "Gameplay/Controller/FruitPlayerController.h"
 #include "Gameplay/Fruit/FruitSpawnHelper.h"
-#include "FruitMergeFeedbackHelper.h"
+#include "Gameplay/Merging/Core/FruitMergeStabilizer.h"
 #include "MergeAnimator.h"
-#include "MergeController.h"
+#include "Gameplay/Merging/Core/MergeController.h"
 
 UMergeAnimationState::UMergeAnimationState()
     : NextBallType(0)
@@ -19,8 +19,7 @@ UMergeAnimationState::UMergeAnimationState()
 {
 }
 
-void UMergeAnimationState::Initialize(AFruitBall* InFruit1, AFruitBall* InFruit2, const FVector& InMergeLocation, 
-                                    int32 InNextBallType, float InAnimDuration)
+void UMergeAnimationState::Initialize(AFruitBall* InFruit1, AFruitBall* InFruit2, const FVector& InMergeLocation, int32 InNextBallType, float InAnimDuration)
 {
     // 유효성 검사
     if (!InFruit1 || !InFruit2 || !IsValid(InFruit1) || !IsValid(InFruit2))
@@ -34,7 +33,7 @@ void UMergeAnimationState::Initialize(AFruitBall* InFruit1, AFruitBall* InFruit2
     Fruit2 = InFruit2;
     MergeLocation = InMergeLocation;
     NextBallType = InNextBallType;
-    AnimDuration = FMath::Min(InAnimDuration, 0.15f);
+    AnimDuration = InAnimDuration;
     CurrentBallType = InFruit1->GetBallType();
     
     // 초기 스케일 저장
@@ -146,7 +145,7 @@ void UMergeAnimationState::FinishAnimation()
     }
     
     // 효과 실행
-    UFruitMergeFeedbackHelper::PlayMergeEffect(World, MergeLocation, CurrentBallType);
+    AMergeController::PlayMergeEffect(World, MergeLocation, CurrentBallType);
     
     // 전역 병합 상태 해제
     UMergeAnimator::SetGlobalMergeInProgress(false);

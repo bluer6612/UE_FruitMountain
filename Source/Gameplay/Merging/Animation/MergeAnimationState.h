@@ -17,8 +17,7 @@ public:
     UMergeAnimationState();
     
     // 초기화 함수
-    void Initialize(AFruitBall* InFruit1, AFruitBall* InFruit2, const FVector& InMergeLocation, 
-                   int32 InNextBallType, float InAnimDuration = 0.1f);
+    void Initialize(AFruitBall* InFruit1, AFruitBall* InFruit2, const FVector& InMergeLocation, int32 InNextBallType, float InAnimDuration = 0.1f);
     
     // 애니메이션 틱 함수
     UFUNCTION()

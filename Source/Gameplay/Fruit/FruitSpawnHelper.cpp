@@ -4,7 +4,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Components/PrimitiveComponent.h"
 #include "Gameplay/Controller/FruitPlayerController.h"
-#include "Gameplay/Merging/FruitMergeHelper.h"
+#include "Gameplay/Merging/Core/FruitMergeHelper.h"
 #include "Actors/PlateActor.h"
 #include "Actors/FruitBall.h"
 

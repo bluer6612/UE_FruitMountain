@@ -18,16 +18,6 @@ public:
                                     int32 NextBallType, 
                                     float AnimDuration = 0.1f);
     
-    // 새 과일 성장 애니메이션
-    static void AnimateNewFruitGrowth(AFruitBall* NewFruit, float AnimDuration = 0.1f);
-    
-    // 애니메이션 틱 처리
-    static void TickMergeAnimation(AFruitBall* Fruit1, AFruitBall* Fruit2, 
-                                  float AnimProgress, const FVector& MergeLocation);
-    
-    // 성장 애니메이션 틱 처리
-    static void TickGrowthAnimation(AFruitBall* NewFruit, float AnimProgress);
-    
     // 애니메이션 정리 함수 - 매개변수 수정
     static void CleanupMergeAnimation(UWorld* World, FTimerHandle& TimerHandle, float* ElapsedTimePtr);
     

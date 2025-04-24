@@ -10,7 +10,7 @@
 #include "Interface/UI/ScoreDisplayWidget.h"
 #include "Interface/UI/TotalScoreWidget.h"
 #include "Gameplay/Physics/FruitTrajectoryHelper.h"
-#include "Gameplay/Merging/FruitMergeHelper.h"
+#include "Gameplay/Merging/Core/FruitMergeHelper.h"
 #include "Logging/LogMacros.h"
 
 #if WITH_EDITOR

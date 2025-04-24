@@ -146,8 +146,6 @@ public:
     int32 BallType;
 
 protected:
-    // 안정화 타이머 핸들
-    FTimerHandle StabilizeTimerHandle;
 
     // 슬로우 모션 활성화 여부
     UPROPERTY()
@@ -156,11 +154,11 @@ protected:
     // 게임오버 타이머 핸들
     FTimerHandle GameOverTimerHandle;
 
+    // 병합 타이머 핸들
+    FTimerHandle CollisionFlagTimerHandle;
+
 private:
     // 접시 액터 캐싱 (성능 최적화)
     UPROPERTY()
     class APlateActor* CachedPlateActor;
-
-    // 충돌 상태 업데이트용 타이머
-    FTimerHandle CollisionFlagTimerHandle;
 };

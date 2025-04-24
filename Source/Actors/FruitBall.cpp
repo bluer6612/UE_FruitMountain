@@ -1,15 +1,15 @@
 #include "FruitBall.h"
 #include "Components/StaticMeshComponent.h"
-#include "Gameplay/Merging/FruitMergeHelper.h"
-#include "Gameplay/Merging/FruitMergeFeedbackHelper.h"
+#include "Gameplay/Merging/Core/FruitMergeHelper.h"
+#include "Gameplay/Merging/Core/FruitMergeStabilizer.h"
 #include "Engine/StaticMesh.h"
 #include "Gameplay/Controller/FruitPlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "System/Camera/CameraOrbitFunctionLibrary.h"
 #include "Gameplay/Physics/FruitTrajectoryHelper.h"
 #include "PlateActor.h"
-#include "Gameplay\Merging\MergeAnimator.h"
-#include "Gameplay/Merging/MergeController.h" 
+#include "Gameplay/Merging/Animation/MergeAnimator.h"
+#include "Gameplay/Merging/Core/MergeController.h" 
 
 AFruitBall::AFruitBall()
 {
@@ -241,7 +241,7 @@ void AFruitBall::OnBallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor
         bHasCollided = true;
         
         // 통합 안정화 함수 호출
-        UFruitMergeFeedbackHelper::StabilizeFruits(
+        UFruitMergeStabilizer::StabilizeFruits(
             GetWorld(),         // 월드
             GetActorLocation(), // 충돌 위치
             DampingMultiplier,  // 감쇠 계수
