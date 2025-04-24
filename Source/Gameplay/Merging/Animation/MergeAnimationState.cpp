@@ -5,8 +5,8 @@
 #include "Gameplay/Controller/FruitPlayerController.h"
 #include "Gameplay/Fruit/FruitSpawnHelper.h"
 #include "Gameplay/Merging/Core/FruitMergeStabilizer.h"
-#include "MergeAnimator.h"
 #include "Gameplay/Merging/Core/MergeController.h"
+#include "Gameplay/Merging/Core/FruitMergeHelper.h"
 
 UMergeAnimationState::UMergeAnimationState()
     : NextBallType(0)
@@ -108,7 +108,7 @@ void UMergeAnimationState::UpdateAnimation()
             CurrentNewFruit->SetHasCollided(true);  // 충돌 경험 설정
         }
         
-        UE_LOG(LogTemp, Display, TEXT("병합 애니메이션 완료"));
+        //UE_LOG(LogTemp, Display, TEXT("병합 애니메이션 완료"));
         
         // 완료 플래그 설정
         bIsCompleted = true;
@@ -140,19 +140,16 @@ void UMergeAnimationState::FinishAnimation()
     }
     
     // 효과 실행
-    AMergeController::PlayMergeEffect(World, MergeLocation, CurrentBallType);
+    UFruitMergeHelper::PlayMergeEffect(World, MergeLocation, CurrentBallType);
     
-    // 전역 병합 상태 해제
-    UMergeAnimator::SetGlobalMergeInProgress(false);
-    
-    // MergeController의 상태도 함께 초기화 (중요: 추가된 부분)
+    // 전역 병합 상태 해제, MergeController의 상태도 함께 초기화
     AMergeController* MergeController = AMergeController::Get(World);
     if (MergeController)
     {
-        MergeController->CompleteMerge();
+        MergeController->SetMergeInProgress(false);
     }
     
-    //UE_LOG(LogTemp, Display, TEXT("병합 후처리 완료: 새 병합 가능 상태"));
+    //UE_LOG(LogTemp, Display, TEXT("병합 후 처리 완료: 새 병합 가능 상태"));
     
     // 객체 정리
     Cleanup();

@@ -6,7 +6,6 @@
 #include "System/Camera/CameraOrbitFunctionLibrary.h"
 #include "Gameplay/Physics/FruitTrajectoryHelper.h"
 #include "PlateActor.h"
-#include "Gameplay/Merging/Animation/MergeAnimator.h"
 #include "Gameplay/Merging/Core/FruitMergeHelper.h"
 #include "Gameplay/Merging/Core/FruitMergeStabilizer.h"
 #include "Gameplay/Merging/Core/MergeController.h" 
@@ -289,14 +288,13 @@ void AFruitBall::OnBallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor
             // 이미 병합이 진행 중이면 무시
             if (MergeController->IsMergeInProgress())
             {
-                UE_LOG(LogTemp, Verbose, TEXT("병합 무시: 다른 병합 진행 중 (%s, %s)"), 
-                       *GetName(), *OtherFruit->GetName());
                 return;
             }
             
             // 같은 타입인 경우 병합 시도
             if (GetBallType() == OtherFruit->GetBallType())
             {
+                //UE_LOG(LogTemp, Warning, TEXT("병합 시도 (%s, %s)"), *GetName(), *OtherFruit->GetName());
                 MergeController->StartMerge(this, OtherFruit, Hit.ImpactPoint);
             }
         }

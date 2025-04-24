@@ -3,7 +3,6 @@
 #include "Actors/FruitBall.h"
 #include "Components/StaticMeshComponent.h"
 #include "TimerManager.h"
-#include "Actors/PlateActor.h"
 
 void UFruitMergeStabilizer::StabilizeFruits(UWorld* World, const FVector& Center, float DampingMultiplier, AFruitBall* TargetFruit, int32 FruitType)
 {

@@ -1,12 +1,8 @@
 #include "FruitMergeHelper.h"
 #include "Actors/FruitBall.h"
-#include "Gameplay/Fruit/FruitSpawnHelper.h"
 #include "Kismet/GameplayStatics.h"
-#include "Gameplay/Controller/FruitPlayerController.h"
-#include "FruitMergeStabilizer.h"
 #include "Engine/StaticMesh.h"
-#include "Gameplay/Merging/Animation/MergeAnimator.h"
-#include "Gameplay/Merging/Animation/MergeAnimationState.h"
+#include "MergeController.h"
 
 void UFruitMergeHelper::RegisterCollisionHandlers(AFruitBall* Fruit)
 {
@@ -25,94 +21,6 @@ void UFruitMergeHelper::RegisterCollisionHandlers(AFruitBall* Fruit)
     // 충돌 이벤트에 연결
     Fruit->GetMeshComponent()->OnComponentHit.AddDynamic(Fruit, &AFruitBall::OnBallHit);
     //UE_LOG(LogTemp, Log, TEXT("과일 충돌 핸들러 등록 완료: %s"), *Fruit->GetName());
-}
-
-void UFruitMergeHelper::ProcessFruitCollision(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& CollisionPoint)
-{
-    // 통합된 유효성 검사 (ValidateMergeConditions 내용을 인라인으로 포함)
-    
-    // 1. 기본 유효성 검사
-    if (!FruitA || !FruitB || !IsValid(FruitA) || !IsValid(FruitB))
-    {
-        //UE_LOG(LogTemp, Warning, TEXT("병합 실패: 유효하지 않은 과일 객체"));
-        return;
-    }
-
-    // 2. 전역 병합 상태 검사
-    if (UMergeAnimator::IsGlobalMergeInProgress())
-    {
-        //UE_LOG(LogTemp, Warning, TEXT("병합 무시: 다른 병합이 이미 진행 중 (%s, %s)"),
-        //       *FruitA->GetName(), *FruitB->GetName());
-        return;
-    }
-    
-    // 3. 미리보기 공 검사
-    if (FruitA->IsPreviewBall() || FruitB->IsPreviewBall())
-    {
-        //UE_LOG(LogTemp, Verbose, TEXT("병합 무시: 미리보기 공"));
-        return;
-    }
-    
-    // 4. 병합 중인 과일 검사
-    if (FruitA->IsMerging() || FruitB->IsMerging())
-    {
-        //UE_LOG(LogTemp, Verbose, TEXT("병합 무시: 이미 병합 중인 과일"));
-        return;
-    }
-    
-    // 5. 과일 타입 일치 검사
-    int32 TypeA = FruitA->GetBallType();
-    int32 TypeB = FruitB->GetBallType();
-    if (TypeA != TypeB)
-    {
-        return;
-    }
-    
-    // 6. 스케일 유효성 검사
-    if (FruitA->GetActorScale3D().IsNearlyZero() || FruitB->GetActorScale3D().IsNearlyZero())
-    {
-        //UE_LOG(LogTemp, Warning, TEXT("병합 실패: 과일 스케일이 0에 가까움"));
-        return;
-    }
-    
-    // 모든 검사 통과 - 병합 실행
-    //UE_LOG(LogTemp, Warning, TEXT("병합 시작: %s(타입:%d) + %s(타입:%d) -> 타입:%d"),
-    //       *FruitA->GetName(), TypeA, *FruitB->GetName(), TypeB, TypeA + 1);
-           
-    // 병합 처리 함수 호출
-    MergeFruits(FruitA, FruitB, CollisionPoint);
-}
-
-void UFruitMergeHelper::MergeFruits(AFruitBall* Fruit1, AFruitBall* Fruit2, const FVector& ImpactPoint)
-{
-    // 병합 위치 계산
-    FVector MergeLocation = ImpactPoint;
-    if (MergeLocation == FVector::ZeroVector)
-    {
-        MergeLocation = (Fruit1->GetActorLocation() + Fruit2->GetActorLocation()) * 0.5f;
-    }
-    
-    // 다음 과일 타입 계산 (1단계 업그레이드)
-    int32 CurrentType = Fruit1->GetBallType();
-    int32 NextType = CurrentType + 1;
-    
-    UWorld* World = Fruit1->GetWorld();
-    if (!World)
-    {
-        return;
-    }
-    
-    // MergeController를 통해 병합 처리 (UMergeAnimator 대신)
-    AMergeController* MergeController = AMergeController::Get(World);
-    if (!MergeController)
-    {
-        return;
-    }
-    
-    UFruitMergeStabilizer::StabilizeFruits(World, MergeLocation, 3.0f, nullptr, NextType);
-    
-    // 병합 애니메이션 시작 - 직접 MergeController 사용
-    MergeController->AnimateMerge(Fruit1, Fruit2, MergeLocation, NextType);
 }
 
 // 모든 메시 사전 로드
@@ -166,4 +74,61 @@ void UFruitMergeHelper::PreloadAllFruitMeshes(UWorld* World)
     }
     
     UE_LOG(LogTemp, Display, TEXT("게임 에셋 사전 로드 완료"));
+}
+
+// 병합 이펙트 재생
+void UFruitMergeHelper::PlayMergeEffect(UWorld* World, const FVector& Location, int32 BallType)
+{
+    if (!World)
+    {
+        return;
+    }
+    
+    // 1. 시각적 효과 (블루프린트 액터)
+    static TSubclassOf<AActor> MergeEffectClass = nullptr;
+    if (!MergeEffectClass)
+    {
+        // 블루프린트 액터 클래스 로드
+        MergeEffectClass = LoadClass<AActor>(nullptr, TEXT("/Game/Particle/02_Blueprints/BP_Particle_Burst_Lvl_1.BP_Particle_Burst_Lvl_1_C"));
+        
+        if (!MergeEffectClass)
+        {
+            UE_LOG(LogTemp, Error, TEXT("병합 이펙트를 로드할 수 없습니다"));
+            return;
+        }
+    }
+    
+    // 2. 이펙트 스폰
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    
+    AActor* SpawnedEffect = World->SpawnActor<AActor>(MergeEffectClass, Location, FRotator::ZeroRotator, SpawnParams);
+    if (SpawnedEffect)
+    {
+        // 과일 타입에 따라 이펙트 스케일 조정
+        float EffectScale = 1.0f + (BallType * 0.025f);
+        SpawnedEffect->SetActorScale3D(FVector(EffectScale, EffectScale, EffectScale));
+        
+        // 자동 삭제
+        SpawnedEffect->SetLifeSpan(1.5f);
+    }
+    
+    // 3. 사운드 효과 재생
+    static USoundBase* MergeSound = nullptr;
+    //static USoundBase* MergeSound = LoadObject<USoundBase>(nullptr, TEXT("/Game/Sounds/S_FruitMerge"));
+    
+    if (MergeSound)
+    {
+        // 과일 크기에 따라 볼륨과 피치 조정
+        float VolumeMultiplier = FMath::Min(1.5f, 0.7f + (BallType * 0.1f));
+        float PitchMultiplier = FMath::Max(0.7f, 1.1f - (BallType * 0.05f)); // 큰 과일은 낮은 소리
+        
+        UGameplayStatics::PlaySoundAtLocation(
+            World, 
+            MergeSound, 
+            Location, 
+            VolumeMultiplier, 
+            PitchMultiplier
+        );
+    }
 }

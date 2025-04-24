@@ -44,7 +44,15 @@ public:
     void Cleanup();
     
     // 애니메이션이 완료되었는지 확인
-    bool IsCompleted() const { return bIsCompleted; }
+    bool IsCompleted() const
+    {
+        return bIsCompleted;
+    }
+    
+    FTimerHandle GetAnimTimerHandle() const
+    {
+        return AnimTimerHandle;
+    }
     
 private:
     // 애니메이션 대상 과일

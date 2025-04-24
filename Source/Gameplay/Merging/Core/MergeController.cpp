@@ -1,7 +1,7 @@
 #include "MergeController.h"
 #include "Actors/FruitBall.h"
-#include "FruitMergeHelper.h"
-#include "Gameplay/Merging/Animation/MergeAnimator.h"
+#include "FruitMergeStabilizer.h"
+#include "Gameplay/Merging/Animation/MergeAnimationState.h" 
 #include "Kismet/GameplayStatics.h"
 
 AMergeController* AMergeController::Instance = nullptr;
@@ -10,6 +10,9 @@ AMergeController::AMergeController()
 {
     PrimaryActorTick.bCanEverTick = true;
     bMergeInProgress = false;
+    
+    // 레벨 변경 시 이벤트 등록
+    FCoreUObjectDelegates::PostLoadMapWithWorld.AddStatic(&AMergeController::HandleLevelChange);
 }
 
 void AMergeController::BeginPlay()
@@ -18,139 +21,131 @@ void AMergeController::BeginPlay()
     Instance = this;
 }
 
-// 싱글톤 인스턴스 접근
-AMergeController* AMergeController::Get(const UObject* WorldContext)
+// 싱글톤 접근자
+AMergeController* AMergeController::Get(const UObject* WorldContextObject)
 {
-    if (!WorldContext)
+    // 이미 인스턴스가 있다면 반환
+    if (Instance && IsValid(Instance))
     {
+        return Instance;
+    }
+    
+    // 없다면 월드 컨텍스트로 찾거나 생성
+    if (!WorldContextObject)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("MergeController 싱글톤 접근 실패: 유효하지 않은 WorldContextObject"));
         return nullptr;
     }
     
-    UWorld* World = WorldContext->GetWorld();
+    UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
     if (!World)
     {
+        UE_LOG(LogTemp, Warning, TEXT("MergeController 싱글톤 접근 실패: 유효한 World를 얻을 수 없음"));
         return nullptr;
     }
     
-    // 모든 MergeController 찾기
-    TArray<AActor*> FoundActors;
-    UGameplayStatics::GetAllActorsOfClass(World, AMergeController::StaticClass(), FoundActors);
+    // 인스턴스를 찾지 못했으면 새로 생성하는 코드 추가
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    Instance = World->SpawnActor<AMergeController>(AMergeController::StaticClass(), 
+                                                  FVector::ZeroVector, 
+                                                  FRotator::ZeroRotator, 
+                                                  SpawnParams);
     
-    if (FoundActors.Num() > 0)
-    {
-        return Cast<AMergeController>(FoundActors[0]);
-    }
-    else
-    {
-        // 필요하다면 생성 로직 추가
-        FActorSpawnParameters SpawnParams;
-        SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-        return World->SpawnActor<AMergeController>(AMergeController::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
-    }
+    return Instance;
 }
 
-bool AMergeController::StartMerge(AFruitBall* Fruit1, AFruitBall* Fruit2, const FVector& CollisionPoint)
+void AMergeController::HandleLevelChange(UWorld* World)
 {
-    // 이미 병합 중인지 확인
-    if (bMergeInProgress || UMergeAnimator::IsGlobalMergeInProgress())
+    // 레벨 변경 시 싱글톤 인스턴스 초기화
+    Instance = nullptr;
+}
+
+void AMergeController::StartMerge(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& CollisionPoint)
+{
+    // 1. 기본 유효성 검사
+    if (!FruitA || !FruitB || !IsValid(FruitA) || !IsValid(FruitB))
     {
-        //UE_LOG(LogTemp, Warning, TEXT("이미 병합이 진행 중입니다. 요청 무시"));
-        return false;
+        return;
+    }
+
+    // 2. 미리보기 공 검사
+    if (FruitA->IsPreviewBall() || FruitB->IsPreviewBall())
+    {
+        return;
     }
     
-    // 유효성 검사 추가
-    if (!IsValid(Fruit1) || !IsValid(Fruit2))
+    // 3. 병합 중인 과일 검사
+    if (FruitA->IsMerging() || FruitB->IsMerging())
     {
-        //UE_LOG(LogTemp, Error, TEXT("병합 실패: 유효하지 않은 과일 객체"));
-        return false;
+        return;
     }
     
-    // 같은 타입인지 확인
-    if (Fruit1->GetBallType() != Fruit2->GetBallType())
+    // 4. 스케일 유효성 검사
+    if (FruitA->GetActorScale3D().IsNearlyZero() || FruitB->GetActorScale3D().IsNearlyZero())
     {
-        return false;
+        return;
     }
     
-    // 병합 시작
-    bMergeInProgress = true;
+    // 모든 검사 통과 - 병합 실행
+    MergeFruits(FruitA, FruitB, CollisionPoint);
+}
+
+void AMergeController::MergeFruits(AFruitBall* Fruit1, AFruitBall* Fruit2, const FVector& ImpactPoint)
+{
+    // 병합 위치 계산
+    FVector MergeLocation = ImpactPoint;
+    if (MergeLocation == FVector::ZeroVector)
+    {
+        MergeLocation = (Fruit1->GetActorLocation() + Fruit2->GetActorLocation()) * 0.5f;
+    }
     
-    // 기존 로직 재활용 (반환 값 없이 호출)
-    UFruitMergeHelper::ProcessFruitCollision(Fruit1, Fruit2, CollisionPoint);
+    // 다음 과일 타입 계산 (1단계 업그레이드)
+    int32 CurrentType = Fruit1->GetBallType();
+    int32 NextType = CurrentType + 1;
     
-    // 병합 프로세스가 시작되었으므로 성공으로 간주
-    return true;
-}
-
-bool AMergeController::IsMergeInProgress() const
-{
-    // 내부 상태와 UMergeAnimator 양쪽 모두 확인
-    return bMergeInProgress || UMergeAnimator::IsGlobalMergeInProgress();
-}
-
-void AMergeController::SetMergeInProgress(bool bInProgress)
-{
-    bMergeInProgress = bInProgress;
-}
-
-// IsMergeInProgress 호출 후 병합을 종료하는 함수
-void AMergeController::CompleteMerge()
-{
-    bMergeInProgress = false;
-}
-
-// 병합 이펙트 재생
-void AMergeController::PlayMergeEffect(UWorld* World, const FVector& Location, int32 BallType)
-{
+    UWorld* World = Fruit1->GetWorld();
     if (!World)
     {
         return;
     }
     
-    // 1. 시각적 효과 (블루프린트 액터)
-    static TSubclassOf<AActor> MergeEffectClass = nullptr;
-    if (!MergeEffectClass)
+    // MergeController 가져오기
+    AMergeController* MergeController = AMergeController::Get(World);
+    if (!MergeController)
     {
-        // 블루프린트 액터 클래스 로드
-        MergeEffectClass = LoadClass<AActor>(nullptr, TEXT("/Game/Particle/02_Blueprints/BP_Particle_Burst_Lvl_1.BP_Particle_Burst_Lvl_1_C"));
-        
-        if (!MergeEffectClass)
-        {
-            UE_LOG(LogTemp, Error, TEXT("병합 이펙트 클래스를 로드할 수 없습니다"));
-            return;
-        }
+        return;
     }
     
-    // 2. 이펙트 스폰
-    FActorSpawnParameters SpawnParams;
-    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    // 병합 상태 설정
+    MergeController->SetMergeInProgress(true);
+    Fruit1->SetIsMerging(true);
+    Fruit2->SetIsMerging(true);
+
+    // 주변 과일 안정화 
+    UFruitMergeStabilizer::StabilizeFruits(World, MergeLocation, 3.0f, nullptr, NextType);
     
-    AActor* SpawnedEffect = World->SpawnActor<AActor>(MergeEffectClass, Location, FRotator::ZeroRotator, SpawnParams);
-    if (SpawnedEffect)
+    // 병합 애니메이션 시작
+    MergeController->AnimateMerge(Fruit1, Fruit2, MergeLocation, NextType);
+}
+
+FTimerHandle AMergeController::AnimateMerge(AFruitBall* Fruit1, AFruitBall* Fruit2, const FVector& MergeLocation, int32 NextBallType)
+{
+    // 기본 유효성 검사
+    if (!Fruit1 || !Fruit2 || !IsValid(Fruit1) || !IsValid(Fruit2))
     {
-        // 과일 타입에 따라 이펙트 스케일 조정
-        float EffectScale = 1.0f + (BallType * 0.025f);
-        SpawnedEffect->SetActorScale3D(FVector(EffectScale, EffectScale, EffectScale));
-        
-        // 자동 삭제
-        SpawnedEffect->SetLifeSpan(1.5f);
+        bMergeInProgress = false;
+        return FTimerHandle();
     }
     
-    // 3. 사운드 효과 재생
-    static USoundBase* MergeSound = nullptr;
-    //static USoundBase* MergeSound = LoadObject<USoundBase>(nullptr, TEXT("/Game/Sounds/S_FruitMerge"));
+    // 매번 새 UMergeAnimationState 객체 생성 (풀링 없이 원래 방식대로)
+    UMergeAnimationState* AnimState = NewObject<UMergeAnimationState>();
     
-    if (MergeSound)
-    {
-        // 과일 크기에 따라 볼륨과 피치 조정
-        float VolumeMultiplier = FMath::Min(1.5f, 0.7f + (BallType * 0.1f));
-        float PitchMultiplier = FMath::Max(0.7f, 1.1f - (BallType * 0.05f)); // 큰 과일은 낮은 소리
-        
-        UGameplayStatics::PlaySoundAtLocation(
-            World, 
-            MergeSound, 
-            Location, 
-            VolumeMultiplier, 
-            PitchMultiplier
-        );
-    }
+    // GC에서 보호하기 위해 Root에 추가
+    AnimState->AddToRoot();
+    
+    // 애니메이션 상태 초기화 및 시작
+    AnimState->Initialize(Fruit1, Fruit2, MergeLocation, NextBallType);
+    
+    return AnimState->GetAnimTimerHandle();
 }

@@ -17,16 +17,12 @@ public:
     // 충돌 이벤트 관리
     UFUNCTION(BlueprintCallable, Category = "Fruit Merging")
     static void RegisterCollisionHandlers(AFruitBall* Fruit);
-
-    // 과일 충돌 처리 및 병합 조건 검사
-    UFUNCTION(BlueprintCallable, Category = "Fruit Merging")
-    static void ProcessFruitCollision(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& CollisionPoint);
-    
-    // 실제 병합 수행 (기존 함수)
-    UFUNCTION(BlueprintCallable, Category = "Fruit Merging")
-    static void MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& MergeLocation);
     
     // 모든 메시 사전 로드 (기존 함수)
     UFUNCTION(BlueprintCallable, Category = "Fruit Merging")
     static void PreloadAllFruitMeshes(UWorld* World);
+    
+    // 병합 이펙트
+    UFUNCTION(BlueprintCallable, Category = "Fruit Merging")
+    static void PlayMergeEffect(UWorld* World, const FVector& Location, int32 BallType);
 };
