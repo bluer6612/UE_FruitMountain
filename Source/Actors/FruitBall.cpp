@@ -9,6 +9,7 @@
 #include "Gameplay/Physics/FruitTrajectoryHelper.h"
 #include "PlateActor.h"
 #include "Gameplay\Merging\MergeAnimator.h"
+#include "Gameplay/Merging/MergeController.h" 
 
 AFruitBall::AFruitBall()
 {
@@ -278,26 +279,26 @@ void AFruitBall::OnBallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor
         AFruitBall* OtherFruit = Cast<AFruitBall>(OtherActor);
         if (OtherFruit)
         {
-            // 전역 병합 진행 중이면 추가 병합 시도하지 않음
-            if (UMergeAnimator::IsGlobalMergeInProgress())
+            // 병합 컨트롤러를 통해 병합 진행 여부 확인
+            AMergeController* MergeController = AMergeController::Get(this);
+            if (!MergeController)
             {
-                // 로그만 출력하고 병합 시도하지 않음
-                UE_LOG(LogTemp, Warning, TEXT("병합 진행 중 충돌: %s(타입:%d) <-> %s(타입:%d), 위치: %s, 병합 처리 대기"),
-                       *GetName(), GetBallType(),
-                       *OtherFruit->GetName(), OtherFruit->GetBallType(),
-                       *Hit.ImpactPoint.ToString());
                 return;
             }
             
-            // 객체 유효성 확인 강화
-            if (!IsValid(this) || !IsValid(OtherFruit))
+            // 이미 병합이 진행 중이면 무시
+            if (MergeController->IsMergeInProgress())
             {
-                UE_LOG(LogTemp, Error, TEXT("병합 시도 중 유효하지 않은 과일 객체 발견"));
+                UE_LOG(LogTemp, Verbose, TEXT("병합 무시: 다른 병합 진행 중 (%s, %s)"), 
+                       *GetName(), *OtherFruit->GetName());
                 return;
             }
             
-            // 과일 충돌 처리 (병합 로직으로 바로 연결)
-            UFruitMergeHelper::ProcessFruitCollision(this, OtherFruit, Hit.ImpactPoint);
+            // 같은 타입인 경우 병합 시도
+            if (GetBallType() == OtherFruit->GetBallType())
+            {
+                MergeController->StartMerge(this, OtherFruit, Hit.ImpactPoint);
+            }
         }
     }
 }
