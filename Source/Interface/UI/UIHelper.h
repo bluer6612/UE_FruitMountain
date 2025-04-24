@@ -43,9 +43,6 @@ public:
     // 앵커 기반 슬롯 위치 설정
     static void SetAnchorForSlot(UCanvasPanelSlot* CanvasSlot, EWidgetAnchor Anchor, float PaddingX, float PaddingY);
     
-    // 텍스처 로드 및 적용
-    static UTexture2D* LoadAndApplyTexture(UImage* ImageWidget, const FString& TexturePath);
-    
     // 텍스트 블록 스타일 설정 헬퍼 함수
     UFUNCTION(BlueprintCallable, Category = "UI Helper")
     static void SetupTextBlockStyle(

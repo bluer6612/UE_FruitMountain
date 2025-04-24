@@ -43,7 +43,7 @@ void AUE_FruitMountainGameMode::BeginPlay()
     // 게임 시작 시 모든 과일 메시 사전 로드
     UFruitMergeHelper::PreloadAllFruitMeshes(GetWorld());
     
-    // UI 위젯 초기화 - UIHelper 사용
+    // UI 위젯 초기화
     UTextureDisplayWidget* TextureWidget = UTextureDisplayWidget::CreateDisplayWidget(this);
     UScoreDisplayWidget* ScoreWidget = UScoreDisplayWidget::CreateScoreWidget(this);
     UTotalScoreWidget* TotalScoreWidget = UTotalScoreWidget::CreateTotalScoreWidget(this);
