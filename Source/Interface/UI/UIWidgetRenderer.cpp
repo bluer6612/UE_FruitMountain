@@ -37,19 +37,6 @@ UUIWidgetRenderer* UUIWidgetRenderer::CreateDisplayWidget(UObject* WorldContextO
     return Instance;
 }
 
-// 위젯 소멸 시 정적 인스턴스 초기화
-void UUIWidgetRenderer::NativeDestruct()
-{
-    Super::NativeDestruct();
-    
-    // 이 위젯이 현재 싱글톤 인스턴스인 경우에만 초기화
-    if (Instance == this)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("UIWidgetRenderer: 인스턴스 소멸, 정적 참조 초기화"));
-        Instance = nullptr;
-    }
-}
-
 void UUIWidgetRenderer::NativeConstruct()
 {
     Super::NativeConstruct();
@@ -75,9 +62,19 @@ void UUIWidgetRenderer::NativeConstruct()
     {
         Instance = this;
     }
+}
+
+// 위젯 소멸 시 정적 인스턴스 초기화
+void UUIWidgetRenderer::NativeDestruct()
+{
+    Super::NativeDestruct();
     
-    // NativeConstruct에서 직접 이미지 설정 호출
-    SetupAllImages();
+    // 이 위젯이 현재 싱글톤 인스턴스인 경우에만 초기화
+    if (Instance == this)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("UIWidgetRenderer: 인스턴스 소멸, 정적 참조 초기화"));
+        Instance = nullptr;
+    }
 }
 
 bool UUIWidgetRenderer::IsInstanceValid()

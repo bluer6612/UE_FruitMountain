@@ -42,6 +42,10 @@ void AUE_FruitMountainGameMode::BeginPlay()
     // 게임 시작 시 모든 과일 메시 사전 로드
     UFruitMergeHelper::PreloadAllFruitMeshes(GetWorld());
     
+    // UI 위젯 초기화
+    UScoreDisplayWidget* ScoreWidget = UScoreDisplayWidget::CreateScoreWidget(this);
+    UTotalScoreWidget* TotalScoreWidget = UTotalScoreWidget::CreateTotalScoreWidget(this);
+
     // ScoreManager 컴포넌트 가져오기 또는 생성
     UScoreManagerComponent* ScoreManagerComp = FindComponentByClass<UScoreManagerComponent>();
     if (!ScoreManagerComp)
