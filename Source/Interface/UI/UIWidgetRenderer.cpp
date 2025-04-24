@@ -157,7 +157,7 @@ void UUIWidgetRenderer::RenderUIImage(UImage*& ImageWidget, EWidgetAnchor Anchor
         ImageWidget = nullptr;
     }
     
-    // 새 이미지 위젯 생성 - 이 부분이 누락되었음!
+    // 새 이미지 위젯 생성
     ImageWidget = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass());
     if (!ImageWidget)
     {
@@ -173,17 +173,8 @@ void UUIWidgetRenderer::RenderUIImage(UImage*& ImageWidget, EWidgetAnchor Anchor
         return;
     }
     
+    // 텍스처 로드
     UTexture2D* LoadedTexture = LoadObject<UTexture2D>(nullptr, *TexturePath);
-    if (!LoadedTexture)
-    {
-        LoadedTexture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), nullptr, *TexturePath));
-    }
-    if (!LoadedTexture)
-    {
-        FStreamableManager StreamableManager;
-        FSoftObjectPath AssetRef(TexturePath);
-        LoadedTexture = Cast<UTexture2D>(StreamableManager.LoadSynchronous(AssetRef));
-    }
     
     if (LoadedTexture)
     {
