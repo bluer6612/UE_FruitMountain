@@ -34,7 +34,7 @@ void UMergeAnimationState::Initialize(AFruitBall* InFruit1, AFruitBall* InFruit2
     Fruit2 = InFruit2;
     MergeLocation = InMergeLocation;
     NextBallType = InNextBallType;
-    AnimDuration = FMath::Min(InAnimDuration, 0.2f);
+    AnimDuration = FMath::Min(InAnimDuration, 0.15f);
     CurrentBallType = InFruit1->GetBallType();
     
     // 초기 스케일 저장
@@ -70,7 +70,7 @@ void UMergeAnimationState::Initialize(AFruitBall* InFruit1, AFruitBall* InFruit2
     if (World)
     {
         World->GetTimerManager().SetTimer(AnimTimerHandle, 
-            this, &UMergeAnimationState::UpdateAnimation, 0.01f, true);
+            this, &UMergeAnimationState::UpdateAnimation, 0.005f, true);
     }
 }
 
@@ -88,7 +88,7 @@ void UMergeAnimationState::UpdateAnimation()
     }
     
     // 경과 시간 증가
-    ElapsedTime += 0.01f; 
+    ElapsedTime += 0.005f; 
     float Progress = FMath::Clamp(ElapsedTime / AnimDuration, 0.0f, 1.0f);
     
     // 스케일 업데이트

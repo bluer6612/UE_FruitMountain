@@ -16,7 +16,7 @@ public:
     static FTimerHandle AnimateMerge(AFruitBall* Fruit1, AFruitBall* Fruit2, 
                                     const FVector& MergeLocation, 
                                     int32 NextBallType, 
-                                    float AnimDuration = 0.15f);
+                                    float AnimDuration = 0.1f);
     
     // 새 과일 성장 애니메이션
     static void AnimateNewFruitGrowth(AFruitBall* NewFruit, float AnimDuration = 0.1f);
