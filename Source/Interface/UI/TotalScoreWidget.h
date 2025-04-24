@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/TextBlock.h"
+#include "Interface/UI/UIHelper.h" // UIHelper 헤더 추가
 #include "TotalScoreWidget.generated.h"
 
 /**
@@ -20,7 +21,6 @@ public:
     static const FVector2D TOTALSCORE_TEXT_POS;
     
     // 정적 인스턴스 - 싱글톤 패턴
-    static UTotalScoreWidget* Instance;
     static TSubclassOf<UUserWidget> TotalScoreWidgetClass;
     
     // 위젯 생성 함수
@@ -47,8 +47,13 @@ public:
     }
     
     // 인스턴스 유효성 확인 함수
-    UFUNCTION(BlueprintCallable, Category = "UI|Score")
+    UFUNCTION(BlueprintCallable, Category = "UI Score")
     static bool IsInstanceValid();
+    
+    static void ClearInstance()
+    {
+        Instance = nullptr;
+    }
     
 protected:
     virtual void NativeConstruct() override;
@@ -59,9 +64,6 @@ protected:
     
     // 위젯 클래스 로드 헬퍼
     static bool LoadWidgetClassIfNeeded();
-    
-    // 유효한 플레이어 컨트롤러 획득
-    static APlayerController* GetValidPlayerController(UObject* WorldContextObject);
     
     // 애니메이션 관련 변수들
     UPROPERTY()
@@ -90,4 +92,7 @@ protected:
     
     // 애니메이션 타이머 핸들
     FTimerHandle ScoreAnimTimerHandle;
+
+protected:
+    static UTotalScoreWidget* Instance;
 };

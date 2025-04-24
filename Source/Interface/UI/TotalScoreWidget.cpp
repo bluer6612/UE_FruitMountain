@@ -84,17 +84,16 @@ void UTotalScoreWidget::NativeDestruct()
 
 UTotalScoreWidget* UTotalScoreWidget::CreateTotalScoreWidget(UObject* WorldContextObject)
 {
-    // 기존 유효 인스턴스 확인
+    // 이미 유효한 인스턴스가 있는지 확인
     if (Instance && IsValid(Instance) && Instance->IsInViewport())
     {
         return Instance;
     }
     
-    // 플레이어 컨트롤러 확인
-    APlayerController* PC = GetValidPlayerController(WorldContextObject);
-    if (!PC)
+    // 기존 인스턴스 정리
+    if (Instance)
     {
-        return nullptr;
+        Instance = nullptr;
     }
     
     // 위젯 클래스 로드
@@ -103,12 +102,18 @@ UTotalScoreWidget* UTotalScoreWidget::CreateTotalScoreWidget(UObject* WorldConte
         return nullptr;
     }
     
-    // 위젯 생성
-    Instance = CreateWidget<UTotalScoreWidget>(PC, TotalScoreWidgetClass);
+    APlayerController* Controller = UUIHelper::GetValidPlayerController(WorldContextObject);
+    if (!Controller)
+    {
+        UE_LOG(LogTemp, Error, TEXT("TotalScoreWidget: 유효한 플레이어 컨트롤러가 없습니다"));
+        return nullptr;
+    }
+    
+    // 위젯 생성 및 뷰포트에 추가
+    Instance = CreateWidget<UTotalScoreWidget>(Controller, TotalScoreWidgetClass);
     if (Instance)
     {
-        // 먼저 뷰포트에 추가
-        Instance->AddToViewport(10);
+        Instance->AddToViewport(100); // 항상 최상위에 표시
     }
     
     return Instance;
@@ -121,12 +126,6 @@ bool UTotalScoreWidget::LoadWidgetClassIfNeeded()
         TotalScoreWidgetClass = LoadClass<UUserWidget>(nullptr, TEXT("/Game/UI/PlayLevel/BP_UI_Play_TotalScore.BP_UI_Play_TotalScore_C"));
     }
     return TotalScoreWidgetClass != nullptr;
-}
-
-APlayerController* UTotalScoreWidget::GetValidPlayerController(UObject* WorldContextObject)
-{
-    UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull);
-    return World ? UGameplayStatics::GetPlayerController(World, 0) : nullptr;
 }
 
 void UTotalScoreWidget::UpdateTotalScore(int32 NewScore)

@@ -7,15 +7,6 @@
 #include "Blueprint/UserWidget.h"
 #include "UIHelper.generated.h"
 
-// 위젯 위치 열거형 - 이미지 변수명과 동기화
-UENUM(BlueprintType)
-enum class EWidgetImageType : uint8
-{
-    UI_Play_Score,
-    UI_Play_FruitList,
-    UI_Play_NextFruit
-};
-
 // 앵커 위치 열거형
 UENUM(BlueprintType)
 enum class EWidgetAnchor : uint8
@@ -152,13 +143,4 @@ template<class T>
 bool UUIHelper::IsWidgetInstanceValid(T* Instance)
 {
     return Instance && IsValid(Instance) && Instance->IsInViewport();
-}
-
-// 템플릿 함수는 헤더 내에 전체 구현이 포함되어야 함
-template<class T>
-static T* CreateSingletonWidget(T*& Instance, TSubclassOf<UUserWidget>& WidgetClass, 
-                              UObject* WorldContextObject, const FString& BlueprintPath, 
-                              int32 ZOrder = 10, ESlateVisibility Visibility = ESlateVisibility::HitTestInvisible)
-{
-    // 전체 구현...
 }

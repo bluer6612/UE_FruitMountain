@@ -46,6 +46,21 @@ public:
     // 애니메이터 접근 함수
     UFUNCTION(BlueprintCallable, Category = "UI Score")
     UScoreWidgetAnimator* GetWidgetAnimator() const { return WidgetAnimator; }
+
+    static UTotalScoreWidget* GetInstance()
+    {
+        return Instance;
+    }
+    
+    static void ClearInstance()
+    {
+        Instance = nullptr;
+    }
+    
+    static bool IsInstanceValid()
+    {
+        return Instance != nullptr && IsValid(Instance);
+    }
     
 protected:
     virtual void NativeConstruct() override;
@@ -66,6 +81,9 @@ protected:
     int32 CurrentScoreGain;  // 현재 표시되는 점수 (애니메이션당)
     float CurrentComboMultiplier;
     bool bScoreTextActive;
+
+protected:
+    static UTotalScoreWidget* Instance;
     
 private:
     // 헬퍼 함수

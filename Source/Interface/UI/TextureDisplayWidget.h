@@ -5,6 +5,14 @@
 #include "UIHelper.h"
 #include "TextureDisplayWidget.generated.h"
 
+UENUM(BlueprintType)
+enum class EWidgetImageType : uint8
+{
+    UI_Play_Score,     // 왼쪽 상단 점수판
+    UI_Play_FruitList, // 왼쪽 하단 과일 목록
+    UI_Play_NextFruit, // 오른쪽 상단 다음 과일
+};
+
 class UCanvasPanel;
 class UImage;
 
@@ -18,15 +26,6 @@ class UE_FRUITMOUNTAIN_API UTextureDisplayWidget : public UUserWidget
     GENERATED_BODY()
     
 public:
-    /** 표준 UI 이미지 타입 */
-    UENUM(BlueprintType)
-    enum class EWidgetImageType : uint8
-    {
-        UI_Play_Score,     // 왼쪽 상단 점수판
-        UI_Play_FruitList, // 왼쪽 하단 과일 목록
-        UI_Play_NextFruit, // 오른쪽 상단 다음 과일
-    };
-    
     /** 위젯 인스턴스 생성 또는 기존 인스턴스 반환 */
     UFUNCTION(BlueprintCallable, Category = "UI TextureDisplay", meta = (WorldContext = "WorldContextObject"))
     static UTextureDisplayWidget* CreateDisplayWidget(UObject* WorldContextObject);
@@ -35,24 +34,29 @@ public:
     UFUNCTION(BlueprintCallable, Category = "UI TextureDisplay")
     static bool IsInstanceValid();
     
+    /** Instance에 접근할 수 있는 getter 추가 */
+    UFUNCTION(BlueprintCallable, Category = "UI TextureDisplay")
+    static UTextureDisplayWidget* GetInstance()
+    {
+        return Instance;
+    }
+    
+    /** 싱글톤 인스턴스 정리 */
+    UFUNCTION(BlueprintCallable, Category = "UI TextureDisplay")
+    static void ClearInstance()
+    {
+        Instance = nullptr;
+    }
+    
     /** 모든 기본 이미지 설정 */
     UFUNCTION(BlueprintCallable, Category = "UI TextureDisplay")
     void SetupAllImages();
     
-    // === 함수 오버로드 정리 ===
-    
     /**
      * 미리 정의된 UI 요소에 이미지 설정
-     * @param ImageType - 이미지 위젯 타입 (UI_Play_Score, UI_Play_FruitList 등)
-     * @param TexturePath - 텍스처 경로
-     * @param CustomSize - 이미지 크기 (0,0이면 원본 크기 사용)
-     * @param PaddingX - X축 패딩
-     * @param PaddingY - Y축 패딩
      */
     UFUNCTION(BlueprintCallable, Category = "UI TextureDisplay")
-    void SetupImage(EWidgetImageType ImageType, const FString& TexturePath, 
-                    const FVector2D& CustomSize = FVector2D::ZeroVector, 
-                    float PaddingX = 0.0f, float PaddingY = 0.0f);
+    void PrepareUIWidget(EWidgetImageType ImageType, const FString& TexturePath, const FVector2D& CustomSize = FVector2D::ZeroVector, float PaddingX = 0.0f, float PaddingY = 0.0f);
     
     /**
      * 직접 제공된 이미지 위젯에 텍스처 설정
@@ -64,9 +68,7 @@ public:
      * @param PaddingX - X축 패딩
      * @param PaddingY - Y축 패딩
      */
-    void SetupImage(UImage*& ImageWidget, EWidgetAnchor Anchor, const FString& TexturePath,
-                    const FVector2D& CustomSize = FVector2D::ZeroVector, 
-                    float PaddingX = 0.0f, float PaddingY = 0.0f);
+    void RenderUIImage(UImage*& ImageWidget, EWidgetAnchor Anchor, const FString& TexturePath, const FVector2D& CustomSize = FVector2D::ZeroVector, float PaddingX = 0.0f, float PaddingY = 0.0f);
     
 protected:
     /** 위젯 생성 시 호출됨 */
@@ -75,10 +77,10 @@ protected:
     /** 위젯 소멸 시 호출됨 */
     virtual void NativeDestruct() override;
     
-private:
     /** 싱글톤 인스턴스 */
     static UTextureDisplayWidget* Instance;
     
+private:
     /** 루트 캔버스 패널 */
     UPROPERTY()
     UCanvasPanel* Canvas;

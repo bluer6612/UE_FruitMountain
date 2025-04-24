@@ -6,6 +6,7 @@
 #include "Components/TextBlock.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/Texture2D.h"
+#include "Engine/StreamableManager.h"
 
 // 정적 인스턴스 초기화
 UTextureDisplayWidget* UTextureDisplayWidget::Instance = nullptr;
@@ -86,25 +87,24 @@ bool UTextureDisplayWidget::IsInstanceValid()
 
 void UTextureDisplayWidget::SetupAllImages()
 {
-    // 화면 크기를 고려한 앵커 기반 위치 설정 + 개별 패딩값 적용
-    SetupImage(EWidgetImageType::UI_Play_Score, TEXT("/Game/UI/PlayLevel/UI_Play_Score"), 
-               FVector2D(504, 253), 40.0f, 30.0f); // 왼쪽 상단 점수판
+    PrepareUIWidget(EWidgetImageType::UI_Play_Score, 
+                   TEXT("/Game/UI/PlayLevel/UI_Play_Score"), 
+                   FVector2D(504, 253), 40.0f, 30.0f);
                          
-    SetupImage(EWidgetImageType::UI_Play_FruitList, TEXT("/Game/UI/PlayLevel/UI_Play_FruitList"), 
-               FVector2D(101, 762), 60.0f, 20.0f); // 왼쪽 하단 과일 목록
+    PrepareUIWidget(EWidgetImageType::UI_Play_FruitList, 
+                   TEXT("/Game/UI/PlayLevel/UI_Play_FruitList"), 
+                   FVector2D(101, 762), 60.0f, 20.0f);
                          
-    SetupImage(EWidgetImageType::UI_Play_NextFruit, TEXT("/Game/UI/PlayLevel/UI_Play_NextFruit"), 
-               FVector2D(301, 339), 120.0f, 60.0f); // 오른쪽 상단 다음 과일
+    PrepareUIWidget(EWidgetImageType::UI_Play_NextFruit, 
+                   TEXT("/Game/UI/PlayLevel/UI_Play_NextFruit"), 
+                   FVector2D(301, 339), 120.0f, 60.0f);
 
     UE_LOG(LogTemp, Warning, TEXT("TextureDisplayWidget: 위젯 이미지 설정 완료"));
 }
 
-// 통합된 이미지 설정 함수: enum 또는 직접 참조 모두 처리 가능
-void UTextureDisplayWidget::SetupImage(EWidgetImageType ImageType, const FString& TexturePath, 
-                                     const FVector2D& CustomSize, 
-                                     float PaddingX, float PaddingY)
+void UTextureDisplayWidget::PrepareUIWidget(EWidgetImageType ImageType, const FString& TexturePath, const FVector2D& CustomSize, float PaddingX, float PaddingY)
 {
-    // 이미지 참조와 앵커 정보를 한 번에 결정
+    // 이미지 참조와 앵커 정보 결정
     UImage** TargetImagePtr = nullptr;
     EWidgetAnchor Anchor = EWidgetAnchor::Center;
     
@@ -131,99 +131,17 @@ void UTextureDisplayWidget::SetupImage(EWidgetImageType ImageType, const FString
             return;
     }
     
-    // 유효한 이미지 참조가 있는지 확인
-    if (!TargetImagePtr || !Canvas)
+    if (!TargetImagePtr) 
     {
-        UE_LOG(LogTemp, Error, TEXT("이미지 참조가 유효하지 않거나 캔버스가 없음"));
         return;
     }
     
-    // 기존 이미지가 있으면 제거
-    if (*TargetImagePtr)
-    {
-        (*TargetImagePtr)->RemoveFromParent();
-        *TargetImagePtr = nullptr;
-    }
-    
-    // 새 이미지 생성
-    *TargetImagePtr = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass());
-    if (!(*TargetImagePtr))
-    {
-        UE_LOG(LogTemp, Error, TEXT("이미지 위젯 생성 실패"));
-        return;
-    }
-    
-    // 캔버스에 추가
-    UCanvasPanelSlot* ImageSlot = Canvas->AddChildToCanvas(*TargetImagePtr);
-    if (!ImageSlot)
-    {
-        UE_LOG(LogTemp, Error, TEXT("이미지 슬롯 생성 실패"));
-        return;
-    }
-    
-    // 텍스처 로드 및 적용
-    UTexture2D* LoadedTexture = LoadObject<UTexture2D>(nullptr, *TexturePath);
-    if (!LoadedTexture)
-    {
-        LoadedTexture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), nullptr, *TexturePath));
-    }
-    if (!LoadedTexture)
-    {
-        FStreamableManager StreamableManager;
-        FSoftObjectPath AssetRef(TexturePath);
-        LoadedTexture = Cast<UTexture2D>(StreamableManager.LoadSynchronous(AssetRef));
-    }
-    
-    if (LoadedTexture)
-    {
-        // 사용자 지정 크기 또는 원본 크기 사용
-        FVector2D FinalSize = CustomSize;
-        if (FinalSize.X <= 0 || FinalSize.Y <= 0)
-        {
-            FinalSize.X = LoadedTexture->GetSizeX();
-            FinalSize.Y = LoadedTexture->GetSizeY();
-        }
-        
-        // 브러시 설정
-        FSlateBrush Brush;
-        Brush.SetResourceObject(LoadedTexture);
-        Brush.DrawAs = ESlateBrushDrawType::Image;
-        Brush.ImageSize = FinalSize;
-        
-        // 이미지에 브러시 적용
-        (*TargetImagePtr)->SetBrush(Brush);
-        (*TargetImagePtr)->SetColorAndOpacity(FLinearColor::White);
-        
-        // 슬롯 크기 설정
-        ImageSlot->SetSize(FinalSize);
-        
-        // 앵커 설정
-        UUIHelper::SetAnchorForSlot(ImageSlot, Anchor, PaddingX, PaddingY);
-        
-        UE_LOG(LogTemp, Display, TEXT("이미지 위젯 설정 완료: %s"), *TexturePath);
-    }
-    else
-    {
-        // 로드 실패 시 빨간색 박스 표시
-        FSlateBrush ErrorBrush;
-        ErrorBrush.DrawAs = ESlateBrushDrawType::Box;
-        ErrorBrush.TintColor = FLinearColor::Red;
-        
-        (*TargetImagePtr)->SetBrush(ErrorBrush);
-        (*TargetImagePtr)->SetColorAndOpacity(FLinearColor::Red);
-        
-        // 슬롯 크기와 위치는 설정
-        ImageSlot->SetSize(CustomSize);
-        UUIHelper::SetAnchorForSlot(ImageSlot, Anchor, PaddingX, PaddingY);
-        
-        UE_LOG(LogTemp, Warning, TEXT("텍스처 로드 실패: %s"), *TexturePath);
-    }
+    // 내부 구현 함수 호출
+    RenderUIImage(*TargetImagePtr, Anchor, TexturePath, CustomSize, PaddingX, PaddingY);
 }
 
-// 직접 UImage 참조를 위한 오버로드 (필요한 경우)
-void UTextureDisplayWidget::SetupImage(UImage*& ImageWidget, EWidgetAnchor Anchor, const FString& TexturePath,
-                                     const FVector2D& CustomSize, 
-                                     float PaddingX, float PaddingY)
+// 직접 참조로 이미지 설정
+void UTextureDisplayWidget::RenderUIImage(UImage*& ImageWidget, EWidgetAnchor Anchor, const FString& TexturePath, const FVector2D& CustomSize, float PaddingX, float PaddingY)
 {
     // 캔버스 체크
     if (!Canvas)
@@ -239,7 +157,15 @@ void UTextureDisplayWidget::SetupImage(UImage*& ImageWidget, EWidgetAnchor Ancho
         ImageWidget = nullptr;
     }
     
-    // 나머지 코드는 위와 동일하게 구현
+    // 새 이미지 위젯 생성 - 이 부분이 누락되었음!
+    ImageWidget = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass());
+    if (!ImageWidget)
+    {
+        UE_LOG(LogTemp, Error, TEXT("TextureDisplayWidget: 이미지 위젯 생성 실패!"));
+        return;
+    }
+    
+    // 캔버스에 추가
     UCanvasPanelSlot* ImageSlot = Canvas->AddChildToCanvas(ImageWidget);
     if (!ImageSlot)
     {
@@ -283,12 +209,36 @@ void UTextureDisplayWidget::SetupImage(UImage*& ImageWidget, EWidgetAnchor Ancho
     }
     else
     {
+        // 로드 실패 시 빨간색 박스와 텍스트 추가
         FSlateBrush ErrorBrush;
         ErrorBrush.DrawAs = ESlateBrushDrawType::Box;
         ErrorBrush.TintColor = FLinearColor::Red;
         
         ImageWidget->SetBrush(ErrorBrush);
         ImageWidget->SetColorAndOpacity(FLinearColor::Red);
+        
+        // 로드 실패 텍스트 추가
+        UTextBlock* ErrorText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
+        if (ErrorText)
+        {
+            Canvas->AddChild(ErrorText);
+            
+            // 경로에서 파일명만 추출
+            FString FileName = FPaths::GetCleanFilename(TexturePath);
+            ErrorText->SetText(FText::FromString(FString::Printf(TEXT("로드 실패:\n%s"), *FileName)));
+            
+            // 텍스트 스타일 설정
+            ErrorText->SetColorAndOpacity(FLinearColor::White);
+            
+            // 텍스트를 이미지와 같은 위치에 배치
+            UCanvasPanelSlot* TextSlot = Cast<UCanvasPanelSlot>(ErrorText->Slot);
+            if (TextSlot)
+            {
+                TextSlot->SetSize(CustomSize);
+                UUIHelper::SetAnchorForSlot(TextSlot, Anchor, PaddingX, PaddingY);
+                TextSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+            }
+        }
         
         ImageSlot->SetSize(CustomSize);
         UUIHelper::SetAnchorForSlot(ImageSlot, Anchor, PaddingX, PaddingY);

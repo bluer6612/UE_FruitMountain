@@ -74,33 +74,33 @@ void AUE_FruitMountainGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason
     // 1. ScoreDisplayWidget 정리 
     if (UScoreDisplayWidget::IsInstanceValid())
     {
-        UScoreDisplayWidget* ScoreWidget = UScoreDisplayWidget::Instance;
+        UScoreDisplayWidget* ScoreWidget = UScoreDisplayWidget::GetInstance();
         if (ScoreWidget)
         {
             ScoreWidget->RemoveFromParent();
-            UScoreDisplayWidget::Instance = nullptr;
+            UScoreDisplayWidget::ClearInstance();
         }
     }
     
     // 2. TextureDisplayWidget 정리
     if (UTextureDisplayWidget::IsInstanceValid())
     {
-        UTextureDisplayWidget* TextureWidget = UTextureDisplayWidget::Instance;
+        UTextureDisplayWidget* TextureWidget = UTextureDisplayWidget::GetInstance();
         if (TextureWidget)
         {
             TextureWidget->RemoveFromParent();
-            UTextureDisplayWidget::Instance = nullptr;
+            UTextureDisplayWidget::ClearInstance();
         }
     }
     
     // 3. TotalScoreWidget 정리
     if (UTotalScoreWidget::IsInstanceValid())
     {
-        UTotalScoreWidget* TotalScoreWidget = UTotalScoreWidget::Instance;
+        UTotalScoreWidget* TotalScoreWidget = UTotalScoreWidget::GetInstance();
         if (TotalScoreWidget)
         {
             TotalScoreWidget->RemoveFromParent();
-            UTotalScoreWidget::Instance = nullptr;
+            UTotalScoreWidget::ClearInstance();
         }
     }
     
