@@ -25,8 +25,8 @@ void UMergeAnimator::SetGlobalMergeInProgress(bool bInProgress)
     bGlobalMergeInProgress = bInProgress;
     
     // 디버깅 로그 추가
-    UE_LOG(LogTemp, Warning, TEXT("전역 병합 상태 변경: %s"), 
-           bInProgress ? TEXT("병합 진행 중") : TEXT("병합 없음"));
+    //UE_LOG(LogTemp, Warning, TEXT("전역 병합 상태 변경: %s"), 
+    //       bInProgress ? TEXT("병합 진행 중") : TEXT("병합 없음"));
 }
 
 FTimerHandle UMergeAnimator::AnimateMerge(AFruitBall* Fruit1, AFruitBall* Fruit2, const FVector& MergeLocation, int32 NextBallType, float AnimDuration)
@@ -34,7 +34,7 @@ FTimerHandle UMergeAnimator::AnimateMerge(AFruitBall* Fruit1, AFruitBall* Fruit2
     // 이미 병합 중이면 중단
     if (bGlobalMergeInProgress)
     {
-        UE_LOG(LogTemp, Warning, TEXT("이미 다른 병합이 진행 중입니다. 병합 요청 무시"));
+        //UE_LOG(LogTemp, Warning, TEXT("이미 다른 병합이 진행 중입니다. 병합 요청 무시"));
         return FTimerHandle();
     }
     

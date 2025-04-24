@@ -58,14 +58,14 @@ bool AMergeController::StartMerge(AFruitBall* Fruit1, AFruitBall* Fruit2, const 
     // 이미 병합 중인지 확인
     if (bMergeInProgress || UMergeAnimator::IsGlobalMergeInProgress())
     {
-        UE_LOG(LogTemp, Warning, TEXT("이미 병합이 진행 중입니다. 요청 무시"));
+        //UE_LOG(LogTemp, Warning, TEXT("이미 병합이 진행 중입니다. 요청 무시"));
         return false;
     }
     
     // 유효성 검사 추가
     if (!IsValid(Fruit1) || !IsValid(Fruit2))
     {
-        UE_LOG(LogTemp, Error, TEXT("병합 실패: 유효하지 않은 과일 객체"));
+        //UE_LOG(LogTemp, Error, TEXT("병합 실패: 유효하지 않은 과일 객체"));
         return false;
     }
     

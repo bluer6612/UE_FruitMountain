@@ -39,11 +39,6 @@ void UMergeAnimationState::Initialize(AFruitBall* InFruit1, AFruitBall* InFruit2
     // 초기 스케일 저장
     InitialScale1 = InFruit1->GetActorScale3D();
     InitialScale2 = InFruit2->GetActorScale3D();
-    
-    UE_LOG(LogTemp, Warning, TEXT("과일 병합 애니메이션 시작: %s와 %s (위치: %s"), 
-           *InFruit1->GetName(), *InFruit2->GetName(), *MergeLocation.ToString());
-    UE_LOG(LogTemp, Warning, TEXT("초기 스케일: 과일1=%.2f, 과일2=%.2f"), 
-           InitialScale1.X, InitialScale2.X);
            
     // 물리/충돌 비활성화
     if (InFruit1->GetMeshComponent())
@@ -157,7 +152,7 @@ void UMergeAnimationState::FinishAnimation()
         MergeController->CompleteMerge();
     }
     
-    UE_LOG(LogTemp, Display, TEXT("병합 후처리 완료: 새 병합 가능 상태"));
+    //UE_LOG(LogTemp, Display, TEXT("병합 후처리 완료: 새 병합 가능 상태"));
     
     // 객체 정리
     Cleanup();
@@ -255,11 +250,6 @@ void UMergeAnimationState::UpdateFruitScale(float Progress)
         float GrowScale = 0.05f + Progress * (TargetScale - 0.05f);
         NewBall->SetActorScale3D(FVector(GrowScale));
     }
-    
-    UE_LOG(LogTemp, Warning, TEXT("병합 진행도: %.2f - 원본 과일 스케일: %.2f, 새 과일 스케일: %.2f"), 
-        Progress, 
-        Fruit1Ball ? Fruit1Ball->GetActorScale3D().X : 0.0f,
-        NewBall ? NewBall->GetActorScale3D().X : 0.0f);
 }
 
 void UMergeAnimationState::DestroyOriginalFruits()
