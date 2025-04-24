@@ -29,27 +29,38 @@ void UFruitMergeHelper::RegisterCollisionHandlers(AFruitBall* Fruit)
 
 void UFruitMergeHelper::ProcessFruitCollision(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& CollisionPoint)
 {
-    // 유효성 검사
-    if (!FruitA || !FruitB)
+    // 통합된 유효성 검사 (ValidateMergeConditions 내용을 인라인으로 포함)
+    
+    // 1. 기본 유효성 검사
+    if (!FruitA || !FruitB || !IsValid(FruitA) || !IsValid(FruitB))
     {
+        UE_LOG(LogTemp, Warning, TEXT("병합 실패: 유효하지 않은 과일 객체"));
+        return;
+    }
+
+    // 2. 전역 병합 상태 검사
+    if (UMergeAnimator::IsGlobalMergeInProgress())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("병합 무시: 다른 병합이 이미 진행 중 (%s, %s)"),
+               *FruitA->GetName(), *FruitB->GetName());
         return;
     }
     
-    // 1. 병합 제외 조건 확인 (빠른 실패)
-    
-    // 미리보기 공 체크
+    // 3. 미리보기 공 검사
     if (FruitA->IsPreviewBall() || FruitB->IsPreviewBall())
     {
+        UE_LOG(LogTemp, Verbose, TEXT("병합 무시: 미리보기 공"));
         return;
     }
     
-    // 이미 병합 중인 과일 체크
+    // 4. 병합 중인 과일 검사
     if (FruitA->IsMerging() || FruitB->IsMerging())
     {
+        UE_LOG(LogTemp, Verbose, TEXT("병합 무시: 이미 병합 중인 과일"));
         return;
     }
     
-    // 타입이 다른 과일 체크
+    // 5. 과일 타입 일치 검사
     int32 TypeA = FruitA->GetBallType();
     int32 TypeB = FruitB->GetBallType();
     if (TypeA != TypeB)
@@ -57,27 +68,24 @@ void UFruitMergeHelper::ProcessFruitCollision(AFruitBall* FruitA, AFruitBall* Fr
         return;
     }
     
-    // 2. 병합 실행 (모든 조건 통과)
+    // 6. 스케일 유효성 검사
+    if (FruitA->GetActorScale3D().IsNearlyZero() || FruitB->GetActorScale3D().IsNearlyZero())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("병합 실패: 과일 스케일이 0에 가까움"));
+        return;
+    }
+    
+    // 모든 검사 통과 - 병합 실행
+    UE_LOG(LogTemp, Warning, TEXT("병합 시작: %s(타입:%d) + %s(타입:%d) -> 타입:%d"),
+           *FruitA->GetName(), TypeA, *FruitB->GetName(), TypeB, TypeA + 1);
+           
+    // 병합 처리 함수 호출
     MergeFruits(FruitA, FruitB, CollisionPoint);
 }
 
 void UFruitMergeHelper::MergeFruits(AFruitBall* Fruit1, AFruitBall* Fruit2, const FVector& ImpactPoint)
 {
-    // 유효성 검사 강화
-    if (!Fruit1 || !Fruit2 || !IsValid(Fruit1) || !IsValid(Fruit2))
-    {
-        UE_LOG(LogTemp, Warning, TEXT("MergeFruits: 유효하지 않은 과일 객체입니다."));
-        return;
-    }
-    
-    // 이미 병합 중인지 확인 - 중복 병합 방지
-    if (Fruit1->IsMerging() || Fruit2->IsMerging())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("MergeFruits: 이미 병합 중인 과일입니다."));
-        return;
-    }
-    
-    // 병합 플래그 설정
+    // 병합 플래그 설정 (유효성 검사는 이미 ProcessFruitCollision에서 완료됨)
     Fruit1->SetMerging(true);
     Fruit2->SetMerging(true);
     
@@ -97,19 +105,18 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* Fruit1, AFruitBall* Fruit2, cons
     int32 CurrentType = Fruit1->GetBallType();
     int32 NextType = CurrentType + 1;
     
-    // 1. 병합 전 주변 과일 공간 확보 - 통합 함수 호출
+    // 1. 병합 전 주변 과일 공간 확보
     UFruitMergeFeedbackHelper::StabilizeFruits(
-        World,             // 월드
-        MergeLocation,     // 병합 위치
-        3.0f,              // 기본 감쇠 계수
-        nullptr,           // 대상 과일 없음 (병합 전)
-        CurrentType + 1    // 새 과일 타입
+        World,
+        MergeLocation,
+        3.0f,
+        nullptr,
+        NextType
     );
     
     // 애니메이션 시작
     UMergeAnimator::AnimateMerge(Fruit1, Fruit2, MergeLocation, NextType, 0.15f);
 }
-
 
 // 모든 메시 사전 로드
 void UFruitMergeHelper::PreloadAllFruitMeshes(UWorld* World)

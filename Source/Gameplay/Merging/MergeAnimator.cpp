@@ -9,17 +9,49 @@
 #include "Gameplay/Fruit/FruitSpawnHelper.h"
 #include "Gameplay/Score/ScoreManagerComponent.h"
 
+// 정적 변수 정의
+bool UMergeAnimator::bGlobalMergeInProgress = false;
+
+// 코드 시작 부분에 초기화
+bool UMergeAnimator::bAnimationCompletionInProgress = false;
+
+bool UMergeAnimator::IsGlobalMergeInProgress()
+{
+    return bGlobalMergeInProgress;
+}
+
+void UMergeAnimator::SetGlobalMergeInProgress(bool bInProgress)
+{
+    bGlobalMergeInProgress = bInProgress;
+    
+    // 디버깅 로그 추가
+    UE_LOG(LogTemp, Warning, TEXT("전역 병합 상태 변경: %s"), 
+           bInProgress ? TEXT("병합 진행 중") : TEXT("병합 없음"));
+}
+
 FTimerHandle UMergeAnimator::AnimateMerge(AFruitBall* Fruit1, AFruitBall* Fruit2, const FVector& MergeLocation, int32 NextBallType, float AnimDuration)
 {
+    // 이미 병합 중이면 중단
+    if (bGlobalMergeInProgress)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("이미 다른 병합이 진행 중입니다. 병합 요청 무시"));
+        return FTimerHandle();
+    }
+    
+    // 병합 시작 - 전역 플래그 설정
+    SetGlobalMergeInProgress(true);
+    
     // 기본 유효성 검사
     if (!Fruit1 || !Fruit2 || !IsValid(Fruit1) || !IsValid(Fruit2))
     {
+        SetGlobalMergeInProgress(false);
         return FTimerHandle();
     }
 
     UWorld* World = Fruit1->GetWorld();
     if (!World)
     {
+        SetGlobalMergeInProgress(false);
         return FTimerHandle();
     }
     
@@ -90,92 +122,95 @@ FTimerHandle UMergeAnimator::AnimateMerge(AFruitBall* Fruit1, AFruitBall* Fruit2
     
     // 타이머 델리게이트 설정
     FTimerDelegate AnimTimerDelegate;
+
     AnimTimerDelegate.BindLambda([=]() mutable {
         // 경과 시간 증가
-        *ElapsedTimePtr += 0.005f;
+        *ElapsedTimePtr += 0.01f;
         float AnimProgress = FMath::Clamp(*ElapsedTimePtr / TotalAnimTime, 0.0f, 1.0f);
         
-        // 1. 기존 과일들 축소 애니메이션
+        // 애니메이션 완료 검사를 가장 먼저 수행
+        if (AnimProgress >= 1.0f)
+        {
+            // 클래스 메서드 호출
+            UMergeAnimator::CleanupMergeAnimation(World, AnimTimerHandle, ElapsedTimePtr);
+            
+            bool bFruit1Valid = IsValid(Fruit1);
+            bool bFruit2Valid = IsValid(Fruit2);
+            
+            // 원본 과일 제거
+            if (bFruit1Valid) Fruit1->Destroy();
+            if (bFruit2Valid) Fruit2->Destroy();
+            
+            // 점수 추가
+            UScoreManagerComponent::AddScoreStatic(World, CurrentType);
+            
+            // 새 과일 생성
+            if (IsValid(NewFruit) && NewFruit->GetMeshComponent())
+            {
+                // 물리만 활성화
+                NewFruit->GetMeshComponent()->SetSimulatePhysics(true);
+                NewFruit->GetMeshComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+            }
+            
+            UE_LOG(LogTemp, Display, TEXT("병합 애니메이션 완료"));
+            
+            // 후처리 타이머는 별도의 안전장치 추가
+            FTimerHandle PostMergeTimerHandle;
+            World->GetTimerManager().SetTimer(PostMergeTimerHandle, [=]() {
+                // 효과 실행
+                if (IsValid(NewFruit))
+                {
+                    UFruitMergeFeedbackHelper::PlayMergeEffect(World, MergeLocation, CurrentType);
+                }
+                
+                // 병합 플래그 해제
+                SetGlobalMergeInProgress(false);
+                
+                // 클래스 멤버 변수 사용
+                bAnimationCompletionInProgress = false;
+                
+                UE_LOG(LogTemp, Display, TEXT("병합 후처리 완료: 새 병합 가능 상태"));
+            }, 0.1f, false); // 딜레이 증가
+            
+            return; // 중요: 완료 후 즉시 반환
+        }
+        
+        // 기존 과일들 축소 애니메이션
         bool bFruit1Valid = IsValid(Fruit1);
         bool bFruit2Valid = IsValid(Fruit2);
         
         if (bFruit1Valid)
         {
-            // 축소 애니메이션
             float ShrinkScale = 1.0f - AnimProgress * 0.95f;
             Fruit1->SetActorScale3D(FVector(ShrinkScale * InitialScale1.X));
         }
         
         if (bFruit2Valid)
         {
-            // 축소 애니메이션
             float ShrinkScale = 1.0f - AnimProgress * 0.95f;
             Fruit2->SetActorScale3D(FVector(ShrinkScale * InitialScale2.X));
         }
         
-        // 2. 새 과일 성장 애니메이션
+        // 새 과일 성장 애니메이션
         if (IsValid(NewFruit))
         {
-            // 성장 애니메이션
             float GrowScale = 0.05f + AnimProgress * 0.95f;
             NewFruit->SetActorScale3D(FVector(GrowScale));
         }
         
-        // 애니메이션 완료 시
-        if (AnimProgress >= 1.0f)
-        {
-            // 타이머 중지
-            World->GetTimerManager().ClearTimer(AnimTimerHandle);
-            
-            // 메모리 해제
-            delete ElapsedTimePtr;
-            
-            // 원본 과일 제거
-            if (bFruit1Valid) Fruit1->Destroy();
-            if (bFruit2Valid) Fruit2->Destroy();
-            
-            // 새 과일 물리/충돌 재활성화
-            if (IsValid(NewFruit) && NewFruit->GetMeshComponent())
-            {
-                NewFruit->GetMeshComponent()->SetSimulatePhysics(true);
-                NewFruit->GetMeshComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-            }
-            
-            // 효과 및 사운드 재생
-            UFruitMergeFeedbackHelper::PlayMergeEffect(World, MergeLocation, CurrentType);
-            
-            // 점수 추가
-            UScoreManagerComponent::AddScoreStatic(World, CurrentType);
-            
-            // 병합 후 안정화
-            if (IsValid(NewFruit))
-            {
-                UFruitMergeFeedbackHelper::StabilizeFruits(
-                    World,
-                    MergeLocation,
-                    5.0f,
-                    NewFruit,
-                    NextBallType
-                );
-            }
-            
-            UE_LOG(LogTemp, Display, TEXT("병합 애니메이션 완료"));
-        }
-        else
-        {
-            // 진행 상황 로그 (로그 양 조절)
-            if (FMath::Fmod(AnimProgress * 10.0f, 1.0f) < 0.05f)
-            {
-                UE_LOG(LogTemp, Warning, TEXT("병합 진행도: %.2f - 원본 과일 스케일: %.2f, 새 과일 스케일: %.2f"), 
-                    AnimProgress, 
-                    bFruit1Valid ? Fruit1->GetActorScale3D().X : 0.0f,
-                    IsValid(NewFruit) ? NewFruit->GetActorScale3D().X : 0.0f);
-            }
-        }
+        // 진행 로그
+        UE_LOG(LogTemp, Warning, TEXT("병합 진행도: %.2f - 원본 과일 스케일: %.2f, 새 과일 스케일: %.2f"), 
+            AnimProgress, 
+            bFruit1Valid ? Fruit1->GetActorScale3D().X : 0.0f,
+            IsValid(NewFruit) ? NewFruit->GetActorScale3D().X : 0.0f);
     });
     
-    // 타이머 설정 (0.005초 간격으로 업데이트 = 200fps)
-    World->GetTimerManager().SetTimer(AnimTimerHandle, AnimTimerDelegate, 0.005f, true);
+    // 타이머 설정 변경 - 중복 호출 방지
+    if (World->GetTimerManager().TimerExists(AnimTimerHandle))
+    {
+        World->GetTimerManager().ClearTimer(AnimTimerHandle);
+    }
+    World->GetTimerManager().SetTimer(AnimTimerHandle, AnimTimerDelegate, 0.01f, true);
     
     return AnimTimerHandle;
 }
@@ -205,14 +240,14 @@ void UMergeAnimator::AnimateNewFruitGrowth(AFruitBall* NewFruit, float AnimDurat
     // AnimateNewFruitGrowth 함수 내 추가 로그
     UE_LOG(LogTemp, Warning, TEXT("새 과일 성장 애니메이션 시작: %s"), *NewFruit->GetName());
     
-    // 애니메이션 진행을 위한 타이머 설정 - 간소화된 버전
+    // 애니메이션 진행을 위한 타이머 설정
     FTimerHandle GrowthTimerHandle;
     FTimerDelegate GrowthTimerDelegate;
     float* ElapsedTimePtr = new float(0.0f); // 힙에 할당
     const float TotalAnimTime = AnimDuration;
     
     GrowthTimerDelegate.BindLambda([=]() mutable {
-        *ElapsedTimePtr += 0.005f;
+        *ElapsedTimePtr += 0.01f;
         float AnimProgress = FMath::Clamp(*ElapsedTimePtr / TotalAnimTime, 0.0f, 1.0f);
         
         // 애니메이션 적용
@@ -260,7 +295,7 @@ void UMergeAnimator::AnimateNewFruitGrowth(AFruitBall* NewFruit, float AnimDurat
     });
     
     // 타이머 설정
-    World->GetTimerManager().SetTimer(GrowthTimerHandle, GrowthTimerDelegate, 0.005f, true);
+    World->GetTimerManager().SetTimer(GrowthTimerHandle, GrowthTimerDelegate, 0.01f, true);
 }
 
 void UMergeAnimator::TickMergeAnimation(AFruitBall* Fruit1, AFruitBall* Fruit2, float AnimProgress, const FVector& MergeLocation)
@@ -334,5 +369,19 @@ float UMergeAnimator::CalculateAnimationScale(float Progress, bool IsGrowing)
     {
         // 단순하게: 1.0에서 0.1로 선형 감소
         return 1.0f - (Progress * 0.9f);
+    }
+}
+
+void UMergeAnimator::CleanupMergeAnimation(UWorld* World, FTimerHandle& TimerHandle, float* TimePtr)
+{
+    if (World && World->GetTimerManager().TimerExists(TimerHandle))
+    {
+        World->GetTimerManager().ClearTimer(TimerHandle);
+    }
+    
+    if (TimePtr)
+    {
+        delete TimePtr;
+        TimePtr = nullptr;
     }
 }
