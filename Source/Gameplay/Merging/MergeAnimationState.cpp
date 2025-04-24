@@ -129,6 +129,14 @@ void UMergeAnimationState::FinishAnimation()
         return;
     }
     
+    // 최종 스케일 명시적으로 설정
+    if (AFruitBall* CurrentNewFruit = NewFruit.Get())
+    {
+        // 타입에 맞는 정확한 최종 크기 설정
+        float FinalScale = AFruitBall::CalculateBallSize(NextBallType) / 100.0f; // UE 스케일로 변환
+        CurrentNewFruit->SetActorScale3D(FVector(FinalScale));
+    }
+    
     // 효과 실행
     UFruitMergeFeedbackHelper::PlayMergeEffect(World, MergeLocation, CurrentBallType);
     
@@ -220,7 +228,11 @@ void UMergeAnimationState::UpdateFruitScale(float Progress)
     
     if (NewBall)
     {
-        float GrowScale = 0.05f + Progress * 0.95f;
+        // 타입에 맞는 적절한 크기 계산 (FruitBall 클래스의 함수 활용)
+        float TargetScale = AFruitBall::CalculateBallSize(NextBallType) / 100.0f; // UE 스케일로 변환
+        
+        // 작은 크기에서 목표 크기로 보간
+        float GrowScale = 0.05f + Progress * (TargetScale - 0.05f);
         NewBall->SetActorScale3D(FVector(GrowScale));
     }
     

@@ -12,9 +12,6 @@ class UE_FRUITMOUNTAIN_API UMergeAnimator : public UObject
     GENERATED_BODY()
     
 public:
-    // 생성자 추가
-    UMergeAnimator();
-    
     // 병합 애니메이션 시작
     static FTimerHandle AnimateMerge(AFruitBall* Fruit1, AFruitBall* Fruit2, 
                                     const FVector& MergeLocation, 
