@@ -6,7 +6,7 @@
 
 class AFruitBall;
 
-// 과일 병합 프로세스를 관리하는 컨트롤러
+// AMergeController: 병합 프로세스 전체를 관리하는 싱글톤 컨트롤러
 UCLASS()
 class UE_FRUITMOUNTAIN_API AMergeController : public AActor
 {
@@ -26,6 +26,9 @@ public:
     // 병합 진행 중 여부 확인
     UFUNCTION(BlueprintCallable, Category="Merge System")
     bool IsMergeInProgress() const;
+
+    UFUNCTION(BlueprintCallable, Category = "Merging")
+    void SetMergeInProgress(bool bInProgress);
     
     // 병합 완료 처리 함수
     void CompleteMerge();
@@ -43,5 +46,6 @@ private:
     static AMergeController* Instance;
     
     // 병합 진행 중 상태 변수 추가
+    UPROPERTY()
     bool bMergeInProgress;
 };

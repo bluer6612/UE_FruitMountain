@@ -8,33 +8,42 @@
 #include "Kismet/GameplayStatics.h"
 #include "Gameplay/Controller/FruitPlayerController.h"
 #include "Gameplay/Fruit/FruitSpawnHelper.h"
+#include "Gameplay/Merging/Core/MergeController.h"
 
-// 정적 변수 정의
-bool UMergeAnimator::bGlobalMergeInProgress = false;
-
-// 코드 시작 부분에 초기화
 bool UMergeAnimator::bAnimationCompletionInProgress = false;
 
 bool UMergeAnimator::IsGlobalMergeInProgress()
 {
-    return bGlobalMergeInProgress;
+    UWorld* World = GEngine->GetWorldContexts()[0].World();
+    if (World)
+    {
+        AMergeController* MergeController = AMergeController::Get(World);
+        if (MergeController)
+        {
+            return MergeController->IsMergeInProgress();
+        }
+    }
+    return false;
 }
 
 void UMergeAnimator::SetGlobalMergeInProgress(bool bInProgress)
 {
-    bGlobalMergeInProgress = bInProgress;
-    
-    // 디버깅 로그 추가
-    //UE_LOG(LogTemp, Warning, TEXT("전역 병합 상태 변경: %s"), 
-    //       bInProgress ? TEXT("병합 진행 중") : TEXT("병합 없음"));
+    UWorld* World = GEngine->GetWorldContexts()[0].World();
+    if (World)
+    {
+        AMergeController* MergeController = AMergeController::Get(World);
+        if (MergeController)
+        {
+            MergeController->SetMergeInProgress(bInProgress);
+        }
+    }
 }
 
 FTimerHandle UMergeAnimator::AnimateMerge(AFruitBall* Fruit1, AFruitBall* Fruit2, const FVector& MergeLocation, int32 NextBallType, float AnimDuration)
 {
     // 이미 병합 중이면 중단
-    if (bGlobalMergeInProgress)
+    if (IsGlobalMergeInProgress())
     {
-        //UE_LOG(LogTemp, Warning, TEXT("이미 다른 병합이 진행 중입니다. 병합 요청 무시"));
         return FTimerHandle();
     }
     
@@ -108,6 +117,6 @@ void UMergeAnimator::CleanupMergeAnimation(UWorld* World, FTimerHandle& TimerHan
         delete ElapsedTimePtr;
     }
     
-    // 전역 병합 상태 해제
+    // 전역 병합 상태 해제 - MergeController 사용
     SetGlobalMergeInProgress(false);
 }

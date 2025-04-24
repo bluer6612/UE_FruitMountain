@@ -6,7 +6,7 @@
 
 class AFruitBall;
 
-// 애니메이션 관련 상수 정의
+// UMergeAnimationState: 개별 병합 애니메이션의 진행과 상태를 관리하는 UObject
 namespace MergeAnimConstants
 {
     // 기본 애니메이션 지속 시간 (초)

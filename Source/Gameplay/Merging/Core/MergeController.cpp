@@ -18,39 +18,35 @@ void AMergeController::BeginPlay()
     Instance = this;
 }
 
+// 싱글톤 인스턴스 접근
 AMergeController* AMergeController::Get(const UObject* WorldContext)
 {
-    // 인스턴스 있으면 반환
-    if (Instance)
+    if (!WorldContext)
     {
-        return Instance;
+        return nullptr;
     }
     
-    // 없으면 월드에서 찾거나 생성
-    UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
-    if (World)
+    UWorld* World = WorldContext->GetWorld();
+    if (!World)
     {
-        // 기존 액터 찾기
-        TArray<AActor*> FoundActors;
-        UGameplayStatics::GetAllActorsOfClass(World, AMergeController::StaticClass(), FoundActors);
-        
-        if (FoundActors.Num() > 0)
-        {
-            Instance = Cast<AMergeController>(FoundActors[0]);
-        }
-        else
-        {
-            // 새로 생성
-            FActorSpawnParameters SpawnParams;
-            SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-            Instance = World->SpawnActor<AMergeController>(AMergeController::StaticClass(), 
-                                                           FVector::ZeroVector, 
-                                                           FRotator::ZeroRotator, 
-                                                           SpawnParams);
-        }
+        return nullptr;
     }
     
-    return Instance;
+    // 모든 MergeController 찾기
+    TArray<AActor*> FoundActors;
+    UGameplayStatics::GetAllActorsOfClass(World, AMergeController::StaticClass(), FoundActors);
+    
+    if (FoundActors.Num() > 0)
+    {
+        return Cast<AMergeController>(FoundActors[0]);
+    }
+    else
+    {
+        // 필요하다면 생성 로직 추가
+        FActorSpawnParameters SpawnParams;
+        SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+        return World->SpawnActor<AMergeController>(AMergeController::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
+    }
 }
 
 bool AMergeController::StartMerge(AFruitBall* Fruit1, AFruitBall* Fruit2, const FVector& CollisionPoint)
@@ -91,7 +87,12 @@ bool AMergeController::IsMergeInProgress() const
     return bMergeInProgress || UMergeAnimator::IsGlobalMergeInProgress();
 }
 
-// IsMergeInProgress 호출 후 병합을 종료하는 함수 추가
+void AMergeController::SetMergeInProgress(bool bInProgress)
+{
+    bMergeInProgress = bInProgress;
+}
+
+// IsMergeInProgress 호출 후 병합을 종료하는 함수
 void AMergeController::CompleteMerge()
 {
     bMergeInProgress = false;

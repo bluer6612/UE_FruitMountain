@@ -7,6 +7,7 @@
 // 전방 선언
 class AFruitBall;
 
+// UFruitMergeHelper: 병합 관련 유틸리티 함수들을 제공하는 정적 함수 라이브러리
 UCLASS()
 class UE_FRUITMOUNTAIN_API UFruitMergeHelper : public UBlueprintFunctionLibrary
 {

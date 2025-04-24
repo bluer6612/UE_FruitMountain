@@ -6,6 +6,7 @@
 
 class AFruitBall;
 
+// UFruitMergeStabilizer: 병합 과정에서 주변 과일들을 안정화시키는 유틸리티
 UCLASS()
 class UE_FRUITMOUNTAIN_API UFruitMergeStabilizer : public UBlueprintFunctionLibrary
 {

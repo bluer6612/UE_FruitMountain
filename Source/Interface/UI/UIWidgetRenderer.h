@@ -26,35 +26,33 @@ class UE_FRUITMOUNTAIN_API UUIWidgetRenderer : public UUserWidget
     GENERATED_BODY()
     
 public:
-    /** 위젯 인스턴스 생성 또는 기존 인스턴스 반환 */
+    // 위젯 인스턴스 생성 또는 기존 인스턴스 반환
     UFUNCTION(BlueprintCallable, Category = "UI TextureDisplay", meta = (WorldContext = "WorldContextObject"))
     static UUIWidgetRenderer* CreateDisplayWidget(UObject* WorldContextObject);
     
-    /** 인스턴스가 유효한지 확인 */
+    // 인스턴스가 유효한지 확인
     UFUNCTION(BlueprintCallable, Category = "UI TextureDisplay")
     static bool IsInstanceValid();
     
-    /** Instance에 접근할 수 있는 getter 추가 */
+    // Instance에 접근할 수 있는 getter 추가
     UFUNCTION(BlueprintCallable, Category = "UI TextureDisplay")
     static UUIWidgetRenderer* GetInstance()
     {
         return Instance;
     }
     
-    /** 싱글톤 인스턴스 정리 */
+    // 싱글톤 인스턴스 정리
     UFUNCTION(BlueprintCallable, Category = "UI TextureDisplay")
     static void ClearInstance()
     {
         Instance = nullptr;
     }
     
-    /** 모든 기본 이미지 설정 */
+    // 모든 기본 이미지 설정
     UFUNCTION(BlueprintCallable, Category = "UI TextureDisplay")
     void SetupAllImages();
     
-    /**
-     * 미리 정의된 UI 요소에 이미지 설정
-     */
+    // 미리 정의된 UI 요소에 이미지 설정
     UFUNCTION(BlueprintCallable, Category = "UI TextureDisplay")
     void PrepareUIWidget(EWidgetImageType ImageType, const FString& TexturePath, const FVector2D& CustomSize = FVector2D::ZeroVector, float PaddingX = 0.0f, float PaddingY = 0.0f);
     
@@ -71,17 +69,17 @@ public:
     void RenderUIImage(UImage*& ImageWidget, EWidgetAnchor Anchor, const FString& TexturePath, const FVector2D& CustomSize = FVector2D::ZeroVector, float PaddingX = 0.0f, float PaddingY = 0.0f);
     
 protected:
-    /** 위젯 생성 시 호출됨 */
+    // 위젯 생성 시 호출됨
     virtual void NativeConstruct() override;
     
-    /** 위젯 소멸 시 호출됨 */
+    // 위젯 소멸 시 호출됨
     virtual void NativeDestruct() override;
     
-    /** 싱글톤 인스턴스 */
+    // 싱글톤 인스턴스
     static UUIWidgetRenderer* Instance;
     
 private:
-    /** 루트 캔버스 패널 */
+    // 루트 캔버스 패널
     UPROPERTY()
     UCanvasPanel* Canvas;
     

@@ -6,6 +6,7 @@
 
 class AFruitBall;
 
+// UMergeAnimator: 병합 애니메이션 상태를 전역적으로 관리하는 유틸리티 클래스
 UCLASS()
 class UE_FRUITMOUNTAIN_API UMergeAnimator : public UObject
 {
