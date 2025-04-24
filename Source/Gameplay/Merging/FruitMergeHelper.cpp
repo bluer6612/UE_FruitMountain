@@ -6,6 +6,7 @@
 #include "FruitMergeFeedbackHelper.h"
 #include "Gameplay/Score/ScoreManagerComponent.h"
 #include "Engine/StaticMesh.h"
+#include "MergeAnimator.h"
 
 void UFruitMergeHelper::RegisterCollisionHandlers(AFruitBall* Fruit)
 {
@@ -57,21 +58,28 @@ void UFruitMergeHelper::ProcessFruitCollision(AFruitBall* FruitA, AFruitBall* Fr
     }
     
     // 2. 병합 실행 (모든 조건 통과)
-    
-    // 병합 상태 설정
-    FruitA->SetMerging(true);
-    FruitB->SetMerging(true);
-    
-    // 병합 실행
     MergeFruits(FruitA, FruitB, CollisionPoint);
 }
 
 void UFruitMergeHelper::MergeFruits(AFruitBall* Fruit1, AFruitBall* Fruit2, const FVector& ImpactPoint)
 {
-    if (!Fruit1 || !Fruit2)
+    // 유효성 검사 강화
+    if (!Fruit1 || !Fruit2 || !IsValid(Fruit1) || !IsValid(Fruit2))
     {
+        UE_LOG(LogTemp, Warning, TEXT("MergeFruits: 유효하지 않은 과일 객체입니다."));
         return;
     }
+    
+    // 이미 병합 중인지 확인 - 중복 병합 방지
+    if (Fruit1->IsMerging() || Fruit2->IsMerging())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("MergeFruits: 이미 병합 중인 과일입니다."));
+        return;
+    }
+    
+    // 병합 플래그 설정
+    Fruit1->SetMerging(true);
+    Fruit2->SetMerging(true);
     
     UWorld* World = Fruit1->GetWorld();
     if (!World)
@@ -87,6 +95,7 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* Fruit1, AFruitBall* Fruit2, cons
     }
     
     int32 CurrentType = Fruit1->GetBallType();
+    int32 NextType = CurrentType + 1;
     
     // 1. 병합 전 주변 과일 공간 확보 - 통합 함수 호출
     UFruitMergeFeedbackHelper::StabilizeFruits(
@@ -97,70 +106,10 @@ void UFruitMergeHelper::MergeFruits(AFruitBall* Fruit1, AFruitBall* Fruit2, cons
         CurrentType + 1    // 새 과일 타입
     );
     
-    // 약간의 딜레이 (0.1초) 후 실제 병합 진행
-    FTimerHandle MergeTimerHandle;
-    World->GetTimerManager().SetTimer(MergeTimerHandle, [=]()
-    {
-        // 1. 피드백 및 점수 처리
-        UFruitMergeFeedbackHelper::PlayMergeEffect(World, MergeLocation, CurrentType);
-        UScoreManagerComponent::AddScoreStatic(World, CurrentType);
-        
-        // 2. 주변 물리 안정화 (폭발적 충돌 방지)
-        UFruitMergeFeedbackHelper::StabilizeFruits(
-            World,             // 월드
-            MergeLocation,     // 병합 위치
-            5.0f,              // 높은 감쇠 계수 (병합 후)
-            nullptr,           // 대상 과일 없음
-            CurrentType        // 현재 과일 타입
-        );
-        
-        // 3. 최대 레벨 확인
-        if (CurrentType >= AFruitBall::MaxBallType)
-        {
-            // 최대 레벨이면 두 과일만 제거하고 종료
-            Fruit1->Destroy();
-            Fruit2->Destroy();
-            return;
-        }
-        
-        // 4. 새 과일 생성
-        FRotator ExistingRotation = Fruit1->GetActorRotation();
-        int32 NextType = CurrentType + 1;
-        
-        // 플레이어 컨트롤러를 통한 생성
-        AFruitPlayerController* Controller = Cast<AFruitPlayerController>(UGameplayStatics::GetPlayerController(World, 0));
-        if (Controller)
-        {
-            // 새 과일 스폰
-            AActor* SpawnedActor = UFruitSpawnHelper::SpawnBall(Controller, MergeLocation, NextType, true);
-            AFruitBall* NewFruit = Cast<AFruitBall>(SpawnedActor);
-            
-            // 생성된 과일에 자연스러운 움직임 적용
-            if (NewFruit && NewFruit->GetMeshComponent())
-            {
-                // 기존 과일의 회전각 적용
-                NewFruit->SetActorRotation(ExistingRotation);
-                
-                // 병합 후 안정화
-                UFruitMergeFeedbackHelper::StabilizeFruits(
-                    World,             // 월드
-                    MergeLocation,     // 병합 위치
-                    5.0f,              // 높은 감쇠 계수 (병합 후)
-                    NewFruit,          // 생성된 새 과일
-                    NextType           // 새 과일 타입
-                );
-            }
-            
-            UE_LOG(LogTemp, Warning, TEXT("새 과일 생성 완료: 레벨=%d, 위치=%s"), 
-                   NextType, *MergeLocation.ToString());
-        }
-        
-        // 기존 과일들 제거
-        Fruit1->Destroy();
-        Fruit2->Destroy();
-        
-    }, 0.1f, false);
+    // 애니메이션 시작
+    UMergeAnimator::AnimateMerge(Fruit1, Fruit2, MergeLocation, NextType, 0.15f);
 }
+
 
 // 모든 메시 사전 로드
 void UFruitMergeHelper::PreloadAllFruitMeshes(UWorld* World)

@@ -15,7 +15,7 @@ AFruitBall::AFruitBall()
     
     // 기본값 설정
     BallType = 1;
-    bIsBeingMerged = false;
+    bIsMerging = false;
     bSlowMotionActive = false;
     
     // 메시 컴포넌트 생성 및 루트로 설정
@@ -115,9 +115,9 @@ APlateActor* AFruitBall::GetPlateActor() const
 void AFruitBall::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
-    
+
     // 미리보기 공이나 병합 중이거나 충돌 경험 없는 과일은 체크하지 않음
-    if (bIsPreviewBall || bIsBeingMerged || !bHasCollided)
+    if (bIsPreviewBall || bIsMerging || !bHasCollided)
     {
         return;
     }

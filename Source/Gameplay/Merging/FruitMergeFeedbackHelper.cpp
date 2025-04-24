@@ -161,10 +161,7 @@ void UFruitMergeFeedbackHelper::PlayMergeEffect(UWorld* World, const FVector& Lo
     
     // 3. 사운드 효과 재생
     static USoundBase* MergeSound = nullptr;
-    if (!MergeSound)
-    {
-        MergeSound = LoadObject<USoundBase>(nullptr, TEXT("/Game/Sounds/S_FruitMerge"));
-    }
+    //static USoundBase* MergeSound = LoadObject<USoundBase>(nullptr, TEXT("/Game/Sounds/S_FruitMerge"));
     
     if (MergeSound)
     {

@@ -49,13 +49,13 @@ public:
     UFUNCTION()
     void SetMerging(bool bMerging)
     {
-        bIsBeingMerged = bMerging;
+        bIsMerging = bMerging;
     }
 
     UFUNCTION()
     bool IsMerging() const
     {
-        return bIsBeingMerged;
+        return bIsMerging;
     }
 
     UFUNCTION()
@@ -131,7 +131,7 @@ public:
 
     // 병합 중인지 여부
     UPROPERTY()
-    bool bIsBeingMerged = false;
+    bool bIsMerging = false;
     
     // 충돌 경험 여부 트래킹
     UPROPERTY()
