@@ -108,7 +108,7 @@ void UPlayStartSequenceManager::LoadAndSetupImage(UImage*& ImageWidget, const FS
     WidgetRenderer->RenderUIImage(ImageWidget, 
                                 EWidgetAnchor::Center, 
                                 TexturePath, 
-                                FVector2D(807, 230),  // 텍스처 크기 지정
+                                FVector2D(807, 230),
                                 0.0f, 0.0f);
                                 
     if (ImageWidget)
