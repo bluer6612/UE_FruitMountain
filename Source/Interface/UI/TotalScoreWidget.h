@@ -19,6 +19,7 @@ public:
     
     // 위치 상수 - UI_Play_Score 위에 겹치도록 설정
     static const FVector2D TOTALSCORE_TEXT_POS;
+    static const FLinearColor TOTALSCORE_BROWN_COLOR;
     
     // 정적 인스턴스 - 싱글톤 패턴
     static TSubclassOf<UUserWidget> TotalScoreWidgetClass;

@@ -203,7 +203,7 @@ void UScoreWidgetAnimator::AnimateScoreText(int32 Score, float Delay)
     // 텍스트 설정
     FString ScoreText = FString::Printf(TEXT("+%d"), Score);
     ScoreTextBlock->SetText(FText::FromString(ScoreText));
-    ScoreTextBlock->SetColorAndOpacity(UScoreDisplayWidget::BRIGHT_YELLOW_COLOR);
+    ScoreTextBlock->SetColorAndOpacity(UScoreDisplayWidget::SCORE_YELLOW_COLOR);
     ScoreTextBlock->SetVisibility(ESlateVisibility::HitTestInvisible);
 }
 
@@ -232,7 +232,7 @@ void UScoreWidgetAnimator::AnimateComboText(int32 ComboCount, float ComboMultipl
     FString ComboText = FString::Printf(TEXT("X%.1f"), ComboMultiplier);
     ComboMultiplierTextBlock->SetText(FText::FromString(ComboText));
     ComboMultiplierTextBlock->SetVisibility(ESlateVisibility::HitTestInvisible);
-    ComboMultiplierTextBlock->SetColorAndOpacity(UScoreDisplayWidget::BRIGHT_YELLOW_COLOR);
+    ComboMultiplierTextBlock->SetColorAndOpacity(UScoreDisplayWidget::SCORE_YELLOW_COLOR);
 }
 
 void UScoreWidgetAnimator::FadeOutBoth(float Delay)

@@ -15,7 +15,7 @@ TSubclassOf<UUserWidget> UScoreDisplayWidget::ScoreWidgetClass = nullptr;
 // 정적 상수 초기화
 const FVector2D UScoreDisplayWidget::SCORE_TEXT_POS = FVector2D(650.0f, 75.0f);
 const FVector2D UScoreDisplayWidget::COMBO_TEXT_POS = FVector2D(690.0f, 135.0f);
-const FLinearColor UScoreDisplayWidget::BRIGHT_YELLOW_COLOR = FLinearColor(1.0f, 0.9f, 0.6f, 1.0f);
+const FLinearColor UScoreDisplayWidget::SCORE_YELLOW_COLOR = FLinearColor(1.0f, 0.9f, 0.6f, 1.0f);
 
 UScoreDisplayWidget::UScoreDisplayWidget(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -119,8 +119,8 @@ void UScoreDisplayWidget::InitializeTextBlocks()
     }
     
     // 절대 좌표로 직접 지정
-    SetupTextBlock(ScoreTextBlock, BRIGHT_YELLOW_COLOR, 48, SCORE_TEXT_POS); 
-    SetupTextBlock(ComboMultiplierTextBlock, BRIGHT_YELLOW_COLOR, 42, COMBO_TEXT_POS);
+    SetupTextBlock(ScoreTextBlock, SCORE_YELLOW_COLOR, 48, SCORE_TEXT_POS); 
+    SetupTextBlock(ComboMultiplierTextBlock, SCORE_YELLOW_COLOR, 42, COMBO_TEXT_POS);
 
     // 초기에 텍스트 블록 숨기기
     ScoreTextBlock->SetVisibility(ESlateVisibility::Hidden);

@@ -12,6 +12,7 @@ TSubclassOf<UUserWidget> UTotalScoreWidget::TotalScoreWidgetClass = nullptr;
 
 // UI_Play_Score 위젯 위에 겹치게 위치 설정
 const FVector2D UTotalScoreWidget::TOTALSCORE_TEXT_POS = FVector2D(292.0f, 106.5f);
+const FLinearColor UTotalScoreWidget::TOTALSCORE_BROWN_COLOR = FLinearColor(1.0f, 0.9f, 0.6f, 1.0f);
 
 UTotalScoreWidget::UTotalScoreWidget(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -56,7 +57,7 @@ void UTotalScoreWidget::NativeConstruct()
         TotalScoreTextBlock->SetText(FText::FromString(TEXT("0")));
         
         // 폰트 크기와 스타일 설정
-        TotalScoreTextBlock->SetColorAndOpacity(FLinearColor(0.15f, 0.075f, 0.05f, 1.0f)); // 어두운 갈색
+        TotalScoreTextBlock->SetColorAndOpacity(UTotalScoreWidget::TOTALSCORE_BROWN_COLOR);
 
         // FSlateFontInfo 생성자 문법 수정
         FSlateFontInfo FontInfo = TotalScoreTextBlock->GetFont();
