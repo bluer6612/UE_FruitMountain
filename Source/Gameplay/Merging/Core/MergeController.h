@@ -23,11 +23,11 @@ public:
 
     // 과일 충돌 처리 및 병합 조건 검사
     UFUNCTION(BlueprintCallable, Category = "Fruit Merging")
-    static void StartMerge(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& CollisionPoint);
+    static void StartMerge(AFruitBall* FruitA, AFruitBall* FruitB);
     
     // 실제 병합 수행 (기존 함수)
     UFUNCTION(BlueprintCallable, Category = "Fruit Merging")
-    static void MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& MergeLocation);
+    static void MergeFruits(AFruitBall* FruitA, AFruitBall* FruitB);
     
     // 병합 애니메이션
     UFUNCTION(BlueprintCallable, Category = "Fruit Merging")

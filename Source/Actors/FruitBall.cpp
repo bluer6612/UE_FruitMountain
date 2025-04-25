@@ -294,7 +294,7 @@ void AFruitBall::OnBallHit(UPrimitiveComponent* HitComponent, AActor* OtherActor
             if (GetBallType() == OtherFruit->GetBallType())
             {
                 //UE_LOG(LogTemp, Warning, TEXT("병합 시도 (%s, %s)"), *GetName(), *OtherFruit->GetName());
-                MergeController->StartMerge(this, OtherFruit, Hit.ImpactPoint);
+                MergeController->StartMerge(this, OtherFruit);
             }
         }
     }

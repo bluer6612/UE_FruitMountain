@@ -190,8 +190,7 @@ void UMergeAnimationState::SpawnNewMergingFruit()
         
     if (Controller)
     {
-        AActor* SpawnedActor = UFruitSpawnHelper::SpawnBall(
-            Controller, MergeLocation, NextBallType, true);
+        AActor* SpawnedActor = UFruitSpawnHelper::SpawnBall(Controller, MergeLocation, NextBallType, true);
         AFruitBall* NewBall = Cast<AFruitBall>(SpawnedActor);
         
         if (NewBall)

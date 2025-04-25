@@ -61,7 +61,7 @@ void AMergeController::HandleLevelChange(UWorld* World)
     Instance = nullptr;
 }
 
-void AMergeController::StartMerge(AFruitBall* FruitA, AFruitBall* FruitB, const FVector& CollisionPoint)
+void AMergeController::StartMerge(AFruitBall* FruitA, AFruitBall* FruitB)
 {
     // 1. 기본 유효성 검사
     if (!FruitA || !FruitB || !IsValid(FruitA) || !IsValid(FruitB))
@@ -88,17 +88,13 @@ void AMergeController::StartMerge(AFruitBall* FruitA, AFruitBall* FruitB, const 
     }
     
     // 모든 검사 통과 - 병합 실행
-    MergeFruits(FruitA, FruitB, CollisionPoint);
+    MergeFruits(FruitA, FruitB);
 }
 
-void AMergeController::MergeFruits(AFruitBall* Fruit1, AFruitBall* Fruit2, const FVector& ImpactPoint)
+void AMergeController::MergeFruits(AFruitBall* Fruit1, AFruitBall* Fruit2)
 {
     // 병합 위치 계산
-    FVector MergeLocation = ImpactPoint;
-    if (MergeLocation == FVector::ZeroVector)
-    {
-        MergeLocation = (Fruit1->GetActorLocation() + Fruit2->GetActorLocation()) * 0.5f;
-    }
+    FVector MergeLocation = MergeLocation = (Fruit1->GetActorLocation() + Fruit2->GetActorLocation()) * 0.5f;
     
     // 다음 과일 타입 계산 (1단계 업그레이드)
     int32 CurrentType = Fruit1->GetBallType();
