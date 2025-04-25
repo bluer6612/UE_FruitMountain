@@ -2,14 +2,6 @@
 #include "Engine/Canvas.h"
 #include "Blueprint/UserWidget.h"
 #include "Interface/UI/UIWidgetRenderer.h"
-#include "Components/TextBlock.h"
-#include "Components/PanelWidget.h" 
-#include "Blueprint/WidgetTree.h"
-#include "Components/Widget.h"
-#include "Framework/Application/SlateApplication.h"
-#include "Widgets/SViewport.h"
-#include "Kismet/GameplayStatics.h"
-#include "GameFramework/GameModeBase.h"
 
 AFruitHUD::AFruitHUD()
 {
@@ -20,46 +12,8 @@ void AFruitHUD::BeginPlay()
 {
     Super::BeginPlay();
     
-    // 글로벌 폰트 설정
-    UUIWidgetUtility::SetGlobalFont();
-    
     // 2D 텍스쳐 위젯 그릴 위젯 생성
     CreateAndAddWidgets();
-    
-    // 약간의 지연 후 모든 텍스트 위젯에 폰트 적용 (시간 늘림)
-    FTimerHandle FontApplyHandle;
-    GetWorldTimerManager().SetTimer(FontApplyHandle, [this]()
-    {
-        ApplyFontsToAllWidgets();
-    }, 1.0f, false); // 1.0초로 늘림
-    
-    // 두 번째 시도 (2초 후)
-    FTimerHandle FontApplyHandle2;
-    GetWorldTimerManager().SetTimer(FontApplyHandle2, [this]()
-    {
-        ApplyFontsToAllWidgets();
-    }, 2.0f, false);
-}
-
-// 새로운 함수 추가
-void AFruitHUD::ApplyFontsToAllWidgets()
-{
-    // 뷰포트의 모든 위젯 탐색
-    if (GEngine && GEngine->GameViewport)
-    {
-        // 모든 활성 위젯 찾기
-        TArray<UUserWidget*> AllWidgets = GetAllActiveWidgets();
-        
-        // 각 위젯에 폰트 적용
-        for (UUserWidget* Widget : AllWidgets)
-        {
-            if (Widget)
-            {
-                UUIWidgetUtility::ApplyFontToAllTextBlocks(Widget, TEXT(""), 0);
-                UE_LOG(LogTemp, Display, TEXT("위젯에 폰트 적용: %s"), *Widget->GetName());
-            }
-        }
-    }
 }
 
 void AFruitHUD::CreateAndAddWidgets()
@@ -112,114 +66,6 @@ void AFruitHUD::CreateAndAddWidgets()
         else
         {
             UE_LOG(LogTemp, Error, TEXT("FruitHUD: UIWidgetRenderer 생성 실패"));
-        }
-    }
-}
-
-TArray<UUserWidget*> AFruitHUD::GetAllActiveWidgets()
-{
-    TArray<UUserWidget*> AllWidgets;
-    
-    if (!GEngine || !GEngine->GameViewport)
-    {
-        return AllWidgets;
-    }
-    
-    // UIWidgetRenderer 추가
-    if (TextureWidget)
-    {
-        AllWidgets.Add(TextureWidget);
-    }
-    
-    // 씬에 있는 모든 플레이어 컨트롤러 검사
-    UWorld* World = GetWorld();
-    if (!World)
-    {
-        return AllWidgets;
-    }
-    
-    // GameMode를 통해 참조된 위젯 가져오기
-    AGameModeBase* GameMode = UGameplayStatics::GetGameMode(World);
-    if (GameMode)
-    {
-        // ScoreManagerComponent 찾기
-        UScoreManagerComponent* ScoreManager = GameMode->FindComponentByClass<UScoreManagerComponent>();
-        if (ScoreManager)
-        {
-            // TotalScoreWidget 추가
-            if (ScoreManager->TotalScoreWidgetInstance)
-            {
-                AllWidgets.AddUnique(ScoreManager->TotalScoreWidgetInstance);
-                UE_LOG(LogTemp, Warning, TEXT("TotalScoreWidget 찾음"));
-            }
-            
-            // ScoreDisplayWidget 추가
-            if (ScoreManager->ScoreWidgetInstance)
-            {
-                AllWidgets.AddUnique(ScoreManager->ScoreWidgetInstance);
-                UE_LOG(LogTemp, Warning, TEXT("ScoreDisplayWidget 찾음"));
-            }
-        }
-    }
-    
-    // 이미 생성된 위젯 인스턴스 찾기
-    UScoreDisplayWidget* ScoreWidget = UScoreDisplayWidget::GetInstance();
-    if (ScoreWidget && !AllWidgets.Contains(ScoreWidget))
-    {
-        AllWidgets.Add(ScoreWidget);
-        UE_LOG(LogTemp, Warning, TEXT("정적 인스턴스에서 ScoreDisplayWidget 찾음"));
-    }
-    
-    UTotalScoreWidget* TotalScoreWidget = UTotalScoreWidget::GetInstance();
-    if (TotalScoreWidget && !AllWidgets.Contains(TotalScoreWidget))
-    {
-        AllWidgets.Add(TotalScoreWidget);
-        UE_LOG(LogTemp, Warning, TEXT("정적 인스턴스에서 TotalScoreWidget 찾음"));
-    }
-    
-    UE_LOG(LogTemp, Log, TEXT("활성 위젯 %d개 발견"), AllWidgets.Num());
-    return AllWidgets;
-}
-
-void AFruitHUD::CollectWidgetsFromWidget(UWidget* Widget, TArray<UUserWidget*>& OutWidgets)
-{
-    if (!Widget)
-    {
-        return;
-    }
-    
-    // UUserWidget인 경우 추가
-    UUserWidget* UserWidget = Cast<UUserWidget>(Widget);
-    if (UserWidget && !OutWidgets.Contains(UserWidget))
-    {
-        OutWidgets.Add(UserWidget);
-        
-        // UWidgetTree를 통해 모든 위젯 대신 검색
-        UWidgetTree* WidgetTree = UserWidget->WidgetTree;
-        if (WidgetTree)
-        {
-            WidgetTree->ForEachWidget([&OutWidgets, this](UWidget* ChildWidget) {
-                UUserWidget* ChildUserWidget = Cast<UUserWidget>(ChildWidget);
-                if (ChildUserWidget && !OutWidgets.Contains(ChildUserWidget))
-                {
-                    OutWidgets.Add(ChildUserWidget);
-                    this->CollectWidgetsFromWidget(ChildUserWidget, OutWidgets);
-                }
-            });
-        }
-    }
-    
-    // 패널 위젯인 경우 모든 자식에게 재귀 적용
-    UPanelWidget* PanelWidget = Cast<UPanelWidget>(Widget);
-    if (PanelWidget)
-    {
-        for (int32 i = 0; i < PanelWidget->GetChildrenCount(); i++)
-        {
-            UWidget* ChildWidget = PanelWidget->GetChildAt(i);
-            if (ChildWidget)
-            {
-                CollectWidgetsFromWidget(ChildWidget, OutWidgets);
-            }
         }
     }
 }

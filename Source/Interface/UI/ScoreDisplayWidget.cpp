@@ -131,11 +131,8 @@ void UScoreDisplayWidget::InitializeTextBlocks()
 
 void UScoreDisplayWidget::SetupTextBlock(UTextBlock* TextBlock, FLinearColor Color, int32 FontSize, FVector2D Pos)
 {
-    // 스타일 설정
-    UUIWidgetUtility::SetupTextBlockStyle(
-        TextBlock, 
-        Color, 
-        FontSize,
+    // 스타일 설정 - 폰트 경로 추가
+    UUIWidgetUtility::SetupTextBlockStyle(TextBlock, Color, FontSize,
         true,                              // 볼드체
         false,                             // 자동 줄바꿈 안함
         ESlateVisibility::Hidden           // 초기에 숨김

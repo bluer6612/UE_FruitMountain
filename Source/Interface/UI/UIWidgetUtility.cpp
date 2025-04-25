@@ -10,94 +10,6 @@
 
 // 정적 멤버 변수 초기화
 const FString UUIWidgetUtility::DEFAULT_FONT_PATH = TEXT("/Game/UI/Font/NotoSerifKR-Regular_Font");
-FString UUIWidgetUtility::CurrentFontPath = UUIWidgetUtility::DEFAULT_FONT_PATH;
-
-// 글로벌 폰트 설정 함수
-void UUIWidgetUtility::SetGlobalFont()
-{
-    if (!CurrentFontPath.IsEmpty())
-    {
-        UE_LOG(LogTemp, Log, TEXT("글로벌 폰트 경로가 설정됨: %s"), *CurrentFontPath);
-    }
-    else
-    {
-        CurrentFontPath = DEFAULT_FONT_PATH;
-    }
-}
-
-// 폰트 적용 함수
-void UUIWidgetUtility::ApplyFontToTextBlock(UTextBlock* TextBlock, const FString& FontPath, int32 FontSize, FName TypefaceName)
-{
-    if (!TextBlock)
-    {
-        return;
-    }
-    
-    // 폰트 경로 결정
-    FString EffectiveFontPath = FontPath.IsEmpty() ? CurrentFontPath : FontPath;
-    
-    // 폰트 로드
-    UFont* FontObject = LoadObject<UFont>(nullptr, *EffectiveFontPath);
-    if (!FontObject)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("폰트 로드 실패: %s"), *EffectiveFontPath);
-        return;
-    }
-    
-    // 기존 폰트 정보 가져오기
-    FSlateFontInfo CurrentFont = TextBlock->GetFont();
-    
-    // 새 폰트 정보 설정
-    FSlateFontInfo NewFontInfo;
-    NewFontInfo.FontObject = FontObject;
-    
-    // 폰트 크기 결정 (0이면 기존 크기 유지)
-    NewFontInfo.Size = FontSize > 0 ? FontSize : CurrentFont.Size;
-    
-    // 폰트 스타일 설정 (Typeface)
-    if (!TypefaceName.IsNone())
-    {
-        NewFontInfo.TypefaceFontName = TypefaceName;
-    }
-    else if (!CurrentFont.TypefaceFontName.IsNone())
-    {
-        NewFontInfo.TypefaceFontName = CurrentFont.TypefaceFontName;
-    }
-    
-    // 폰트 적용
-    TextBlock->SetFont(NewFontInfo);
-    UE_LOG(LogTemp, Display, TEXT("텍스트 블록에 폰트 적용: %s (크기: %.1f)"), *EffectiveFontPath, NewFontInfo.Size);
-}
-
-// 모든 텍스트 블록에 폰트 적용 (재귀적)
-void UUIWidgetUtility::ApplyFontToAllTextBlocks(UWidget* RootWidget, const FString& FontPath, int32 DefaultFontSize)
-{
-    if (!RootWidget)
-    {
-        return;
-    }
-    
-    // 텍스트 블록인 경우 폰트 적용
-    UTextBlock* TextBlock = Cast<UTextBlock>(RootWidget);
-    if (TextBlock)
-    {
-        ApplyFontToTextBlock(TextBlock, FontPath, DefaultFontSize);
-    }
-    
-    // 패널 위젯인 경우 모든 자식에게 재귀 적용
-    UPanelWidget* PanelWidget = Cast<UPanelWidget>(RootWidget);
-    if (PanelWidget)
-    {
-        for (int32 i = 0; i < PanelWidget->GetChildrenCount(); i++)
-        {
-            UWidget* ChildWidget = PanelWidget->GetChildAt(i);
-            if (ChildWidget)
-            {
-                ApplyFontToAllTextBlocks(ChildWidget, FontPath, DefaultFontSize);
-            }
-        }
-    }
-}
 
 void UUIWidgetUtility::SetAnchorForSlot(UCanvasPanelSlot* CanvasSlot, EWidgetAnchor Anchor, float PaddingX, float PaddingY)
 {
@@ -150,31 +62,47 @@ void UUIWidgetUtility::SetAnchorForSlot(UCanvasPanelSlot* CanvasSlot, EWidgetAnc
     }
 }
 
-void UUIWidgetUtility::SetupTextBlockStyle(
-    UTextBlock* TextBlock, 
-    FLinearColor Color,
-    int32 FontSize,
-    bool bBold,
-    bool bAutoWrapText,
-    ESlateVisibility DefaultVisibility)
+bool UUIWidgetUtility::SetupTextBlockStyle(UTextBlock* TextBlock, FLinearColor Color, float FontSize, bool bBold, bool bAutoWrapText, ESlateVisibility DefaultVisibility)
 {
     if (!TextBlock)
     {
         UE_LOG(LogTemp, Error, TEXT("SetupTextBlockStyle: TextBlock이 null입니다."));
-        return;
+        return false;
     }
     
-    // 커스텀 폰트 적용
-    ApplyFontToTextBlock(TextBlock, TEXT(""), FontSize, bBold ? FName("Bold") : NAME_None);
-    
-    // 색상 설정
+    // 1. 색상 설정
     TextBlock->SetColorAndOpacity(Color);
     
-    // 자동 줄바꿈 설정
+    // 2. 자동 줄바꿈 설정
     TextBlock->SetAutoWrapText(bAutoWrapText);
     
-    // 기본 가시성 설정
+    // 3. 가시성 설정
     TextBlock->SetVisibility(DefaultVisibility);
+    
+    // 4. 폰트 설정 - 항상 DEFAULT_FONT_PATH 사용
+    UFont* FontObject = LoadObject<UFont>(nullptr, *UUIWidgetUtility::DEFAULT_FONT_PATH);
+    if (!FontObject)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("폰트 로드 실패: %s"), *UUIWidgetUtility::DEFAULT_FONT_PATH);
+        return false;
+    }
+    
+    // 폰트 정보 설정
+    FSlateFontInfo FontInfo;
+    FontInfo.FontObject = FontObject;
+    FontInfo.Size = FontSize;
+    
+    // Bold 설정 적용
+    if (bBold)
+    {
+        FontInfo.TypefaceFontName = FName("Bold");
+    }
+    
+    // 폰트 적용
+    TextBlock->SetFont(FontInfo);
+    
+    UE_LOG(LogTemp, Display, TEXT("텍스트 블록에 스타일 적용 (폰트: %s, 크기: %.1f)"), *UUIWidgetUtility::DEFAULT_FONT_PATH, FontSize);
+    return true;
 }
 
 UCanvasPanelSlot* UUIWidgetUtility::SetScoreDisplayPosition(UTextBlock* TextBlock, float PosX, float PosY, float Width, float Height, bool bRightAlign)

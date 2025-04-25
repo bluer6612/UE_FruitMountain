@@ -31,18 +31,18 @@ class UE_FRUITMOUNTAIN_API UUIWidgetUtility : public UObject
     GENERATED_BODY()
     
 public:
+    static const FString DEFAULT_FONT_PATH;
+
+    // 글로벌 폰트 설정 함수
+    UFUNCTION(BlueprintCallable, Category = "Font")
+    static void SetGlobalFont();
+
     // 앵커 기반 슬롯 위치 설정
     static void SetAnchorForSlot(UCanvasPanelSlot* CanvasSlot, EWidgetAnchor Anchor, float PaddingX, float PaddingY);
     
     // 텍스트 블록 스타일 설정 헬퍼 함수
     UFUNCTION(BlueprintCallable, Category = "UI Helper")
-    static void SetupTextBlockStyle(
-        UTextBlock* TextBlock, 
-        FLinearColor Color = FLinearColor(1.0f, 1.0f, 0.8f, 1.0f),
-        int32 FontSize = 42,
-        bool bBold = false,
-        bool bAutoWrapText = true,
-        ESlateVisibility DefaultVisibility = ESlateVisibility::HitTestInvisible);
+    static void SetupTextBlockStyle(UTextBlock* TextBlock, FLinearColor Color, int32 FontSize, bool bBold = false, bool bAutoWrapText = true, ESlateVisibility DefaultVisibility = ESlateVisibility::HitTestInvisible);
     
     // 텍스트 블록 위치 설정 헬퍼 함수
     UFUNCTION(BlueprintCallable, Category = "UI Helper")
@@ -115,35 +115,7 @@ public:
     // 특정 위젯 유효성 검사 함수
     template<class T>
     static bool IsWidgetInstanceValid(T* Instance);
-
-public:
-    static const FString DEFAULT_FONT_PATH;
-    
-    // 글로벌 폰트 설정 함수
-    UFUNCTION(BlueprintCallable, Category = "Font")
-    static void SetGlobalFont();
-    
-    // 폰트 적용 함수
-    UFUNCTION(BlueprintCallable, Category = "Font")
-    static void ApplyFontToTextBlock(
-        UTextBlock* TextBlock, 
-        const FString& FontPath = TEXT(""),
-        int32 FontSize = 0, 
-        FName TypefaceName = NAME_None);
-    
-    // 모든 위젯 트리의 텍스트 블록에 폰트 적용 (재귀)
-    UFUNCTION(BlueprintCallable, Category = "Font")
-    static void ApplyFontToAllTextBlocks(
-        UWidget* RootWidget, 
-        const FString& FontPath = TEXT(""),
-        int32 DefaultFontSize = 24);
-
-private:
-    // 현재 글로벌 폰트 경로
-    static FString CurrentFontPath;
 };
-
-// 템플릿 함수 구현
 
 // 위젯 클래스 로드 템플릿 함수
 template<class T>

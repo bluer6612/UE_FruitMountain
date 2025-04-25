@@ -56,13 +56,13 @@ void UTotalScoreWidget::NativeConstruct()
         // 초기 텍스트 설정
         TotalScoreTextBlock->SetText(FText::FromString(TEXT("0")));
         
-        // 폰트 크기와 스타일 설정
-        TotalScoreTextBlock->SetColorAndOpacity(UTotalScoreWidget::TOTALSCORE_BROWN_COLOR);
-
-        // FSlateFontInfo 생성자 문법 수정
-        FSlateFontInfo FontInfo = TotalScoreTextBlock->GetFont();
-        FontInfo.Size = 52.0f;
-        TotalScoreTextBlock->SetFont(FontInfo);
+        // 폰트 및 색상 설정 (SetupTextBlockStyle 활용)
+        UUIWidgetUtility::SetupTextBlockStyle(TotalScoreTextBlock, TOTALSCORE_BROWN_COLOR,
+            52.0f,                           // 폰트 크기
+            false,                          // 볼드체 아님
+            false,                          // 자동 줄바꿈 안함
+            ESlateVisibility::Visible       // 기본 가시성
+        );
     }
 }
 
