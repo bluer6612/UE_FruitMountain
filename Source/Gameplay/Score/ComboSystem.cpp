@@ -1,6 +1,7 @@
 #include "ComboSystem.h"
 #include "Interface/UI/PlayLevel/Score/ScoreDisplayWidget.h"
 #include "Interface/UI/PlayLevel/Score/ScoreWidgetAnimator.h"
+#include "Interface/UI/PlayLevel/Score/ComboCountWidget.h"
 #include "Kismet/GameplayStatics.h"
 
 UComboSystem::UComboSystem()
@@ -30,15 +31,22 @@ void UComboSystem::BeginDestroy()
     Super::BeginDestroy();
 }
 
-void UComboSystem::Initialize(UObject* InOwner, UScoreDisplayWidget* InScoreWidget)
+void UComboSystem::Initialize(UObject* InOwner, UScoreDisplayWidget* InScoreWidget, UComboCountWidget* InComboCountWidget)
 {
     OwnerObject = InOwner;
     ScoreWidgetInstance = InScoreWidget;
+    ComboCountWidget = InComboCountWidget;
     
     // 스코어 위젯이 없으면 기본 인스턴스 사용
     if (!ScoreWidgetInstance)
     {
         ScoreWidgetInstance = UScoreDisplayWidget::GetInstance();
+    }
+    
+    // ComboCountWidget이 없다면 기본 인스턴스 얻기 시도
+    if (!ComboCountWidget)
+    {
+        ComboCountWidget = UComboCountWidget::GetInstance();
     }
 }
 
@@ -91,6 +99,12 @@ int32 UComboSystem::CalculateFinalScore(int32 BallType)
     
     // 5. UI 업데이트
     DisplayScoreAnimation(ComboMultiplierScore, ComboCount, ComboMultiplier);
+    
+    // 콤보 카운트 위젯 업데이트
+    if (ComboCountWidget)
+    {
+        ComboCountWidget->UpdateComboCount(ComboCount);
+    }
     
     return BaseScore;
 }
@@ -155,6 +169,12 @@ void UComboSystem::OnAnimationCompleted()
 void UComboSystem::AddToCombo(int32 BallType)
 {
     CalculateFinalScore(BallType);
+
+    // 콤보 카운트 위젯 업데이트
+    if (ComboCountWidget)
+    {
+        ComboCountWidget->UpdateComboCount(ComboCount);
+    }
 }
 
 void UComboSystem::ResetCombo()
@@ -162,6 +182,12 @@ void UComboSystem::ResetCombo()
     ComboCount = 0;
     ComboRemainingTime = 0.0f;
     bComboActive = false;
+    
+    // ComboCountWidget 업데이트 추가
+    if (ComboCountWidget)
+    {
+        ComboCountWidget->ResetComboCount();
+    }
 }
 
 void UComboSystem::ExtendComboTime()

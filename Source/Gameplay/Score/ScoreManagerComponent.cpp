@@ -4,6 +4,7 @@
 #include "Interface/UI/PlayLevel/Score/ScoreDisplayWidget.h"
 #include "Interface/UI/PlayLevel/Score/TotalScoreWidget.h"
 #include "Interface/UI/PlayLevel/Score/ScoreWidgetAnimator.h"
+#include "Interface/UI/PlayLevel/Score/ComboCountWidget.h"
 #include "ComboSystem.h"
 
 UScoreManagerComponent::UScoreManagerComponent()
@@ -17,6 +18,7 @@ UScoreManagerComponent::UScoreManagerComponent()
     // 위젯 초기화
     ScoreWidgetInstance = nullptr;
     TotalScoreWidgetInstance = nullptr;
+    ComboCountWidgetInstance = nullptr;
     bWidgetCreated = false;
     
     // 콤보 시스템은 BeginPlay에서 초기화
@@ -79,8 +81,15 @@ void UScoreManagerComponent::InitializeComboSystem()
         return;
     }
     
-    // 콤보 시스템 초기화
-    ComboSystem->Initialize(this, ScoreWidgetInstance);
+    // 콤보 카운트 위젯 확인 및 생성
+    if (!ComboCountWidgetInstance)
+    {
+        ComboCountWidgetInstance = UComboCountWidget::CreateComboCountWidget(GetWorld());
+        UE_LOG(LogTemp, Display, TEXT("ComboCountWidget 생성 완료"));
+    }
+    
+    // 콤보 시스템 초기화 - ComboCountWidget 통합
+    ComboSystem->Initialize(this, ScoreWidgetInstance, ComboCountWidgetInstance);
     ComboSystem->SetComboTimeLimit(ComboTimeLimit);
     
     // 이벤트 연결 전 디버깅 로그
@@ -163,11 +172,14 @@ void UScoreManagerComponent::OnComboScoreFinalized(int32 FinalComboScore)
 
 void UScoreManagerComponent::OnComboUpdated(int32 ComboCount, float ComboMultiplier)
 {
-    // 콤보 점수는 별도로 계산하거나 필요 없는 경우 0으로 설정
-    int32 ComboScore = 0; // 필요에 따라 계산 로직 구현
+    // 콤보 카운트 위젯 업데이트
+    if (ComboCountWidgetInstance)
+    {
+        ComboCountWidgetInstance->UpdateComboCount(ComboCount);
+    }
     
     // 점수 추가 이벤트 발생 (UI나 다른 시스템에서 활용할 수 있음)
-    OnScoreAdded.Broadcast(ComboScore, ComboCount, ComboMultiplier);
+    OnScoreAdded.Broadcast(0, ComboCount, ComboMultiplier);
 }
 
 // 정적 헬퍼 함수 구현

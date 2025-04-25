@@ -2,8 +2,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "Gameplay/Score/ScoreManagerComponent.h"
+#include "Interface/UI/PlayLevel/Score/ScoreDisplayWidget.h"
+#include "Interface/UI/PlayLevel/Score/TotalScoreWidget.h"
+#include "Interface/UI/PlayLevel/Score/ComboCountWidget.h"
 #include "Interface/UI/PlayLevel/Start/PlayStartSequenceManager.h"
+#include "Gameplay/Score/ScoreManagerComponent.h"
 #include "UE_FruitMountainGameMode.generated.h"
 
 class APlateActor;
@@ -36,4 +39,7 @@ public:
     // 클래스 선언부에 추가
     UFUNCTION()
     void OnGameStartSequenceFinished();
+
+    // 게임 UI 위젯 초기화 함수
+    void InitializeGameWidgets();
 };

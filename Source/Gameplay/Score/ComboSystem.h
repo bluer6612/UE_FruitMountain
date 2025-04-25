@@ -7,6 +7,7 @@
 // 전방 선언
 class UScoreDisplayWidget;
 class UScoreWidgetAnimator;
+class UComboCountWidget;
 
 // 콤보 관련 델리게이트 정의
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FComboEndedSignature, int32, FinalComboCount);
@@ -23,7 +24,7 @@ public:
     virtual void BeginDestroy() override;
     
     // 초기화 함수
-    void Initialize(UObject* InOwner, UScoreDisplayWidget* InScoreWidget);
+    void Initialize(UObject* InOwner, UScoreDisplayWidget* InScoreWidget, UComboCountWidget* InComboCountWidget);
     void Tick(float DeltaTime);
     
     // 콤보 관리 함수
@@ -91,6 +92,9 @@ private:
     
     UPROPERTY()
     UScoreDisplayWidget* ScoreWidgetInstance;
+    
+    UPROPERTY()
+    UComboCountWidget* ComboCountWidget;
     
     // 콜백 함수
     void OnComboTimerExpired();

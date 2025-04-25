@@ -7,9 +7,6 @@
 #include "Actors/FruitBall.h"
 #include "Interface/HUD/FruitHUD.h"
 #include "Interface/UI/Core/UIWidgetRenderer.h"
-#include "Interface/UI/PlayLevel/Score/ScoreDisplayWidget.h"
-#include "Interface/UI/PlayLevel/Score/TotalScoreWidget.h"
-#include "Interface/UI/PlayLevel/Start\PlayStartSequenceManager.h"
 #include "Gameplay/Physics/FruitTrajectoryHelper.h"
 #include "Gameplay/Merging/Core/FruitMergeHelper.h"
 
@@ -80,27 +77,7 @@ void AUE_FruitMountainGameMode::OnGameStartSequenceFinished()
     // 게임 시작 로직 실행
     UE_LOG(LogTemp, Display, TEXT("게임 시작 시퀀스 완료 - 게임 플레이 시작"));
     
-    // UI 위젯 초기화
-    UScoreDisplayWidget* ScoreWidget = UScoreDisplayWidget::CreateScoreWidget(this);
-    UTotalScoreWidget* TotalScoreWidget = UTotalScoreWidget::CreateTotalScoreWidget(this);
-
-    // ScoreManager 컴포넌트 가져오기 또는 생성
-    UScoreManagerComponent* ScoreManagerComp = FindComponentByClass<UScoreManagerComponent>();
-    if (!ScoreManagerComp)
-    {
-        ScoreManagerComp = NewObject<UScoreManagerComponent>(this, UScoreManagerComponent::StaticClass());
-        ScoreManagerComp->RegisterComponent();
-    }
-    
-    // 위젯 연결
-    if (ScoreManagerComp)
-    {
-        ScoreManagerComp->ScoreWidgetInstance = ScoreWidget;
-        ScoreManagerComp->TotalScoreWidgetInstance = TotalScoreWidget;
-        ScoreManagerComp->bWidgetCreated = true;
-        
-        UE_LOG(LogTemp, Display, TEXT("게임 위젯 초기화 완료"));
-    }
+    InitializeGameWidgets(); // 위젯 초기화 함수 호출
 
     // HUD의 UIWidgetRenderer에 이미지 설정
     AFruitHUD* FruitHUD = Cast<AFruitHUD>(GetWorld()->GetFirstPlayerController()->GetHUD());
@@ -151,7 +128,17 @@ void AUE_FruitMountainGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason
         }
     }
     
-    // 4. 스코어 매니저 참조 해제
+    // 4. UComboCountWidget 정리
+    if (UComboCountWidget::IsInstanceValid())
+    {
+        UComboCountWidget* ComboCountWidget = UComboCountWidget::GetInstance();
+        if (ComboCountWidget)
+        {
+            ComboCountWidget->ClearInstance();
+        }
+    }
+    
+    // 5. 스코어 매니저 참조 해제
     UScoreManagerComponent* ScoreManagerComp = FindComponentByClass<UScoreManagerComponent>();
     if (ScoreManagerComp)
     {
@@ -202,5 +189,36 @@ void AUE_FruitMountainGameMode::StartPlay()
     else
     {
         UE_LOG(LogTemp, Log, TEXT("이미 접시 액터가 존재합니다."));
+    }
+}
+
+void AUE_FruitMountainGameMode::InitializeGameWidgets()
+{
+    UE_LOG(LogTemp, Display, TEXT("게임 위젯 초기화 시작"));
+    
+    // UI 위젯 초기화
+    UScoreDisplayWidget* ScoreWidget = UScoreDisplayWidget::CreateScoreWidget(this);
+    UTotalScoreWidget* TotalScoreWidget = UTotalScoreWidget::CreateTotalScoreWidget(this);
+    
+    // 새 콤보 카운트 위젯 생성
+    UComboCountWidget* ComboWidget = UComboCountWidget::CreateComboCountWidget(this);
+
+    // ScoreManager 컴포넌트 가져오기 또는 생성
+    UScoreManagerComponent* ScoreManagerComp = FindComponentByClass<UScoreManagerComponent>();
+    if (!ScoreManagerComp)
+    {
+        ScoreManagerComp = NewObject<UScoreManagerComponent>(this, UScoreManagerComponent::StaticClass());
+        ScoreManagerComp->RegisterComponent();
+    }
+    
+    // 위젯 연결
+    if (ScoreManagerComp)
+    {
+        ScoreManagerComp->ScoreWidgetInstance = ScoreWidget;
+        ScoreManagerComp->TotalScoreWidgetInstance = TotalScoreWidget;
+        ScoreManagerComp->ComboCountWidgetInstance = ComboWidget;
+        ScoreManagerComp->bWidgetCreated = true;
+        
+        UE_LOG(LogTemp, Display, TEXT("게임 위젯 초기화 완료"));
     }
 }

@@ -7,6 +7,7 @@
 // 전방 선언
 class UScoreDisplayWidget;
 class UTotalScoreWidget;
+class UComboCountWidget;
 class UComboSystem;
 
 // ScoreManager 전용 델리게이트
@@ -59,15 +60,18 @@ public:
     UFUNCTION(BlueprintPure, Category = "Score")
     int32 GetTotalScore() const { return TotalScore; }
 
-    // 위젯 인스턴스 직접 관리
+    // 위젯 인스턴스들
     UPROPERTY()
     UScoreDisplayWidget* ScoreWidgetInstance;
 
     UPROPERTY()
     UTotalScoreWidget* TotalScoreWidgetInstance;
 
-    // 위젯이 이미 생성되었는지 플래그
-    bool bWidgetCreated = false;
+    UPROPERTY()
+    UComboCountWidget* ComboCountWidgetInstance;
+
+    UPROPERTY()
+    bool bWidgetCreated;
     
     // 콤보 시스템 접근 함수
     UFUNCTION(BlueprintPure, Category = "Combo")

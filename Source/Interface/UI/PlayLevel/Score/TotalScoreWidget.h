@@ -97,6 +97,5 @@ protected:
     // 애니메이션 타이머 핸들
     FTimerHandle ScoreAnimTimerHandle;
 
-protected:
     static UTotalScoreWidget* Instance;
 };
