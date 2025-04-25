@@ -29,6 +29,9 @@ public:
     UScoreWidgetAnimator();
     virtual void BeginDestroy() override;
     
+    // 애니메이터 초기화 함수
+    void Initialize(UTextBlock* InScoreTextBlock, UTextBlock* InComboTextBlock);
+    
     // 주요 인터페이스 함수
     void SetTextBlocks(UTextBlock* InScoreText, UTextBlock* InComboText);
     void FadeOutBoth(float Delay = 0.0f);
@@ -57,8 +60,10 @@ protected:
     FTimerHandle DelayTimerHandle;
     FTimerHandle AnimTimerHandle;
     
-    // 상태 변수
+    // 애니메이션 상태 추적
+    UPROPERTY()
     bool bAnimationActive;
+    
     int32 CurrentAnimStep;
     
     // 내부 구현 함수

@@ -22,6 +22,30 @@ void UScoreWidgetAnimator::BeginDestroy()
     Super::BeginDestroy();
 }
 
+void UScoreWidgetAnimator::Initialize(UTextBlock* InScoreTextBlock, UTextBlock* InComboMultiplierTextBlock)
+{
+    // 텍스트 블록 참조 저장
+    ScoreTextBlock = InScoreTextBlock;
+    ComboMultiplierTextBlock = InComboMultiplierTextBlock;
+    
+    // 초기화 로그
+    UE_LOG(LogTemp, Display, TEXT("ScoreWidgetAnimator: 텍스트 블록 초기화 완료"));
+    
+    // 초기 상태 - 텍스트 숨김
+    if (ScoreTextBlock)
+    {
+        ScoreTextBlock->SetVisibility(ESlateVisibility::Hidden);
+    }
+    
+    if (ComboMultiplierTextBlock)
+    {
+        ComboMultiplierTextBlock->SetVisibility(ESlateVisibility::Hidden);
+    }
+    
+    // 기타 필요한 초기화
+    bAnimationActive = false;
+}
+
 void UScoreWidgetAnimator::SetTextBlocks(UTextBlock* InScoreText, UTextBlock* InComboText)
 {
     ScoreTextBlock = InScoreText;

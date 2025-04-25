@@ -2,84 +2,69 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "Components/TextBlock.h"
+#include "Components/TextBlock.h"  // 추가: TextBlock 헤더
+#include "ScoreWidgetAnimator.h"   // 추가: 애니메이터 클래스 헤더
 #include "ScoreDisplayWidget.generated.h"
-
-// 전방 선언
-class UScoreWidgetAnimator;
 
 UCLASS()
 class UE_FRUITMOUNTAIN_API UScoreDisplayWidget : public UUserWidget
 {
     GENERATED_BODY()
-    
+
 public:
-    UScoreDisplayWidget(const FObjectInitializer& ObjectInitializer);
-    
-    // 위젯 클래스 참조
-    static TSubclassOf<UUserWidget> ScoreWidgetClass;
-    
-    // 위치 색상 상수
+    // 위치 및 색상 상수
     static const FVector2D SCORE_TEXT_POS;
     static const FVector2D COMBO_TEXT_POS;
     static const FLinearColor SCORE_YELLOW_COLOR;
-    
-    // 위젯 생성 함수
-    UFUNCTION(BlueprintCallable, Category = "UI Score", meta = (WorldContext = "WorldContextObject"))
-    static UScoreDisplayWidget* CreateScoreWidget(UObject* WorldContextObject);
-    
-    // 점수 표시 함수
-    UFUNCTION(BlueprintCallable, Category = "UI Score")
-    void DisplayScoreGain(int32 Score, int32 ComboCount, float ComboMultiplier);
 
-    // 콤보 타이머가 끊어질 때 호출하는 함수
-    UFUNCTION(BlueprintCallable, Category = "UI Score")
-    void ResetComboDisplay();
-
-    // 애니메이터 접근 함수
-    UFUNCTION(BlueprintCallable, Category = "UI Score")
-    UScoreWidgetAnimator* GetWidgetAnimator() const { return WidgetAnimator; }
-
-    static UScoreDisplayWidget* GetInstance()
-    {
-        return Instance;
-    }
+    // 생성자
+    UScoreDisplayWidget(const FObjectInitializer& ObjectInitializer);
     
-    static void ClearInstance()
-    {
-        Instance = nullptr;
-    }
-    
-    static bool IsInstanceValid()
-    {
-        return Instance != nullptr && IsValid(Instance);
-    }
-    
-protected:
+    // 위젯 라이프사이클 함수
     virtual void NativeConstruct() override;
     virtual void NativeDestruct() override;
     virtual void BeginDestroy() override;
     
-    UPROPERTY(meta = (BindWidget))
+    // 위젯 생성 및 접근 인터페이스
+    static UScoreDisplayWidget* CreateScoreWidget(UObject* WorldContextObject);
+    static UScoreDisplayWidget* GetInstance() { return Instance; }
+    
+    // 점수 표시 함수
+    void DisplayScoreGain(int32 Score, int32 ComboCount, float ComboMultiplier);
+    void ResetComboDisplay();
+    
+    // 애니메이터 접근자
+    UScoreWidgetAnimator* GetWidgetAnimator() const { return WidgetAnimator; }
+
+    // 인스턴스 유효성 검사
+    static bool IsInstanceValid();
+
+    // 인스턴스 제거
+    static void ClearInstance();
+    
+protected:
+    // 텍스트 블록 초기화
+    void InitializeTextBlocks();
+    
+private:
+    // 텍스트 블록 참조
+    UPROPERTY()
     UTextBlock* ScoreTextBlock;
     
-    UPROPERTY(meta = (BindWidget))
+    UPROPERTY()
     UTextBlock* ComboMultiplierTextBlock;
     
+    // 애니메이터
     UPROPERTY()
     UScoreWidgetAnimator* WidgetAnimator;
     
-    // 점수 데이터
-    int32 TotalScoreGain;  // 총 누적 점수 (애니메이션당)
-    int32 CurrentScoreGain;  // 현재 표시되는 점수 (애니메이션당)
+    // 점수 관련 변수
+    int32 TotalScoreGain;
+    int32 CurrentScoreGain;
     float CurrentComboMultiplier;
     bool bScoreTextActive;
-
-protected:
-    static UScoreDisplayWidget* Instance;
     
-private:
-    // 헬퍼 함수
-    void InitializeTextBlocks();
-    void SetupTextBlock(UTextBlock* TextBlock, FLinearColor Color, int32 FontSize, FVector2D Pos);
+    // 정적 인스턴스 및 클래스 참조
+    static UScoreDisplayWidget* Instance;
+    static TSubclassOf<UUserWidget> ScoreWidgetClass;
 };

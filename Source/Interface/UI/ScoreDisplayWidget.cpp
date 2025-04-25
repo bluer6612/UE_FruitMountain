@@ -17,8 +17,7 @@ const FVector2D UScoreDisplayWidget::SCORE_TEXT_POS = FVector2D(650.0f, 75.0f);
 const FVector2D UScoreDisplayWidget::COMBO_TEXT_POS = FVector2D(690.0f, 135.0f);
 const FLinearColor UScoreDisplayWidget::SCORE_YELLOW_COLOR = FLinearColor(232.0f/255.0f, 229.0f/255.0f, 176.0f/255.0f, 1.0f);
 
-UScoreDisplayWidget::UScoreDisplayWidget(const FObjectInitializer& ObjectInitializer)
-    : Super(ObjectInitializer)
+UScoreDisplayWidget::UScoreDisplayWidget(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
     TotalScoreGain = 0;
     CurrentScoreGain = 0;
@@ -36,10 +35,6 @@ void UScoreDisplayWidget::NativeConstruct()
     
     // 텍스트 블록 초기화
     InitializeTextBlocks();
-    
-    // 애니메이터 생성
-    WidgetAnimator = NewObject<UScoreWidgetAnimator>(this, UScoreWidgetAnimator::StaticClass());
-    WidgetAnimator->SetTextBlocks(ScoreTextBlock, ComboMultiplierTextBlock);
 }
 
 void UScoreDisplayWidget::NativeDestruct()
@@ -59,6 +54,17 @@ void UScoreDisplayWidget::NativeDestruct()
     {
         Instance = nullptr;
     }
+}
+
+void UScoreDisplayWidget::BeginDestroy()
+{
+    // 정적 인스턴스 참조 해제 (중요)
+    if (Instance == this)
+    {
+        Instance = nullptr;
+    }
+    
+    Super::BeginDestroy();
 }
 
 UScoreDisplayWidget* UScoreDisplayWidget::CreateScoreWidget(UObject* WorldContextObject)
@@ -99,54 +105,75 @@ UScoreDisplayWidget* UScoreDisplayWidget::CreateScoreWidget(UObject* WorldContex
     return Instance;
 }
 
-void UScoreDisplayWidget::BeginDestroy()
-{
-    // 정적 인스턴스 참조 해제 (중요)
-    if (Instance == this)
-    {
-        Instance = nullptr;
-    }
-    
-    Super::BeginDestroy();
-}
-
 void UScoreDisplayWidget::InitializeTextBlocks()
 {
+    // 텍스트 블록 생성 및 설정
     if (!ScoreTextBlock || !ComboMultiplierTextBlock)
     {
-        UE_LOG(LogTemp, Error, TEXT("ScoreDisplayWidget: 텍스트 블록 바인딩 실패!"));
-        return;
+        UCanvasPanel* RootCanvas = Cast<UCanvasPanel>(GetRootWidget());
+        if (RootCanvas)
+        {
+            // 점수 텍스트 블록 생성
+            ScoreTextBlock = NewObject<UTextBlock>(this, TEXT("ScoreTextBlock"));
+            if (ScoreTextBlock)
+            {
+                RootCanvas->AddChild(ScoreTextBlock);
+                
+                // 스타일 설정
+                UUIWidgetUtility::SetupTextBlockStyle(
+                    ScoreTextBlock, 
+                    SCORE_YELLOW_COLOR, 
+                    46.0f,      // 폰트 크기 
+                    true,       // 볼드체
+                    false,      // 자동 줄바꿈 안함
+                    ESlateVisibility::Hidden // 초기에는 숨김
+                );
+                
+                // 위치 설정
+                UCanvasPanelSlot* ScoreSlot = Cast<UCanvasPanelSlot>(ScoreTextBlock->Slot);
+                if (ScoreSlot)
+                {
+                    ScoreSlot->SetAnchors(FAnchors());
+                    ScoreSlot->SetAlignment(FVector2D::ZeroVector);
+                    ScoreSlot->SetPosition(SCORE_TEXT_POS);
+                    ScoreSlot->SetSize(FVector2D(200.0f, 80.0f));
+                }
+            }
+            
+            // 콤보 텍스트 블록 생성
+            ComboMultiplierTextBlock = NewObject<UTextBlock>(this, TEXT("ComboTextBlock"));
+            if (ComboMultiplierTextBlock)
+            {
+                RootCanvas->AddChild(ComboMultiplierTextBlock);
+                
+                // 스타일 설정
+                UUIWidgetUtility::SetupTextBlockStyle(
+                    ComboMultiplierTextBlock, 
+                    SCORE_YELLOW_COLOR,
+                    36.0f,      // 콤보 텍스트는 좀 더 작은 크기
+                    true,       // 볼드체
+                    false,      // 자동 줄바꿈 안함
+                    ESlateVisibility::Hidden // 초기에는 숨김
+                );
+                
+                // 위치 설정
+                UCanvasPanelSlot* ComboSlot = Cast<UCanvasPanelSlot>(ComboMultiplierTextBlock->Slot);
+                if (ComboSlot)
+                {
+                    ComboSlot->SetAnchors(FAnchors());
+                    ComboSlot->SetAlignment(FVector2D::ZeroVector);
+                    ComboSlot->SetPosition(COMBO_TEXT_POS);
+                    ComboSlot->SetSize(FVector2D(180.0f, 70.0f));
+                }
+            }
+        }
     }
     
-    // 절대 좌표로 직접 지정
-    SetupTextBlock(ScoreTextBlock, SCORE_YELLOW_COLOR, 48, SCORE_TEXT_POS); 
-    SetupTextBlock(ComboMultiplierTextBlock, SCORE_YELLOW_COLOR, 42, COMBO_TEXT_POS);
-
-    // 초기에 텍스트 블록 숨기기
-    ScoreTextBlock->SetVisibility(ESlateVisibility::Hidden);
-    ComboMultiplierTextBlock->SetVisibility(ESlateVisibility::Hidden);
-    
-    UE_LOG(LogTemp, Warning, TEXT("ScoreDisplayWidget: 텍스트 블록 위치 절대좌표로 설정됨"));
-}
-
-void UScoreDisplayWidget::SetupTextBlock(UTextBlock* TextBlock, FLinearColor Color, int32 FontSize, FVector2D Pos)
-{
-    // 스타일 설정 - 폰트 경로 추가
-    UUIWidgetUtility::SetupTextBlockStyle(TextBlock, Color, FontSize,
-        true,                              // 볼드체
-        false,                             // 자동 줄바꿈 안함
-        ESlateVisibility::Hidden           // 초기에 숨김
-    );
-    
-    // 위치 설정 (기존 코드 유지)
-    UCanvasPanelSlot* TextSlot = Cast<UCanvasPanelSlot>(TextBlock->Slot);
-    if (TextSlot)
+    // 애니메이터 생성
+    if (!WidgetAnimator)
     {
-        TextSlot->SetAnchors(FAnchors());
-        TextSlot->SetAlignment(FVector2D::ZeroVector);
-        TextSlot->SetPosition(Pos);
-        TextSlot->SetSize(FVector2D(TextBlock == ScoreTextBlock ? 200.0f : 180.0f, 
-                           TextBlock == ScoreTextBlock ? 80.0f : 70.0f));
+        WidgetAnimator = NewObject<UScoreWidgetAnimator>(this);
+        WidgetAnimator->Initialize(ScoreTextBlock, ComboMultiplierTextBlock);
     }
 }
 
@@ -195,4 +222,23 @@ void UScoreDisplayWidget::ResetComboDisplay()
     {
         ComboMultiplierTextBlock->SetVisibility(ESlateVisibility::Hidden);
     }
+}
+
+bool UScoreDisplayWidget::IsInstanceValid()
+{
+    return Instance && IsValid(Instance) && Instance->IsInViewport();
+}
+
+void UScoreDisplayWidget::ClearInstance()
+{
+    if (Instance)
+    {
+        if (Instance->IsInViewport())
+        {
+            Instance->RemoveFromParent();
+        }
+        Instance = nullptr;
+    }
+    
+    UE_LOG(LogTemp, Display, TEXT("ScoreDisplayWidget: 인스턴스 제거됨"));
 }

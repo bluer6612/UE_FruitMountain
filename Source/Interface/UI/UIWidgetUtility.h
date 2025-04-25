@@ -32,26 +32,13 @@ class UE_FRUITMOUNTAIN_API UUIWidgetUtility : public UObject
     
 public:
     static const FString DEFAULT_FONT_PATH;
-
-    // 글로벌 폰트 설정 함수
-    UFUNCTION(BlueprintCallable, Category = "Font")
-    static void SetGlobalFont();
-
-    // 앵커 기반 슬롯 위치 설정
-    static void SetAnchorForSlot(UCanvasPanelSlot* CanvasSlot, EWidgetAnchor Anchor, float PaddingX, float PaddingY);
     
     // 텍스트 블록 스타일 설정 헬퍼 함수
     UFUNCTION(BlueprintCallable, Category = "UI Helper")
     static void SetupTextBlockStyle(UTextBlock* TextBlock, FLinearColor Color, int32 FontSize, bool bBold = false, bool bAutoWrapText = true, ESlateVisibility DefaultVisibility = ESlateVisibility::HitTestInvisible);
     
-    // 텍스트 블록 위치 설정 헬퍼 함수
-    UFUNCTION(BlueprintCallable, Category = "UI Helper")
-    static UCanvasPanelSlot* SetScoreDisplayPosition(UTextBlock* TextBlock, 
-                                                   float PosX, 
-                                                   float PosY,
-                                                   float Width = 200.0f,
-                                                   float Height = 80.0f,
-                                                   bool bRightAlign = true);
+    // 앵커 기반 슬롯 위치 설정
+    static void SetAnchorForSlot(UCanvasPanelSlot* CanvasSlot, EWidgetAnchor Anchor, float PaddingX, float PaddingY);
     
     // 유효한 플레이어 컨트롤러 가져오기 (공통 함수)
     UFUNCTION(BlueprintCallable, Category = "UI Helper")
