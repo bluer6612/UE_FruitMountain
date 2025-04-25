@@ -6,6 +6,8 @@
 #include "Components/Image.h"
 #include "ComboCountWidget.generated.h"
 
+class UComboCountWidgetAnimator;
+
 UCLASS()
 class UE_FRUITMOUNTAIN_API UComboCountWidget : public UUserWidget
 {
@@ -19,28 +21,17 @@ public:
     virtual void BeginDestroy() override;
     
     // 위젯 생성 함수
-    UFUNCTION(BlueprintCallable, Category = "Combo Widget")
     static UComboCountWidget* CreateComboCountWidget(UObject* WorldContextObject);
-    
-    UFUNCTION(BlueprintCallable, Category = "Combo Widget")
     static UComboCountWidget* GetInstance() { return Instance; }
-    
-    UFUNCTION(BlueprintCallable, Category = "Combo Widget")
     static void ClearInstance();
-    
-    UFUNCTION(BlueprintCallable, Category = "Combo Widget")
     static bool IsInstanceValid();
     
-    // 콤보 카운트 업데이트
-    UFUNCTION(BlueprintCallable, Category = "Combo Widget")
-    void UpdateComboCount(int32 NewComboCount);
+    // 애니메이터 직접 접근을 위한 게터 추가
+    UComboCountWidgetAnimator* GetAnimator() const { return WidgetAnimator; }
     
-    UFUNCTION(BlueprintCallable, Category = "Combo Widget")
-    void ResetComboCount();
-    
-    // 위젯 가시성 조절
-    UFUNCTION(BlueprintCallable, Category = "Combo Widget")
-    void SetComboCountVisibility(bool bVisible);
+    // 레퍼런스를 위한 상태 변수 유지
+    int32 GetCurrentComboCount() const { return CurrentComboCount; }
+    void SetCurrentComboCount(int32 Value) { CurrentComboCount = Value; }
     
 private:
     // 싱글톤 인스턴스
@@ -49,30 +40,24 @@ private:
     
     // UI 요소
     UPROPERTY()
-    UImage* ComboImage;
+    UImage* ComboCountImage;
     
-    UPROPERTY(meta = (BindWidget))
+    UPROPERTY()
     UTextBlock* ComboCountTextBlock;
     
+    // 애니메이션 컨트롤러
+    UPROPERTY()
+    UComboCountWidgetAnimator* WidgetAnimator;
+    
     // 위치 및 색상 관련 상수
-    static const FVector2D COMBO_IMAGE_POS;
-    static const FVector2D COMBO_TEXT_POS;
-    static const FLinearColor COMBO_TEXT_COLOR;
+    static const FVector2D COMBOCOUNT_IMAGE_POS;
+    static const FVector2D COMBOCOUNT_TEXT_POS;
+    static const FLinearColor COMBOCOUNT_TEXT_COLOR;
     
     // 상태 변수
     int32 CurrentComboCount;
-    bool bAnimating;
-    FTimerHandle ComboAnimTimerHandle;
-    
-    // 페이드 아웃 관련 변수
-    FTimerHandle FadeOutTimerHandle;
-    float FadeOutDuration;
-    bool bFadingOut;
     
     // 내부 함수
     void InitializeComboWidgets();
     static bool LoadWidgetClassIfNeeded();
-    void PlayComboAnimation(int32 ComboCount);
-    void PlayFadeOutAnimation();
-    void ExecuteFadeOutStep();
 };

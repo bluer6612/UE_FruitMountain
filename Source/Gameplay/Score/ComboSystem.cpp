@@ -1,7 +1,7 @@
 #include "ComboSystem.h"
 #include "Interface/UI/PlayLevel/Score/ScoreDisplayWidget.h"
 #include "Interface/UI/PlayLevel/Score/ScoreWidgetAnimator.h"
-#include "Interface/UI/PlayLevel/Score/ComboCountWidget.h"
+#include "Interface/UI/PlayLevel/Score/Combo/ComboCountWidget.h"
 #include "Kismet/GameplayStatics.h"
 
 UComboSystem::UComboSystem()
@@ -177,16 +177,30 @@ void UComboSystem::AddToCombo(int32 BallType)
     }
 }
 
+void UComboSystem::OnBallDestroyed(int32 BallType)
+{
+    // 애니메이터 직접 접근
+    UComboCountWidget* ComboWidget = UComboCountWidget::GetInstance();
+    
+    if (ComboWidget && ComboWidget->GetAnimator())
+    {
+        ComboWidget->SetCurrentComboCount(ComboCount); // 위젯 내부 상태 유지
+        ComboWidget->GetAnimator()->UpdateComboCount(ComboCount);
+    }
+}
+
 void UComboSystem::ResetCombo()
 {
     ComboCount = 0;
     ComboRemainingTime = 0.0f;
     bComboActive = false;
     
-    // ComboCountWidget 업데이트 추가
-    if (ComboCountWidget)
+    UComboCountWidget* ComboWidget = UComboCountWidget::GetInstance();
+    
+    if (ComboWidget && ComboWidget->GetAnimator())
     {
-        ComboCountWidget->ResetComboCount();
+        ComboWidget->SetCurrentComboCount(0); // 위젯 내부 상태 유지
+        ComboWidget->GetAnimator()->ResetComboCount();
     }
 }
 

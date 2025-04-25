@@ -4,7 +4,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "Interface/UI/PlayLevel/Score/ScoreDisplayWidget.h"
 #include "Interface/UI/PlayLevel/Score/TotalScoreWidget.h"
-#include "Interface/UI/PlayLevel/Score/ComboCountWidget.h"
+#include "Interface/UI/PlayLevel/Score/Combo/ComboCountWidget.h"
 #include "Interface/UI/PlayLevel/Start/PlayStartSequenceManager.h"
 #include "Gameplay/Score/ScoreManagerComponent.h"
 #include "UE_FruitMountainGameMode.generated.h"

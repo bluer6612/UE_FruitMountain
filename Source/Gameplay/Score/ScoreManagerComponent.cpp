@@ -4,7 +4,7 @@
 #include "Interface/UI/PlayLevel/Score/ScoreDisplayWidget.h"
 #include "Interface/UI/PlayLevel/Score/TotalScoreWidget.h"
 #include "Interface/UI/PlayLevel/Score/ScoreWidgetAnimator.h"
-#include "Interface/UI/PlayLevel/Score/ComboCountWidget.h"
+#include "Interface/UI/PlayLevel/Score/Combo/ComboCountWidget.h"
 #include "ComboSystem.h"
 
 UScoreManagerComponent::UScoreManagerComponent()
