@@ -46,14 +46,13 @@ protected:
     // 텍스트 블록 초기화
     void InitializeTextBlocks();
     
+    UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+    UTextBlock* ScoreTextBlock;
+    
+    UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+    UTextBlock* ComboMultiplierTextBlock;
+
 private:
-    // 텍스트 블록 참조
-    UPROPERTY()
-    UTextBlock* ScoreTextBlock_C;
-    
-    UPROPERTY()
-    UTextBlock* ComboMultiplierTextBlock_C;
-    
     // 애니메이터
     UPROPERTY()
     UScoreWidgetAnimator* WidgetAnimator;

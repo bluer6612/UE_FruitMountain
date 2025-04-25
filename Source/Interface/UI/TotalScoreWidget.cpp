@@ -40,10 +40,10 @@ void UTotalScoreWidget::NativeConstruct()
     Instance = this;
     
     // 총점 텍스트 블록이 있는지 확인
-    if (TotalScoreTextBlock_C)
+    if (TotalScoreTextBlock)
     {
         // 위치 설정
-        if (UCanvasPanelSlot* ScoreSlot = Cast<UCanvasPanelSlot>(TotalScoreTextBlock_C->Slot))
+        if (UCanvasPanelSlot* ScoreSlot = Cast<UCanvasPanelSlot>(TotalScoreTextBlock->Slot))
         {
             // 고정된 위치 사용 (UI_Play_Score 위에 겹치게)
             ScoreSlot->SetPosition(TOTALSCORE_TEXT_POS);
@@ -54,10 +54,10 @@ void UTotalScoreWidget::NativeConstruct()
         }
         
         // 초기 텍스트 설정
-        TotalScoreTextBlock_C->SetText(FText::FromString(TEXT("0")));
+        TotalScoreTextBlock->SetText(FText::FromString(TEXT("0")));
         
         // 폰트 및 색상 설정 (SetupTextBlockStyle 활용)
-        UUIWidgetUtility::SetupTextBlockStyle(TotalScoreTextBlock_C, TOTALSCORE_BROWN_COLOR,
+        UUIWidgetUtility::SetupTextBlockStyle(TotalScoreTextBlock, TOTALSCORE_BROWN_COLOR,
             52.0f,                           // 폰트 크기
             UUIWidgetUtility::DEFAULT_NUMBER_FONT_PATH,
             false,                          // 볼드체
@@ -136,22 +136,22 @@ void UTotalScoreWidget::UpdateTotalScore(int32 NewScore)
     CurrentTotalScore = NewScore;
     
     // UI 업데이트
-    if (TotalScoreTextBlock_C)
+    if (TotalScoreTextBlock)
     {
         // 점수 표시 형식 변경 (천 단위 구분 기호 추가)
         FNumberFormattingOptions NumberFormat;
         NumberFormat.UseGrouping = true;
         
-        TotalScoreTextBlock_C->SetText(FText::AsNumber(CurrentTotalScore, &NumberFormat));
+        TotalScoreTextBlock->SetText(FText::AsNumber(CurrentTotalScore, &NumberFormat));
     }
 }
 
 // 애니메이션과 함께 점수 증가
 void UTotalScoreWidget::AnimateScoreIncrease(int32 NewTotalScore)
 {
-    if (!TotalScoreTextBlock_C || !IsValid(TotalScoreTextBlock_C))
+    if (!TotalScoreTextBlock || !IsValid(TotalScoreTextBlock))
     {
-        UE_LOG(LogTemp, Error, TEXT("TotalScoreTextBlock_C이 유효하지 않습니다"));
+        UE_LOG(LogTemp, Error, TEXT("TotalScoreTextBlock이 유효하지 않습니다"));
         return;
     }
     
@@ -163,7 +163,7 @@ void UTotalScoreWidget::AnimateScoreIncrease(int32 NewTotalScore)
     }
     
     // 기존 점수와 목표 점수 설정
-    CurrentDisplayScore = FCString::Atoi(*TotalScoreTextBlock_C->GetText().ToString());
+    CurrentDisplayScore = FCString::Atoi(*TotalScoreTextBlock->GetText().ToString());
     TargetScore = NewTotalScore;
     
     // 애니메이션 적용: 점수가 증가하는 효과
@@ -194,7 +194,7 @@ void UTotalScoreWidget::AnimateScoreIncrease(int32 NewTotalScore)
                 // 텍스트 업데이트 - 천 단위 구분자 추가
                 FNumberFormattingOptions NumberFormat;
                 NumberFormat.UseGrouping = true;
-                Self->TotalScoreTextBlock_C->SetText(FText::AsNumber(Self->CurrentDisplayScore, &NumberFormat));
+                Self->TotalScoreTextBlock->SetText(FText::AsNumber(Self->CurrentDisplayScore, &NumberFormat));
                 
                 // 목표 점수에 도달하면 타이머 종료
                 if (Self->CurrentDisplayScore >= Self->TargetScore)
@@ -208,7 +208,7 @@ void UTotalScoreWidget::AnimateScoreIncrease(int32 NewTotalScore)
                 
                 // 숫자가 변할 때 약간의 크기 애니메이션도 적용
                 float Scale = 1.0f + (0.1f * (float)(Self->TargetScore - Self->CurrentDisplayScore) / (float)Self->TargetScore);
-                Self->TotalScoreTextBlock_C->SetRenderScale(FVector2D(Scale, Scale));
+                Self->TotalScoreTextBlock->SetRenderScale(FVector2D(Scale, Scale));
             });
             
             // 0.02초마다 업데이트
@@ -221,7 +221,7 @@ void UTotalScoreWidget::AnimateScoreIncrease(int32 NewTotalScore)
         // 즉시 업데이트
         FNumberFormattingOptions NumberFormat;
         NumberFormat.UseGrouping = true;
-        TotalScoreTextBlock_C->SetText(FText::AsNumber(NewTotalScore, &NumberFormat));
+        TotalScoreTextBlock->SetText(FText::AsNumber(NewTotalScore, &NumberFormat));
     }
 }
 

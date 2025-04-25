@@ -64,7 +64,7 @@ protected:
     virtual void NativeDestruct() override;
     
     UPROPERTY(meta = (BindWidget))
-    UTextBlock* TotalScoreTextBlock_C;
+    UTextBlock* TotalScoreTextBlock;
     
     // 위젯 클래스 로드 헬퍼
     static bool LoadWidgetClassIfNeeded();

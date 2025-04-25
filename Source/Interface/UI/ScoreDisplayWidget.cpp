@@ -107,15 +107,11 @@ UScoreDisplayWidget* UScoreDisplayWidget::CreateScoreWidget(UObject* WorldContex
 
 void UScoreDisplayWidget::InitializeTextBlocks()
 {
-    // 블루프린트에서 이미 생성된 위젯 가져오기
-    ScoreTextBlock_C = Cast<UTextBlock>(GetWidgetFromName(TEXT("ScoreTextBlock_C")));
-    ComboMultiplierTextBlock_C = Cast<UTextBlock>(GetWidgetFromName(TEXT("ComboMultiplierTextBlock_C")));
-    
-    if (ScoreTextBlock_C)
+    if (ScoreTextBlock)
     {
         // 스타일만 설정 (위치는 블루프린트에서 이미 설정됨)
         UUIWidgetUtility::SetupTextBlockStyle(
-            ScoreTextBlock_C, 
+            ScoreTextBlock, 
             SCORE_YELLOW_COLOR, 
             44.0f,
             UUIWidgetUtility::DEFAULT_NUMBER_FONT_PATH,
@@ -124,15 +120,11 @@ void UScoreDisplayWidget::InitializeTextBlocks()
             ESlateVisibility::Hidden
         );
     }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("블루프린트에서 ScoreTextBlock_C을 찾을 수 없습니다"));
-    }
-    
-    if (ComboMultiplierTextBlock_C)
+
+    if (ComboMultiplierTextBlock)
     {
         UUIWidgetUtility::SetupTextBlockStyle(
-            ComboMultiplierTextBlock_C, 
+            ComboMultiplierTextBlock, 
             SCORE_YELLOW_COLOR,
             38.0f,
             UUIWidgetUtility::DEFAULT_NUMBER_FONT_PATH,
@@ -141,22 +133,18 @@ void UScoreDisplayWidget::InitializeTextBlocks()
             ESlateVisibility::Hidden
         );
     }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("블루프린트에서 ComboMultiplierTextBlock_C을 찾을 수 없습니다"));
-    }
     
     // 애니메이터 생성
     if (!WidgetAnimator)
     {
         WidgetAnimator = NewObject<UScoreWidgetAnimator>(this);
-        WidgetAnimator->Initialize(ScoreTextBlock_C, ComboMultiplierTextBlock_C);
+        WidgetAnimator->Initialize(ScoreTextBlock, ComboMultiplierTextBlock);
     }
 }
 
 void UScoreDisplayWidget::DisplayScoreGain(int32 Score, int32 ComboCount, float ComboMultiplier)
 {
-    if (!ScoreTextBlock_C || !ComboMultiplierTextBlock_C || !WidgetAnimator)
+    if (!ScoreTextBlock || !ComboMultiplierTextBlock || !WidgetAnimator)
     {
         UE_LOG(LogTemp, Error, TEXT("DisplayScoreGain: 위젯 구성요소가 null입니다"));
         return;
@@ -176,9 +164,9 @@ void UScoreDisplayWidget::DisplayScoreGain(int32 Score, int32 ComboCount, float 
     WidgetAnimator->AnimateComboText(ComboCount, ComboMultiplier);
     
     // 애니메이션 시작
-    if (WidgetAnimator && ScoreTextBlock_C->GetWorld())
+    if (WidgetAnimator && ScoreTextBlock->GetWorld())
     {
-        WidgetAnimator->StartFadeOutAnimation(ScoreTextBlock_C->GetWorld(), 1.5f);
+        WidgetAnimator->StartFadeOutAnimation(ScoreTextBlock->GetWorld(), 1.5f);
     }
     
     // 디버그 로그
@@ -195,9 +183,9 @@ void UScoreDisplayWidget::ResetComboDisplay()
     CurrentComboMultiplier = 1.0f;
     
     // 콤보 텍스트 숨기기
-    if (ComboMultiplierTextBlock_C)
+    if (ComboMultiplierTextBlock)
     {
-        ComboMultiplierTextBlock_C->SetVisibility(ESlateVisibility::Hidden);
+        ComboMultiplierTextBlock->SetVisibility(ESlateVisibility::Hidden);
     }
 }
 

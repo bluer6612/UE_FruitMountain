@@ -30,7 +30,7 @@ public:
     virtual void BeginDestroy() override;
     
     // 애니메이터 초기화 함수
-    void Initialize(UTextBlock* InScoreTextBlock_C, UTextBlock* InComboTextBlock);
+    void Initialize(UTextBlock* InScoreTextBlock, UTextBlock* InComboTextBlock);
     
     // 주요 인터페이스 함수
     void SetTextBlocks(UTextBlock* InScoreText, UTextBlock* InComboText);
@@ -51,10 +51,10 @@ public:
 protected:
     // 텍스트 블록
     UPROPERTY()
-    UTextBlock* ScoreTextBlock_C;
+    UTextBlock* ScoreTextBlock;
     
     UPROPERTY()
-    UTextBlock* ComboMultiplierTextBlock_C;
+    UTextBlock* ComboMultiplierTextBlock;
     
     // 타이머 핸들
     FTimerHandle DelayTimerHandle;
