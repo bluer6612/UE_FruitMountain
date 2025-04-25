@@ -8,9 +8,9 @@
 UPlayStartSequenceManager* UPlayStartSequenceManager::Instance = nullptr;
 
 UPlayStartSequenceManager::UPlayStartSequenceManager()
-    : CurrentStep(ESequenceStep::None)
+    : CurrentPhase(0)
     , ElapsedTime(0.0f)
-    , TotalDuration(0.0f)
+    , PhaseDuration(0.0f)
     , ReadyTexturePath(TEXT("/Game/UI/PlayLevel/UI_Play_Ready"))
     , StartTexturePath(TEXT("/Game/UI/PlayLevel/UI_Play_Start"))
     , MaxScaleFactor(1.5f)
@@ -41,22 +41,34 @@ void UPlayStartSequenceManager::StartSequence(UObject* InWorldContextObject)
     // 위젯 생성
     CreateSequenceWidgets();
     
-    // 시퀀스 초기화
-    InitializeSequence();
+    // 시퀀스 초기화 - Ready 이미지 준비
+    if (ReadyImage)
+    {
+        ReadyImage->SetRenderScale(FVector2D(MaxScaleFactor, MaxScaleFactor));
+        ReadyImage->SetRenderOpacity(1.0f);
+        ReadyImage->SetVisibility(ESlateVisibility::HitTestInvisible);
+    }
     
-    // 시퀀스 시작
-    CurrentStep = ESequenceStep::ReadyShrink;
+    if (StartImage)
+    {
+        StartImage->SetRenderScale(FVector2D(1.0f, 1.0f));
+        StartImage->SetRenderOpacity(1.0f);
+        StartImage->SetVisibility(ESlateVisibility::Hidden);
+    }
+    
+    // 시퀀스 시작 - 첫 번째 단계로 설정
+    CurrentPhase = 0; // Ready 축소 단계
     ElapsedTime = 0.0f;
-    TotalDuration = 1.5f; // Ready 줄어드는 시간
+    PhaseDuration = 0.5f; // Ready 축소 시간 (0.5초)
     
-    // 타이머 설정
+    // 타이머 설정 - 더 빠른 업데이트 주기
     APlayerController* PC = UUIWidgetUtility::GetValidPlayerController(WorldContextObject);
     if (PC)
     {
         PC->GetWorldTimerManager().SetTimer(SequenceTimerHandle, 
                                            this, 
                                            &UPlayStartSequenceManager::UpdateSequence, 
-                                           0.005f,
+                                           0.005f,  // 매우 작은 간격으로 업데이트
                                            true);
     }
     
@@ -73,230 +85,152 @@ void UPlayStartSequenceManager::CreateSequenceWidgets()
         return;
     }
     
-    // Z-Order 설정 (SetZOrder 대신 다른 방법 사용)
+    // Z-Order 설정
     if (WidgetRenderer && WidgetRenderer->IsInViewport())
     {
-        // 뷰포트에서 제거 후 높은 Z-Order 값으로 다시 추가
         WidgetRenderer->RemoveFromParent();
-        WidgetRenderer->AddToViewport(9999); // 매우 높은 Z-Order로 설정
+        WidgetRenderer->AddToViewport(9999);
         UE_LOG(LogTemp, Warning, TEXT("PlayStartSequence: Z-Order를 9999로 설정"));
     }
 
-    // Ready 이미지 생성
-    ReadyImage = nullptr;
-    WidgetRenderer->RenderUIImage(ReadyImage, 
-                                 EWidgetAnchor::Center, 
-                                 ReadyTexturePath, 
-                                 FVector2D(807, 230),
-                                 0.0f, 0.0f);
-    
-    // Start 이미지 생성
-    StartImage = nullptr;
-    WidgetRenderer->RenderUIImage(StartImage, 
-                                 EWidgetAnchor::Center, 
-                                 StartTexturePath, 
-                                 FVector2D(807, 230),
-                                 0.0f, 0.0f);
-    
-    // 초기 설정
-    if (ReadyImage)
-    {
-        ReadyImage->SetRenderScale(FVector2D(MaxScaleFactor, MaxScaleFactor));
-        ReadyImage->SetRenderOpacity(1.0f);
-        // 가시성 설정
-        ReadyImage->SetVisibility(ESlateVisibility::HitTestInvisible);
-    }
-    
-    if (StartImage)
-    {
-        StartImage->SetVisibility(ESlateVisibility::Hidden);
-    }
+    // 이미지 생성 및 설정을 헬퍼 함수로 간소화
+    LoadAndSetupImage(ReadyImage, ReadyTexturePath, true, MaxScaleFactor);  // Ready는 보이게, 1.5배 크기
+    LoadAndSetupImage(StartImage, StartTexturePath, false, 1.0f);  // Start는 안 보이게, 원래 크기
     
     UE_LOG(LogTemp, Display, TEXT("PlayStartSequence: 위젯 생성 완료"));
 }
 
+void UPlayStartSequenceManager::LoadAndSetupImage(UImage*& ImageWidget, const FString& TexturePath, bool bVisible, float InitialScale)
+{
+    // 이미지 위젯 생성
+    ImageWidget = nullptr;
+    WidgetRenderer->RenderUIImage(ImageWidget, 
+                                EWidgetAnchor::Center, 
+                                TexturePath, 
+                                FVector2D(807, 230),  // 텍스처 크기 지정
+                                0.0f, 0.0f);
+                                
+    if (ImageWidget)
+    {
+        // 스케일 설정
+        ImageWidget->SetRenderScale(FVector2D(InitialScale, InitialScale));
+        
+        // 투명도 설정
+        ImageWidget->SetRenderOpacity(1.0f);
+        
+        // 가시성 설정
+        ImageWidget->SetVisibility(bVisible ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Hidden);
+        
+        UE_LOG(LogTemp, Display, TEXT("이미지 위젯 설정 완료: %s"), *TexturePath);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("이미지 위젯 생성 실패: %s"), *TexturePath);
+    }
+}
+
 void UPlayStartSequenceManager::UpdateSequence()
 {
-    // 월드/플레이어 컨트롤러 확인
     APlayerController* PC = UUIWidgetUtility::GetValidPlayerController(WorldContextObject);
-    if (!PC)
-    {
-        UE_LOG(LogTemp, Error, TEXT("PlayStartSequence: 유효한 PlayerController 없음"));
-        return;
-    }
+    if (!PC) return;
     
-    // 델타 타임 계산
     float DeltaTime = PC->GetWorld()->GetDeltaSeconds();
     ElapsedTime += DeltaTime;
     
     // 현재 단계에 따른 처리
-    switch (CurrentStep)
+    switch (CurrentPhase)
     {
-        case ESequenceStep::ReadyShrink:
-            ProcessReadyShrink(DeltaTime);
+        case 0: // Ready 축소 단계
+            if (ReadyImage)
+            {
+                float Progress = FMath::Clamp(ElapsedTime / PhaseDuration, 0.0f, 1.0f);
+                float CurrentScale = MaxScaleFactor - ((MaxScaleFactor - 1.0f) * Progress);
+                ReadyImage->SetRenderScale(FVector2D(CurrentScale, CurrentScale));
+            }
             break;
             
-        case ESequenceStep::ReadyFadeOut:
-            ProcessReadyFadeOut(DeltaTime);
+        case 1: // Ready 유지 단계
+            // 특별한 처리 없음 (타이머만 증가)
             break;
             
-        case ESequenceStep::StartGrow:
-            ProcessStartGrow(DeltaTime);
+        case 2: // Start 확대 단계 - 0.25초로 단축
+            if (StartImage)
+            {
+                float Progress = FMath::Clamp(ElapsedTime / PhaseDuration, 0.0f, 1.0f);
+                float CurrentScale = 1.0f + ((MaxScaleFactor - 1.0f) * Progress);
+                StartImage->SetRenderScale(FVector2D(CurrentScale, CurrentScale));
+                
+                // 0.5배 시점에 페이드아웃 시작 (0.125초부터)
+                if (ElapsedTime >= (PhaseDuration * 0.5f))
+                {
+                    float FadeProgress = (ElapsedTime - (PhaseDuration * 0.5f)) / (PhaseDuration * 0.5f);
+                    FadeProgress = FMath::Clamp(FadeProgress, 0.0f, 1.0f);
+                    float CurrentOpacity = 1.0f - (0.5f * FadeProgress); // 50% 투명도까지 (0.5 남음)
+                    StartImage->SetRenderOpacity(CurrentOpacity);
+                }
+            }
             break;
             
-        case ESequenceStep::StartFadeOut:
-            ProcessStartFadeOut(DeltaTime);
+        case 3: // 마지막 페이드아웃 단계 (0.5초부터 1.25초까지 완전히 사라짐)
+            if (StartImage)
+            {
+                float Progress = FMath::Clamp(ElapsedTime / PhaseDuration, 0.0f, 1.0f);
+                float CurrentOpacity = 0.5f - (0.5f * Progress); // 50%에서 0%로
+                StartImage->SetRenderOpacity(CurrentOpacity);
+            }
             break;
             
-        case ESequenceStep::Complete:
-        case ESequenceStep::None:
+        case 4: // 완료 단계
             // 아무것도 안함
             break;
     }
     
-    // 단계 완료 확인
-    if (ElapsedTime >= TotalDuration && CurrentStep != ESequenceStep::None && CurrentStep != ESequenceStep::Complete)
+    // 단계 완료 확인 및 다음 단계로 진행
+    if (ElapsedTime >= PhaseDuration && CurrentPhase < 4)
     {
-        AdvanceToNextStep();
+        // 다음 단계로 진행
+        CurrentPhase++;
+        ElapsedTime = 0.0f;
+        
+        // 단계별 처리
+        switch (CurrentPhase)
+        {
+            case 1: // Ready 유지 단계
+                PhaseDuration = 1.25f;
+                UE_LOG(LogTemp, Warning, TEXT("단계 전환: Ready 축소 -> Ready 유지"));
+                break;
+                
+            case 2: // Start 확대 단계
+                PhaseDuration = 0.25f;
+                // Ready 이미지 숨기기
+                if (ReadyImage) ReadyImage->SetVisibility(ESlateVisibility::Hidden);
+                // Start 이미지 표시
+                if (StartImage)
+                {
+                    StartImage->SetVisibility(ESlateVisibility::HitTestInvisible);
+                    StartImage->SetRenderOpacity(1.0f);
+                    StartImage->SetRenderScale(FVector2D(1.0f, 1.0f));
+                }
+                UE_LOG(LogTemp, Warning, TEXT("단계 전환: Ready 유지 -> Start 확대"));
+                break;
+                
+            case 3: // 마지막 페이드아웃
+                PhaseDuration = 1.f;
+                UE_LOG(LogTemp, Warning, TEXT("단계 전환: Start 확대 -> 최종 페이드아웃"));
+                break;
+                
+            case 4: // 완료 단계
+                // 타이머 중지
+                if (PC) PC->GetWorldTimerManager().ClearTimer(SequenceTimerHandle);
+                // 위젯 숨기기
+                if (ReadyImage) ReadyImage->SetVisibility(ESlateVisibility::Hidden);
+                if (StartImage) StartImage->SetVisibility(ESlateVisibility::Hidden);
+                // 이벤트 발생
+                OnSequenceCompleted.Broadcast();
+                UE_LOG(LogTemp, Display, TEXT("PlayStartSequence: 시퀀스 완료"));
+                break;
+        }
     }
-}
-
-void UPlayStartSequenceManager::ProcessReadyShrink(float DeltaTime)
-{
-    if (!ReadyImage) return;
-    
-    // 디버깅 로그 추가
-    static float lastLogTime = 0.0f;
-    if (ElapsedTime - lastLogTime > 0.5f)  // 0.5초마다 로그
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Ready 줄어드는 중: 스케일=%.2f, 시간=%.2f/%.2f"), 
-               ReadyImage->GetRenderTransform().Scale.X, ElapsedTime, TotalDuration);
-        lastLogTime = ElapsedTime;
-    }
-    
-    // 기존 코드
-    float Progress = FMath::Clamp(ElapsedTime / TotalDuration, 0.0f, 1.0f);
-    float CurrentScale = MaxScaleFactor - ((MaxScaleFactor - 1.0f) * Progress);
-    ReadyImage->SetRenderScale(FVector2D(CurrentScale, CurrentScale));
-}
-
-void UPlayStartSequenceManager::ProcessReadyFadeOut(float DeltaTime)
-{
-    if (!ReadyImage || !StartImage) return;
-    
-    // READY 페이드 아웃
-    float Progress = FMath::Clamp(ElapsedTime / TotalDuration, 0.0f, 1.0f);
-    float Opacity = 1.0f - Progress;
-    
-    ReadyImage->SetRenderOpacity(Opacity);
-    
-    // START 표시 시작
-    if (ElapsedTime >= TotalDuration * 0.5f && StartImage->GetVisibility() == ESlateVisibility::Hidden)
-    {
-        StartImage->SetVisibility(ESlateVisibility::HitTestInvisible);
-        StartImage->SetRenderOpacity(1.0f);
-        StartImage->SetRenderScale(FVector2D(1.0f, 1.0f));
-    }
-}
-
-void UPlayStartSequenceManager::ProcessStartGrow(float DeltaTime)
-{
-    if (!StartImage) return;
-    
-    // 1.0배 -> 1.5배로 키우는 애니메이션
-    float Progress = FMath::Clamp(ElapsedTime / TotalDuration, 0.0f, 1.0f);
-    float CurrentScale = 1.0f + ((MaxScaleFactor - 1.0f) * Progress);
-    
-    StartImage->SetRenderScale(FVector2D(CurrentScale, CurrentScale));
-}
-
-void UPlayStartSequenceManager::ProcessStartFadeOut(float DeltaTime)
-{
-    if (!StartImage) return;
-    
-    // START 페이드 아웃
-    float Progress = FMath::Clamp(ElapsedTime / TotalDuration, 0.0f, 1.0f);
-    float Opacity = 1.0f - Progress;
-    
-    StartImage->SetRenderOpacity(Opacity);
-}
-
-void UPlayStartSequenceManager::AdvanceToNextStep()
-{
-    // 다음 단계로 진행
-    switch (CurrentStep)
-    {
-        case ESequenceStep::ReadyShrink:
-            CurrentStep = ESequenceStep::ReadyFadeOut;
-            TotalDuration = 0.5f; // Ready 페이드 아웃 시간
-            break;
-            
-        case ESequenceStep::ReadyFadeOut:
-            CurrentStep = ESequenceStep::StartGrow;
-            TotalDuration = 1.5f; // Start 커지는 시간
-            break;
-            
-        case ESequenceStep::StartGrow:
-            CurrentStep = ESequenceStep::StartFadeOut;
-            TotalDuration = 0.5f; // Start 페이드 아웃 시간
-            break;
-            
-        case ESequenceStep::StartFadeOut:
-            CurrentStep = ESequenceStep::Complete;
-            CompleteSequence();
-            break;
-            
-        default:
-            break;
-    }
-    
-    // 타이머 초기화
-    ElapsedTime = 0.0f;
-}
-
-void UPlayStartSequenceManager::InitializeSequence()
-{
-    // Ready 이미지 초기화
-    if (ReadyImage)
-    {
-        ReadyImage->SetRenderScale(FVector2D(MaxScaleFactor, MaxScaleFactor));
-        ReadyImage->SetRenderOpacity(1.0f);
-        ReadyImage->SetVisibility(ESlateVisibility::HitTestInvisible);
-    }
-    
-    // Start 이미지 초기화
-    if (StartImage)
-    {
-        StartImage->SetRenderScale(FVector2D(1.0f, 1.0f));
-        StartImage->SetRenderOpacity(1.0f);
-        StartImage->SetVisibility(ESlateVisibility::Hidden);
-    }
-}
-
-void UPlayStartSequenceManager::CompleteSequence()
-{
-    // 타이머 중지
-    APlayerController* PC = UUIWidgetUtility::GetValidPlayerController(WorldContextObject);
-    if (PC)
-    {
-        PC->GetWorldTimerManager().ClearTimer(SequenceTimerHandle);
-    }
-    
-    // 위젯 정리
-    if (ReadyImage)
-    {
-        ReadyImage->SetVisibility(ESlateVisibility::Hidden);
-    }
-    
-    if (StartImage)
-    {
-        StartImage->SetVisibility(ESlateVisibility::Hidden);
-    }
-    
-    // 완료 이벤트 발생
-    OnSequenceCompleted.Broadcast();
-    
-    UE_LOG(LogTemp, Display, TEXT("PlayStartSequence: 시퀀스 완료"));
 }
 
 UPlayStartSequenceManager* UPlayStartSequenceManager::GetInstance()

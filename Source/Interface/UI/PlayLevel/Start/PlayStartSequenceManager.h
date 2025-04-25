@@ -4,7 +4,6 @@
 #include "UObject/NoExportTypes.h"
 #include "Components/Image.h"
 #include "Interface/UI/Core/UIWidgetRenderer.h"
-#include "TimerManager.h"
 #include "PlayStartSequenceManager.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSequenceCompleted);
@@ -23,7 +22,7 @@ public:
     
     // 시퀀스 시작
     UFUNCTION(BlueprintCallable, Category = "Game Sequence")
-    void StartSequence(UObject* WorldContextObject);
+    void StartSequence(UObject* InWorldContextObject);
     
     // 시퀀스 완료 이벤트
     UPROPERTY(BlueprintAssignable, Category = "Game Sequence")
@@ -36,7 +35,8 @@ public:
     // 싱글톤 인스턴스 생성
     UFUNCTION(BlueprintCallable, Category = "Game Sequence", meta = (WorldContext = "WorldContextObject"))
     static UPlayStartSequenceManager* CreateInstance(UObject* WorldContextObject);
-
+    
+    // 외부 위젯 렌더러 설정 
     UFUNCTION(BlueprintCallable, Category = "Game Sequence")
     void SetExistingWidgetRenderer(UUIWidgetRenderer* ExistingRenderer);
 
@@ -55,25 +55,13 @@ private:
     UPROPERTY()
     UImage* StartImage;
     
-    // 시퀀스 단계
-    enum class ESequenceStep : uint8
-    {
-        None,
-        ReadyShrink,
-        ReadyFadeOut,
-        StartGrow,
-        StartFadeOut,
-        Complete
-    };
-    
-    ESequenceStep CurrentStep;
-    
     // 시퀀스 타이머 핸들
     FTimerHandle SequenceTimerHandle;
     
-    // 애니메이션 진행 시간
+    // 애니메이션 진행 상태
+    int32 CurrentPhase;
     float ElapsedTime;
-    float TotalDuration;
+    float PhaseDuration;
     
     // 리소스 경로
     FString ReadyTexturePath;
@@ -82,28 +70,16 @@ private:
     // 애니메이션 관련 값
     float MaxScaleFactor;
     
+    // 월드 객체 레퍼런스
+    UObject* WorldContextObject;
+    
     // 위젯 생성
     void CreateSequenceWidgets();
     
-    // 애니메이션 단계 처리 함수
-    void ProcessReadyShrink(float DeltaTime);
-    void ProcessReadyFadeOut(float DeltaTime);
-    void ProcessStartGrow(float DeltaTime);
-    void ProcessStartFadeOut(float DeltaTime);
+    // 이미지 로드 및 설정을 위한 헬퍼 함수
+    void LoadAndSetupImage(UImage*& ImageWidget, const FString& TexturePath, bool bVisible, float InitialScale);
     
     // 타이머 업데이트
     UFUNCTION()
     void UpdateSequence();
-    
-    // 다음 단계로 진행
-    void AdvanceToNextStep();
-    
-    // 시퀀스 초기화
-    void InitializeSequence();
-    
-    // 시퀀스 완료
-    void CompleteSequence();
-    
-    // 월드 객체 레퍼런스
-    UObject* WorldContextObject;
 };

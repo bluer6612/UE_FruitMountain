@@ -197,36 +197,13 @@ void UUIWidgetRenderer::RenderUIImage(UImage*& ImageWidget, EWidgetAnchor Anchor
     }
     else
     {
-        // 로드 실패 시 빨간색 박스와 텍스트 추가
+        // 로드 실패 시 빨간색 박스 추가
         FSlateBrush ErrorBrush;
         ErrorBrush.DrawAs = ESlateBrushDrawType::Box;
         ErrorBrush.TintColor = FLinearColor::Red;
         
         ImageWidget->SetBrush(ErrorBrush);
         ImageWidget->SetColorAndOpacity(FLinearColor::Red);
-        
-        // 로드 실패 텍스트 추가
-        UTextBlock* ErrorText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
-        if (ErrorText)
-        {
-            Canvas->AddChild(ErrorText);
-            
-            // 경로에서 파일명만 추출
-            FString FileName = FPaths::GetCleanFilename(TexturePath);
-            ErrorText->SetText(FText::FromString(FString::Printf(TEXT("로드 실패:\n%s"), *FileName)));
-            
-            // 텍스트 스타일 설정
-            ErrorText->SetColorAndOpacity(FLinearColor::White);
-            
-            // 텍스트를 이미지와 같은 위치에 배치
-            UCanvasPanelSlot* TextSlot = Cast<UCanvasPanelSlot>(ErrorText->Slot);
-            if (TextSlot)
-            {
-                TextSlot->SetSize(CustomSize);
-                UUIWidgetUtility::SetAnchorForSlot(TextSlot, Anchor, PaddingX, PaddingY);
-                TextSlot->SetAlignment(FVector2D(0.5f, 0.5f));
-            }
-        }
         
         ImageSlot->SetSize(CustomSize);
         UUIWidgetUtility::SetAnchorForSlot(ImageSlot, Anchor, PaddingX, PaddingY);
