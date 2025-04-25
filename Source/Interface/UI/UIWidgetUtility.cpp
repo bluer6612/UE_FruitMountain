@@ -10,7 +10,7 @@
 
 // 정적 멤버 변수 초기화
 const FString UUIWidgetUtility::DEFAULT_KOREAN_FONT_PATH = TEXT("/Game/UI/Font/NotoSerifKR-Regular_Font");
-const FString UUIWidgetUtility::DEFAULT_NUMBER_FONT_PATH = TEXT("/Game/UI/Font/LiberationSans-Regular_Font");
+const FString UUIWidgetUtility::DEFAULT_NUMBER_FONT_PATH = TEXT("/Game/UI/Font/LiberationSans-Bold_Font");
 
 void UUIWidgetUtility::SetupTextBlockStyle(UTextBlock* TextBlock, FLinearColor Color, int32 FontSize, bool bBold, bool bAutoWrapText, ESlateVisibility DefaultVisibility)
 {
