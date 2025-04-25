@@ -4,7 +4,7 @@
 #include "Interface/UI/Core/UIWidgetUtility.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
-#include "UIWidgetRenderer.h"
+#include "Interface/UI/Core/UIWidgetRenderer.h"
 
 // 정적 멤버 초기화
 UTotalScoreWidget* UTotalScoreWidget::Instance = nullptr;
