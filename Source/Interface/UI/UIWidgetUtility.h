@@ -115,6 +115,32 @@ public:
     // 특정 위젯 유효성 검사 함수
     template<class T>
     static bool IsWidgetInstanceValid(T* Instance);
+
+public:
+    static const FString DEFAULT_FONT_PATH;
+    
+    // 글로벌 폰트 설정 함수
+    UFUNCTION(BlueprintCallable, Category = "Font")
+    static void SetGlobalFont(const FString& FontPath);
+    
+    // 폰트 적용 함수
+    UFUNCTION(BlueprintCallable, Category = "Font")
+    static void ApplyFontToTextBlock(
+        UTextBlock* TextBlock, 
+        const FString& FontPath = TEXT(""),
+        int32 FontSize = 0, 
+        FName TypefaceName = NAME_None);
+    
+    // 모든 위젯 트리의 텍스트 블록에 폰트 적용 (재귀)
+    UFUNCTION(BlueprintCallable, Category = "Font")
+    static void ApplyFontToAllTextBlocks(
+        UWidget* RootWidget, 
+        const FString& FontPath = TEXT(""),
+        int32 DefaultFontSize = 24);
+
+private:
+    // 현재 글로벌 폰트 경로
+    static FString CurrentFontPath;
 };
 
 // 템플릿 함수 구현

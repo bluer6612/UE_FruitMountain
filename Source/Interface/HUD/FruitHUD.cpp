@@ -12,8 +12,30 @@ void AFruitHUD::BeginPlay()
 {
     Super::BeginPlay();
     
+    // 글로벌 폰트 설정
+    UUIWidgetUtility::SetGlobalFont(TEXT("/Game/UI/Fonts/BMJUA_Regular"));
+    
     // 2D 텍스쳐 위젯 그릴 위젯 생성
     CreateAndAddWidgets();
+    
+    // 약간의 지연 후 모든 텍스트 위젯에 폰트 적용
+    FTimerHandle FontApplyHandle;
+    GetWorldTimerManager().SetTimer(FontApplyHandle, [this]()
+    {
+        // 뷰포트의 모든 위젯 탐색
+        if (GEngine && GEngine->GameViewport)
+        {
+            TArray<UUserWidget*> AllWidgets;
+            // 모든 활성 위젯 찾기 (별도 함수로 구현 필요)
+            // ...
+            
+            // 각 위젯에 폰트 적용
+            for (UUserWidget* Widget : AllWidgets)
+            {
+                UUIWidgetUtility::ApplyFontToAllTextBlocks(Widget, TEXT(""), 0);
+            }
+        }
+    }, 0.5f, false); // 0.5초 후 실행
 }
 
 void AFruitHUD::CreateAndAddWidgets()
