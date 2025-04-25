@@ -40,7 +40,13 @@ void AUE_FruitMountainGameMode::BeginPlay()
 {
     Super::BeginPlay();
     
-    // HUD 먼저 초기화될 수 있게 충분한 지연 추가
+    // 시작시에는 플레이어 입력 비활성화
+    if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+    {
+        PC->SetIgnoreMoveInput(true);
+    }
+    
+    // PlayLevel 시작 후 1.25초 후에 시작 시퀀스 실행
     FTimerHandle DelayHandle;
     GetWorldTimerManager().SetTimer(DelayHandle, [this]() {
         // 1. 먼저 HUD 참조 가져오기
@@ -58,8 +64,10 @@ void AUE_FruitMountainGameMode::BeginPlay()
             
             // 시퀀스 시작
             SequenceManager->StartSequence(this);
+            
+            UE_LOG(LogTemp, Display, TEXT("시작 시퀀스 시작 - 나머지 UI는 시퀀스 완료 후 로드됨"));
         }
-    }, 0.1f, false);
+    }, 1.25f, false);  // 1.25초 후 실행으로 변경
 }
 
 // 시퀀스 완료 이벤트 핸들러
@@ -92,6 +100,8 @@ void AUE_FruitMountainGameMode::OnGameStartSequenceFinished()
         ScoreManagerComp->ScoreWidgetInstance = ScoreWidget;
         ScoreManagerComp->TotalScoreWidgetInstance = TotalScoreWidget;
         ScoreManagerComp->bWidgetCreated = true;
+        
+        UE_LOG(LogTemp, Display, TEXT("게임 위젯 초기화 완료"));
     }
 }
 
