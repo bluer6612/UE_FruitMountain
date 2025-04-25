@@ -67,7 +67,7 @@ void AUE_FruitMountainGameMode::BeginPlay()
             
             UE_LOG(LogTemp, Display, TEXT("시작 시퀀스 시작 - 나머지 UI는 시퀀스 완료 후 로드됨"));
         }
-    }, 1.25f, false);  // 1.25초 후 실행으로 변경
+    }, 1.f, false);  // 1초 후 실행으로 변경
 }
 
 // 시퀀스 완료 이벤트 핸들러
@@ -103,6 +103,9 @@ void AUE_FruitMountainGameMode::OnGameStartSequenceFinished()
         
         UE_LOG(LogTemp, Display, TEXT("게임 위젯 초기화 완료"));
     }
+
+    UUIWidgetRenderer* TextureWidget = UUIWidgetRenderer::GetInstance();
+    TextureWidget->SetupAllImages();
 }
 
 void AUE_FruitMountainGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)

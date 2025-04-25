@@ -13,7 +13,7 @@ UPlayStartSequenceManager::UPlayStartSequenceManager()
     , PhaseDuration(0.0f)
     , ReadyTexturePath(TEXT("/Game/UI/PlayLevel/UI_Play_Ready"))
     , StartTexturePath(TEXT("/Game/UI/PlayLevel/UI_Play_Start"))
-    , MaxScaleFactor(1.5f)
+    , MaxScaleFactor(2.0f)
     , WorldContextObject(nullptr)
 {
 }
@@ -51,7 +51,7 @@ void UPlayStartSequenceManager::StartSequence(UObject* InWorldContextObject)
     
     if (StartImage)
     {
-        StartImage->SetRenderScale(FVector2D(1.0f, 1.0f));
+        StartImage->SetRenderScale(FVector2D(1.1f, 1.1f));
         StartImage->SetRenderOpacity(1.0f);
         StartImage->SetVisibility(ESlateVisibility::Hidden);
     }
@@ -94,7 +94,7 @@ void UPlayStartSequenceManager::CreateSequenceWidgets()
     }
 
     // 이미지 생성 및 설정을 헬퍼 함수로 간소화
-    LoadAndSetupImage(ReadyImage, ReadyTexturePath, true, MaxScaleFactor);  // Ready는 보이게, 1.5배 크기
+    LoadAndSetupImage(ReadyImage, ReadyTexturePath, true, MaxScaleFactor);  // Ready는 보이게
     LoadAndSetupImage(StartImage, StartTexturePath, false, 1.0f);  // Start는 안 보이게, 원래 크기
     
     UE_LOG(LogTemp, Display, TEXT("PlayStartSequence: 위젯 생성 완료"));
@@ -165,17 +165,17 @@ void UPlayStartSequenceManager::UpdateSequence()
                 {
                     float FadeProgress = (ElapsedTime - (PhaseDuration * 0.5f)) / (PhaseDuration * 0.5f);
                     FadeProgress = FMath::Clamp(FadeProgress, 0.0f, 1.0f);
-                    float CurrentOpacity = 1.0f - (0.5f * FadeProgress); // 50% 투명도까지 (0.5 남음)
+                    float CurrentOpacity = 1.0f - (0.65f * FadeProgress); // 65% 투명도까지 (0.35 남음)
                     StartImage->SetRenderOpacity(CurrentOpacity);
                 }
             }
             break;
             
-        case 3: // 마지막 페이드아웃 단계 (0.5초부터 1.25초까지 완전히 사라짐)
+        case 3: // 마지막 페이드아웃 단계 (0.5초부터 2초까지 완전히 사라짐)
             if (StartImage)
             {
                 float Progress = FMath::Clamp(ElapsedTime / PhaseDuration, 0.0f, 1.0f);
-                float CurrentOpacity = 0.5f - (0.5f * Progress); // 50%에서 0%로
+                float CurrentOpacity = 0.35f - (0.35f * Progress); // 50%에서 0%로
                 StartImage->SetRenderOpacity(CurrentOpacity);
             }
             break;
@@ -215,8 +215,9 @@ void UPlayStartSequenceManager::UpdateSequence()
                 break;
                 
             case 3: // 마지막 페이드아웃
-                PhaseDuration = 1.f;
+                PhaseDuration = 1.5f;
                 UE_LOG(LogTemp, Warning, TEXT("단계 전환: Start 확대 -> 최종 페이드아웃"));
+                OnSequenceCompleted.Broadcast();
                 break;
                 
             case 4: // 완료 단계
@@ -226,7 +227,6 @@ void UPlayStartSequenceManager::UpdateSequence()
                 if (ReadyImage) ReadyImage->SetVisibility(ESlateVisibility::Hidden);
                 if (StartImage) StartImage->SetVisibility(ESlateVisibility::Hidden);
                 // 이벤트 발생
-                OnSequenceCompleted.Broadcast();
                 UE_LOG(LogTemp, Display, TEXT("PlayStartSequence: 시퀀스 완료"));
                 break;
         }
