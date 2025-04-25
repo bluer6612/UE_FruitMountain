@@ -104,8 +104,14 @@ void AUE_FruitMountainGameMode::OnGameStartSequenceFinished()
         UE_LOG(LogTemp, Display, TEXT("게임 위젯 초기화 완료"));
     }
 
-    UUIWidgetRenderer* TextureWidget = UUIWidgetRenderer::GetInstance();
-    TextureWidget->SetupAllImages();
+    // HUD의 UIWidgetRenderer에 이미지 설정
+    AFruitHUD* FruitHUD = Cast<AFruitHUD>(GetWorld()->GetFirstPlayerController()->GetHUD());
+    if (FruitHUD && FruitHUD->GetTextureWidget())
+    {
+        // 여기서 명시적으로 이미지 설정
+        FruitHUD->GetTextureWidget()->SetupAllImages();
+        UE_LOG(LogTemp, Display, TEXT("게임 UI 이미지 설정 완료"));
+    }
 }
 
 void AUE_FruitMountainGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)

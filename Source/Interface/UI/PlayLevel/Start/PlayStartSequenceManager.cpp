@@ -78,27 +78,35 @@ void UPlayStartSequenceManager::StartSequence(UObject* InWorldContextObject)
 
 void UPlayStartSequenceManager::CreateSequenceWidgets()
 {
-    // UIWidgetRenderer 생성
-    WidgetRenderer = UUIWidgetRenderer::CreateDisplayWidget(WorldContextObject);
+    // 이미 외부에서 위젯 렌더러가 설정되어 있으면 새로 생성하지 않음
     if (!WidgetRenderer)
     {
-        UE_LOG(LogTemp, Error, TEXT("PlayStartSequence: UIWidgetRenderer 생성 실패"));
-        return;
+        // UIWidgetRenderer 생성
+        WidgetRenderer = UUIWidgetRenderer::CreateDisplayWidget(WorldContextObject);
+        if (!WidgetRenderer)
+        {
+            UE_LOG(LogTemp, Error, TEXT("PlayStartSequence: UIWidgetRenderer 생성 실패"));
+            return;
+        }
+        
+        // Z-Order 설정
+        if (WidgetRenderer && WidgetRenderer->IsInViewport())
+        {
+            WidgetRenderer->RemoveFromParent();
+            WidgetRenderer->AddToViewport(9999);
+            UE_LOG(LogTemp, Warning, TEXT("PlayStartSequence: Z-Order를 9999로 설정"));
+        }
     }
-    
-    // Z-Order 설정
-    if (WidgetRenderer && WidgetRenderer->IsInViewport())
+    else
     {
-        WidgetRenderer->RemoveFromParent();
-        WidgetRenderer->AddToViewport(9999);
-        UE_LOG(LogTemp, Warning, TEXT("PlayStartSequence: Z-Order를 9999로 설정"));
+        UE_LOG(LogTemp, Warning, TEXT("PlayStartSequence: 기존 UIWidgetRenderer 사용 중"));
     }
 
     // 이미지 생성 및 설정을 헬퍼 함수로 간소화
     LoadAndSetupImage(ReadyImage, ReadyTexturePath, true, MaxReadyScaleFactor);  // Ready는 보이게
     LoadAndSetupImage(StartImage, StartTexturePath, false, 1.0f);  // Start는 안 보이게, 원래 크기
     
-    //UE_LOG(LogTemp, Display, TEXT("PlayStartSequence: 위젯 생성 완료"));
+    UE_LOG(LogTemp, Display, TEXT("PlayStartSequence: 위젯 생성 완료"));
 }
 
 void UPlayStartSequenceManager::LoadAndSetupImage(UImage*& ImageWidget, const FString& TexturePath, bool bVisible, float InitialScale)
