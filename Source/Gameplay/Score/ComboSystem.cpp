@@ -2,6 +2,7 @@
 #include "Interface/UI/PlayLevel/Score/ScoreDisplayWidget.h"
 #include "Interface/UI/PlayLevel/Score/ScoreWidgetAnimator.h"
 #include "Interface/UI/PlayLevel/Score/Combo/ComboCountWidget.h"
+#include "Interface/UI/PlayLevel/Score/Combo/ComboCountWidgetAnimator.h"
 #include "Kismet/GameplayStatics.h"
 
 UComboSystem::UComboSystem()
@@ -100,10 +101,13 @@ int32 UComboSystem::CalculateFinalScore(int32 BallType)
     // 5. UI 업데이트
     DisplayScoreAnimation(ComboMultiplierScore, ComboCount, ComboMultiplier);
     
-    // 콤보 카운트 위젯 업데이트
+    // 콤보 카운트 위젯 업데이트 - 애니메이터 직접 사용으로 변경
     if (ComboCountWidget)
     {
-        ComboCountWidget->UpdateComboCount(ComboCount);
+        if (UComboCountWidgetAnimator* Animator = ComboCountWidget->GetAnimator())
+        {
+            Animator->UpdateComboCount(ComboCount);
+        }
     }
     
     return BaseScore;
@@ -171,21 +175,9 @@ void UComboSystem::AddToCombo(int32 BallType)
     CalculateFinalScore(BallType);
 
     // 콤보 카운트 위젯 업데이트
-    if (ComboCountWidget)
+    if (ComboCountWidget && ComboCountWidget->GetAnimator())
     {
-        ComboCountWidget->UpdateComboCount(ComboCount);
-    }
-}
-
-void UComboSystem::OnBallDestroyed(int32 BallType)
-{
-    // 애니메이터 직접 접근
-    UComboCountWidget* ComboWidget = UComboCountWidget::GetInstance();
-    
-    if (ComboWidget && ComboWidget->GetAnimator())
-    {
-        ComboWidget->SetCurrentComboCount(ComboCount); // 위젯 내부 상태 유지
-        ComboWidget->GetAnimator()->UpdateComboCount(ComboCount);
+        ComboCountWidget->GetAnimator()->UpdateComboCount(ComboCount);
     }
 }
 
@@ -195,12 +187,13 @@ void UComboSystem::ResetCombo()
     ComboRemainingTime = 0.0f;
     bComboActive = false;
     
-    UComboCountWidget* ComboWidget = UComboCountWidget::GetInstance();
-    
-    if (ComboWidget && ComboWidget->GetAnimator())
+    // 애니메이터 직접 참조
+    if (UComboCountWidget* ComboWidget = UComboCountWidget::GetInstance())
     {
-        ComboWidget->SetCurrentComboCount(0); // 위젯 내부 상태 유지
-        ComboWidget->GetAnimator()->ResetComboCount();
+        if (UComboCountWidgetAnimator* Animator = ComboWidget->GetAnimator())
+        {
+            Animator->ResetComboCount();
+        }
     }
 }
 

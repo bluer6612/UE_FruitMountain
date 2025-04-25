@@ -26,12 +26,12 @@ public:
     static void ClearInstance();
     static bool IsInstanceValid();
     
-    // 애니메이터 직접 접근을 위한 게터 추가
+    // 애니메이터 접근 함수 추가
     UComboCountWidgetAnimator* GetAnimator() const { return WidgetAnimator; }
     
-    // 레퍼런스를 위한 상태 변수 유지
-    int32 GetCurrentComboCount() const { return CurrentComboCount; }
+    // 상태 접근 함수 추가
     void SetCurrentComboCount(int32 Value) { CurrentComboCount = Value; }
+    int32 GetCurrentComboCount() const { return CurrentComboCount; }
     
 private:
     // 싱글톤 인스턴스
@@ -42,7 +42,7 @@ private:
     UPROPERTY()
     UImage* ComboCountImage;
     
-    UPROPERTY()
+    UPROPERTY(meta = (BindWidget))
     UTextBlock* ComboCountTextBlock;
     
     // 애니메이션 컨트롤러

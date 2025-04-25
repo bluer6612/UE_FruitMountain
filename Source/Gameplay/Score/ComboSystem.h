@@ -68,6 +68,9 @@ public:
     // 애니메이션 관련 함수
     void DisplayScoreAnimation(int32 Score, int32 ComboCount, float ComboMultiplier);
     
+public:
+    void OnBallDestroyed(int32 BallType);
+
 private:
     // 콤보 관련 변수
     UPROPERTY()

@@ -5,6 +5,7 @@
 #include "Interface/UI/PlayLevel/Score/TotalScoreWidget.h"
 #include "Interface/UI/PlayLevel/Score/ScoreWidgetAnimator.h"
 #include "Interface/UI/PlayLevel/Score/Combo/ComboCountWidget.h"
+#include "Interface/UI/PlayLevel/Score/Combo/ComboCountWidgetAnimator.h"
 #include "ComboSystem.h"
 
 UScoreManagerComponent::UScoreManagerComponent()
@@ -130,7 +131,6 @@ void UScoreManagerComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     Super::EndPlay(EndPlayReason);
     
-    // ComboSystem 정리 - RemoveFromRoot 대신 안전한 정리 함수 호출
     if (ComboSystem && IsValid(ComboSystem))
     {
         ComboSystem->SafeCleanup();
@@ -172,10 +172,9 @@ void UScoreManagerComponent::OnComboScoreFinalized(int32 FinalComboScore)
 
 void UScoreManagerComponent::OnComboUpdated(int32 ComboCount, float ComboMultiplier)
 {
-    // 콤보 카운트 위젯 업데이트
-    if (ComboCountWidgetInstance)
+    if (ComboCountWidgetInstance && ComboCountWidgetInstance->GetAnimator())
     {
-        ComboCountWidgetInstance->UpdateComboCount(ComboCount);
+        ComboCountWidgetInstance->GetAnimator()->UpdateComboCount(ComboCount);
     }
     
     // 점수 추가 이벤트 발생 (UI나 다른 시스템에서 활용할 수 있음)

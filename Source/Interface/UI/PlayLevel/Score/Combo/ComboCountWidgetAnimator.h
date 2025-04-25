@@ -49,5 +49,4 @@ private:
     
     // 애니메이션 실행 함수
     void ExecuteFadeOutStep();
-    void OnAnimationCompleted();
 };

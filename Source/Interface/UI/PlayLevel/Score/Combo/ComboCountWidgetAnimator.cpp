@@ -43,20 +43,18 @@ void UComboCountWidgetAnimator::UpdateComboCount(int32 NewComboCount)
             ComboTextBlock->SetText(FText::AsNumber(CurrentComboCount));
         }
     }
-    else
-    {
-        // 콤보가 리셋된 경우 페이드 아웃
-        PlayFadeOutAnimation();
-    }
 }
 
 // ComboCountWidget에서 이동된 함수
 void UComboCountWidgetAnimator::ResetComboCount()
 {
+    if (CurrentComboCount >= 2)
+    {
+        // 페이드 아웃 애니메이션 시작
+        PlayFadeOutAnimation();
+    }
+
     CurrentComboCount = 0;
-    
-    // 페이드 아웃 애니메이션 시작
-    PlayFadeOutAnimation();
 }
 
 // ComboCountWidget에서 이동된 함수
@@ -163,10 +161,4 @@ void UComboCountWidgetAnimator::ExecuteFadeOutStep()
         
         UE_LOG(LogTemp, Display, TEXT("콤보 카운트 페이드 아웃 애니메이션 완료"));
     }
-}
-
-void UComboCountWidgetAnimator::OnAnimationCompleted()
-{
-    // 이제 직접 가시성 설정 가능
-    SetComboCountVisibility(false);
 }
