@@ -49,10 +49,10 @@ protected:
 private:
     // 텍스트 블록 참조
     UPROPERTY()
-    UTextBlock* ScoreTextBlock;
+    UTextBlock* ScoreTextBlock_C;
     
     UPROPERTY()
-    UTextBlock* ComboMultiplierTextBlock;
+    UTextBlock* ComboMultiplierTextBlock_C;
     
     // 애니메이터
     UPROPERTY()

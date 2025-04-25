@@ -12,7 +12,7 @@
 const FString UUIWidgetUtility::DEFAULT_KOREAN_FONT_PATH = TEXT("/Game/UI/Font/NotoSerifKR-Regular_Font");
 const FString UUIWidgetUtility::DEFAULT_NUMBER_FONT_PATH = TEXT("/Game/UI/Font/LiberationSans-Bold_Font");
 
-void UUIWidgetUtility::SetupTextBlockStyle(UTextBlock* TextBlock, FLinearColor Color, float FontSize, bool bBold, bool bAutoWrapText, ESlateVisibility DefaultVisibility)
+void UUIWidgetUtility::SetupTextBlockStyle(UTextBlock* TextBlock, FLinearColor Color, float FontSize, const FString& FontPath, bool bBold, bool bAutoWrapText, ESlateVisibility DefaultVisibility)
 {
     if (!TextBlock)
     {
@@ -29,12 +29,26 @@ void UUIWidgetUtility::SetupTextBlockStyle(UTextBlock* TextBlock, FLinearColor C
     // 3. 가시성 설정
     TextBlock->SetVisibility(DefaultVisibility);
     
-    // 4. 폰트 설정 - 항상 DEFAULT_NUMBER_FONT_PATH 사용
-    UFont* FontObject = LoadObject<UFont>(nullptr, *UUIWidgetUtility::DEFAULT_NUMBER_FONT_PATH);
+    // 4. 폰트 설정
+    // 폰트 경로가 지정되지 않으면 기본 폰트 사용
+    FString EffectiveFontPath = FontPath.IsEmpty() ? DEFAULT_KOREAN_FONT_PATH : FontPath;
+    
+    UFont* FontObject = LoadObject<UFont>(nullptr, *EffectiveFontPath);
     if (!FontObject)
     {
-        UE_LOG(LogTemp, Warning, TEXT("폰트 로드 실패: %s"), *UUIWidgetUtility::DEFAULT_NUMBER_FONT_PATH);
-        return;
+        UE_LOG(LogTemp, Warning, TEXT("폰트 로드 실패: %s, 기본 폰트 사용 시도"), *EffectiveFontPath);
+        
+        // 기본 폰트로 폴백 시도
+        if (EffectiveFontPath != DEFAULT_NUMBER_FONT_PATH)
+        {
+            FontObject = LoadObject<UFont>(nullptr, *DEFAULT_NUMBER_FONT_PATH);
+            if (!FontObject)
+            {
+                UE_LOG(LogTemp, Error, TEXT("기본 폰트도 로드 실패: %s"), *DEFAULT_NUMBER_FONT_PATH);
+                return;
+            }
+            EffectiveFontPath = DEFAULT_NUMBER_FONT_PATH;
+        }
     }
     
     // 폰트 정보 설정
