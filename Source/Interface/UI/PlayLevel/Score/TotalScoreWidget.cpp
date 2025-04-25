@@ -58,7 +58,7 @@ void UTotalScoreWidget::NativeConstruct()
         
         // 폰트 및 색상 설정 (SetupTextBlockStyle 활용)
         UUIWidgetUtility::SetupTextBlockStyle(TotalScoreTextBlock, TOTALSCORE_BROWN_COLOR,
-            52.0f,                           // 폰트 크기
+            48.0f,                           // 폰트 크기
             UUIWidgetUtility::DEFAULT_NUMBER_FONT_PATH,
             false,                          // 볼드체
             false,                          // 자동 줄바꿈 안함
