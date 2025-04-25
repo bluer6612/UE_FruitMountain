@@ -14,6 +14,11 @@ public:
     AFruitHUD();
     
     virtual void BeginPlay() override;
+
+    UUIWidgetRenderer* GetTextureWidget() const
+    {
+        return TextureWidget;
+    }
     
 protected:
     // UMG 위젯 참조

@@ -40,25 +40,26 @@ void AUE_FruitMountainGameMode::BeginPlay()
 {
     Super::BeginPlay();
     
-    // 게임 시작 시 모든 과일 메시 사전 로드
-    UFruitMergeHelper::PreloadAllFruitMeshes(GetWorld());
-    
-    // 게임 시작 시퀀스 생성 및 실행
-    UPlayStartSequenceManager* SequenceManager = UPlayStartSequenceManager::CreateInstance(this);
-    if (SequenceManager)
-    {
-        // 시퀀스 완료 이벤트 바인딩
-        SequenceManager->OnSequenceCompleted.AddDynamic(this, &AUE_FruitMountainGameMode::OnGameStartSequenceFinished);
+    // HUD 먼저 초기화될 수 있게 충분한 지연 추가
+    FTimerHandle DelayHandle;
+    GetWorldTimerManager().SetTimer(DelayHandle, [this]() {
+        // 1. 먼저 HUD 참조 가져오기
+        AFruitHUD* FruitHUD = Cast<AFruitHUD>(GetWorld()->GetFirstPlayerController()->GetHUD());
         
-        // 시퀀스 시작
-        SequenceManager->StartSequence(this);
-        
-        // 게임 입력 일시 중지
-        if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+        // 2. 게임 시작 시퀀스 생성 및 실행
+        UPlayStartSequenceManager* SequenceManager = UPlayStartSequenceManager::CreateInstance(this);
+        if (SequenceManager && FruitHUD && FruitHUD->GetTextureWidget())
         {
-            PC->SetIgnoreMoveInput(true);
+            // HUD의 UIWidgetRenderer 사용
+            SequenceManager->SetExistingWidgetRenderer(FruitHUD->GetTextureWidget());
+            
+            // 시퀀스 완료 이벤트 바인딩
+            SequenceManager->OnSequenceCompleted.AddDynamic(this, &AUE_FruitMountainGameMode::OnGameStartSequenceFinished);
+            
+            // 시퀀스 시작
+            SequenceManager->StartSequence(this);
         }
-    }
+    }, 0.1f, false);
 }
 
 // 시퀀스 완료 이벤트 핸들러

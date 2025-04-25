@@ -20,7 +20,12 @@ UPlayStartSequenceManager::UPlayStartSequenceManager()
 
 void UPlayStartSequenceManager::StartSequence(UObject* InWorldContextObject)
 {
-    // 월드 컨텍스트 저장
+    // 월드 컨텍스트 검증
+    if (!InWorldContextObject)
+    {
+        UE_LOG(LogTemp, Error, TEXT("PlayStartSequence: 유효하지 않은 WorldContextObject"));
+        return;
+    }
     WorldContextObject = InWorldContextObject;
     
     // 이미 실행 중인 시퀀스가 있다면 정리
@@ -51,7 +56,7 @@ void UPlayStartSequenceManager::StartSequence(UObject* InWorldContextObject)
         PC->GetWorldTimerManager().SetTimer(SequenceTimerHandle, 
                                            this, 
                                            &UPlayStartSequenceManager::UpdateSequence, 
-                                           0.016f, // 약 60fps
+                                           0.005f,
                                            true);
     }
     
@@ -68,12 +73,21 @@ void UPlayStartSequenceManager::CreateSequenceWidgets()
         return;
     }
     
+    // Z-Order 설정 (SetZOrder 대신 다른 방법 사용)
+    if (WidgetRenderer && WidgetRenderer->IsInViewport())
+    {
+        // 뷰포트에서 제거 후 높은 Z-Order 값으로 다시 추가
+        WidgetRenderer->RemoveFromParent();
+        WidgetRenderer->AddToViewport(9999); // 매우 높은 Z-Order로 설정
+        UE_LOG(LogTemp, Warning, TEXT("PlayStartSequence: Z-Order를 9999로 설정"));
+    }
+
     // Ready 이미지 생성
     ReadyImage = nullptr;
     WidgetRenderer->RenderUIImage(ReadyImage, 
                                  EWidgetAnchor::Center, 
                                  ReadyTexturePath, 
-                                 FVector2D(0, 0),  // 원본 크기 사용
+                                 FVector2D(807, 230),
                                  0.0f, 0.0f);
     
     // Start 이미지 생성
@@ -81,7 +95,7 @@ void UPlayStartSequenceManager::CreateSequenceWidgets()
     WidgetRenderer->RenderUIImage(StartImage, 
                                  EWidgetAnchor::Center, 
                                  StartTexturePath, 
-                                 FVector2D(0, 0),  // 원본 크기 사용
+                                 FVector2D(807, 230),
                                  0.0f, 0.0f);
     
     // 초기 설정
@@ -89,6 +103,8 @@ void UPlayStartSequenceManager::CreateSequenceWidgets()
     {
         ReadyImage->SetRenderScale(FVector2D(MaxScaleFactor, MaxScaleFactor));
         ReadyImage->SetRenderOpacity(1.0f);
+        // 가시성 설정
+        ReadyImage->SetVisibility(ESlateVisibility::HitTestInvisible);
     }
     
     if (StartImage)
@@ -149,10 +165,18 @@ void UPlayStartSequenceManager::ProcessReadyShrink(float DeltaTime)
 {
     if (!ReadyImage) return;
     
-    // 1.5배 -> 1.0배로 줄이는 애니메이션
+    // 디버깅 로그 추가
+    static float lastLogTime = 0.0f;
+    if (ElapsedTime - lastLogTime > 0.5f)  // 0.5초마다 로그
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Ready 줄어드는 중: 스케일=%.2f, 시간=%.2f/%.2f"), 
+               ReadyImage->GetRenderTransform().Scale.X, ElapsedTime, TotalDuration);
+        lastLogTime = ElapsedTime;
+    }
+    
+    // 기존 코드
     float Progress = FMath::Clamp(ElapsedTime / TotalDuration, 0.0f, 1.0f);
     float CurrentScale = MaxScaleFactor - ((MaxScaleFactor - 1.0f) * Progress);
-    
     ReadyImage->SetRenderScale(FVector2D(CurrentScale, CurrentScale));
 }
 
@@ -289,4 +313,19 @@ UPlayStartSequenceManager* UPlayStartSequenceManager::CreateInstance(UObject* Wo
     }
     
     return Instance;
+}
+
+void UPlayStartSequenceManager::SetExistingWidgetRenderer(UUIWidgetRenderer* ExistingRenderer)
+{
+    if (ExistingRenderer && IsValid(ExistingRenderer))
+    {
+        // 기존 위젯 정리
+        if (WidgetRenderer && WidgetRenderer != ExistingRenderer)
+        {
+            WidgetRenderer->RemoveFromParent();
+        }
+        
+        WidgetRenderer = ExistingRenderer;
+        UE_LOG(LogTemp, Warning, TEXT("PlayStartSequence: 외부에서 제공된 UIWidgetRenderer 사용"));
+    }
 }

@@ -37,6 +37,9 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Game Sequence", meta = (WorldContext = "WorldContextObject"))
     static UPlayStartSequenceManager* CreateInstance(UObject* WorldContextObject);
 
+    UFUNCTION(BlueprintCallable, Category = "Game Sequence")
+    void SetExistingWidgetRenderer(UUIWidgetRenderer* ExistingRenderer);
+
 private:
     // 싱글톤 인스턴스
     static UPlayStartSequenceManager* Instance;
