@@ -3,6 +3,9 @@
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
 #include "Interface/UI/UIWidgetRenderer.h"
+#include "Interface/UI/TotalScoreWidget.h"
+#include "Interface/UI/ScoreDisplayWidget.h"
+#include "Gameplay/Score/ScoreManagerComponent.h"
 #include "FruitHUD.generated.h"
 
 UCLASS()
@@ -22,7 +25,10 @@ protected:
     
     // 위젯 생성 함수
     void CreateAndAddWidgets();
-    
+
+    // 모든 위젯에 폰트 적용 함수
+    void ApplyFontsToAllWidgets();
+
 private:
     // 모든 활성 위젯 찾기
     TArray<UUserWidget*> GetAllActiveWidgets();

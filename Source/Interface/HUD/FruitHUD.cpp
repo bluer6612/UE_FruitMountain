@@ -26,24 +26,40 @@ void AFruitHUD::BeginPlay()
     // 2D 텍스쳐 위젯 그릴 위젯 생성
     CreateAndAddWidgets();
     
-    // 약간의 지연 후 모든 텍스트 위젯에 폰트 적용
+    // 약간의 지연 후 모든 텍스트 위젯에 폰트 적용 (시간 늘림)
     FTimerHandle FontApplyHandle;
     GetWorldTimerManager().SetTimer(FontApplyHandle, [this]()
     {
-        // 뷰포트의 모든 위젯 탐색
-        if (GEngine && GEngine->GameViewport)
+        ApplyFontsToAllWidgets();
+    }, 1.0f, false); // 1.0초로 늘림
+    
+    // 두 번째 시도 (2초 후)
+    FTimerHandle FontApplyHandle2;
+    GetWorldTimerManager().SetTimer(FontApplyHandle2, [this]()
+    {
+        ApplyFontsToAllWidgets();
+    }, 2.0f, false);
+}
+
+// 새로운 함수 추가
+void AFruitHUD::ApplyFontsToAllWidgets()
+{
+    // 뷰포트의 모든 위젯 탐색
+    if (GEngine && GEngine->GameViewport)
+    {
+        // 모든 활성 위젯 찾기
+        TArray<UUserWidget*> AllWidgets = GetAllActiveWidgets();
+        
+        // 각 위젯에 폰트 적용
+        for (UUserWidget* Widget : AllWidgets)
         {
-            // 모든 활성 위젯 찾기
-            TArray<UUserWidget*> AllWidgets = GetAllActiveWidgets();
-            
-            // 각 위젯에 폰트 적용
-            for (UUserWidget* Widget : AllWidgets)
+            if (Widget)
             {
                 UUIWidgetUtility::ApplyFontToAllTextBlocks(Widget, TEXT(""), 0);
                 UE_LOG(LogTemp, Display, TEXT("위젯에 폰트 적용: %s"), *Widget->GetName());
             }
         }
-    }, 0.5f, false); // 0.5초 후 실행
+    }
 }
 
 void AFruitHUD::CreateAndAddWidgets()
@@ -126,23 +142,39 @@ TArray<UUserWidget*> AFruitHUD::GetAllActiveWidgets()
     AGameModeBase* GameMode = UGameplayStatics::GetGameMode(World);
     if (GameMode)
     {
-        // 여기서 GameMode 내의 특정 위젯 참조를 가져올 수 있음
-        // 예: ScoreManagerComponent에서 위젯 참조를 얻을 수 있음
+        // ScoreManagerComponent 찾기
+        UScoreManagerComponent* ScoreManager = GameMode->FindComponentByClass<UScoreManagerComponent>();
+        if (ScoreManager)
+        {
+            // TotalScoreWidget 추가
+            if (ScoreManager->TotalScoreWidgetInstance)
+            {
+                AllWidgets.AddUnique(ScoreManager->TotalScoreWidgetInstance);
+                UE_LOG(LogTemp, Warning, TEXT("TotalScoreWidget 찾음"));
+            }
+            
+            // ScoreDisplayWidget 추가
+            if (ScoreManager->ScoreWidgetInstance)
+            {
+                AllWidgets.AddUnique(ScoreManager->ScoreWidgetInstance);
+                UE_LOG(LogTemp, Warning, TEXT("ScoreDisplayWidget 찾음"));
+            }
+        }
     }
     
-    // 모든 플레이어 컨트롤러에서 HUD 위젯 찾기
-    for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+    // 이미 생성된 위젯 인스턴스 찾기
+    UScoreDisplayWidget* ScoreWidget = UScoreDisplayWidget::GetInstance();
+    if (ScoreWidget && !AllWidgets.Contains(ScoreWidget))
     {
-        APlayerController* PlayerController = It->Get();
-        if (!PlayerController)
-            continue;
-            
-        // 현재 HUD 확인
-        AHUD* HUD = PlayerController->GetHUD();
-        if (HUD != this) // 자기 자신이 아닌 경우만 확인
-        {
-            // HUD에 위젯 참조가 있을 수 있음
-        }
+        AllWidgets.Add(ScoreWidget);
+        UE_LOG(LogTemp, Warning, TEXT("정적 인스턴스에서 ScoreDisplayWidget 찾음"));
+    }
+    
+    UTotalScoreWidget* TotalScoreWidget = UTotalScoreWidget::GetInstance();
+    if (TotalScoreWidget && !AllWidgets.Contains(TotalScoreWidget))
+    {
+        AllWidgets.Add(TotalScoreWidget);
+        UE_LOG(LogTemp, Warning, TEXT("정적 인스턴스에서 TotalScoreWidget 찾음"));
     }
     
     UE_LOG(LogTemp, Log, TEXT("활성 위젯 %d개 발견"), AllWidgets.Num());
