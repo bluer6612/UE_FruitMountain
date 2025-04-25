@@ -13,8 +13,8 @@ UScoreDisplayWidget* UScoreDisplayWidget::Instance = nullptr;
 TSubclassOf<UUserWidget> UScoreDisplayWidget::ScoreWidgetClass = nullptr;
 
 // 정적 상수 초기화
-const FVector2D UScoreDisplayWidget::SCORE_TEXT_POS = FVector2D(650.0f, 75.0f);
-const FVector2D UScoreDisplayWidget::COMBO_TEXT_POS = FVector2D(690.0f, 135.0f);
+const FVector2D UScoreDisplayWidget::SCORE_TEXT_POS = FVector2D(650.0f, 20.0f);
+const FVector2D UScoreDisplayWidget::COMBO_TEXT_POS = FVector2D(690.0f, 90.0f);
 const FLinearColor UScoreDisplayWidget::SCORE_YELLOW_COLOR = FLinearColor(232.0f/255.0f, 235.0f/255.0f, 141.0f/255.0f, 1.0f);
 
 UScoreDisplayWidget::UScoreDisplayWidget(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
