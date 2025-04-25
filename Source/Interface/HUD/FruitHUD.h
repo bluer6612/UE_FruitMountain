@@ -22,4 +22,11 @@ protected:
     
     // 위젯 생성 함수
     void CreateAndAddWidgets();
+    
+private:
+    // 모든 활성 위젯 찾기
+    TArray<UUserWidget*> GetAllActiveWidgets();
+    
+    // 재귀적으로 위젯 수집
+    void CollectWidgetsFromWidget(UWidget* Widget, TArray<UUserWidget*>& OutWidgets);
 };
