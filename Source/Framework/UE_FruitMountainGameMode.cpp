@@ -37,6 +37,9 @@ void AUE_FruitMountainGameMode::BeginPlay()
 {
     Super::BeginPlay();
     
+    // 게임 시작 시 모든 과일 메시 사전 로드
+    UFruitMergeHelper::PreloadAllFruitMeshes(GetWorld());
+    
     // 시작시에는 플레이어 입력 비활성화
     if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
     {

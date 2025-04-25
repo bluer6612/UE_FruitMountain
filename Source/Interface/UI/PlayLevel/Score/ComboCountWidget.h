@@ -19,19 +19,27 @@ public:
     virtual void BeginDestroy() override;
     
     // 위젯 생성 함수
+    UFUNCTION(BlueprintCallable, Category = "Combo Widget")
     static UComboCountWidget* CreateComboCountWidget(UObject* WorldContextObject);
+    
+    UFUNCTION(BlueprintCallable, Category = "Combo Widget")
     static UComboCountWidget* GetInstance() { return Instance; }
     
-    // 인스턴스 유효성 검사
-    static bool IsInstanceValid();
-
+    UFUNCTION(BlueprintCallable, Category = "Combo Widget")
     static void ClearInstance();
     
+    UFUNCTION(BlueprintCallable, Category = "Combo Widget")
+    static bool IsInstanceValid();
+    
     // 콤보 카운트 업데이트
+    UFUNCTION(BlueprintCallable, Category = "Combo Widget")
     void UpdateComboCount(int32 NewComboCount);
+    
+    UFUNCTION(BlueprintCallable, Category = "Combo Widget")
     void ResetComboCount();
     
     // 위젯 가시성 조절
+    UFUNCTION(BlueprintCallable, Category = "Combo Widget")
     void SetComboCountVisibility(bool bVisible);
     
 private:
@@ -56,9 +64,15 @@ private:
     bool bAnimating;
     FTimerHandle ComboAnimTimerHandle;
     
+    // 페이드 아웃 관련 변수
+    FTimerHandle FadeOutTimerHandle;
+    float FadeOutDuration;
+    bool bFadingOut;
+    
     // 내부 함수
     void InitializeComboWidgets();
     static bool LoadWidgetClassIfNeeded();
     void PlayComboAnimation(int32 ComboCount);
-    void ExecuteComboAnimation();
+    void PlayFadeOutAnimation();
+    void ExecuteFadeOutStep();
 };
