@@ -77,7 +77,7 @@ protected:
     float StartFadeOutTime = 0.5f;
     
     UPROPERTY(EditDefaultsOnly, Category = "Animation")
-    float MaxScaleFactor = 1.5f;
+    float MaxReadyScaleFactor = 1.5f;
     
     // 애니메이션 상태 전환
     void SetSequenceState(ESequenceState NewState);

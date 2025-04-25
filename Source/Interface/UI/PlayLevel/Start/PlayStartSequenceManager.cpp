@@ -13,7 +13,8 @@ UPlayStartSequenceManager::UPlayStartSequenceManager()
     , PhaseDuration(0.0f)
     , ReadyTexturePath(TEXT("/Game/UI/PlayLevel/UI_Play_Ready"))
     , StartTexturePath(TEXT("/Game/UI/PlayLevel/UI_Play_Start"))
-    , MaxScaleFactor(2.0f)
+    , MaxReadyScaleFactor(2.0f)
+    , MaxStartScaleFactor(1.75f)
     , WorldContextObject(nullptr)
 {
 }
@@ -44,7 +45,7 @@ void UPlayStartSequenceManager::StartSequence(UObject* InWorldContextObject)
     // 시퀀스 초기화 - Ready 이미지 준비
     if (ReadyImage)
     {
-        ReadyImage->SetRenderScale(FVector2D(MaxScaleFactor, MaxScaleFactor));
+        ReadyImage->SetRenderScale(FVector2D(MaxReadyScaleFactor, MaxReadyScaleFactor));
         ReadyImage->SetRenderOpacity(1.0f);
         ReadyImage->SetVisibility(ESlateVisibility::HitTestInvisible);
     }
@@ -94,7 +95,7 @@ void UPlayStartSequenceManager::CreateSequenceWidgets()
     }
 
     // 이미지 생성 및 설정을 헬퍼 함수로 간소화
-    LoadAndSetupImage(ReadyImage, ReadyTexturePath, true, MaxScaleFactor);  // Ready는 보이게
+    LoadAndSetupImage(ReadyImage, ReadyTexturePath, true, MaxReadyScaleFactor);  // Ready는 보이게
     LoadAndSetupImage(StartImage, StartTexturePath, false, 1.0f);  // Start는 안 보이게, 원래 크기
     
     UE_LOG(LogTemp, Display, TEXT("PlayStartSequence: 위젯 생성 완료"));
@@ -144,7 +145,7 @@ void UPlayStartSequenceManager::UpdateSequence()
             if (ReadyImage)
             {
                 float Progress = FMath::Clamp(ElapsedTime / PhaseDuration, 0.0f, 1.0f);
-                float CurrentScale = MaxScaleFactor - ((MaxScaleFactor - 1.0f) * Progress);
+                float CurrentScale = MaxReadyScaleFactor - ((MaxReadyScaleFactor - 1.0f) * Progress);
                 ReadyImage->SetRenderScale(FVector2D(CurrentScale, CurrentScale));
             }
             break;
@@ -157,7 +158,7 @@ void UPlayStartSequenceManager::UpdateSequence()
             if (StartImage)
             {
                 float Progress = FMath::Clamp(ElapsedTime / PhaseDuration, 0.0f, 1.0f);
-                float CurrentScale = 1.0f + ((MaxScaleFactor - 1.0f) * Progress);
+                float CurrentScale = 1.0f + ((MaxStartScaleFactor - 1.0f) * Progress);
                 StartImage->SetRenderScale(FVector2D(CurrentScale, CurrentScale));
                 
                 // 0.5배 시점에 페이드아웃 시작 (0.125초부터)

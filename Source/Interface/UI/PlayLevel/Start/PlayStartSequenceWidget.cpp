@@ -73,7 +73,7 @@ void UPlayStartSequenceWidget::NativeTick(const FGeometry& MyGeometry, float InD
             if (ReadyImage)
             {
                 // 1.5배 -> 1.0배로 크기 변화
-                float CurrentScale = MaxScaleFactor - (MaxScaleFactor - 1.0f) * ProgressRatio;
+                float CurrentScale = MaxReadyScaleFactor - (MaxReadyScaleFactor - 1.0f) * ProgressRatio;
                 ReadyImage->SetRenderScale(FVector2D(CurrentScale, CurrentScale));
             }
             
@@ -116,7 +116,7 @@ void UPlayStartSequenceWidget::NativeTick(const FGeometry& MyGeometry, float InD
             if (StartImage)
             {
                 // 1.0배 -> 1.5배로 크기 변화
-                float CurrentScale = 1.0f + (MaxScaleFactor - 1.0f) * ProgressRatio;
+                float CurrentScale = 1.0f + (MaxReadyScaleFactor - 1.0f) * ProgressRatio;
                 StartImage->SetRenderScale(FVector2D(CurrentScale, CurrentScale));
             }
             
@@ -195,7 +195,7 @@ void UPlayStartSequenceWidget::StartSequence()
     {
         ReadyImage->SetVisibility(ESlateVisibility::Visible);
         ReadyImage->SetRenderOpacity(1.0f);
-        ReadyImage->SetRenderScale(FVector2D(MaxScaleFactor, MaxScaleFactor));
+        ReadyImage->SetRenderScale(FVector2D(MaxReadyScaleFactor, MaxReadyScaleFactor));
     }
     
     // Start 이미지 초기화

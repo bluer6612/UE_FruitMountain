@@ -68,7 +68,8 @@ private:
     FString StartTexturePath;
     
     // 애니메이션 관련 값
-    float MaxScaleFactor;
+    float MaxReadyScaleFactor;
+    float MaxStartScaleFactor;
     
     // 월드 객체 레퍼런스
     UObject* WorldContextObject;
