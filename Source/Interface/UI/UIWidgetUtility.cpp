@@ -12,7 +12,7 @@
 const FString UUIWidgetUtility::DEFAULT_KOREAN_FONT_PATH = TEXT("/Game/UI/Font/NotoSerifKR-Regular_Font");
 const FString UUIWidgetUtility::DEFAULT_NUMBER_FONT_PATH = TEXT("/Game/UI/Font/LiberationSans-Bold_Font");
 
-void UUIWidgetUtility::SetupTextBlockStyle(UTextBlock* TextBlock, FLinearColor Color, int32 FontSize, bool bBold, bool bAutoWrapText, ESlateVisibility DefaultVisibility)
+void UUIWidgetUtility::SetupTextBlockStyle(UTextBlock* TextBlock, FLinearColor Color, float FontSize, bool bBold, bool bAutoWrapText, ESlateVisibility DefaultVisibility)
 {
     if (!TextBlock)
     {
@@ -51,7 +51,7 @@ void UUIWidgetUtility::SetupTextBlockStyle(UTextBlock* TextBlock, FLinearColor C
     // 폰트 적용
     TextBlock->SetFont(FontInfo);
     
-    UE_LOG(LogTemp, Display, TEXT("텍스트 블록에 스타일 적용 (폰트: %s, 크기: %d)"), *UUIWidgetUtility::DEFAULT_NUMBER_FONT_PATH, FontSize);
+    UE_LOG(LogTemp, Display, TEXT("텍스트 블록에 스타일 적용 (폰트: %s, 크기: %.1f)"), *UUIWidgetUtility::DEFAULT_NUMBER_FONT_PATH, FontSize);
 }
 
 void UUIWidgetUtility::SetAnchorForSlot(UCanvasPanelSlot* CanvasSlot, EWidgetAnchor Anchor, float PaddingX, float PaddingY)

@@ -36,7 +36,7 @@ public:
     
     // 텍스트 블록 스타일 설정 헬퍼 함수
     UFUNCTION(BlueprintCallable, Category = "UI Helper")
-    static void SetupTextBlockStyle(UTextBlock* TextBlock, FLinearColor Color, int32 FontSize, bool bBold = false, bool bAutoWrapText = true, ESlateVisibility DefaultVisibility = ESlateVisibility::HitTestInvisible);
+    static void SetupTextBlockStyle(UTextBlock* TextBlock, FLinearColor Color, float FontSize, bool bBold = false, bool bAutoWrapText = true, ESlateVisibility DefaultVisibility = ESlateVisibility::HitTestInvisible);
     
     // 앵커 기반 슬롯 위치 설정
     static void SetAnchorForSlot(UCanvasPanelSlot* CanvasSlot, EWidgetAnchor Anchor, float PaddingX, float PaddingY);

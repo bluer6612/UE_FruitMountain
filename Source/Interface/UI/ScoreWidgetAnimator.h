@@ -17,7 +17,7 @@ struct FScoreAnimParams
     int32 TotalSteps = 20;
     float FrameInterval = 0.02f;
     float AlphaStepSize = 0.05f;
-    float MoveStepSize = 4.f;
+    float MoveStepSize = 5.f;
 };
 
 UCLASS()

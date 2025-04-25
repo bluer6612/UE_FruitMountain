@@ -107,66 +107,41 @@ UScoreDisplayWidget* UScoreDisplayWidget::CreateScoreWidget(UObject* WorldContex
 
 void UScoreDisplayWidget::InitializeTextBlocks()
 {
-    // 텍스트 블록 생성 및 설정
-    if (!ScoreTextBlock || !ComboMultiplierTextBlock)
+    // 블루프린트에서 이미 생성된 위젯 가져오기
+    ScoreTextBlock = Cast<UTextBlock>(GetWidgetFromName(TEXT("ScoreTextBlock")));
+    ComboMultiplierTextBlock = Cast<UTextBlock>(GetWidgetFromName(TEXT("ComboMultiplierTextBlock")));
+    
+    if (ScoreTextBlock)
     {
-        UCanvasPanel* RootCanvas = Cast<UCanvasPanel>(GetRootWidget());
-        if (RootCanvas)
-        {
-            // 점수 텍스트 블록 생성
-            ScoreTextBlock = NewObject<UTextBlock>(this, TEXT("ScoreTextBlock"));
-            if (ScoreTextBlock)
-            {
-                RootCanvas->AddChild(ScoreTextBlock);
-                
-                // 스타일 설정
-                UUIWidgetUtility::SetupTextBlockStyle(
-                    ScoreTextBlock, 
-                    SCORE_YELLOW_COLOR, 
-                    46.0f,      // 폰트 크기 
-                    true,       // 볼드체
-                    false,      // 자동 줄바꿈 안함
-                    ESlateVisibility::Hidden // 초기에는 숨김
-                );
-                
-                // 위치 설정
-                UCanvasPanelSlot* ScoreSlot = Cast<UCanvasPanelSlot>(ScoreTextBlock->Slot);
-                if (ScoreSlot)
-                {
-                    ScoreSlot->SetAnchors(FAnchors());
-                    ScoreSlot->SetAlignment(FVector2D::ZeroVector);
-                    ScoreSlot->SetPosition(SCORE_TEXT_POS);
-                    ScoreSlot->SetSize(FVector2D(200.0f, 80.0f));
-                }
-            }
-            
-            // 콤보 텍스트 블록 생성
-            ComboMultiplierTextBlock = NewObject<UTextBlock>(this, TEXT("ComboTextBlock"));
-            if (ComboMultiplierTextBlock)
-            {
-                RootCanvas->AddChild(ComboMultiplierTextBlock);
-                
-                // 스타일 설정
-                UUIWidgetUtility::SetupTextBlockStyle(
-                    ComboMultiplierTextBlock, 
-                    SCORE_YELLOW_COLOR,
-                    36.0f,      // 콤보 텍스트는 좀 더 작은 크기
-                    true,       // 볼드체
-                    false,      // 자동 줄바꿈 안함
-                    ESlateVisibility::Hidden // 초기에는 숨김
-                );
-                
-                // 위치 설정
-                UCanvasPanelSlot* ComboSlot = Cast<UCanvasPanelSlot>(ComboMultiplierTextBlock->Slot);
-                if (ComboSlot)
-                {
-                    ComboSlot->SetAnchors(FAnchors());
-                    ComboSlot->SetAlignment(FVector2D::ZeroVector);
-                    ComboSlot->SetPosition(COMBO_TEXT_POS);
-                    ComboSlot->SetSize(FVector2D(180.0f, 70.0f));
-                }
-            }
-        }
+        // 스타일만 설정 (위치는 블루프린트에서 이미 설정됨)
+        UUIWidgetUtility::SetupTextBlockStyle(
+            ScoreTextBlock, 
+            SCORE_YELLOW_COLOR, 
+            44.0f,
+            true,       
+            false,      
+            ESlateVisibility::Hidden
+        );
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("블루프린트에서 ScoreTextBlock을 찾을 수 없습니다"));
+    }
+    
+    if (ComboMultiplierTextBlock)
+    {
+        UUIWidgetUtility::SetupTextBlockStyle(
+            ComboMultiplierTextBlock, 
+            SCORE_YELLOW_COLOR,
+            38.0f,
+            true,       
+            false,      
+            ESlateVisibility::Hidden
+        );
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("블루프린트에서 ComboMultiplierTextBlock을 찾을 수 없습니다"));
     }
     
     // 애니메이터 생성
