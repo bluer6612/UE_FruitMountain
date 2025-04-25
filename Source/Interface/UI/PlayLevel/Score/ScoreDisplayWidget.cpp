@@ -113,7 +113,7 @@ void UScoreDisplayWidget::InitializeTextBlocks()
         UUIWidgetUtility::SetupTextBlockStyle(
             ScoreTextBlock, 
             SCORE_YELLOW_COLOR, 
-            44.0f,
+            41.0f,
             UUIWidgetUtility::DEFAULT_NUMBER_FONT_PATH,
             false,       
             false,      
@@ -126,7 +126,7 @@ void UScoreDisplayWidget::InitializeTextBlocks()
         UUIWidgetUtility::SetupTextBlockStyle(
             ComboMultiplierTextBlock, 
             SCORE_YELLOW_COLOR,
-            38.0f,
+            35.0f,
             UUIWidgetUtility::DEFAULT_NUMBER_FONT_PATH,
             false,       
             false,      

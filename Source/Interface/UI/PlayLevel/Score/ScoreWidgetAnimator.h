@@ -14,9 +14,9 @@ struct FScoreAnimParams
 {
     GENERATED_BODY()
     
-    int32 TotalSteps = 20;
+    int32 TotalSteps = 25;
     float FrameInterval = 0.02f;
-    float AlphaStepSize = 0.05f;
+    float AlphaStepSize = 0.04f;
     float MoveStepSize = 5.f;
 };
 
