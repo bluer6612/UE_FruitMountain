@@ -85,8 +85,14 @@ void UScoreManagerComponent::InitializeComboSystem()
     // 콤보 카운트 위젯 확인 및 생성
     if (!ComboCountWidgetInstance)
     {
-        ComboCountWidgetInstance = UComboCountWidget::CreateComboCountWidget(GetWorld());
-        UE_LOG(LogTemp, Display, TEXT("ComboCountWidget 생성 완료"));
+        // 이미 존재하는 인스턴스 확인
+        ComboCountWidgetInstance = UComboCountWidget::GetInstance();
+        
+        // 인스턴스가 없을 때만 새로 생성
+        if (!ComboCountWidgetInstance || !UComboCountWidget::IsInstanceValid())
+        {
+            ComboCountWidgetInstance = UComboCountWidget::CreateComboCountWidget(GetWorld());
+        }
     }
     
     // 콤보 시스템 초기화 - ComboCountWidget 통합

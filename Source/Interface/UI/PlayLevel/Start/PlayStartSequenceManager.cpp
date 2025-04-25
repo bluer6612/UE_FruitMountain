@@ -164,7 +164,7 @@ void UPlayStartSequenceManager::UpdateSequence()
                 {
                     float FadeProgress = (ElapsedTime - (PhaseDuration * 0.5f)) / (PhaseDuration * 0.5f);
                     FadeProgress = FMath::Clamp(FadeProgress, 0.0f, 1.0f);
-                    float CurrentOpacity = 1.0f - (0.65f * FadeProgress); // 65% 투명도까지 (0.35 남음)
+                    float CurrentOpacity = 1.0f - (0.75f * FadeProgress); // 75% 투명도까지 (0.25 남음)
                     StartImage->SetRenderOpacity(CurrentOpacity);
                 }
             }
@@ -174,7 +174,7 @@ void UPlayStartSequenceManager::UpdateSequence()
             if (StartImage)
             {
                 float Progress = FMath::Clamp(ElapsedTime / PhaseDuration, 0.0f, 1.0f);
-                float CurrentOpacity = 0.35f - (0.35f * Progress); // 50%에서 0%로
+                float CurrentOpacity = 0.25f - (0.25f * Progress); // 25%에서 0%로
                 StartImage->SetRenderOpacity(CurrentOpacity);
             }
             break;

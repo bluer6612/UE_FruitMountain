@@ -150,12 +150,14 @@ UComboCountWidget* UComboCountWidget::CreateComboCountWidget(UObject* WorldConte
     // 이미 유효한 인스턴스가 있는지 확인
     if (Instance && IsValid(Instance) && Instance->IsInViewport())
     {
+        UE_LOG(LogTemp, Display, TEXT("ComboCountWidget 이미 존재 - 기존 인스턴스 반환"));
         return Instance;
     }
     
     // 기존 인스턴스 정리
     if (Instance)
     {
+        UE_LOG(LogTemp, Display, TEXT("ComboCountWidget 인스턴스 발견됨 - 정리 후 재생성"));
         Instance = nullptr;
     }
     
@@ -178,7 +180,7 @@ UComboCountWidget* UComboCountWidget::CreateComboCountWidget(UObject* WorldConte
     if (Instance)
     {
         Instance->AddToViewport(10002); // 점수 위젯보다 높은 Z-Order
-        UE_LOG(LogTemp, Display, TEXT("ComboCountWidget 생성 완료"));
+        UE_LOG(LogTemp, Display, TEXT("ComboCountWidget 새로 생성 완료"));
     }
     
     return Instance;
