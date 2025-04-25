@@ -15,7 +15,6 @@ TSubclassOf<UUserWidget> UScoreDisplayWidget::ScoreWidgetClass = nullptr;
 // 정적 상수 초기화
 const FVector2D UScoreDisplayWidget::SCORE_TEXT_POS = FVector2D(650.0f, 75.0f);
 const FVector2D UScoreDisplayWidget::COMBO_TEXT_POS = FVector2D(690.0f, 135.0f);
-// CMYK(9%, 10%, 31%, 0%)를 RGB로 변환: RGB(232, 229, 176)
 const FLinearColor UScoreDisplayWidget::SCORE_YELLOW_COLOR = FLinearColor(232.0f/255.0f, 229.0f/255.0f, 176.0f/255.0f, 1.0f);
 
 UScoreDisplayWidget::UScoreDisplayWidget(const FObjectInitializer& ObjectInitializer)

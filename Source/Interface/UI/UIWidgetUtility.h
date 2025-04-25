@@ -121,7 +121,7 @@ public:
     
     // 글로벌 폰트 설정 함수
     UFUNCTION(BlueprintCallable, Category = "Font")
-    static void SetGlobalFont(const FString& FontPath);
+    static void SetGlobalFont();
     
     // 폰트 적용 함수
     UFUNCTION(BlueprintCallable, Category = "Font")

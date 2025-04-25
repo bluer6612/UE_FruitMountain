@@ -13,7 +13,7 @@ void AFruitHUD::BeginPlay()
     Super::BeginPlay();
     
     // 글로벌 폰트 설정
-    UUIWidgetUtility::SetGlobalFont(TEXT("/Game/UI/Fonts/BMJUA_Regular"));
+    UUIWidgetUtility::SetGlobalFont();
     
     // 2D 텍스쳐 위젯 그릴 위젯 생성
     CreateAndAddWidgets();

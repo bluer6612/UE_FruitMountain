@@ -13,11 +13,10 @@ const FString UUIWidgetUtility::DEFAULT_FONT_PATH = TEXT("/Game/UI/Font/NotoSeri
 FString UUIWidgetUtility::CurrentFontPath = UUIWidgetUtility::DEFAULT_FONT_PATH;
 
 // 글로벌 폰트 설정 함수
-void UUIWidgetUtility::SetGlobalFont(const FString& FontPath)
+void UUIWidgetUtility::SetGlobalFont()
 {
-    if (!FontPath.IsEmpty())
+    if (!CurrentFontPath.IsEmpty())
     {
-        CurrentFontPath = FontPath;
         UE_LOG(LogTemp, Log, TEXT("글로벌 폰트 경로가 설정됨: %s"), *CurrentFontPath);
     }
     else
@@ -67,7 +66,7 @@ void UUIWidgetUtility::ApplyFontToTextBlock(UTextBlock* TextBlock, const FString
     
     // 폰트 적용
     TextBlock->SetFont(NewFontInfo);
-    UE_LOG(LogTemp, Display, TEXT("텍스트 블록에 폰트 적용: %s (크기: %d)"), *EffectiveFontPath, NewFontInfo.Size);
+    UE_LOG(LogTemp, Display, TEXT("텍스트 블록에 폰트 적용: %s (크기: %.1f)"), *EffectiveFontPath, NewFontInfo.Size);
 }
 
 // 모든 텍스트 블록에 폰트 적용 (재귀적)
@@ -166,7 +165,7 @@ void UUIWidgetUtility::SetupTextBlockStyle(
     }
     
     // 커스텀 폰트 적용
-    ApplyFontToTextBlock(TextBlock, TEXT(""), FontSize, bBold ? TEXT("Bold") : NAME_None);
+    ApplyFontToTextBlock(TextBlock, TEXT(""), FontSize, bBold ? FName("Bold") : NAME_None);
     
     // 색상 설정
     TextBlock->SetColorAndOpacity(Color);
