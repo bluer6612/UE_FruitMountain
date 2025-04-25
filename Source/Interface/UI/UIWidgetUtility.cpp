@@ -9,7 +9,8 @@
 #include "Components/PanelWidget.h"
 
 // 정적 멤버 변수 초기화
-const FString UUIWidgetUtility::DEFAULT_FONT_PATH = TEXT("/Game/UI/Font/NotoSerifKR-Regular_Font");
+const FString UUIWidgetUtility::DEFAULT_KOREAN_FONT_PATH = TEXT("/Game/UI/Font/NotoSerifKR-Regular_Font");
+const FString UUIWidgetUtility::DEFAULT_NUMBER_FONT_PATH = TEXT("/Game/UI/Font/LiberationSans-Regular_Font");
 
 void UUIWidgetUtility::SetupTextBlockStyle(UTextBlock* TextBlock, FLinearColor Color, int32 FontSize, bool bBold, bool bAutoWrapText, ESlateVisibility DefaultVisibility)
 {
@@ -28,11 +29,11 @@ void UUIWidgetUtility::SetupTextBlockStyle(UTextBlock* TextBlock, FLinearColor C
     // 3. 가시성 설정
     TextBlock->SetVisibility(DefaultVisibility);
     
-    // 4. 폰트 설정 - 항상 DEFAULT_FONT_PATH 사용
-    UFont* FontObject = LoadObject<UFont>(nullptr, *UUIWidgetUtility::DEFAULT_FONT_PATH);
+    // 4. 폰트 설정 - 항상 DEFAULT_NUMBER_FONT_PATH 사용
+    UFont* FontObject = LoadObject<UFont>(nullptr, *UUIWidgetUtility::DEFAULT_NUMBER_FONT_PATH);
     if (!FontObject)
     {
-        UE_LOG(LogTemp, Warning, TEXT("폰트 로드 실패: %s"), *UUIWidgetUtility::DEFAULT_FONT_PATH);
+        UE_LOG(LogTemp, Warning, TEXT("폰트 로드 실패: %s"), *UUIWidgetUtility::DEFAULT_NUMBER_FONT_PATH);
         return;
     }
     
@@ -50,7 +51,7 @@ void UUIWidgetUtility::SetupTextBlockStyle(UTextBlock* TextBlock, FLinearColor C
     // 폰트 적용
     TextBlock->SetFont(FontInfo);
     
-    UE_LOG(LogTemp, Display, TEXT("텍스트 블록에 스타일 적용 (폰트: %s, 크기: %d)"), *UUIWidgetUtility::DEFAULT_FONT_PATH, FontSize);
+    UE_LOG(LogTemp, Display, TEXT("텍스트 블록에 스타일 적용 (폰트: %s, 크기: %d)"), *UUIWidgetUtility::DEFAULT_NUMBER_FONT_PATH, FontSize);
 }
 
 void UUIWidgetUtility::SetAnchorForSlot(UCanvasPanelSlot* CanvasSlot, EWidgetAnchor Anchor, float PaddingX, float PaddingY)

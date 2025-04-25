@@ -31,7 +31,7 @@ class UE_FRUITMOUNTAIN_API UUIWidgetUtility : public UObject
     GENERATED_BODY()
     
 public:
-    static const FString DEFAULT_FONT_PATH;
+    static const FString DEFAULT_NUMBER_FONT_PATH;
     
     // 텍스트 블록 스타일 설정 헬퍼 함수
     UFUNCTION(BlueprintCallable, Category = "UI Helper")
