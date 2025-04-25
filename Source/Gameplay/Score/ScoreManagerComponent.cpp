@@ -84,7 +84,7 @@ void UScoreManagerComponent::InitializeComboSystem()
     ComboSystem->SetComboTimeLimit(ComboTimeLimit);
     
     // 이벤트 연결 전 디버깅 로그
-    UE_LOG(LogTemp, Display, TEXT("콤보 시스템 이벤트 등록 시작"));
+    //UE_LOG(LogTemp, Display, TEXT("콤보 시스템 이벤트 등록 시작"));
     
     // 콤보 시스템 이벤트 등록 - 바인딩 전 객체 유효성 재확인
     if (IsValid(ComboSystem))

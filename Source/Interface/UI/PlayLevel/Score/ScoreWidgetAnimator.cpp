@@ -29,7 +29,7 @@ void UScoreWidgetAnimator::Initialize(UTextBlock* InScoreTextBlock, UTextBlock* 
     ComboMultiplierTextBlock = InComboMultiplierTextBlock;
     
     // 초기화 로그
-    UE_LOG(LogTemp, Display, TEXT("ScoreWidgetAnimator: 텍스트 블록 초기화 완료"));
+    //UE_LOG(LogTemp, Display, TEXT("ScoreWidgetAnimator: 텍스트 블록 초기화 완료"));
     
     // 초기 상태 - 텍스트 숨김
     if (ScoreTextBlock)

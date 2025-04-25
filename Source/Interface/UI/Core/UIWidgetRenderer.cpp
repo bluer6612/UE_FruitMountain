@@ -96,7 +96,7 @@ void UUIWidgetRenderer::SetupAllImages()
                    TEXT("/Game/UI/PlayLevel/UI_Play_NextFruit"), 
                    FVector2D(301, 339), 120.0f, 60.0f);
 
-    UE_LOG(LogTemp, Warning, TEXT("UIWidgetRenderer: 위젯 이미지 설정 완료"));
+    //UE_LOG(LogTemp, Warning, TEXT("UIWidgetRenderer: 위젯 이미지 설정 완료"));
 }
 
 void UUIWidgetRenderer::PrepareUIWidget(EWidgetImageType ImageType, const FString& TexturePath, const FVector2D& CustomSize, float PaddingX, float PaddingY)
@@ -193,7 +193,7 @@ void UUIWidgetRenderer::RenderUIImage(UImage*& ImageWidget, EWidgetAnchor Anchor
         ImageSlot->SetSize(FinalSize);
         UUIWidgetUtility::SetAnchorForSlot(ImageSlot, Anchor, PaddingX, PaddingY);
         
-        UE_LOG(LogTemp, Display, TEXT("이미지 위젯 설정 완료: %s"), *TexturePath);
+        //UE_LOG(LogTemp, Display, TEXT("이미지 위젯 설정 완료: %s"), *TexturePath);
     }
     else
     {
