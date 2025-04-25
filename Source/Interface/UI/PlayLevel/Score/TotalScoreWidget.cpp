@@ -1,7 +1,7 @@
 #include "TotalScoreWidget.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Blueprint/WidgetTree.h"
-#include "UIWidgetUtility.h"
+#include "Interface/UI/Core/UIWidgetUtility.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 #include "UIWidgetRenderer.h"

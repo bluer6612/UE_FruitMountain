@@ -1,6 +1,6 @@
 #include "ComboSystem.h"
-#include "Interface/UI/ScoreDisplayWidget.h"
-#include "Interface/UI/ScoreWidgetAnimator.h"
+#include "Interface/UI/PlayLevel/Score/ScoreDisplayWidget.h"
+#include "Interface/UI/PlayLevel/Score/ScoreWidgetAnimator.h"
 #include "Kismet/GameplayStatics.h"
 
 UComboSystem::UComboSystem()

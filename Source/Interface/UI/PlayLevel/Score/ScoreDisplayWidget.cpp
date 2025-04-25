@@ -5,7 +5,7 @@
 #include "Blueprint/WidgetTree.h"
 #include "Components/Image.h"
 #include "Components/PanelWidget.h"
-#include "UIWidgetUtility.h"
+#include "Interface/UI/Core/UIWidgetUtility.h"
 #include "ScoreWidgetAnimator.h"
 
 // 정적 인스턴스 초기화

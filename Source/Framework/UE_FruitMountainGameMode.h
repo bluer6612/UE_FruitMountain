@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "Gameplay/Score/ScoreManagerComponent.h"
+#include "Interface/UI/PlayLevel/Start/PlayStartSequenceManager.h"
 #include "UE_FruitMountainGameMode.generated.h"
 
 class APlateActor;
@@ -31,4 +32,8 @@ public:
 
     UPROPERTY(BlueprintReadOnly, Category = "Components")
     class UScoreManagerComponent* ScoreManager;
+
+    // 클래스 선언부에 추가
+    UFUNCTION()
+    void OnGameStartSequenceFinished();
 };

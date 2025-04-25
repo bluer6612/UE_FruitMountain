@@ -1,9 +1,9 @@
 #include "ScoreManagerComponent.h"
 #include "Framework/UE_FruitMountainGameMode.h"
 #include "Kismet/GameplayStatics.h"
-#include "Interface/UI/ScoreDisplayWidget.h"
-#include "Interface/UI/TotalScoreWidget.h"
-#include "Interface/UI/ScoreWidgetAnimator.h"
+#include "Interface/UI/PlayLevel/Score/ScoreDisplayWidget.h"
+#include "Interface/UI/PlayLevel/Score/TotalScoreWidget.h"
+#include "Interface/UI/PlayLevel/Score/ScoreWidgetAnimator.h"
 #include "ComboSystem.h"
 
 UScoreManagerComponent::UScoreManagerComponent()

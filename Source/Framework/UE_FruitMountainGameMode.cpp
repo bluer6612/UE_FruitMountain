@@ -1,16 +1,17 @@
 #include "UE_FruitMountainGameMode.h"
 #include "Kismet/GameplayStatics.h"
+#include "Logging/LogMacros.h"
 #include "Gameplay/Controller/FruitPlayerController.h"
 #include "Actors/PlateActor.h"
 #include "Actors/PlayerPawn.h"
 #include "Actors/FruitBall.h"
 #include "Interface/HUD/FruitHUD.h"
-#include "Interface/UI/UIWidgetRenderer.h"
-#include "Interface/UI/ScoreDisplayWidget.h"
-#include "Interface/UI/TotalScoreWidget.h"
+#include "Interface/UI/Core/UIWidgetRenderer.h"
+#include "Interface/UI/PlayLevel/Score/ScoreDisplayWidget.h"
+#include "Interface/UI/PlayLevel/Score/TotalScoreWidget.h"
+#include "Interface/UI/PlayLevel/Start\PlayStartSequenceManager.h"
 #include "Gameplay/Physics/FruitTrajectoryHelper.h"
 #include "Gameplay/Merging/Core/FruitMergeHelper.h"
-#include "Logging/LogMacros.h"
 
 #if WITH_EDITOR
 #include "Editor.h"
@@ -41,6 +42,36 @@ void AUE_FruitMountainGameMode::BeginPlay()
     
     // 게임 시작 시 모든 과일 메시 사전 로드
     UFruitMergeHelper::PreloadAllFruitMeshes(GetWorld());
+    
+    // 게임 시작 시퀀스 생성 및 실행
+    UPlayStartSequenceManager* SequenceManager = UPlayStartSequenceManager::CreateInstance(this);
+    if (SequenceManager)
+    {
+        // 시퀀스 완료 이벤트 바인딩
+        SequenceManager->OnSequenceCompleted.AddDynamic(this, &AUE_FruitMountainGameMode::OnGameStartSequenceFinished);
+        
+        // 시퀀스 시작
+        SequenceManager->StartSequence(this);
+        
+        // 게임 입력 일시 중지
+        if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+        {
+            PC->SetIgnoreMoveInput(true);
+        }
+    }
+}
+
+// 시퀀스 완료 이벤트 핸들러
+void AUE_FruitMountainGameMode::OnGameStartSequenceFinished()
+{
+    // 게임 입력 다시 활성화
+    if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+    {
+        PC->SetIgnoreMoveInput(false);
+    }
+    
+    // 게임 시작 로직 실행
+    UE_LOG(LogTemp, Display, TEXT("게임 시작 시퀀스 완료 - 게임 플레이 시작"));
     
     // UI 위젯 초기화
     UScoreDisplayWidget* ScoreWidget = UScoreDisplayWidget::CreateScoreWidget(this);

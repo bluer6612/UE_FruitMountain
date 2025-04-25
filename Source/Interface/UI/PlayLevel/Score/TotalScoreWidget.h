@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/TextBlock.h"
-#include "Interface/UI/UIWidgetUtility.h" // UIWidgetUtility 헤더 추가
+#include "Interface/UI/Core/UIWidgetUtility.h"
 #include "TotalScoreWidget.generated.h"
 
 /**

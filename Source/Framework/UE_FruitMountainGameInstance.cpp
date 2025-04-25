@@ -1,5 +1,5 @@
 #include "UE_FruitMountainGameInstance.h"
-#include "Interface/UI/UIWidgetRenderer.h"
+#include "Interface/UI/Core/UIWidgetRenderer.h"
 
 UUE_FruitMountainGameInstance::UUE_FruitMountainGameInstance()
 {

@@ -1,7 +1,7 @@
 #include "FruitHUD.h"
 #include "Engine/Canvas.h"
 #include "Blueprint/UserWidget.h"
-#include "Interface/UI/UIWidgetRenderer.h"
+#include "Interface/UI/Core/UIWidgetRenderer.h"
 
 AFruitHUD::AFruitHUD()
 {

@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
-#include "Interface/UI/UIWidgetRenderer.h"
+#include "Interface/UI/Core/UIWidgetRenderer.h"
 #include "FruitHUD.generated.h"
 
 UCLASS()
