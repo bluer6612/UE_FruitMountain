@@ -67,7 +67,7 @@ void AUE_FruitMountainGameMode::BeginPlay()
             
             UE_LOG(LogTemp, Display, TEXT("시작 시퀀스 시작 - 나머지 UI는 시퀀스 완료 후 로드됨"));
         }
-    }, 1.f, false);  // 1초 후 실행으로 변경
+    }, 0.66f, false);  // 0.66초 후 실행으로 변경
 }
 
 // 시퀀스 완료 이벤트 핸들러

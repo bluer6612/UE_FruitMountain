@@ -73,7 +73,7 @@ void UPlayStartSequenceManager::StartSequence(UObject* InWorldContextObject)
                                            true);
     }
     
-    UE_LOG(LogTemp, Display, TEXT("PlayStartSequence: 시작 시퀀스 시작됨"));
+    //UE_LOG(LogTemp, Display, TEXT("PlayStartSequence: 시작 시퀀스 시작됨"));
 }
 
 void UPlayStartSequenceManager::CreateSequenceWidgets()
@@ -98,7 +98,7 @@ void UPlayStartSequenceManager::CreateSequenceWidgets()
     LoadAndSetupImage(ReadyImage, ReadyTexturePath, true, MaxReadyScaleFactor);  // Ready는 보이게
     LoadAndSetupImage(StartImage, StartTexturePath, false, 1.0f);  // Start는 안 보이게, 원래 크기
     
-    UE_LOG(LogTemp, Display, TEXT("PlayStartSequence: 위젯 생성 완료"));
+    //UE_LOG(LogTemp, Display, TEXT("PlayStartSequence: 위젯 생성 완료"));
 }
 
 void UPlayStartSequenceManager::LoadAndSetupImage(UImage*& ImageWidget, const FString& TexturePath, bool bVisible, float InitialScale)
@@ -198,7 +198,6 @@ void UPlayStartSequenceManager::UpdateSequence()
         {
             case 1: // Ready 유지 단계
                 PhaseDuration = 1.25f;
-                UE_LOG(LogTemp, Warning, TEXT("단계 전환: Ready 축소 -> Ready 유지"));
                 break;
                 
             case 2: // Start 확대 단계
@@ -212,12 +211,10 @@ void UPlayStartSequenceManager::UpdateSequence()
                     StartImage->SetRenderOpacity(1.0f);
                     StartImage->SetRenderScale(FVector2D(1.0f, 1.0f));
                 }
-                UE_LOG(LogTemp, Warning, TEXT("단계 전환: Ready 유지 -> Start 확대"));
                 break;
                 
             case 3: // 마지막 페이드아웃
                 PhaseDuration = 1.5f;
-                UE_LOG(LogTemp, Warning, TEXT("단계 전환: Start 확대 -> 최종 페이드아웃"));
                 OnSequenceCompleted.Broadcast();
                 break;
                 
@@ -227,8 +224,7 @@ void UPlayStartSequenceManager::UpdateSequence()
                 // 위젯 숨기기
                 if (ReadyImage) ReadyImage->SetVisibility(ESlateVisibility::Hidden);
                 if (StartImage) StartImage->SetVisibility(ESlateVisibility::Hidden);
-                // 이벤트 발생
-                UE_LOG(LogTemp, Display, TEXT("PlayStartSequence: 시퀀스 완료"));
+                //UE_LOG(LogTemp, Display, TEXT("PlayStartSequence: 시퀀스 완료"));
                 break;
         }
     }
@@ -261,6 +257,6 @@ void UPlayStartSequenceManager::SetExistingWidgetRenderer(UUIWidgetRenderer* Exi
         }
         
         WidgetRenderer = ExistingRenderer;
-        UE_LOG(LogTemp, Warning, TEXT("PlayStartSequence: 외부에서 제공된 UIWidgetRenderer 사용"));
+        //UE_LOG(LogTemp, Warning, TEXT("PlayStartSequence: 외부에서 제공된 UIWidgetRenderer 사용"));
     }
 }
