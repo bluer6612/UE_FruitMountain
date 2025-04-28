@@ -109,7 +109,6 @@ void UScoreDisplayWidget::InitializeTextBlocks()
 {
     if (ScoreTextBlock)
     {
-        // 스타일만 설정 (위치는 블루프린트에서 이미 설정됨)
         UUIWidgetUtility::SetupTextBlockStyle(
             ScoreTextBlock, 
             SCORE_YELLOW_COLOR, 
@@ -134,7 +133,6 @@ void UScoreDisplayWidget::InitializeTextBlocks()
         );
     }
     
-    // 애니메이터 생성
     if (!WidgetAnimator)
     {
         WidgetAnimator = NewObject<UScoreWidgetAnimator>(this);
