@@ -19,12 +19,10 @@ public:
 
     void InitializeTitleWidget();
 
-    // 위젯 라이프사이클 함수
-    virtual void NativeConstruct() override;
-    virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+    float FadeOutDuration = 0.0f;
 
 protected:
-    void PlayFadeOut(class UBorder* TargetBorder, float Duration);
+    void PlayFadeOut();
     void PlayFadeIn(class UImage* TargetImage);
 
     // Logo/Menu 이미지 포인터
@@ -39,10 +37,9 @@ protected:
     void UpdateMenuSelection();
     void OnMenuSelect();
 
+    void StartLogoAndMenuFadeIn();
+
 private:
     bool bIsFading = false;
     float FadeTime = 0.0f;
-    float FadeOutDuration = 0.0f; // 페이드 아웃 지속 시간
-
-    void StartLogoAndMenuFadeIn();
 };

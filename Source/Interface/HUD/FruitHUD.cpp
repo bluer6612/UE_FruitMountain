@@ -1,8 +1,6 @@
 #include "FruitHUD.h"
 #include "Engine/Canvas.h"
 #include "Blueprint/UserWidget.h"
-#include "Interface/UI/Core/UIWidgetRenderer.h"
-#include "Interface/UI/TitleLevel/TitleLevelWidget.h"
 #include "EngineUtils.h"
 
 AFruitHUD::AFruitHUD()
@@ -61,6 +59,8 @@ void AFruitHUD::CreateAndAddWidgets()
                 );
                 UE_LOG(LogTemp, Warning, TEXT("FruitHUD: SBox에 래핑한 위젯을 뷰포트에 직접 추가"));
             }
+
+            CachedTitleWidget->InitializeTitleWidget();
         }
         else
         {

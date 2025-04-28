@@ -9,81 +9,20 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "TimerManager.h"
-#include "Interface/HUD/FruitHUD.h"
 
 UTitleLevelWidget::UTitleLevelWidget(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
     bIsFocusable = true;
-    FadeOutDuration = 1.5f;
+    FadeOutDuration = 2.5f;
     bHasScriptImplementedTick = true;
-}
-
-// 위젯이 실제로 생성될 때 호출됨
-void UTitleLevelWidget::NativeConstruct()
-{
-    Super::NativeConstruct();
-    
-    // 간단한 지연 후 초기화 진행 (HUD가 생성될 시간 확보)
-    FTimerHandle InitHandle;
-    GetWorld()->GetTimerManager().SetTimer(InitHandle, this, &UTitleLevelWidget::InitializeTitleWidget, 0.2f, false);
 }
 
 void UTitleLevelWidget::InitializeTitleWidget()
 {
     UE_LOG(LogTemp, Warning, TEXT("TitleLevelWidget::InitializeTitleWidget 진입"));
     
-    // 1. HUD 확인
-    AFruitHUD* FruitHUD = Cast<AFruitHUD>(GetWorld()->GetFirstPlayerController()->GetHUD());
-    if (!FruitHUD)
-    {
-        UE_LOG(LogTemp, Error, TEXT("HUD가 아직 생성되지 않았습니다. 초기화 지연"));
-        
-        FTimerHandle RetryHandle;
-        GetWorld()->GetTimerManager().SetTimer(RetryHandle, this, &UTitleLevelWidget::InitializeTitleWidget, 0.1f, false);
-        return;
-    }
-    
-    // 2. 간단한 검은색 보더 생성 부분 수정
-    if (!FadeBorder)
-    {
-        // 보더를 직접 생성하고 루트 캔버스에 추가
-        UCanvasPanel* RootCanvas = Cast<UCanvasPanel>(GetRootWidget());
-        if (!RootCanvas)
-        {
-            // 루트 캔버스가 없으면 생성
-            RootCanvas = WidgetTree->ConstructWidget<UCanvasPanel>(UCanvasPanel::StaticClass());
-            WidgetTree->RootWidget = RootCanvas;
-        }
-        
-        // 간단히 보더 생성
-        FadeBorder = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass());
-        
-        // 중요: 보더 내용물 설정
-        FadeBorder->SetContent(WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass()));
-        
-        // 전체 불투명 검은색으로 설정
-        FadeBorder->SetBrushColor(FLinearColor(0, 0, 0, 1));
-        FadeBorder->SetRenderOpacity(1.0f);
-        
-        // 루트 캔버스에 보더 추가
-        RootCanvas->AddChild(FadeBorder);
-        
-        // 전체 화면 크기로 설정
-        if (UCanvasPanelSlot* BorderSlot = Cast<UCanvasPanelSlot>(FadeBorder->Slot))
-        {
-            BorderSlot->SetAnchors(FAnchors(0, 0, 1, 1));
-            BorderSlot->SetOffsets(FMargin(0, 0, 0, 0));
-            BorderSlot->SetZOrder(100000);  // ZOrder를 더 높게 설정
-            BorderSlot->SetSize(FVector2D(3840, 2160));  // 명시적인 크기 설정
-        }
-        
-        // 로그 및 디버깅
-        UE_LOG(LogTemp, Warning, TEXT("페이드 보더 생성 완료 - Color=%s, Opacity=%f, ZOrder=100000"), 
-            *FadeBorder->GetBrushColor().ToString(), FadeBorder->GetRenderOpacity());
-    }
-    
-    // 3. 게임 UI 요소 생성
+    // 1. 게임 UI 요소 생성
     UUIWidgetRenderer* Renderer = UUIWidgetRenderer::GetInstance();
     if (Renderer)
     {
@@ -96,26 +35,52 @@ void UTitleLevelWidget::InitializeTitleWidget()
             TEXT("/Game/UI/TitleLevel/UI_Title_Menu"),
             FVector2D(592.f, 359.f), 150.f, 50.f);
         MenuImage->SetRenderOpacity(0.f);
+        
+        UE_LOG(LogTemp, Warning, TEXT("UI 요소 생성 완료 - Logo: %s, Menu: %s"), 
+            IsValid(LogoImage) ? TEXT("유효") : TEXT("nullptr"),
+            IsValid(MenuImage) ? TEXT("유효") : TEXT("nullptr"));
     }
-    
-    if (!LogoImage || !MenuImage)
+    else
     {
-        UE_LOG(LogTemp, Error, TEXT("이미지 위젯 생성 실패! Logo: %s, Menu: %s"), 
-            LogoImage ? TEXT("유효") : TEXT("nullptr"),
-            MenuImage ? TEXT("유효") : TEXT("nullptr"));
+        UE_LOG(LogTemp, Error, TEXT("UIWidgetRenderer 인스턴스를 가져올 수 없음"));
     }
-    
-    // 4. 페이드 아웃 시작
-    if (FadeBorder)
+
+    // 바인딩된 FadeBorder가 있는지 확인
+    if (!FadeBorder)
     {
+        UE_LOG(LogTemp, Error, TEXT("FadeBorder가 블루프린트에 생성되지 않았습니다!"));
+    }
+    else
+    {
+        // 페이드 보더 초기화 (완전 불투명 검은색으로 시작)
+        FadeBorder->SetBrushColor(FLinearColor(0, 0, 0, 1));
         FadeBorder->SetRenderOpacity(1.0f);
         
-        // 페이드 변수 초기화
-        FadeTime = 0.0f;
-        FadeOutDuration = 1.5f;
-        bIsFading = true;
+        if (UCanvasPanelSlot* BorderSlot = Cast<UCanvasPanelSlot>(FadeBorder->Slot))
+        {
+            FVector2D ViewportSize = FVector2D(1920 * 3, 1080 * 2);
+            BorderSlot->SetSize(ViewportSize);
+            BorderSlot->SetPosition(FVector2D(-100, 0));
+            BorderSlot->SetZOrder(20000);
+            
+            UE_LOG(LogTemp, Warning, TEXT("FadeBorder 슬롯 설정 완료 - 크기: %s, ZOrder: %d"), 
+                *BorderSlot->GetSize().ToString(), BorderSlot->GetZOrder());
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("FadeBorder의 CanvasPanelSlot을 가져올 수 없음"));
+        }
         
-        UE_LOG(LogTemp, Warning, TEXT("독립 페이드 스크린 페이드아웃 시작"));
+        UE_LOG(LogTemp, Warning, TEXT("블루프린트 FadeBorder 초기화 완료 - Opacity=%f"), 
+               FadeBorder->GetRenderOpacity());
+    }
+    
+    // 2. 페이드 아웃 시작
+    if (FadeBorder)
+    {
+        PlayFadeOut();
+        
+        UE_LOG(LogTemp, Warning, TEXT("타이머 기반 FadeBorder 페이드아웃 시작"));
     }
     else
     {
@@ -123,39 +88,6 @@ void UTitleLevelWidget::InitializeTitleWidget()
     }
     
     UE_LOG(LogTemp, Warning, TEXT("TitleLevelWidget::InitializeTitleWidget 종료"));
-}
-
-void UTitleLevelWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
-{
-    Super::NativeTick(MyGeometry, InDeltaTime);
-    
-    // 페이드 중이라면 매 프레임 업데이트
-    if (bIsFading && FadeBorder)
-    {
-        FadeTime += InDeltaTime;
-        float Alpha = 1.0f - FMath::Clamp(FadeTime / FadeOutDuration, 0.0f, 1.0f);
-        
-        // 로그 출력 (약 10프레임마다)
-        if (FMath::Fmod(FadeTime, 0.16f) < InDeltaTime)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Tick 페이드아웃: %f초 / %f초, Alpha=%f"), 
-                FadeTime, FadeOutDuration, Alpha);
-        }
-        
-        // 보더 투명도 설정
-        FadeBorder->SetRenderOpacity(Alpha);
-        
-        // 완료되면 페이드 종료
-        if (FadeTime >= FadeOutDuration)
-        {
-            FadeBorder->SetRenderOpacity(0.0f);
-            bIsFading = false;
-            UE_LOG(LogTemp, Warning, TEXT("Tick 페이드아웃 완료"));
-            
-            // 로고와 메뉴 페이드인 시작
-            StartLogoAndMenuFadeIn();
-        }
-    }
 }
 
 void UTitleLevelWidget::StartLogoAndMenuFadeIn()
@@ -175,6 +107,78 @@ void UTitleLevelWidget::StartLogoAndMenuFadeIn()
             PlayFadeIn(MenuImage);
         }
     }, 0.5f, false);
+}
+
+// 타이머 기반 페이드아웃 함수 추가
+void UTitleLevelWidget::PlayFadeOut()
+{
+    if (!IsValid(FadeBorder))
+    {
+        UE_LOG(LogTemp, Error, TEXT("PlayFadeOut: FadeBorder가 유효하지 않음"));
+        return;
+    }
+    
+    // 초기 상태 설정
+    FadeBorder->SetRenderOpacity(1.0f);
+    UE_LOG(LogTemp, Warning, TEXT("PlayFadeOut: 시작 - Duration=%f"), FadeOutDuration);
+    
+    // 페이드아웃을 위한 구조체 생성
+    struct FFadeOutContext
+    {
+        float ElapsedTime = 0.0f;
+        float Duration = 0.0f;
+        FTimerHandle TimerHandle;
+    };
+    
+    // 컨텍스트 생성
+    FFadeOutContext* Context = new FFadeOutContext();
+    Context->Duration = FadeOutDuration;
+    
+    // 약한 참조로 안전하게 처리
+    TWeakObjectPtr<UTitleLevelWidget> WeakThis(this);
+    TWeakObjectPtr<UBorder> WeakBorder(FadeBorder);
+    
+    // 더 자주 업데이트되도록 간격 조정 (약 60fps)
+    float TickInterval = 0.016f;
+    
+    GetWorld()->GetTimerManager().SetTimer(
+        Context->TimerHandle,
+        [WeakThis, WeakBorder, Context, TickInterval]()
+        {
+            if (!WeakThis.IsValid() || !WeakBorder.IsValid())
+            {
+                UE_LOG(LogTemp, Warning, TEXT("PlayFadeOut: 위젯이 더 이상 유효하지 않음"));
+                if (UWorld* World = GEngine->GetWorld())
+                {
+                    World->GetTimerManager().ClearTimer(Context->TimerHandle);
+                }
+                delete Context;
+                return;
+            }
+            
+            // 시간 업데이트
+            Context->ElapsedTime += TickInterval;
+            
+            // 알파값 계산 (1.0에서 0.0으로)
+            float Alpha = 1.0f - FMath::Clamp(Context->ElapsedTime / Context->Duration, 0.0f, 1.0f);
+            WeakBorder->SetRenderOpacity(Alpha);
+            
+            // 완료되면 정리
+            if (Context->ElapsedTime >= Context->Duration)
+            {
+                WeakBorder->SetRenderOpacity(0.0f);
+                UE_LOG(LogTemp, Warning, TEXT("FadeOut 완료: 소요 시간=%f초"), Context->Duration);
+                
+                // 타이머 정리
+                WeakThis->GetWorld()->GetTimerManager().ClearTimer(Context->TimerHandle);
+                
+                // 로고와 메뉴 페이드인 시작
+                WeakThis->StartLogoAndMenuFadeIn();
+                
+                delete Context;
+            }
+        },
+        TickInterval, true);
 }
 
 void UTitleLevelWidget::PlayFadeIn(UImage* TargetImage)
