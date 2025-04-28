@@ -24,9 +24,6 @@ public:
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 protected:
-    UPROPERTY()
-    class UBorder* FadeBorder = nullptr;
-
     void PlayFadeOut(class UBorder* TargetBorder, float Duration);
     void PlayFadeIn(class UImage* TargetImage);
 
@@ -35,6 +32,9 @@ protected:
     class UImage* LogoImage = nullptr;
     UPROPERTY()
     class UImage* MenuImage = nullptr;
+    
+    UPROPERTY(meta = (BindWidget))
+    class UBorder* FadeBorder;
 
     void UpdateMenuSelection();
     void OnMenuSelect();

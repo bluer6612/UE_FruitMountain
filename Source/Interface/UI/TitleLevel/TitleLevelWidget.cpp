@@ -3,21 +3,19 @@
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/Image.h"
-#include "Components/TextBlock.h" // UTextBlock 추가
+#include "Components/SizeBox.h"
 #include "Blueprint/WidgetTree.h"
 #include "Interface/UI/Core/UIWidgetRenderer.h"
-#include "Interface/UI/Core/UIWidgetUtility.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "TimerManager.h"
-#include "Components/Border.h"
+#include "Interface/HUD/FruitHUD.h"
 
 UTitleLevelWidget::UTitleLevelWidget(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
     bIsFocusable = true;
-    FadeOutDuration = 1.5f;  // 페이드 아웃 지속 시간 (초)
-    
-    // Tick 활성화 (중요!)
+    FadeOutDuration = 1.5f;
     bHasScriptImplementedTick = true;
 }
 
@@ -26,51 +24,66 @@ void UTitleLevelWidget::NativeConstruct()
 {
     Super::NativeConstruct();
     
-    // 검은색 페이드 스크린을 독립적으로 생성
-    UWorld* World = GetWorld();
-    if (World && World->GetGameViewport())
-    {
-        // 1. 독립 보더 위젯 생성
-        UBorder* FadeScreen = NewObject<UBorder>(GetTransientPackage(), TEXT("FadeScreen"));
-        FadeScreen->SetBrushColor(FLinearColor(0, 0, 0, 1));
-        FadeScreen->SetRenderOpacity(1.0f); // 완전 불투명 시작
-        
-        // 2. SBorder 래핑하여 뷰포트에 직접 추가
-        TSharedRef<SBorder> SlateWidget = StaticCastSharedRef<SBorder>(FadeScreen->TakeWidget());
-        UGameViewportClient* ViewportClient = World->GetGameViewport(); // FViewportClient → UGameViewportClient로 수정
-        ViewportClient->AddViewportWidgetContent(
-            SNew(SOverlay)
-            +SOverlay::Slot()
-            .HAlign(HAlign_Fill)
-            .VAlign(VAlign_Fill)
-            [
-                SlateWidget
-            ],
-            999999 // 매우 높은 ZOrder로 추가
-        );
-        
-        // 3. 참조 저장
-        FadeBorder = FadeScreen;
-        
-        UE_LOG(LogTemp, Warning, TEXT("독립 페이드 스크린 생성 완료 - Opacity=%f, ZOrder=999999"), 
-               FadeBorder->GetRenderOpacity());
-    }
-    
-    // 4. 약간의 지연 후 초기화 진행
+    // 간단한 지연 후 초기화 진행 (HUD가 생성될 시간 확보)
     FTimerHandle InitHandle;
-    GetWorld()->GetTimerManager().SetTimer(InitHandle, this, &UTitleLevelWidget::InitializeTitleWidget, 0.1f, false);
+    GetWorld()->GetTimerManager().SetTimer(InitHandle, this, &UTitleLevelWidget::InitializeTitleWidget, 0.2f, false);
 }
 
 void UTitleLevelWidget::InitializeTitleWidget()
 {
     UE_LOG(LogTemp, Warning, TEXT("TitleLevelWidget::InitializeTitleWidget 진입"));
     
-    // 흰색 테스트 텍스트 추가 (페이드 스크린이 실제로 보이는지 확인)
-    UTextBlock* TestText = NewObject<UTextBlock>(this);
-    TestText->SetText(FText::FromString(TEXT("페이드 테스트 중...")));
-    TestText->SetColorAndOpacity(FLinearColor::White);
+    // 1. HUD 확인
+    AFruitHUD* FruitHUD = Cast<AFruitHUD>(GetWorld()->GetFirstPlayerController()->GetHUD());
+    if (!FruitHUD)
+    {
+        UE_LOG(LogTemp, Error, TEXT("HUD가 아직 생성되지 않았습니다. 초기화 지연"));
+        
+        FTimerHandle RetryHandle;
+        GetWorld()->GetTimerManager().SetTimer(RetryHandle, this, &UTitleLevelWidget::InitializeTitleWidget, 0.1f, false);
+        return;
+    }
     
-    // 1. 기존 Renderer 활용해서 이미지 생성
+    // 2. 간단한 검은색 보더 생성 부분 수정
+    if (!FadeBorder)
+    {
+        // 보더를 직접 생성하고 루트 캔버스에 추가
+        UCanvasPanel* RootCanvas = Cast<UCanvasPanel>(GetRootWidget());
+        if (!RootCanvas)
+        {
+            // 루트 캔버스가 없으면 생성
+            RootCanvas = WidgetTree->ConstructWidget<UCanvasPanel>(UCanvasPanel::StaticClass());
+            WidgetTree->RootWidget = RootCanvas;
+        }
+        
+        // 간단히 보더 생성
+        FadeBorder = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass());
+        
+        // 중요: 보더 내용물 설정
+        FadeBorder->SetContent(WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass()));
+        
+        // 전체 불투명 검은색으로 설정
+        FadeBorder->SetBrushColor(FLinearColor(0, 0, 0, 1));
+        FadeBorder->SetRenderOpacity(1.0f);
+        
+        // 루트 캔버스에 보더 추가
+        RootCanvas->AddChild(FadeBorder);
+        
+        // 전체 화면 크기로 설정
+        if (UCanvasPanelSlot* BorderSlot = Cast<UCanvasPanelSlot>(FadeBorder->Slot))
+        {
+            BorderSlot->SetAnchors(FAnchors(0, 0, 1, 1));
+            BorderSlot->SetOffsets(FMargin(0, 0, 0, 0));
+            BorderSlot->SetZOrder(100000);  // ZOrder를 더 높게 설정
+            BorderSlot->SetSize(FVector2D(3840, 2160));  // 명시적인 크기 설정
+        }
+        
+        // 로그 및 디버깅
+        UE_LOG(LogTemp, Warning, TEXT("페이드 보더 생성 완료 - Color=%s, Opacity=%f, ZOrder=100000"), 
+            *FadeBorder->GetBrushColor().ToString(), FadeBorder->GetRenderOpacity());
+    }
+    
+    // 3. 게임 UI 요소 생성
     UUIWidgetRenderer* Renderer = UUIWidgetRenderer::GetInstance();
     if (Renderer)
     {
@@ -92,7 +105,7 @@ void UTitleLevelWidget::InitializeTitleWidget()
             MenuImage ? TEXT("유효") : TEXT("nullptr"));
     }
     
-    // 페이드 아웃 시작
+    // 4. 페이드 아웃 시작
     if (FadeBorder)
     {
         FadeBorder->SetRenderOpacity(1.0f);
@@ -108,6 +121,8 @@ void UTitleLevelWidget::InitializeTitleWidget()
     {
         UE_LOG(LogTemp, Error, TEXT("FadeBorder 없음! 페이드아웃 불가"));
     }
+    
+    UE_LOG(LogTemp, Warning, TEXT("TitleLevelWidget::InitializeTitleWidget 종료"));
 }
 
 void UTitleLevelWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
