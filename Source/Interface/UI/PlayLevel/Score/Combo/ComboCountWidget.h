@@ -53,5 +53,4 @@ private:
     // 내부 함수
     void InitializeComboWidgets();
     static bool LoadWidgetClassIfNeeded();
-    bool bInitialized = false;
 };
