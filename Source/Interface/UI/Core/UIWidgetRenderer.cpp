@@ -138,76 +138,48 @@ void UUIWidgetRenderer::PrepareUIWidget(EWidgetImageType ImageType, const FStrin
 }
 
 // 직접 참조로 이미지 설정
-void UUIWidgetRenderer::RenderUIImage(UImage*& ImageWidget, EWidgetAnchor Anchor, const FString& TexturePath, const FVector2D& CustomSize, float PaddingX, float PaddingY)
+void UUIWidgetRenderer::RenderUIImage(
+    UImage*& ImageWidget,
+    EWidgetAnchor Anchor,
+    const FString& TexturePath,
+    const FVector2D& CustomSize,
+    float OffsetX,
+    float OffsetY)
 {
-    // 캔버스 체크
-    if (!Canvas)
-    {
-        UE_LOG(LogTemp, Error, TEXT("UIWidgetRenderer: 캔버스가 없음!"));
-        return;
-    }
-    
-    // 기존 이미지가 있으면 제거
+    if (!Canvas) return;
+
     if (ImageWidget)
     {
         ImageWidget->RemoveFromParent();
         ImageWidget = nullptr;
     }
-    
-    // 새 이미지 위젯 생성
+
     ImageWidget = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass());
-    if (!ImageWidget)
+
+    UTexture2D* LoededTexture = LoadObject<UTexture2D>(nullptr, *TexturePath);
+    if (LoededTexture)
     {
-        UE_LOG(LogTemp, Error, TEXT("UIWidgetRenderer: 이미지 위젯 생성 실패!"));
-        return;
-    }
-    
-    // 캔버스에 추가
-    UCanvasPanelSlot* ImageSlot = Canvas->AddChildToCanvas(ImageWidget);
-    if (!ImageSlot)
-    {
-        UE_LOG(LogTemp, Error, TEXT("이미지 슬롯 생성 실패"));
-        return;
-    }
-    
-    // 텍스처 로드
-    UTexture2D* LoadedTexture = LoadObject<UTexture2D>(nullptr, *TexturePath);
-    
-    if (LoadedTexture)
-    {
-        FVector2D FinalSize = CustomSize;
-        if (FinalSize.X <= 0 || FinalSize.Y <= 0)
-        {
-            FinalSize.X = LoadedTexture->GetSizeX();
-            FinalSize.Y = LoadedTexture->GetSizeY();
-        }
-        
         FSlateBrush Brush;
-        Brush.SetResourceObject(LoadedTexture);
+        Brush.SetResourceObject(LoededTexture);
         Brush.DrawAs = ESlateBrushDrawType::Image;
-        Brush.ImageSize = FinalSize;
-        
+        Brush.ImageSize = CustomSize;
         ImageWidget->SetBrush(Brush);
         ImageWidget->SetColorAndOpacity(FLinearColor::White);
-        
-        ImageSlot->SetSize(FinalSize);
-        UUIWidgetUtility::SetAnchorForSlot(ImageSlot, Anchor, PaddingX, PaddingY);
-        
-        //UE_LOG(LogTemp, Display, TEXT("이미지 위젯 설정 완료: %s"), *TexturePath);
     }
     else
     {
-        // 로드 실패 시 빨간색 박스 추가
+        // 에러 브러시 처리
         FSlateBrush ErrorBrush;
         ErrorBrush.DrawAs = ESlateBrushDrawType::Box;
         ErrorBrush.TintColor = FLinearColor::Red;
-        
         ImageWidget->SetBrush(ErrorBrush);
         ImageWidget->SetColorAndOpacity(FLinearColor::Red);
-        
-        ImageSlot->SetSize(CustomSize);
-        UUIWidgetUtility::SetAnchorForSlot(ImageSlot, Anchor, PaddingX, PaddingY);
-        
-        UE_LOG(LogTemp, Warning, TEXT("텍스처 로드 실패: %s"), *TexturePath);
+    }
+
+    UCanvasPanelSlot* InSlot = Canvas->AddChildToCanvas(ImageWidget);
+    if (InSlot)
+    {
+        UUIWidgetUtility::SetAnchorForSlot(InSlot, Anchor, OffsetX, OffsetY);
+        InSlot->SetSize(CustomSize);
     }
 }
