@@ -87,7 +87,7 @@ void UComboCountWidget::InitializeComboWidgets()
         UUIWidgetUtility::SetupTextBlockStyle(
             ComboCountTextBlock,
             COMBOCOUNT_TEXT_COLOR,
-            56.0f,
+            86.0f,
             UUIWidgetUtility::DEFAULT_NUMBER_FONT_PATH,
             true,
             false,
@@ -97,7 +97,7 @@ void UComboCountWidget::InitializeComboWidgets()
 
         // 폰트에 갈색 외곽선(패딩) 적용 - UTotalScoreWidget::TOTALSCORE_BROWN_COLOR 사용
         FSlateFontInfo FontInfo = ComboCountTextBlock->Font;
-        FontInfo.OutlineSettings.OutlineSize = 3; // 패딩 두께
+        FontInfo.OutlineSettings.OutlineSize = 8; // 패딩 두께
         FontInfo.OutlineSettings.OutlineColor = UTotalScoreWidget::TOTALSCORE_BROWN_COLOR;
         ComboCountTextBlock->SetFont(FontInfo);
 
