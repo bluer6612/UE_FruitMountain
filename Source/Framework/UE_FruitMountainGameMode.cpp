@@ -1,6 +1,7 @@
 #include "UE_FruitMountainGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Logging/LogMacros.h"
+#include "System/Input/FruitInputMappingManager.h"
 #include "Gameplay/Controller/FruitPlayerController.h"
 #include "Actors/PlateActor.h"
 #include "Actors/PlayerPawn.h"
@@ -36,17 +37,14 @@ AUE_FruitMountainGameMode::AUE_FruitMountainGameMode()
 void AUE_FruitMountainGameMode::BeginPlay()
 {
     Super::BeginPlay();
-    
+
     // 게임 시작 시 모든 과일 메시 사전 로드
     UFruitMergeHelper::PreloadAllFruitMeshes(GetWorld());
     
-    // 시작시에는 플레이어 입력 비활성화
-    if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
-    {
-        PC->SetIgnoreMoveInput(true);
-    }
-    
-    // PlayLevel 시작 후 1.25초 후에 시작 시퀀스 실행
+    // 입력 매핑은 여기서 한 번만!
+    UFruitInputMappingManager::ConfigureKeyMappings();
+
+    // PlayLevel 시작 후 0.66초 후 시작 시퀀스 실행
     FTimerHandle DelayHandle;
     GetWorldTimerManager().SetTimer(DelayHandle, [this]() {
         // 1. 먼저 HUD 참조 가져오기
@@ -65,18 +63,20 @@ void AUE_FruitMountainGameMode::BeginPlay()
             // 시퀀스 시작
             SequenceManager->StartSequence(this);
         }
-    }, 0.66f, false);  // 0.66초 후 실행으로 변경
+    }, 0.66f, false);
 }
 
 // 시퀀스 완료 이벤트 핸들러
 void AUE_FruitMountainGameMode::OnGameStartSequenceFinished()
 {
-    // 게임 입력 다시 활성화
-    if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+    if (AFruitPlayerController* PC = Cast<AFruitPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0)))
     {
-        PC->SetIgnoreMoveInput(false);
+        // 게임 시작 시 입력 해제
+        PC->EnableInput(PC);
+        PC->bShowMouseCursor = true;
+        PC->SetInputMode(FInputModeGameAndUI());
     }
-    
+
     // 게임 시작 로직 실행
     UE_LOG(LogTemp, Display, TEXT("게임 시작 시퀀스 완료 - 게임 플레이 시작"));
     

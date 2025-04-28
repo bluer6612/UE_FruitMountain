@@ -5,7 +5,7 @@
 #include "Interface/UI/Core/UIWidgetUtility.h"
 #include "Interface/UI/Core/UIWidgetRenderer.h"
 #include "TimerManager.h"
-#include "ComboCountWidgetAnimator.h" // 헤더에 애니메이터 클래스 포함 추가
+#include "ComboCountWidgetAnimator.h"
 
 // 정적 멤버 초기화
 UComboCountWidget* UComboCountWidget::Instance = nullptr;
@@ -19,97 +19,80 @@ const FLinearColor UComboCountWidget::COMBOCOUNT_TEXT_COLOR = FLinearColor(1.0f,
 UComboCountWidget::UComboCountWidget(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
-    CurrentComboCount = 0;
     WidgetAnimator = nullptr;
 }
 
 void UComboCountWidget::InitializeComboWidgets()
 {
-    // 루트 패널 찾기
     UPanelWidget* RootPanel = Cast<UPanelWidget>(GetRootWidget());
     if (!RootPanel)
     {
         UE_LOG(LogTemp, Error, TEXT("ComboCountWidget: 루트 패널을 찾을 수 없습니다."));
         return;
     }
-    
-    // UIWidgetRenderer 인스턴스 가져오기
+
+    // UIWidgetRenderer 인스턴스 가져오기 및 준비 확인
     UUIWidgetRenderer* WidgetRenderer = UUIWidgetRenderer::GetInstance();
-    if (!WidgetRenderer)
+    if (!WidgetRenderer || !WidgetRenderer->IsInViewport())
     {
-        WidgetRenderer = UUIWidgetRenderer::CreateDisplayWidget(this);
-    }
-    
-    if (!WidgetRenderer)
-    {
-        UE_LOG(LogTemp, Error, TEXT("ComboCountWidget: WidgetRenderer를 생성할 수 없습니다."));
+        // 아직 준비되지 않았다면 다음 틱에 다시 시도
+        FTimerHandle RetryHandle;
+        GetWorld()->GetTimerManager().SetTimer(RetryHandle, [this]()
+        {
+            InitializeComboWidgets();
+        }, 0.01f, false);
         return;
     }
-    
+
     // 이미지 위젯 생성 - UIWidgetRenderer 활용
     if (!ComboCountImage)
     {
-        // 새 이미지 위젯 생성
         ComboCountImage = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass());
-        
         if (ComboCountImage)
         {
-            // UIWidgetRenderer를 사용하여 이미지 설정
             WidgetRenderer->RenderUIImage(
-                ComboCountImage,                               // 이미지 위젯 참조
-                EWidgetAnchor::Center,                         // 중앙 앵커로 변경
-                TEXT("/Game/UI/PlayLevel/UI_Play_ComboCount"),  // 텍스처 경로
-                FVector2D(353.0f * 1.5f, 78.0f * 1.5f),         // 이미지 크기
-                0.0f,                                           // X 패딩
-                COMBOCOUNT_IMAGE_POS.Y                          // Y 패딩 (중앙에서 위로 이동하는 음수값)
+                ComboCountImage,
+                EWidgetAnchor::Center,
+                TEXT("/Game/UI/PlayLevel/UI_Play_ComboCount"),
+                FVector2D(353.0f * 1.5f, 78.0f * 1.5f),
+                0.0f,
+                COMBOCOUNT_IMAGE_POS.Y
             );
-            
+
             // 패널에 추가 - 앵커 등은 RenderUIImage에서 이미 설정됨
             RootPanel->AddChild(ComboCountImage);
-            
             UE_LOG(LogTemp, Warning, TEXT("콤보 이미지 설정 완료 (UIWidgetRenderer 사용)"));
         }
     }
-    
+
     // 텍스트 블록 생성
     if (!ComboCountTextBlock)
     {
-        ComboCountTextBlock = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
-        if (ComboCountTextBlock)
+        UUIWidgetUtility::SetupTextBlockStyle(
+            ComboCountTextBlock,
+            COMBOCOUNT_TEXT_COLOR,
+            56.0f,
+            UUIWidgetUtility::DEFAULT_NUMBER_FONT_PATH,
+            true,
+            false,
+            ESlateVisibility::HitTestInvisible
+        );
+        ComboCountTextBlock->SetText(FText::FromString(TEXT("0")));
+
+        UCanvasPanelSlot* TextSlot = Cast<UCanvasPanelSlot>(RootPanel->AddChild(ComboCountTextBlock));
+        if (TextSlot)
         {
-            // 스타일 설정
-            UUIWidgetUtility::SetupTextBlockStyle(
-                ComboCountTextBlock,
-                COMBOCOUNT_TEXT_COLOR,
-                56.0f,
-                UUIWidgetUtility::DEFAULT_NUMBER_FONT_PATH,
-                true,
-                false,
-                ESlateVisibility::HitTestInvisible
-            );
-            
-            // 텍스트 초기화
-            ComboCountTextBlock->SetText(FText::FromString(TEXT("0")));
-            
-            // 이미지 위에 배치
-            UCanvasPanelSlot* TextSlot = Cast<UCanvasPanelSlot>(RootPanel->AddChild(ComboCountTextBlock));
-            if (TextSlot)
-            {
-                TextSlot->SetAnchors(FAnchors(0.5f, 0.5f, 0.5f, 0.5f)); // 중앙 앵커
-                TextSlot->SetAlignment(FVector2D(0.5f, 0.5f)); // 중앙 정렬
-                
-                // 이미지 위치를 기준으로 텍스트 위치 계산
-                FVector2D TextPos = COMBOCOUNT_IMAGE_POS + COMBOCOUNT_TEXT_POS;
-                TextSlot->SetPosition(TextPos);
-                TextSlot->SetSize(FVector2D(100.0f, 60.0f));
-                TextSlot->SetZOrder(10); // 이미지 위에 표시
-                
-                UE_LOG(LogTemp, Warning, TEXT("콤보 텍스트 위치: (%f,%f)"), TextPos.X, TextPos.Y);
-            }
+            TextSlot->SetAnchors(FAnchors(0.5f, 0.5f, 0.5f, 0.5f));
+            TextSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+            FVector2D TextPos = COMBOCOUNT_IMAGE_POS + COMBOCOUNT_TEXT_POS;
+            TextSlot->SetPosition(TextPos);
+            TextSlot->SetSize(FVector2D(100.0f, 60.0f));
+            TextSlot->SetZOrder(10);
+            UE_LOG(LogTemp, Warning, TEXT("콤보 텍스트 위치: (%f,%f)"), TextPos.X, TextPos.Y);
         }
     }
-    
-    // 초기 숨김 상태 (마지막 부분)
+
+    // 초기 숨김 상태
     if (WidgetAnimator && ComboCountImage && ComboCountTextBlock)
     {
         WidgetAnimator->SetComboCountVisibility(false);
@@ -117,14 +100,12 @@ void UComboCountWidget::InitializeComboWidgets()
     else
     {
         UE_LOG(LogTemp, Display, TEXT("ComboCountWidget 초기화 시 애니메이터 준비 안됨"));
-        // 애니메이터가 아직 준비되지 않았을 경우 직접 숨김
         if (ComboCountImage)
             ComboCountImage->SetVisibility(ESlateVisibility::Hidden);
-            
-        if (ComboCountTextBlock) 
+        if (ComboCountTextBlock)
             ComboCountTextBlock->SetVisibility(ESlateVisibility::Hidden);
     }
-    
+
     UE_LOG(LogTemp, Display, TEXT("ComboCountWidget 초기화 완료"));
 }
 
@@ -220,17 +201,17 @@ void UComboCountWidget::NativeConstruct()
     // 인스턴스 업데이트
     Instance = this;
     
-    // 애니메이터 먼저 생성 및 초기화
-    WidgetAnimator = NewObject<UComboCountWidgetAnimator>(this, UComboCountWidgetAnimator::StaticClass());
+    // 애니메이터 초기화 완료
+    if (!WidgetAnimator && ComboCountImage && ComboCountTextBlock)
+    {
+        WidgetAnimator = NewObject<UComboCountWidgetAnimator>(this, UComboCountWidgetAnimator::StaticClass());
+        
+        // ComboCountImage, ComboCountTextBlock은 블루프린트 바인딩이므로 바로 전달
+        WidgetAnimator->Initialize(ComboCountImage, ComboCountTextBlock);
+    }
     
     // 위젯 초기화 호출
     InitializeComboWidgets();
-    
-    // 애니메이터 초기화 완료
-    if (WidgetAnimator && ComboCountImage && ComboCountTextBlock)
-    {
-        WidgetAnimator->Initialize(ComboCountImage, ComboCountTextBlock);
-    }
     
     UE_LOG(LogTemp, Display, TEXT("ComboCountWidget NativeConstruct 완료"));
 }

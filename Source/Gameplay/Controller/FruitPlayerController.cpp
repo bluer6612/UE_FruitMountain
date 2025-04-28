@@ -1,5 +1,4 @@
 #include "FruitPlayerController.h"
-#include "System/Input/FruitInputMappingManager.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
 #include "System/Camera/CameraOrbitFunctionLibrary.h"
@@ -25,6 +24,11 @@ AFruitPlayerController::AFruitPlayerController()
 void AFruitPlayerController::BeginPlay()
 {
     Super::BeginPlay();
+
+    // 입력 비활성화 (게임 시작 시)
+    DisableInput(this);
+    bShowMouseCursor = false;
+    SetInputMode(FInputModeGameOnly());
 
     // GameMode를 캐스팅하여 FruitBallClass 값을 가져옴
     AUE_FruitMountainGameMode* GM = Cast<AUE_FruitMountainGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
@@ -70,11 +74,6 @@ void AFruitPlayerController::BeginPlay()
 
     CurrentBallType = FMath::RandRange(1, AFruitBall::RandomBallTypeMax);
     UpdatePreviewBallWithDebounce();
-
-    // 입력 매핑 설정
-    UFruitInputMappingManager::ConfigureKeyMappings();
-    SetInputMode(FInputModeGameAndUI());
-    SetShowMouseCursor(true);
     
     // 추가된 콘솔 명령 실행
     GetLocalPlayer()->ViewportClient->ConsoleCommand(TEXT("r.TranslucentSortPolicy 0"));

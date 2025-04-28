@@ -29,10 +29,6 @@ public:
     // 애니메이터 접근 함수 추가
     UComboCountWidgetAnimator* GetAnimator() const { return WidgetAnimator; }
     
-    // 상태 접근 함수 추가
-    void SetCurrentComboCount(int32 Value) { CurrentComboCount = Value; }
-    int32 GetCurrentComboCount() const { return CurrentComboCount; }
-    
 private:
     // 싱글톤 인스턴스
     static UComboCountWidget* Instance;
@@ -53,9 +49,6 @@ private:
     static const FVector2D COMBOCOUNT_IMAGE_POS;
     static const FVector2D COMBOCOUNT_TEXT_POS;
     static const FLinearColor COMBOCOUNT_TEXT_COLOR;
-    
-    // 상태 변수
-    int32 CurrentComboCount;
     
     // 내부 함수
     void InitializeComboWidgets();

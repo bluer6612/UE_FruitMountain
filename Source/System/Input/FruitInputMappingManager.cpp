@@ -104,7 +104,7 @@ void UFruitInputMappingManager::ConfigureKeyMappings()
     if (bMappingsChanged)
     {
         InputSettings->SaveKeyMappings();
-        UE_LOG(LogTemp, Log, TEXT("프로젝트 Axis & 키 매핑이 업데이트 되었습니다."));
+        UE_LOG(LogTemp, Warning, TEXT("프로젝트 Axis & 키 매핑이 업데이트 되었습니다. (ConfigureKeyMappings 호출 위치: %s)"), *FFrame::GetScriptCallstack());
     }
     else
     {
