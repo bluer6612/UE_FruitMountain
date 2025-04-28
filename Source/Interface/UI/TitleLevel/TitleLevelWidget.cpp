@@ -109,76 +109,72 @@ void UTitleLevelWidget::StartLogoAndMenuFadeIn()
     }, 0.5f, false);
 }
 
-// 타이머 기반 페이드아웃 함수 추가
+// 타이머 기반 페이드아웃 함수 수정
 void UTitleLevelWidget::PlayFadeOut()
 {
-    if (!IsValid(FadeBorder))
+    if (!FadeBorder)
     {
-        UE_LOG(LogTemp, Error, TEXT("PlayFadeOut: FadeBorder가 유효하지 않음"));
         return;
     }
-    
-    // 초기 상태 설정
-    FadeBorder->SetRenderOpacity(1.0f);
-    UE_LOG(LogTemp, Warning, TEXT("PlayFadeOut: 시작 - Duration=%f"), FadeOutDuration);
-    
-    // 페이드아웃을 위한 구조체 생성
-    struct FFadeOutContext
-    {
-        float ElapsedTime = 0.0f;
-        float Duration = 0.0f;
-        FTimerHandle TimerHandle;
-    };
-    
-    // 컨텍스트 생성
-    FFadeOutContext* Context = new FFadeOutContext();
-    Context->Duration = FadeOutDuration;
-    
-    // 약한 참조로 안전하게 처리
+
+    // PlayFadeIn과 동일한 구조로 변경
+    const float FadeDuration = FadeOutDuration; // 클래스 멤버 변수 사용
+    const float TickInterval = 0.02f;
+    float* Elapsed = new float(0.f);
+
     TWeakObjectPtr<UTitleLevelWidget> WeakThis(this);
     TWeakObjectPtr<UBorder> WeakBorder(FadeBorder);
-    
-    // 더 자주 업데이트되도록 간격 조정 (약 60fps)
-    float TickInterval = 0.016f;
-    
-    GetWorld()->GetTimerManager().SetTimer(
-        Context->TimerHandle,
-        [WeakThis, WeakBorder, Context, TickInterval]()
+
+    FTimerHandle* FadeHandle = new FTimerHandle;
+    GetWorld()->GetTimerManager().SetTimer(*FadeHandle, [WeakThis, WeakBorder, FadeDuration, TickInterval, Elapsed, FadeHandle]()
+    {
+        if (!WeakThis.IsValid() || !WeakBorder.IsValid())
         {
-            if (!WeakThis.IsValid() || !WeakBorder.IsValid())
+            if (FadeHandle)
             {
-                UE_LOG(LogTemp, Warning, TEXT("PlayFadeOut: 위젯이 더 이상 유효하지 않음"));
-                if (UWorld* World = GEngine->GetWorld())
+                if (UWorld* World = GEngine->GetWorldFromContextObjectChecked(WeakThis.Get()))
                 {
-                    World->GetTimerManager().ClearTimer(Context->TimerHandle);
+                    World->GetTimerManager().ClearTimer(*FadeHandle);
                 }
-                delete Context;
-                return;
+                delete FadeHandle;
             }
+            delete Elapsed;
+            return;
+        }
+
+        *Elapsed += TickInterval;
+        
+        // 알파값 계산 (1.0에서 0.0으로 감소)
+        float Alpha = 1.0f - FMath::Clamp(*Elapsed / FadeDuration, 0.f, 1.f);
+        WeakBorder->SetRenderOpacity(Alpha);
+
+        // 로깅 (10프레임마다)
+        if (FMath::Fmod(*Elapsed, 0.2f) < TickInterval)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("FadeOut 진행 중: %f초 / %f초, Alpha=%f"), 
+                  *Elapsed, FadeDuration, Alpha);
+        }
+
+        if (*Elapsed >= FadeDuration)
+        {
+            WeakBorder->SetRenderOpacity(0.0f);
+            UE_LOG(LogTemp, Warning, TEXT("FadeOut 완료: 소요 시간=%f초"), FadeDuration);
             
-            // 시간 업데이트
-            Context->ElapsedTime += TickInterval;
-            
-            // 알파값 계산 (1.0에서 0.0으로)
-            float Alpha = 1.0f - FMath::Clamp(Context->ElapsedTime / Context->Duration, 0.0f, 1.0f);
-            WeakBorder->SetRenderOpacity(Alpha);
-            
-            // 완료되면 정리
-            if (Context->ElapsedTime >= Context->Duration)
+            // 타이머 정리
+            if (UWorld* World = GEngine->GetWorldFromContextObjectChecked(WeakThis.Get()))
             {
-                WeakBorder->SetRenderOpacity(0.0f);
-                UE_LOG(LogTemp, Warning, TEXT("FadeOut 완료: 소요 시간=%f초"), Context->Duration);
-                
-                // 타이머 정리
-                WeakThis->GetWorld()->GetTimerManager().ClearTimer(Context->TimerHandle);
-                
-                // 로고와 메뉴 페이드인 시작
-                WeakThis->StartLogoAndMenuFadeIn();
-                
-                delete Context;
+                World->GetTimerManager().ClearTimer(*FadeHandle);
             }
-        },
-        TickInterval, true);
+            
+            // 로고와 메뉴 페이드인 시작
+            WeakThis->StartLogoAndMenuFadeIn();
+            
+            delete FadeHandle;
+            delete Elapsed;
+        }
+    }, TickInterval, true);
+    
+    UE_LOG(LogTemp, Warning, TEXT("PlayFadeOut 시작: Duration=%f"), FadeDuration);
 }
 
 void UTitleLevelWidget::PlayFadeIn(UImage* TargetImage)
