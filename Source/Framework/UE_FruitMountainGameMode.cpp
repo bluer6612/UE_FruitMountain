@@ -38,32 +38,44 @@ void AUE_FruitMountainGameMode::BeginPlay()
 {
     Super::BeginPlay();
 
-    // 게임 시작 시 모든 과일 메시 사전 로드
-    UFruitMergeHelper::PreloadAllFruitMeshes(GetWorld());
-    
-    // 입력 매핑은 여기서 한 번만!
-    UFruitInputMappingManager::ConfigureKeyMappings();
-
-    // PlayLevel 시작 후 0.66초 후 시작 시퀀스 실행
-    FTimerHandle DelayHandle;
-    GetWorldTimerManager().SetTimer(DelayHandle, [this]() {
-        // 1. 먼저 HUD 참조 가져오기
-        AFruitHUD* FruitHUD = Cast<AFruitHUD>(GetWorld()->GetFirstPlayerController()->GetHUD());
+    // PlayLevel UI만 생성
+    UUIWidgetRenderer::CreateDisplayWidget(GetWorld());
+    // 현재 레벨 이름이 PlayLevel일 때만 Play UI 생성
+    UWorld* World = GetWorld();
+    if (World && World->GetMapName().Contains(TEXT("PlayLevel")))
+    {
+        // 게임 시작 시 모든 과일 메시 사전 로드
+        UFruitMergeHelper::PreloadAllFruitMeshes(GetWorld());
         
-        // 2. 게임 시작 시퀀스 생성 및 실행
-        UPlayStartSequenceManager* SequenceManager = UPlayStartSequenceManager::CreateInstance(this);
-        if (SequenceManager && FruitHUD && FruitHUD->GetTextureWidget())
-        {
-            // HUD의 UIWidgetRenderer 사용
-            SequenceManager->SetExistingWidgetRenderer(FruitHUD->GetTextureWidget());
+        // 입력 매핑은 여기서 한 번만!
+        UFruitInputMappingManager::ConfigureKeyMappings();
+        
+        // PlayLevel 시작 후 0.66초 후 시작 시퀀스 실행
+        FTimerHandle DelayHandle;
+        GetWorldTimerManager().SetTimer(DelayHandle, [this]() {
+            // 1. 먼저 HUD 참조 가져오기
+            AFruitHUD* FruitHUD = Cast<AFruitHUD>(GetWorld()->GetFirstPlayerController()->GetHUD());
             
-            // 시퀀스 완료 이벤트 바인딩
-            SequenceManager->OnSequenceCompleted.AddDynamic(this, &AUE_FruitMountainGameMode::OnGameStartSequenceFinished);
-            
-            // 시퀀스 시작
-            SequenceManager->StartSequence(this);
-        }
-    }, 0.66f, false);
+            // 2. 게임 시작 시퀀스 생성 및 실행
+            UPlayStartSequenceManager* SequenceManager = UPlayStartSequenceManager::CreateInstance(this);
+            if (SequenceManager && FruitHUD && FruitHUD->GetTextureWidget())
+            {
+                // HUD의 UIWidgetRenderer 사용
+                SequenceManager->SetExistingWidgetRenderer(FruitHUD->GetTextureWidget());
+                
+                // 시퀀스 완료 이벤트 바인딩
+                SequenceManager->OnSequenceCompleted.AddDynamic(this, &AUE_FruitMountainGameMode::OnGameStartSequenceFinished);
+                
+                // 시퀀스 시작
+                SequenceManager->StartSequence(this);
+            }
+        }, 0.66f, false);
+    }
+    else if (World && World->GetMapName().Contains(TEXT("TitleLevel")))
+    {
+        // TitleLevel일 때는 아무것도 하지 않음
+        UE_LOG(LogTemp, Log, TEXT("TitleLevel에서 UIWidgetRenderer 생성 안 함"));
+    }
 }
 
 // 시퀀스 완료 이벤트 핸들러

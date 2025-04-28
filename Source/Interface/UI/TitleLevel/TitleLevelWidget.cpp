@@ -19,17 +19,22 @@ void UTitleLevelWidget::NativeConstruct()
         WidgetTree->RootWidget = RootCanvas;
     }
 
+    UUIWidgetRenderer* Renderer = UUIWidgetRenderer::GetInstance();
+
     // 로고 이미지 위젯 생성 및 렌더러로 배치
     if (!LogoImage)
     {
         LogoImage = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass(), TEXT("LogoImage"));
-        UUIWidgetRenderer::RenderUIImage(
-            LogoImage,
-            EWidgetAnchor::TopLeft,
-            TEXT("/Game/UI/TitleLevel/UI_Title_Logo"),
-            FVector2D(633.f, 369.f), // 실제 크기 사용
-            80.f, 80.f
-        );
+        if (Renderer)
+        {
+            Renderer->RenderUIImage(
+                LogoImage,
+                EWidgetAnchor::TopLeft,
+                TEXT("/Game/UI/TitleLevel/UI_Title_Logo"),
+                FVector2D(633.f, 369.f),
+                80.f, 80.f
+            );
+        }
         RootCanvas->AddChild(LogoImage);
     }
 
@@ -37,13 +42,16 @@ void UTitleLevelWidget::NativeConstruct()
     if (!MenuImage)
     {
         MenuImage = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass(), TEXT("MenuImage"));
-        UUIWidgetRenderer::RenderUIImage(
-            MenuImage,
-            EWidgetAnchor::BottomLeft,
-            TEXT("/Game/UI/TitleLevel/UI_Title_Menu"),
-            FVector2D(592.f, 359.f), // 실제 크기 사용
-            80.f, 80.f
-        );
+        if (Renderer)
+        {
+            Renderer->RenderUIImage(
+                MenuImage,
+                EWidgetAnchor::BottomLeft,
+                TEXT("/Game/UI/TitleLevel/UI_Title_Menu"),
+                FVector2D(592.f, 359.f),
+                80.f, 80.f
+            );
+        }
         RootCanvas->AddChild(MenuImage);
     }
 

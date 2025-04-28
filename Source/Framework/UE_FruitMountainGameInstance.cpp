@@ -20,6 +20,14 @@ void UUE_FruitMountainGameInstance::CheckPersistentUI()
 
 void UUE_FruitMountainGameInstance::ShowFruitUIWidget()
 {
-    // GetWorld()를 사용해 WorldContextObject 전달
-    UUIWidgetRenderer::CreateDisplayWidget(GetWorld());
+    UWorld* World = GetWorld();
+    if (!World) return;
+
+    FString MapName = World->GetMapName();
+
+    if (MapName.Contains(TEXT("PlayLevel")))
+    {
+        UUIWidgetRenderer::CreateDisplayWidget(World);
+    }
+    // TitleLevel일 때는 Title UI만 생성 (여기선 아무것도 안함)
 }
