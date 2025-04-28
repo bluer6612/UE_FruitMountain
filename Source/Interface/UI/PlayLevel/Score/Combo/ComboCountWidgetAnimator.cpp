@@ -147,7 +147,7 @@ void UComboCountWidgetAnimator::ExecuteFadeOutStep()
         // 애니메이션 완료 이벤트 발생
         OnAnimationComplete.ExecuteIfBound();
         
-        UE_LOG(LogTemp, Display, TEXT("콤보 카운트 페이드 아웃 애니메이션 완료"));
+        //UE_LOG(LogTemp, Display, TEXT("콤보 카운트 페이드 아웃 애니메이션 완료"));
     }
 }
 
@@ -171,7 +171,7 @@ void UComboCountWidgetAnimator::PlayFadeOutAnimation()
         FadeOutTimerHandle,
         this,
         &UComboCountWidgetAnimator::ExecuteFadeOutStep,
-        0.016f, // 약 60fps
+        0.005f,
         true
     );
 }

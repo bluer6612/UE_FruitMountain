@@ -6,7 +6,7 @@
 #include "Interface/UI/Core/UIWidgetRenderer.h"
 #include "TimerManager.h"
 #include "ComboCountWidgetAnimator.h"
-#include "Interface/UI/PlayLevel/Score/TotalScoreWidget.h"
+#include "Interface/UI/PlayLevel/Score/Total/TotalScoreWidget.h"
 
 // 정적 멤버 초기화
 UComboCountWidget* UComboCountWidget::Instance = nullptr;
@@ -75,7 +75,7 @@ void UComboCountWidget::InitializeComboWidgets()
         if (UCanvasPanelSlot* TextSlot = Cast<UCanvasPanelSlot>(ComboCountTextBlock->Slot))
         {
             TextSlot->SetAnchors(FAnchors(0.5f, 0.5f, 0.5f, 0.5f));
-            TextSlot->SetAlignment(FVector2D(0.5f, 1.0f)); // 중앙 x, 상단 y
+            TextSlot->SetAlignment(FVector2D(0.5f, 1.0f)); // 아래쪽 정렬
             FVector2D TextPos = COMBOCOUNT_IMAGE_POS + COMBOCOUNT_TEXT_POS;
             TextSlot->SetPosition(TextPos);
             TextSlot->SetSize(FVector2D(100.0f, 60.0f));
@@ -202,14 +202,14 @@ void UComboCountWidget::NativeConstruct()
     InitializeComboWidgets();
 
     // 3. 애니메이터에 위젯 연결
-    // ComboCountImage, ComboCountTextBlock은 아직 nullptr일 수 있으니, Initialize는 나중에!
+    // ComboCountImage, ComboCountTextBlock은 아직 nullptr일 수 있으니, Initialize 나중에 호출
     if (WidgetAnimator && ComboCountImage && ComboCountTextBlock)
     {
         WidgetAnimator->Initialize(ComboCountImage, ComboCountTextBlock);
         WidgetAnimator->SetComboCountVisibility(false); // 반드시 한 번 더 호출
     }
 
-    UE_LOG(LogTemp, Display, TEXT("ComboCountWidget NativeConstruct 완료"));
+    //UE_LOG(LogTemp, Display, TEXT("ComboCountWidget NativeConstruct 완료"));
 }
 
 void UComboCountWidget::NativeDestruct()
@@ -228,5 +228,5 @@ void UComboCountWidget::NativeDestruct()
         Instance = nullptr;
     }
     
-    UE_LOG(LogTemp, Display, TEXT("ComboCountWidget NativeDestruct 완료"));
+    //UE_LOG(LogTemp, Display, TEXT("ComboCountWidget NativeDestruct 완료"));
 }

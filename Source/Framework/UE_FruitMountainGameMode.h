@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "Interface/UI/PlayLevel/Score/ScoreDisplayWidget.h"
-#include "Interface/UI/PlayLevel/Score/TotalScoreWidget.h"
+#include "Interface/UI/PlayLevel/Score/Total/TotalScoreWidget.h"
 #include "Interface/UI/PlayLevel/Score/Combo/ComboCountWidget.h"
 #include "Interface/UI/PlayLevel/Start/PlayStartSequenceManager.h"
 #include "Gameplay/Score/ScoreManagerComponent.h"

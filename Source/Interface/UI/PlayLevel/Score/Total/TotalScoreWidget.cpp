@@ -11,7 +11,7 @@ UTotalScoreWidget* UTotalScoreWidget::Instance = nullptr;
 TSubclassOf<UUserWidget> UTotalScoreWidget::TotalScoreWidgetClass = nullptr;
 
 // UI_Play_Score 위젯 위에 겹치게 위치 설정
-const FVector2D UTotalScoreWidget::TOTALSCORE_TEXT_POS = FVector2D(292.0f, 50.f);
+const FVector2D UTotalScoreWidget::TOTALSCORE_TEXT_POS = FVector2D(292.0f, 52.5f);
 const FLinearColor UTotalScoreWidget::TOTALSCORE_BROWN_COLOR = FLinearColor(56.0f/255.0f, 38.0f/255.0f, 47.0f/255.0f, 1.0f);
 
 UTotalScoreWidget::UTotalScoreWidget(const FObjectInitializer& ObjectInitializer)

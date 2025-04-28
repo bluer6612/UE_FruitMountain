@@ -2,7 +2,7 @@
 #include "Framework/UE_FruitMountainGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Interface/UI/PlayLevel/Score/ScoreDisplayWidget.h"
-#include "Interface/UI/PlayLevel/Score/TotalScoreWidget.h"
+#include "Interface/UI/PlayLevel/Score/Total/TotalScoreWidget.h"
 #include "Interface/UI/PlayLevel/Score/ScoreWidgetAnimator.h"
 #include "Interface/UI/PlayLevel/Score/Combo/ComboCountWidget.h"
 #include "Interface/UI/PlayLevel/Score/Combo/ComboCountWidgetAnimator.h"
