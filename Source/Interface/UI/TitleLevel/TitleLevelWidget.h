@@ -18,9 +18,10 @@ public:
     int32 CurrentMenuIndex = 0;
 
     void InitializeTitleWidget();
-    
+
     // 위젯 라이프사이클 함수
     virtual void NativeConstruct() override;
+    virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 protected:
     UPROPERTY()
@@ -39,5 +40,9 @@ protected:
     void OnMenuSelect();
 
 private:
-    float FadeOutDuration = 1.5f; // 페이드 아웃 지속 시간
+    bool bIsFading = false;
+    float FadeTime = 0.0f;
+    float FadeOutDuration = 0.0f; // 페이드 아웃 지속 시간
+
+    void StartLogoAndMenuFadeIn();
 };
