@@ -20,7 +20,7 @@ UTitleLevelWidget::UTitleLevelWidget(const FObjectInitializer& ObjectInitializer
 
 void UTitleLevelWidget::InitializeTitleWidget()
 {
-    UE_LOG(LogTemp, Warning, TEXT("TitleLevelWidget::InitializeTitleWidget 진입"));
+    // UE_LOG(LogTemp, Warning, TEXT("TitleLevelWidget::InitializeTitleWidget 진입"));
     
     // 1. 게임 UI 요소 생성
     UUIWidgetRenderer* Renderer = UUIWidgetRenderer::GetInstance();
@@ -36,9 +36,9 @@ void UTitleLevelWidget::InitializeTitleWidget()
             FVector2D(592.f, 359.f), 150.f, 50.f);
         MenuImage->SetRenderOpacity(0.f);
         
-        UE_LOG(LogTemp, Warning, TEXT("UI 요소 생성 완료 - Logo: %s, Menu: %s"), 
-            IsValid(LogoImage) ? TEXT("유효") : TEXT("nullptr"),
-            IsValid(MenuImage) ? TEXT("유효") : TEXT("nullptr"));
+        // UE_LOG(LogTemp, Warning, TEXT("UI 요소 생성 완료 - Logo: %s, Menu: %s"), 
+        //     IsValid(LogoImage) ? TEXT("유효") : TEXT("nullptr"),
+        //     IsValid(MenuImage) ? TEXT("유효") : TEXT("nullptr"));
     }
     else
     {
@@ -62,39 +62,30 @@ void UTitleLevelWidget::InitializeTitleWidget()
             BorderSlot->SetSize(ViewportSize);
             BorderSlot->SetPosition(FVector2D(-100, 0));
             BorderSlot->SetZOrder(20000);
-            
-            UE_LOG(LogTemp, Warning, TEXT("FadeBorder 슬롯 설정 완료 - 크기: %s, ZOrder: %d"), 
-                *BorderSlot->GetSize().ToString(), BorderSlot->GetZOrder());
         }
         else
         {
             UE_LOG(LogTemp, Error, TEXT("FadeBorder의 CanvasPanelSlot을 가져올 수 없음"));
         }
-        
-        UE_LOG(LogTemp, Warning, TEXT("블루프린트 FadeBorder 초기화 완료 - Opacity=%f"), 
-               FadeBorder->GetRenderOpacity());
     }
     
     // 2. 페이드 아웃 시작
     if (FadeBorder)
     {
         PlayFadeOut();
-        
-        UE_LOG(LogTemp, Warning, TEXT("타이머 기반 FadeBorder 페이드아웃 시작"));
     }
     else
     {
         UE_LOG(LogTemp, Error, TEXT("FadeBorder 없음! 페이드아웃 불가"));
     }
     
-    UE_LOG(LogTemp, Warning, TEXT("TitleLevelWidget::InitializeTitleWidget 종료"));
+    // UE_LOG(LogTemp, Warning, TEXT("TitleLevelWidget::InitializeTitleWidget 종료"));
 }
 
 void UTitleLevelWidget::StartLogoAndMenuFadeIn()
 {
     if (LogoImage)
     {
-        UE_LOG(LogTemp, Warning, TEXT("LogoImage 페이드인 시작"));
         PlayFadeIn(LogoImage);
     }
     
@@ -103,13 +94,11 @@ void UTitleLevelWidget::StartLogoAndMenuFadeIn()
     {
         if (MenuImage)
         {
-            UE_LOG(LogTemp, Warning, TEXT("MenuImage 페이드인 시작"));
             PlayFadeIn(MenuImage);
         }
     }, 0.5f, false);
 }
 
-// 타이머 기반 페이드아웃 함수 수정
 void UTitleLevelWidget::PlayFadeOut()
 {
     if (!FadeBorder)
@@ -117,8 +106,7 @@ void UTitleLevelWidget::PlayFadeOut()
         return;
     }
 
-    // PlayFadeIn과 동일한 구조로 변경
-    const float FadeDuration = FadeOutDuration; // 클래스 멤버 변수 사용
+    const float FadeDuration = FadeOutDuration;
     const float TickInterval = 0.02f;
     float* Elapsed = new float(0.f);
 
@@ -148,17 +136,10 @@ void UTitleLevelWidget::PlayFadeOut()
         float Alpha = 1.0f - FMath::Clamp(*Elapsed / FadeDuration, 0.f, 1.f);
         WeakBorder->SetRenderOpacity(Alpha);
 
-        // 로깅 (10프레임마다)
-        if (FMath::Fmod(*Elapsed, 0.2f) < TickInterval)
-        {
-            UE_LOG(LogTemp, Warning, TEXT("FadeOut 진행 중: %f초 / %f초, Alpha=%f"), 
-                  *Elapsed, FadeDuration, Alpha);
-        }
-
         if (*Elapsed >= FadeDuration)
         {
             WeakBorder->SetRenderOpacity(0.0f);
-            UE_LOG(LogTemp, Warning, TEXT("FadeOut 완료: 소요 시간=%f초"), FadeDuration);
+            // UE_LOG(LogTemp, Warning, TEXT("FadeOut 완료: 소요 시간=%f초"), FadeDuration);
             
             // 타이머 정리
             if (UWorld* World = GEngine->GetWorldFromContextObjectChecked(WeakThis.Get()))
@@ -174,7 +155,7 @@ void UTitleLevelWidget::PlayFadeOut()
         }
     }, TickInterval, true);
     
-    UE_LOG(LogTemp, Warning, TEXT("PlayFadeOut 시작: Duration=%f"), FadeDuration);
+    // UE_LOG(LogTemp, Warning, TEXT("PlayFadeOut 시작: Duration=%f"), FadeDuration);
 }
 
 void UTitleLevelWidget::PlayFadeIn(UImage* TargetImage)
