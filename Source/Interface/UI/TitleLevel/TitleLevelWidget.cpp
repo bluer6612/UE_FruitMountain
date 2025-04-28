@@ -44,6 +44,15 @@ void UTitleLevelWidget::InitializeTitleWidget()
         }
     }
 
+    if (!LogoImage)
+    {
+        UE_LOG(LogTemp, Error, TEXT("LogoImage가 nullptr입니다!"));
+    }
+    if (!MenuImage)
+    {
+        UE_LOG(LogTemp, Error, TEXT("MenuImage가 nullptr입니다!"));
+    }
+
     // 처음엔 모두 투명하게
     if (LogoImage)
     {
@@ -84,6 +93,7 @@ void UTitleLevelWidget::InitializeTitleWidget()
         {
             PlayFadeIn(LogoImage);
         }, 0.0f, false);
+        UE_LOG(LogTemp, Warning, TEXT("LogoImage 페이드인 타이머 등록"));
     }
 
     // MenuImage 페이드인 (LogoImage보다 0.5초 뒤)
