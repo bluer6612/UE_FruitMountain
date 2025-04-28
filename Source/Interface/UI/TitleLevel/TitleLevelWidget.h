@@ -18,6 +18,9 @@ public:
     int32 CurrentMenuIndex = 0;
 
     void InitializeTitleWidget();
+    
+    // 위젯 라이프사이클 함수
+    virtual void NativeConstruct() override;
 
 protected:
     UPROPERTY()

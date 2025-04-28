@@ -14,20 +14,8 @@ void AFruitHUD::BeginPlay()
 {
     Super::BeginPlay();
 
-    UE_LOG(LogTemp, Warning, TEXT("FruitHUD: BeginPlay 완료"));
-
     // UIWidgetRenderer 생성 및 뷰포트 추가
     CreateAndAddWidgets();
-
-    // 이미지 생성 및 추가가 끝난 뒤 TitleLevelWidget 초기화
-    for (TObjectIterator<UTitleLevelWidget> i; i; ++i)
-    {
-        if (i->IsInViewport())
-        {
-            i->InitializeTitleWidget();
-            break;
-        }
-    }
 }
 
 void AFruitHUD::CreateAndAddWidgets()
@@ -71,7 +59,7 @@ void AFruitHUD::CreateAndAddWidgets()
                         TextureWidget->TakeWidget()
                     ]
                 );
-                UE_LOG(LogTemp, Warning, TEXT("SBox에 래핑한 위젯을 뷰포트에 직접 추가"));
+                UE_LOG(LogTemp, Warning, TEXT("FruitHUD: SBox에 래핑한 위젯을 뷰포트에 직접 추가"));
             }
         }
         else
