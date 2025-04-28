@@ -13,8 +13,8 @@ UComboCountWidget* UComboCountWidget::Instance = nullptr;
 TSubclassOf<UUserWidget> UComboCountWidget::ComboCountWidgetClass = nullptr;
 
 // 위치 상수 수정 - 화면 중앙 기준으로 위로 올라가도록 Y값을 음수로 설정
-const FVector2D UComboCountWidget::COMBOCOUNT_IMAGE_POS = FVector2D(75.0f, -350.0f); // 중앙에서 위로
-const FVector2D UComboCountWidget::COMBOCOUNT_TEXT_POS = FVector2D(-30.0f, 0.0f); // 이미지 기준 상대 위치
+const FVector2D UComboCountWidget::COMBOCOUNT_IMAGE_POS = FVector2D(100.0f, -350.0f); // 중앙에서 위로
+const FVector2D UComboCountWidget::COMBOCOUNT_TEXT_POS = FVector2D(-75.0f, -225.0f); // 이미지 기준 상대 위치 + 텍스트 크기만큼 + y축
 const FLinearColor UComboCountWidget::COMBOCOUNT_TEXT_COLOR = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f); // 흰색
 
 UComboCountWidget::UComboCountWidget(const FObjectInitializer& ObjectInitializer)
@@ -45,7 +45,7 @@ void UComboCountWidget::InitializeComboWidgets()
             ComboCountImage,
             EWidgetAnchor::Center,
             TEXT("/Game/UI/PlayLevel/UI_Play_ComboCount"),
-            FVector2D(353.0f * 1.5f, 78.0f * 1.5f),
+            FVector2D(353.0f * 1.2f, 78.0f * 1.2f),
             COMBOCOUNT_IMAGE_POS.X,
             COMBOCOUNT_IMAGE_POS.Y
         );
@@ -57,7 +57,7 @@ void UComboCountWidget::InitializeComboWidgets()
         UUIWidgetUtility::SetupTextBlockStyle(
             ComboCountTextBlock,
             COMBOCOUNT_TEXT_COLOR,
-            86.0f,
+            112.0f,
             UUIWidgetUtility::DEFAULT_NUMBER_FONT_PATH,
             true,
             false,
@@ -75,7 +75,7 @@ void UComboCountWidget::InitializeComboWidgets()
         if (UCanvasPanelSlot* TextSlot = Cast<UCanvasPanelSlot>(ComboCountTextBlock->Slot))
         {
             TextSlot->SetAnchors(FAnchors(0.5f, 0.5f, 0.5f, 0.5f));
-            TextSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+            TextSlot->SetAlignment(FVector2D(0.5f, 1.0f)); // 중앙 x, 상단 y
             FVector2D TextPos = COMBOCOUNT_IMAGE_POS + COMBOCOUNT_TEXT_POS;
             TextSlot->SetPosition(TextPos);
             TextSlot->SetSize(FVector2D(100.0f, 60.0f));
