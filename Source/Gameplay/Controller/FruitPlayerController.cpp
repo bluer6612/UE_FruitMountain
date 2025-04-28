@@ -27,8 +27,7 @@ void AFruitPlayerController::BeginPlay()
 
     // 입력 비활성화 (게임 시작 시)
     DisableInput(this);
-    bShowMouseCursor = false;
-    SetInputMode(FInputModeGameOnly());
+    SetShowMouseCursor(true);
 
     // GameMode를 캐스팅하여 FruitBallClass 값을 가져옴
     AUE_FruitMountainGameMode* GM = Cast<AUE_FruitMountainGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
