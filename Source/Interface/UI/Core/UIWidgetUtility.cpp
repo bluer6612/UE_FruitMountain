@@ -70,52 +70,49 @@ void UUIWidgetUtility::SetupTextBlockStyle(UTextBlock* TextBlock, FLinearColor C
 
 void UUIWidgetUtility::SetAnchorForSlot(UCanvasPanelSlot* CanvasSlot, EWidgetAnchor Anchor, float PaddingX, float PaddingY)
 {
-    if (!CanvasSlot) return;
-    
-    // 앵커 타입에 따라 위치와 정렬 설정
     switch (Anchor)
     {
-        case EWidgetAnchor::TopLeft:
-            CanvasSlot->SetAnchors(FAnchors(0.0f, 0.0f, 0.0f, 0.0f));
-            CanvasSlot->SetPosition(FVector2D(PaddingX, PaddingY));
-            CanvasSlot->SetAlignment(FVector2D(0.0f, 0.0f));
-            break;
-            
-        case EWidgetAnchor::TopRight:
-            CanvasSlot->SetAnchors(FAnchors(1.0f, 0.0f, 1.0f, 0.0f));
-            CanvasSlot->SetPosition(FVector2D(-PaddingX, PaddingY));
-            CanvasSlot->SetAlignment(FVector2D(1.0f, 0.0f));
-            break;
-            
-        case EWidgetAnchor::MiddleLeft:
-            CanvasSlot->SetAnchors(FAnchors(0.0f, 0.5f, 0.0f, 0.5f));
-            CanvasSlot->SetPosition(FVector2D(PaddingX, 0.0f));
-            CanvasSlot->SetAlignment(FVector2D(0.0f, 0.5f));
-            break;
-            
-        case EWidgetAnchor::MiddleRight:
-            CanvasSlot->SetAnchors(FAnchors(1.0f, 0.5f, 1.0f, 0.5f));
-            CanvasSlot->SetPosition(FVector2D(-PaddingX, 0.0f));
-            CanvasSlot->SetAlignment(FVector2D(1.0f, 0.5f));
-            break;
-            
-        case EWidgetAnchor::BottomLeft:
-            CanvasSlot->SetAnchors(FAnchors(0.0f, 1.0f, 0.0f, 1.0f));
-            CanvasSlot->SetPosition(FVector2D(PaddingX, -PaddingY));
-            CanvasSlot->SetAlignment(FVector2D(0.0f, 1.0f));
-            break;
-            
-        case EWidgetAnchor::BottomRight:
-            CanvasSlot->SetAnchors(FAnchors(1.0f, 1.0f, 1.0f, 1.0f));
-            CanvasSlot->SetPosition(FVector2D(-PaddingX, -PaddingY));
-            CanvasSlot->SetAlignment(FVector2D(1.0f, 1.0f));
-            break;
-            
-        case EWidgetAnchor::Center:
-            CanvasSlot->SetAnchors(FAnchors(0.5f, 0.5f, 0.5f, 0.5f));
-            CanvasSlot->SetPosition(FVector2D(0.0f, 0.0f));
-            CanvasSlot->SetAlignment(FVector2D(0.5f, 0.5f));
-            break;
+    case EWidgetAnchor::Center:
+        CanvasSlot->SetAnchors(FAnchors(0.5f, 0.5f, 0.5f, 0.5f));
+        CanvasSlot->SetPosition(FVector2D(PaddingX, PaddingY));
+        CanvasSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+        break;
+        
+    case EWidgetAnchor::TopLeft:
+        CanvasSlot->SetAnchors(FAnchors(0.0f, 0.0f, 0.0f, 0.0f));
+        CanvasSlot->SetPosition(FVector2D(PaddingX, PaddingY));
+        CanvasSlot->SetAlignment(FVector2D(0.0f, 0.0f));
+        break;
+        
+    case EWidgetAnchor::TopRight:
+        CanvasSlot->SetAnchors(FAnchors(1.0f, 0.0f, 1.0f, 0.0f));
+        CanvasSlot->SetPosition(FVector2D(-PaddingX, PaddingY));
+        CanvasSlot->SetAlignment(FVector2D(1.0f, 0.0f));
+        break;
+        
+    case EWidgetAnchor::MiddleLeft:
+        CanvasSlot->SetAnchors(FAnchors(0.0f, 0.5f, 0.0f, 0.5f));
+        CanvasSlot->SetPosition(FVector2D(PaddingX, 0.0f));
+        CanvasSlot->SetAlignment(FVector2D(0.0f, 0.5f));
+        break;
+        
+    case EWidgetAnchor::MiddleRight:
+        CanvasSlot->SetAnchors(FAnchors(1.0f, 0.5f, 1.0f, 0.5f));
+        CanvasSlot->SetPosition(FVector2D(-PaddingX, 0.0f));
+        CanvasSlot->SetAlignment(FVector2D(1.0f, 0.5f));
+        break;
+        
+    case EWidgetAnchor::BottomLeft:
+        CanvasSlot->SetAnchors(FAnchors(0.0f, 1.0f, 0.0f, 1.0f));
+        CanvasSlot->SetPosition(FVector2D(PaddingX, -PaddingY));
+        CanvasSlot->SetAlignment(FVector2D(0.0f, 1.0f));
+        break;
+        
+    case EWidgetAnchor::BottomRight:
+        CanvasSlot->SetAnchors(FAnchors(1.0f, 1.0f, 1.0f, 1.0f));
+        CanvasSlot->SetPosition(FVector2D(-PaddingX, -PaddingY));
+        CanvasSlot->SetAlignment(FVector2D(1.0f, 1.0f));
+        break;
     }
 }
 

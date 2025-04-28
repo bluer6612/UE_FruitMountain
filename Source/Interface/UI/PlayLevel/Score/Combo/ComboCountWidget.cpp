@@ -13,7 +13,7 @@ UComboCountWidget* UComboCountWidget::Instance = nullptr;
 TSubclassOf<UUserWidget> UComboCountWidget::ComboCountWidgetClass = nullptr;
 
 // 위치 상수 수정 - 화면 중앙 기준으로 위로 올라가도록 Y값을 음수로 설정
-const FVector2D UComboCountWidget::COMBOCOUNT_IMAGE_POS = FVector2D(0.0f, 350.0f); // 중앙에서 위로
+const FVector2D UComboCountWidget::COMBOCOUNT_IMAGE_POS = FVector2D(75.0f, -350.0f); // 중앙에서 위로
 const FVector2D UComboCountWidget::COMBOCOUNT_TEXT_POS = FVector2D(-30.0f, 0.0f); // 이미지 기준 상대 위치
 const FLinearColor UComboCountWidget::COMBOCOUNT_TEXT_COLOR = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f); // 흰색
 
