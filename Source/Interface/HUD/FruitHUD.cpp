@@ -2,6 +2,8 @@
 #include "Engine/Canvas.h"
 #include "Blueprint/UserWidget.h"
 #include "Interface/UI/Core/UIWidgetRenderer.h"
+#include "Interface/UI/TitleLevel/TitleLevelWidget.h"
+#include "EngineUtils.h"
 
 AFruitHUD::AFruitHUD()
 {
@@ -24,6 +26,20 @@ void AFruitHUD::BeginPlay()
         if (TextureWidget)
         {
             TextureWidget->SetupTitleImages();
+        }
+
+        // TitleLevelWidget 찾아서 초기화 함수 호출
+        for (TObjectIterator<UUserWidget> It; It; ++It)
+        {
+            if (It->IsA<UTitleLevelWidget>() && It->IsInViewport())
+            {
+                UTitleLevelWidget* TitleWidget = Cast<UTitleLevelWidget>(*It);
+                if (TitleWidget)
+                {
+                    TitleWidget->InitializeTitleWidget();
+                    break;
+                }
+            }
         }
     }
 }

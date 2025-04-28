@@ -77,6 +77,9 @@ public:
      */
     void RenderUIImage(UImage*& ImageWidget, EWidgetAnchor Anchor, const FString& TexturePath, const FVector2D& CustomSize = FVector2D::ZeroVector, float PaddingX = 0.0f, float PaddingY = 0.0f);
     
+    UImage* GetLogoImage() const { return UI_Title_Logo; }
+    UImage* GetMenuImage() const { return UI_Title_Menu; }
+
 protected:
     // 위젯 생성 시 호출됨
     virtual void NativeConstruct() override;
