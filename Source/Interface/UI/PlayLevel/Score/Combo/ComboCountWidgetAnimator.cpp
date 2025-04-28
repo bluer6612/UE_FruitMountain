@@ -30,92 +30,80 @@ void UComboCountWidgetAnimator::Initialize(UImage* InComboCountImage, UTextBlock
 // ComboCountWidget에서 이동된 함수
 void UComboCountWidgetAnimator::UpdateComboCount(int32 NewComboCount)
 {
+    // 콤보가 새로 시작될 때 애니메이션 상태 초기화
+    if (bFadingOut)
+    {
+        CancelAnimation();
+    }
+
     CurrentComboCount = NewComboCount;
-    
-    // 콤보가 2 이상일 때만 보이게
+
     if (CurrentComboCount >= 2)
     {
         SetComboCountVisibility(true);
-        
-        // 텍스트 업데이트
+
+        // 투명도 복구
+        if (ComboTextBlock)
+        {
+            ComboTextBlock->SetRenderOpacity(1.0f);
+        }
+        if (ComboCountImage)
+        {
+            ComboCountImage->SetRenderOpacity(1.0f);
+        }
         if (ComboTextBlock)
         {
             ComboTextBlock->SetText(FText::AsNumber(CurrentComboCount));
         }
     }
+    else
+    {
+        SetComboCountVisibility(false);
+    }
 }
 
-// ComboCountWidget에서 이동된 함수
 void UComboCountWidgetAnimator::ResetComboCount()
 {
     if (CurrentComboCount >= 2)
     {
-        // 페이드 아웃 애니메이션 시작
         PlayFadeOutAnimation();
     }
-
+    else
+    {
+        SetComboCountVisibility(false);
+    }
     CurrentComboCount = 0;
 }
 
-// ComboCountWidget에서 이동된 함수
 void UComboCountWidgetAnimator::SetComboCountVisibility(bool bVisible)
 {
     ESlateVisibility InVisibility = bVisible ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Hidden;
-    
+
     if (ComboCountImage)
     {
         ComboCountImage->SetVisibility(InVisibility);
     }
-    
+
     if (ComboTextBlock)
     {
         ComboTextBlock->SetVisibility(InVisibility);
     }
 }
 
-void UComboCountWidgetAnimator::PlayFadeOutAnimation()
-{
-    // 이미 페이드 아웃 중이면 중복 실행 방지
-    if (bFadingOut || !ComboCountImage || !ComboTextBlock)
-        return;
-        
-    UWorld* World = GetWorld();
-    if (!World)
-        return;
-        
-    bFadingOut = true;
-    
-    // 초기 상태 설정
-    ComboTextBlock->SetRenderOpacity(1.0f);
-    ComboCountImage->SetRenderOpacity(1.0f);
-    
-    // 타이머로 페이드 아웃 실행
-    FTimerDelegate FadeOutDelegate;
-    FadeOutDelegate.BindUObject(this, &UComboCountWidgetAnimator::ExecuteFadeOutStep);
-    
-    World->GetTimerManager().SetTimer(
-        FadeOutTimerHandle, 
-        FadeOutDelegate, 
-        0.016f, // ~60fps
-        true
-    );
-    
-    UE_LOG(LogTemp, Display, TEXT("콤보 카운트 페이드 아웃 애니메이션 시작"));
-}
-
 void UComboCountWidgetAnimator::CancelAnimation()
 {
     UWorld* World = GetWorld();
     if (!World)
+    {
         return;
-        
+    }
+
     if (bFadingOut)
     {
         World->GetTimerManager().ClearTimer(FadeOutTimerHandle);
         bFadingOut = false;
     }
-    
-    // 위젯이 유효하면 초기 상태로 재설정
+
     if (ComboCountImage && ComboTextBlock)
     {
         ComboCountImage->SetRenderOpacity(1.0f);
@@ -161,4 +149,29 @@ void UComboCountWidgetAnimator::ExecuteFadeOutStep()
         
         UE_LOG(LogTemp, Display, TEXT("콤보 카운트 페이드 아웃 애니메이션 완료"));
     }
+}
+
+void UComboCountWidgetAnimator::PlayFadeOutAnimation()
+{
+    if (bFadingOut)
+    {
+        return;
+    }
+
+    UWorld* World = GetWorld();
+    if (!World || !ComboCountImage || !ComboTextBlock)
+    {
+        return;
+    }
+
+    bFadingOut = true;
+
+    // 타이머를 이용해 페이드 아웃 단계적으로 실행
+    World->GetTimerManager().SetTimer(
+        FadeOutTimerHandle,
+        this,
+        &UComboCountWidgetAnimator::ExecuteFadeOutStep,
+        0.016f, // 약 60fps
+        true
+    );
 }

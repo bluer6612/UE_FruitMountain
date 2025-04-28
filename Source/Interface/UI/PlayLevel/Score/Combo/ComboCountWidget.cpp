@@ -6,14 +6,15 @@
 #include "Interface/UI/Core/UIWidgetRenderer.h"
 #include "TimerManager.h"
 #include "ComboCountWidgetAnimator.h"
+#include "Interface/UI/PlayLevel/Score/TotalScoreWidget.h"
 
 // 정적 멤버 초기화
 UComboCountWidget* UComboCountWidget::Instance = nullptr;
 TSubclassOf<UUserWidget> UComboCountWidget::ComboCountWidgetClass = nullptr;
 
 // 위치 상수 수정 - 화면 중앙 기준으로 위로 올라가도록 Y값을 음수로 설정
-const FVector2D UComboCountWidget::COMBOCOUNT_IMAGE_POS = FVector2D(0.0f, -150.0f); // 중앙에서 위로 150픽셀
-const FVector2D UComboCountWidget::COMBOCOUNT_TEXT_POS = FVector2D(0.0f, -30.0f); // 이미지 기준 상대 위치
+const FVector2D UComboCountWidget::COMBOCOUNT_IMAGE_POS = FVector2D(0.0f, 350.0f); // 중앙에서 위로
+const FVector2D UComboCountWidget::COMBOCOUNT_TEXT_POS = FVector2D(-30.0f, 0.0f); // 이미지 기준 상대 위치
 const FLinearColor UComboCountWidget::COMBOCOUNT_TEXT_COLOR = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f); // 흰색
 
 UComboCountWidget::UComboCountWidget(const FObjectInitializer& ObjectInitializer)
@@ -24,7 +25,6 @@ UComboCountWidget::UComboCountWidget(const FObjectInitializer& ObjectInitializer
 
 void UComboCountWidget::InitializeComboWidgets()
 {
-    static bool bInitialized = false;
     if (bInitialized)
     {
         UE_LOG(LogTemp, Display, TEXT("ComboCountWidget::InitializeComboWidgets - 이미 초기화됨, 재호출 무시 (this=%p)"), this);
@@ -49,7 +49,6 @@ void UComboCountWidget::InitializeComboWidgets()
     if (!WidgetRenderer->IsInViewport())
     {
         UE_LOG(LogTemp, Warning, TEXT("ComboCountWidget: WidgetRenderer가 아직 뷰포트에 없음. 재시도 대기."));
-        // 아직 준비되지 않았다면 다음 틱에 다시 시도
         FTimerHandle RetryHandle;
         GetWorld()->GetTimerManager().SetTimer(RetryHandle, [this]()
         {
@@ -60,35 +59,25 @@ void UComboCountWidget::InitializeComboWidgets()
     }
     UE_LOG(LogTemp, Display, TEXT("ComboCountWidget: WidgetRenderer 준비 완료. (this=%p)"), this);
 
-    // 이미지 위젯 생성 - UIWidgetRenderer 활용
+    // 이미지 위젯 생성 - Renderer 함수 활용
     if (!ComboCountImage)
     {
-        ComboCountImage = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass());
-        if (ComboCountImage)
-        {
-            WidgetRenderer->RenderUIImage(
-                ComboCountImage,
-                EWidgetAnchor::Center,
-                TEXT("/Game/UI/PlayLevel/UI_Play_ComboCount"),
-                FVector2D(353.0f * 1.5f, 78.0f * 1.5f),
-                COMBOCOUNT_IMAGE_POS.X,
-                COMBOCOUNT_IMAGE_POS.Y
-            );
-
-            RootPanel->AddChild(ComboCountImage);
-            UE_LOG(LogTemp, Warning, TEXT("콤보 이미지 설정 완료 (UIWidgetRenderer 사용), ComboCountImage=%p (this=%p)"), ComboCountImage, this);
-        }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT("ComboCountWidget: ComboCountImage 생성 실패 (this=%p)"), this);
-        }
+        WidgetRenderer->RenderUIImage(
+            ComboCountImage,
+            EWidgetAnchor::Center,
+            TEXT("/Game/UI/PlayLevel/UI_Play_ComboCount"),
+            FVector2D(353.0f * 1.5f, 78.0f * 1.5f),
+            COMBOCOUNT_IMAGE_POS.X,
+            COMBOCOUNT_IMAGE_POS.Y
+        );
+        UE_LOG(LogTemp, Warning, TEXT("콤보 이미지 설정 완료 (UIWidgetRenderer 사용), ComboCountImage=%p (this=%p)"), ComboCountImage, this);
     }
     else
     {
         UE_LOG(LogTemp, Display, TEXT("ComboCountWidget: ComboCountImage 이미 존재, 주소=%p (this=%p)"), ComboCountImage, this);
     }
 
-    // 텍스트 블록 생성
+    // 텍스트 블록은 UMG 디자이너에서 이미 패널에 추가되어 있으므로 AddChild 하지 않음
     if (!ComboCountTextBlock)
     {
         UE_LOG(LogTemp, Error, TEXT("ComboCountWidget: ComboCountTextBlock이 nullptr입니다. UMG 바인딩 확인 필요. (this=%p)"), this);
@@ -106,8 +95,14 @@ void UComboCountWidget::InitializeComboWidgets()
         );
         ComboCountTextBlock->SetText(FText::FromString(TEXT("0")));
 
-        UCanvasPanelSlot* TextSlot = Cast<UCanvasPanelSlot>(RootPanel->AddChild(ComboCountTextBlock));
-        if (TextSlot)
+        // 폰트에 갈색 외곽선(패딩) 적용 - UTotalScoreWidget::TOTALSCORE_BROWN_COLOR 사용
+        FSlateFontInfo FontInfo = ComboCountTextBlock->Font;
+        FontInfo.OutlineSettings.OutlineSize = 3; // 패딩 두께
+        FontInfo.OutlineSettings.OutlineColor = UTotalScoreWidget::TOTALSCORE_BROWN_COLOR;
+        ComboCountTextBlock->SetFont(FontInfo);
+
+        // 이미 패널에 추가되어 있으므로 슬롯만 가져와서 설정
+        if (UCanvasPanelSlot* TextSlot = Cast<UCanvasPanelSlot>(ComboCountTextBlock->Slot))
         {
             TextSlot->SetAnchors(FAnchors(0.5f, 0.5f, 0.5f, 0.5f));
             TextSlot->SetAlignment(FVector2D(0.5f, 0.5f));
@@ -119,7 +114,7 @@ void UComboCountWidget::InitializeComboWidgets()
         }
         else
         {
-            UE_LOG(LogTemp, Error, TEXT("ComboCountWidget: ComboCountTextBlock의 CanvasPanelSlot 생성 실패 (this=%p)"), this);
+            UE_LOG(LogTemp, Error, TEXT("ComboCountWidget: ComboCountTextBlock의 CanvasPanelSlot을 가져올 수 없음 (this=%p)"), this);
         }
     }
 
@@ -139,6 +134,7 @@ void UComboCountWidget::InitializeComboWidgets()
             ComboCountTextBlock->SetVisibility(ESlateVisibility::Hidden);
     }
 
+    bInitialized = true;
     UE_LOG(LogTemp, Display, TEXT("ComboCountWidget::InitializeComboWidgets - 최초 초기화 완료 (this=%p)"), this);
 }
 
@@ -241,7 +237,7 @@ void UComboCountWidget::NativeConstruct()
 
     // 2. 위젯 초기화
     InitializeComboWidgets();
-    bbInitialized = true;
+    bInitialized = true;
 
     // 3. 애니메이터에 위젯 연결
     // ComboCountImage, ComboCountTextBlock은 아직 nullptr일 수 있으니, Initialize는 나중에!
