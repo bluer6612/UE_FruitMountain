@@ -20,8 +20,6 @@ UTitleLevelWidget::UTitleLevelWidget(const FObjectInitializer& ObjectInitializer
 
 void UTitleLevelWidget::InitializeTitleWidget()
 {
-    // UE_LOG(LogTemp, Warning, TEXT("TitleLevelWidget::InitializeTitleWidget 진입"));
-    
     // 1. 게임 UI 요소 생성
     UUIWidgetRenderer* Renderer = UUIWidgetRenderer::GetInstance();
     if (Renderer)
@@ -35,10 +33,6 @@ void UTitleLevelWidget::InitializeTitleWidget()
             TEXT("/Game/UI/TitleLevel/UI_Title_Menu"),
             FVector2D(592.f, 359.f), 150.f, 50.f);
         MenuImage->SetRenderOpacity(0.f);
-        
-        // UE_LOG(LogTemp, Warning, TEXT("UI 요소 생성 완료 - Logo: %s, Menu: %s"), 
-        //     IsValid(LogoImage) ? TEXT("유효") : TEXT("nullptr"),
-        //     IsValid(MenuImage) ? TEXT("유효") : TEXT("nullptr"));
     }
     else
     {
@@ -105,6 +99,8 @@ void UTitleLevelWidget::PlayFadeOut()
     {
         return;
     }
+    
+    // UE_LOG(LogTemp, Warning, TEXT("PlayFadeOut 시작: Duration=%f"), FadeDuration);
 
     const float FadeDuration = FadeOutDuration;
     const float TickInterval = 0.02f;
@@ -139,7 +135,6 @@ void UTitleLevelWidget::PlayFadeOut()
         if (*Elapsed >= FadeDuration)
         {
             WeakBorder->SetRenderOpacity(0.0f);
-            // UE_LOG(LogTemp, Warning, TEXT("FadeOut 완료: 소요 시간=%f초"), FadeDuration);
             
             // 타이머 정리
             if (UWorld* World = GEngine->GetWorldFromContextObjectChecked(WeakThis.Get()))
@@ -154,8 +149,6 @@ void UTitleLevelWidget::PlayFadeOut()
             delete Elapsed;
         }
     }, TickInterval, true);
-    
-    // UE_LOG(LogTemp, Warning, TEXT("PlayFadeOut 시작: Duration=%f"), FadeDuration);
 }
 
 void UTitleLevelWidget::PlayFadeIn(UImage* TargetImage)
