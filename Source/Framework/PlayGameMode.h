@@ -7,18 +7,18 @@
 #include "Interface/UI/PlayLevel/Score/Combo/ComboCountWidget.h"
 #include "Interface/UI/PlayLevel/Start/PlayStartSequenceManager.h"
 #include "Gameplay/Score/ScoreManagerComponent.h"
-#include "UE_FruitMountainGameMode.generated.h"
+#include "PlayGameMode.generated.h"
 
 class APlateActor;
 class AFruitBall;
 
 UCLASS()
-class UE_FRUITMOUNTAIN_API AUE_FruitMountainGameMode : public AGameModeBase
+class UE_FRUITMOUNTAIN_API APlayGameMode : public AGameModeBase
 {
     GENERATED_BODY()
     
 public:
-    AUE_FruitMountainGameMode();
+    APlayGameMode();
 
     // 기존 함수들
     virtual void BeginPlay() override;

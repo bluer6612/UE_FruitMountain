@@ -11,9 +11,21 @@ AFruitHUD::AFruitHUD()
 void AFruitHUD::BeginPlay()
 {
     Super::BeginPlay();
-    
+
+    UE_LOG(LogTemp, Warning, TEXT("FruitHUD: BeginPlay 완료"));
+
     // 2D 텍스쳐 위젯 그릴 위젯 생성
     CreateAndAddWidgets();
+
+    // TitleLevel이면 타이틀 이미지 세팅
+    UWorld* World = GetWorld();
+    if (World && World->GetMapName().Contains(TEXT("TitleLevel")))
+    {
+        if (TextureWidget)
+        {
+            TextureWidget->SetupTitleImages();
+        }
+    }
 }
 
 void AFruitHUD::CreateAndAddWidgets()

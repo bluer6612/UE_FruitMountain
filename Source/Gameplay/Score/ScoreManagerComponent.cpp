@@ -1,5 +1,5 @@
 #include "ScoreManagerComponent.h"
-#include "Framework/UE_FruitMountainGameMode.h"
+#include "Framework/PlayGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Interface/UI/PlayLevel/Score/ScoreDisplayWidget.h"
 #include "Interface/UI/PlayLevel/Score/Total/TotalScoreWidget.h"
@@ -196,7 +196,7 @@ void UScoreManagerComponent::AddScoreStatic(UWorld* World, int32 BallType)
     }
     
     // 게임모드에서 ScoreManagerComponent 찾기
-    AUE_FruitMountainGameMode* GameMode = Cast<AUE_FruitMountainGameMode>(UGameplayStatics::GetGameMode(World));
+    APlayGameMode* GameMode = Cast<APlayGameMode>(UGameplayStatics::GetGameMode(World));
     if (!GameMode) 
     {
         UE_LOG(LogTemp, Error, TEXT("AddScoreStatic: 게임모드를 찾을 수 없음"));
@@ -233,7 +233,7 @@ void UScoreManagerComponent::ResetComboStatic(UWorld* World)
         return;
     }
     
-    AUE_FruitMountainGameMode* GameMode = Cast<AUE_FruitMountainGameMode>(UGameplayStatics::GetGameMode(World));
+    APlayGameMode* GameMode = Cast<APlayGameMode>(UGameplayStatics::GetGameMode(World));
     if (!GameMode) 
     {
         return;

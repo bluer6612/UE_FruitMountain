@@ -7,55 +7,33 @@
 #include "Interface/UI/Core/UIWidgetUtility.h"
 #include "Kismet/GameplayStatics.h"
 
+UTitleLevelWidget::UTitleLevelWidget(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer)
+{
+    bIsFocusable = true;
+}
+
 void UTitleLevelWidget::NativeConstruct()
 {
     Super::NativeConstruct();
+
+    UE_LOG(LogTemp, Warning, TEXT("TitleLevelWidget::NativeConstruct 진입"));
 
     // 캔버스 패널 생성 또는 가져오기
     UCanvasPanel* RootCanvas = Cast<UCanvasPanel>(GetRootWidget());
     if (!RootCanvas)
     {
+        UE_LOG(LogTemp, Warning, TEXT("RootCanvas가 없음, 새로 생성"));
         RootCanvas = WidgetTree->ConstructWidget<UCanvasPanel>(UCanvasPanel::StaticClass(), TEXT("RootCanvas"));
         WidgetTree->RootWidget = RootCanvas;
     }
-
-    UUIWidgetRenderer* Renderer = UUIWidgetRenderer::GetInstance();
-
-    // 로고 이미지 위젯 생성 및 렌더러로 배치
-    if (!LogoImage)
+    else
     {
-        LogoImage = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass(), TEXT("LogoImage"));
-        if (Renderer)
-        {
-            Renderer->RenderUIImage(
-                LogoImage,
-                EWidgetAnchor::TopLeft,
-                TEXT("/Game/UI/TitleLevel/UI_Title_Logo"),
-                FVector2D(633.f, 369.f),
-                80.f, 80.f
-            );
-        }
-        RootCanvas->AddChild(LogoImage);
-    }
-
-    // 메뉴 이미지 위젯 생성 및 렌더러로 배치
-    if (!MenuImage)
-    {
-        MenuImage = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass(), TEXT("MenuImage"));
-        if (Renderer)
-        {
-            Renderer->RenderUIImage(
-                MenuImage,
-                EWidgetAnchor::BottomLeft,
-                TEXT("/Game/UI/TitleLevel/UI_Title_Menu"),
-                FVector2D(592.f, 359.f),
-                80.f, 80.f
-            );
-        }
-        RootCanvas->AddChild(MenuImage);
+        UE_LOG(LogTemp, Warning, TEXT("RootCanvas 정상적으로 존재"));
     }
 
     UpdateMenuSelection();
+    UE_LOG(LogTemp, Warning, TEXT("TitleLevelWidget::NativeConstruct 종료"));
 }
 
 FReply UTitleLevelWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)

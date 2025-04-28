@@ -8,9 +8,11 @@
 UENUM(BlueprintType)
 enum class EWidgetImageType : uint8
 {
-    UI_Play_Score,     // 왼쪽 상단 점수판
-    UI_Play_FruitList, // 왼쪽 하단 과일 목록
-    UI_Play_NextFruit, // 오른쪽 상단 다음 과일
+    UI_Play_Score,
+    UI_Play_FruitList,
+    UI_Play_NextFruit,
+    UI_Title_Logo,
+    UI_Title_Menu
 };
 
 class UCanvasPanel;
@@ -50,12 +52,19 @@ public:
     
     // 모든 기본 이미지 설정
     UFUNCTION(BlueprintCallable, Category = "UI TextureDisplay")
-    void SetupAllImages();
-    
-    // 미리 정의된 UI 요소에 이미지 설정
-    UFUNCTION(BlueprintCallable, Category = "UI TextureDisplay")
-    void PrepareUIWidget(EWidgetImageType ImageType, const FString& TexturePath, const FVector2D& CustomSize = FVector2D::ZeroVector, float PaddingX = 0.0f, float PaddingY = 0.0f);
-    
+    void SetupPlayImages();
+
+    // 타이틀 레벨용 이미지 일괄 생성
+    void SetupTitleImages();
+
+    // 이미지 위젯 생성
+    void PrepareUIWidget(
+        EWidgetImageType ImageType,
+        const FString& TexturePath,
+        const FVector2D& CustomSize,
+        float PaddingX,
+        float PaddingY);
+
     /**
      * 직접 제공된 이미지 위젯에 텍스처 설정
      * 동적 UI 요소나 커스텀 배치가 필요한 상황에서 사용
@@ -92,4 +101,11 @@ private:
     
     UPROPERTY()
     UImage* UI_Play_NextFruit;
+
+    // 멤버 변수도 추가
+    UPROPERTY()
+    UImage* UI_Title_Logo;
+
+    UPROPERTY()
+    UImage* UI_Title_Menu;
 };

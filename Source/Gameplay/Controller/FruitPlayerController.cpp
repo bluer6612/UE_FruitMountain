@@ -2,7 +2,7 @@
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
 #include "System/Camera/CameraOrbitFunctionLibrary.h"
-#include "Framework/UE_FruitMountainGameMode.h"
+#include "Framework/PlayGameMode.h"
 #include "Gameplay/Physics/FruitThrowHelper.h"
 #include "Gameplay/Physics/FruitTrajectoryHelper.h"
 #include "Gameplay/Physics/FruitPhysicsHelper.h"
@@ -30,7 +30,7 @@ void AFruitPlayerController::BeginPlay()
     SetShowMouseCursor(true);
 
     // GameMode를 캐스팅하여 FruitBallClass 값을 가져옴
-    AUE_FruitMountainGameMode* GM = Cast<AUE_FruitMountainGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
+    APlayGameMode* GM = Cast<APlayGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
     if (GM && GM->FruitBallClass)
     {
         FruitBallClass = GM->FruitBallClass;

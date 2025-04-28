@@ -82,7 +82,7 @@ bool UUIWidgetRenderer::IsInstanceValid()
     return Instance != nullptr && IsValid(Instance);
 }
 
-void UUIWidgetRenderer::SetupAllImages()
+void UUIWidgetRenderer::SetupPlayImages()
 {
     PrepareUIWidget(EWidgetImageType::UI_Play_Score, 
                    TEXT("/Game/UI/PlayLevel/UI_Play_Score"), 
@@ -96,44 +96,55 @@ void UUIWidgetRenderer::SetupAllImages()
                    TEXT("/Game/UI/PlayLevel/UI_Play_NextFruit"), 
                    FVector2D(301, 339), 120.0f, 60.0f);
 
-    //UE_LOG(LogTemp, Warning, TEXT("UIWidgetRenderer: 위젯 이미지 설정 완료"));
+    //UE_LOG(LogTemp, Warning, TEXT("UIWidgetRenderer: play 위젯 이미지 설정 완료"));
+}
+
+void UUIWidgetRenderer::SetupTitleImages()
+{
+    PrepareUIWidget(EWidgetImageType::UI_Title_Logo,
+        TEXT("/Game/UI/TitleLevel/UI_Title_Logo"),
+        FVector2D(633.f, 369.f), 80.f, 20.f);
+
+    PrepareUIWidget(EWidgetImageType::UI_Title_Menu,
+        TEXT("/Game/UI/TitleLevel/UI_Title_Menu"),
+        FVector2D(592.f, 359.f), 80.f, 100.f);
 }
 
 void UUIWidgetRenderer::PrepareUIWidget(EWidgetImageType ImageType, const FString& TexturePath, const FVector2D& CustomSize, float PaddingX, float PaddingY)
 {
-    // 이미지 참조와 앵커 정보 결정
     UImage** TargetImagePtr = nullptr;
     EWidgetAnchor Anchor = EWidgetAnchor::Center;
-    
-    // enum 값에 따라 이미지 참조와 앵커 설정
+
     switch (ImageType)
     {
         case EWidgetImageType::UI_Play_Score:
             TargetImagePtr = &UI_Play_Score;
             Anchor = EWidgetAnchor::TopLeft;
             break;
-            
         case EWidgetImageType::UI_Play_FruitList:
             TargetImagePtr = &UI_Play_FruitList;
             Anchor = EWidgetAnchor::BottomLeft;
             break;
-            
         case EWidgetImageType::UI_Play_NextFruit:
             TargetImagePtr = &UI_Play_NextFruit;
             Anchor = EWidgetAnchor::TopRight;
             break;
-            
+        case EWidgetImageType::UI_Title_Logo:
+            TargetImagePtr = &UI_Title_Logo;
+            Anchor = EWidgetAnchor::TopLeft;
+            break;
+        case EWidgetImageType::UI_Title_Menu:
+            TargetImagePtr = &UI_Title_Menu;
+            Anchor = EWidgetAnchor::BottomLeft;
+            break;
         default:
             UE_LOG(LogTemp, Error, TEXT("알 수 없는 이미지 위치 유형: %d"), static_cast<int32>(ImageType));
             return;
     }
-    
-    if (!TargetImagePtr) 
-    {
+
+    if (!TargetImagePtr)
         return;
-    }
-    
-    // 내부 구현 함수 호출
+
     RenderUIImage(*TargetImagePtr, Anchor, TexturePath, CustomSize, PaddingX, PaddingY);
 }
 

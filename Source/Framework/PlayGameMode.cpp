@@ -1,4 +1,4 @@
-#include "UE_FruitMountainGameMode.h"
+#include "PlayGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Logging/LogMacros.h"
 #include "System/Input/FruitInputMappingManager.h"
@@ -15,7 +15,7 @@
 #include "Editor.h"
 #endif
 
-AUE_FruitMountainGameMode::AUE_FruitMountainGameMode()
+APlayGameMode::APlayGameMode()
 {
     // FruitHUD 명시적 설정
     HUDClass = AFruitHUD::StaticClass();
@@ -31,10 +31,10 @@ AUE_FruitMountainGameMode::AUE_FruitMountainGameMode()
     
     FruitBallClass = AFruitBall::StaticClass();
     
-    UE_LOG(LogTemp, Log, TEXT("AUE_FruitMountainGameMode 생성자 호출됨"));
+    UE_LOG(LogTemp, Log, TEXT("APlayGameMode 생성자 호출됨"));
 }
 
-void AUE_FruitMountainGameMode::BeginPlay()
+void APlayGameMode::BeginPlay()
 {
     Super::BeginPlay();
 
@@ -64,7 +64,7 @@ void AUE_FruitMountainGameMode::BeginPlay()
                 SequenceManager->SetExistingWidgetRenderer(FruitHUD->GetTextureWidget());
                 
                 // 시퀀스 완료 이벤트 바인딩
-                SequenceManager->OnSequenceCompleted.AddDynamic(this, &AUE_FruitMountainGameMode::OnGameStartSequenceFinished);
+                SequenceManager->OnSequenceCompleted.AddDynamic(this, &APlayGameMode::OnGameStartSequenceFinished);
                 
                 // 시퀀스 시작
                 SequenceManager->StartSequence(this);
@@ -79,7 +79,7 @@ void AUE_FruitMountainGameMode::BeginPlay()
 }
 
 // 시퀀스 완료 이벤트 핸들러
-void AUE_FruitMountainGameMode::OnGameStartSequenceFinished()
+void APlayGameMode::OnGameStartSequenceFinished()
 {
     if (AFruitPlayerController* PC = Cast<AFruitPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0)))
     {
@@ -99,12 +99,12 @@ void AUE_FruitMountainGameMode::OnGameStartSequenceFinished()
     if (FruitHUD && FruitHUD->GetTextureWidget())
     {
         // 여기서 명시적으로 이미지 설정
-        FruitHUD->GetTextureWidget()->SetupAllImages();
+        FruitHUD->GetTextureWidget()->SetupPlayImages();
         UE_LOG(LogTemp, Display, TEXT("게임 UI 이미지 설정 완료"));
     }
 }
 
-void AUE_FruitMountainGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void APlayGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     Super::EndPlay(EndPlayReason);
     
@@ -167,7 +167,7 @@ void AUE_FruitMountainGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason
     UFruitTrajectoryHelper::ResetTrajectorySystem();
 }
 
-void AUE_FruitMountainGameMode::StartPlay()
+void APlayGameMode::StartPlay()
 {
     Super::StartPlay();
 
@@ -207,7 +207,7 @@ void AUE_FruitMountainGameMode::StartPlay()
     }
 }
 
-void AUE_FruitMountainGameMode::InitializeGameWidgets()
+void APlayGameMode::InitializeGameWidgets()
 {
     UE_LOG(LogTemp, Display, TEXT("게임 위젯 초기화 시작"));
     
