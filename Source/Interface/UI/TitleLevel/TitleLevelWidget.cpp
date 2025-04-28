@@ -53,8 +53,8 @@ void UTitleLevelWidget::InitializeTitleWidget()
     {
         MenuImage->SetRenderOpacity(0.f);
     }
-
-    // 1.5초간 검은 화면 페이드아웃 효과용 Border 생성
+    
+    // FadeBorder 생성 및 추가
     if (!FadeBorder)
     {
         FadeBorder = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), TEXT("FadeBorder"));
@@ -73,6 +73,7 @@ void UTitleLevelWidget::InitializeTitleWidget()
         }
     }
 
+    // 검은 화면 페이드아웃 시작
     PlayFadeOut(FadeBorder, 1.5f);
 
     // LogoImage 페이드인
@@ -102,22 +103,47 @@ void UTitleLevelWidget::InitializeTitleWidget()
 // 검은 화면 페이드아웃 함수
 void UTitleLevelWidget::PlayFadeOut(UBorder* TargetBorder, float Duration)
 {
-    if (!TargetBorder) return;
+    if (!TargetBorder)
+    {
+        return;
+    }
 
     const float TickInterval = 0.02f;
     float* Elapsed = new float(0.f);
 
-    FTimerHandle FadeHandle;
-    GetWorld()->GetTimerManager().SetTimer(FadeHandle, [TargetBorder, Duration, TickInterval, Elapsed]()
+    TWeakObjectPtr<UBorder> WeakBorder(TargetBorder);
+    TWeakObjectPtr<UTitleLevelWidget> WeakThis(this);
+
+    FTimerHandle* FadeHandle = new FTimerHandle;
+    GetWorld()->GetTimerManager().SetTimer(*FadeHandle, [WeakBorder, WeakThis, Duration, TickInterval, Elapsed, FadeHandle]()
     {
+        if (!WeakThis.IsValid() || !WeakBorder.IsValid())
+        {
+            if (FadeHandle)
+            {
+                if (UWorld* World = GEngine->GetWorldFromContextObjectChecked(WeakThis.Get()))
+                {
+                    World->GetTimerManager().ClearTimer(*FadeHandle);
+                }
+                delete FadeHandle;
+            }
+            delete Elapsed;
+            return;
+        }
+
         *Elapsed += TickInterval;
         float Alpha = 1.f - FMath::Clamp(*Elapsed / Duration, 0.f, 1.f);
-        TargetBorder->SetRenderOpacity(Alpha);
+        WeakBorder->SetRenderOpacity(Alpha);
 
         if (Alpha <= 0.f)
         {
-            TargetBorder->SetRenderOpacity(0.f);
-            TargetBorder->RemoveFromParent();
+            WeakBorder->SetRenderOpacity(0.f);
+            WeakBorder->RemoveFromParent();
+            if (UWorld* World = GEngine->GetWorldFromContextObjectChecked(WeakThis.Get()))
+            {
+                World->GetTimerManager().ClearTimer(*FadeHandle);
+            }
+            delete FadeHandle;
             delete Elapsed;
         }
     }, TickInterval, true);
@@ -134,17 +160,39 @@ void UTitleLevelWidget::PlayFadeIn(UImage* TargetImage)
     const float TickInterval = 0.02f;
     float* Elapsed = new float(0.f);
 
-    // FTimerHandle을 람다 외부에 선언하고, 포인터로 캡처
+    TWeakObjectPtr<UTitleLevelWidget> WeakThis(this);
+    TWeakObjectPtr<UImage> WeakImage(TargetImage);
+
     FTimerHandle* FadeHandle = new FTimerHandle;
-    GetWorld()->GetTimerManager().SetTimer(*FadeHandle, [this, TargetImage, FadeDuration, TickInterval, Elapsed, FadeHandle]()
+    GetWorld()->GetTimerManager().SetTimer(*FadeHandle, [WeakThis, WeakImage, FadeDuration, TickInterval, Elapsed, FadeHandle]()
     {
+        if (!WeakThis.IsValid() || !WeakImage.IsValid())
+        {
+            if (FadeHandle)
+            {
+                if (UWorld* World = GEngine->GetWorldFromContextObjectChecked(WeakThis.Get()))
+                {
+                    World->GetTimerManager().ClearTimer(*FadeHandle);
+                }
+                delete FadeHandle;
+            }
+            delete Elapsed;
+            return;
+        }
+
         *Elapsed += TickInterval;
         float Alpha = FMath::Clamp(*Elapsed / FadeDuration, 0.f, 1.f);
-        TargetImage->SetRenderOpacity(Alpha);
+        WeakImage->SetRenderOpacity(Alpha);
+
+        // 로그로 Alpha 값 출력
+        UE_LOG(LogTemp, Warning, TEXT("PlayFadeIn: Alpha = %f"), Alpha);
 
         if (Alpha >= 1.f)
         {
-            GetWorld()->GetTimerManager().ClearTimer(*FadeHandle);
+            if (UWorld* World = GEngine->GetWorldFromContextObjectChecked(WeakThis.Get()))
+            {
+                World->GetTimerManager().ClearTimer(*FadeHandle);
+            }
             delete FadeHandle;
             delete Elapsed;
         }

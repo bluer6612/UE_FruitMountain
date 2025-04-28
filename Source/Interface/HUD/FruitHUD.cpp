@@ -29,11 +29,11 @@ void AFruitHUD::BeginPlay()
         }
 
         // TitleLevelWidget 찾아서 초기화 함수 호출
-        for (TObjectIterator<UUserWidget> It; It; ++It)
+        for (TObjectIterator<UUserWidget> i; i; ++i)
         {
-            if (It->IsA<UTitleLevelWidget>() && It->IsInViewport())
+            if (i->IsA<UTitleLevelWidget>() && i->IsInViewport())
             {
-                UTitleLevelWidget* TitleWidget = Cast<UTitleLevelWidget>(*It);
+                UTitleLevelWidget* TitleWidget = Cast<UTitleLevelWidget>(*i);
                 if (TitleWidget)
                 {
                     TitleWidget->InitializeTitleWidget();
