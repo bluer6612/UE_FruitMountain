@@ -15,7 +15,7 @@ APlateActor::APlateActor()
         UStaticMeshComponent* TableMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("TableMesh"));
         TableMesh->SetupAttachment(RootComponent);
         TableMesh->SetStaticMesh(TableAsset.Object);
-        TableMesh->SetWorldScale3D(FVector(10.0f, 10.0f, 1.0f));
+        TableMesh->SetWorldScale3D(FVector(6.25f, 6.25f, 1.0f));
         TableMesh->SetWorldLocation(FVector(0.0f, 0.0f, -10.0f));
         TableMesh->SetCollisionProfileName(TEXT("BlockAll"));
         TableMesh->ComponentTags.AddUnique(FName("Object"));

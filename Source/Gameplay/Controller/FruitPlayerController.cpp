@@ -11,11 +11,11 @@
 
 AFruitPlayerController::AFruitPlayerController()
 {
-    ThrowAngle = 45.f;
+    ThrowAngle = 45.f; // 발사 각도 (도 단위)
 
-    CameraOrbitRadius = 110.f;
+    CameraOrbitRadius = 110.f; // 접시와의 거리
 
-    CurrentBallType = 1;
+    CurrentBallType = 1; // 현재 선택된 과일 타입 (1~11)
 
     // 게임 오버 상태 초기화
     bIsGameOver = false;

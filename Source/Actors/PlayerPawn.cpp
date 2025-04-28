@@ -16,7 +16,7 @@ APlayerPawn::APlayerPawn()
     // CameraComponent 생성 및 루트에 부착
     CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
     CameraComponent->SetupAttachment(RootComponent);
-    CameraComponent->FieldOfView = 90.f;
+    CameraComponent->FieldOfView = 75.f; // 카메라 시야각 (화각) 설정
 
     FVector CurrentLocation = CameraComponent->GetRelativeLocation();
     CurrentLocation.Y += 5.f;
@@ -24,7 +24,7 @@ APlayerPawn::APlayerPawn()
     CameraComponent->SetRelativeLocation(CurrentLocation);
 
     FRotator CurrentRotation = CameraComponent->GetRelativeRotation();
-    CurrentRotation.Pitch -= 20.f;
+    CurrentRotation.Pitch -= 25.f; // 카메라 각도 조정 
     
     CameraComponent->SetRelativeRotation(CurrentRotation);
 }

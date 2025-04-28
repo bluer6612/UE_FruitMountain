@@ -33,7 +33,7 @@ public:
     UPROPERTY(EditDefaultsOnly, Category = "Game")
     TSubclassOf<AActor> FruitBallClass;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Components")
+    UPROPERTY(BlueprintReadOnly, Category = "Game")
     class UScoreManagerComponent* ScoreManager;
 
     // 클래스 선언부에 추가

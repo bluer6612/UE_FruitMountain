@@ -19,6 +19,6 @@ public:
     static void UpdateCameraOrbit(APawn* ControlledPawn, const FVector& PlateLocation, float OrbitAngle, float OrbitRadius);
 
     // 떨어지는 과일을 보기 위한 카메라 이동 함수
-    UFUNCTION(BlueprintCallable, Category = "Camera|Fruit")
+    UFUNCTION(BlueprintCallable, Category = "Camera Orbit")
     static void MoveViewToFallingFruit(APlayerController* Controller, const FVector& FruitLocation, const FRotator& CameraRotation);
 };

@@ -27,7 +27,7 @@ protected:
     
     // 접시 반경 - FruitBall에서 사용됨
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Plate")
-    float PlateRadius = 75.0f;
+    float PlateRadius = 0.f;
     
     // 접시 반경 계산 함수 (BeginPlay에서 호출)
     void CalculatePlateRadius();
