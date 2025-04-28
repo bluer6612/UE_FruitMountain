@@ -95,19 +95,17 @@ void UUIWidgetRenderer::SetupPlayImages()
     PrepareUIWidget(EWidgetImageType::UI_Play_NextFruit, 
                    TEXT("/Game/UI/PlayLevel/UI_Play_NextFruit"), 
                    FVector2D(301, 339), 120.0f, 60.0f);
-
-    //UE_LOG(LogTemp, Warning, TEXT("UIWidgetRenderer: play 위젯 이미지 설정 완료"));
 }
 
 void UUIWidgetRenderer::SetupTitleImages()
 {
     PrepareUIWidget(EWidgetImageType::UI_Title_Logo,
         TEXT("/Game/UI/TitleLevel/UI_Title_Logo"),
-        FVector2D(633.f, 369.f), 80.f, 20.f);
+        FVector2D(633.f, 369.f), 150.f, 267.5f);
 
     PrepareUIWidget(EWidgetImageType::UI_Title_Menu,
         TEXT("/Game/UI/TitleLevel/UI_Title_Menu"),
-        FVector2D(592.f, 359.f), 80.f, 100.f);
+        FVector2D(592.f, 359.f), 150.f, 35.f);
 }
 
 void UUIWidgetRenderer::PrepareUIWidget(EWidgetImageType ImageType, const FString& TexturePath, const FVector2D& CustomSize, float PaddingX, float PaddingY)
