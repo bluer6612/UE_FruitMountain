@@ -108,7 +108,8 @@ void UUIWidgetRenderer::SetupTitleImages()
         FVector2D(592.f, 359.f), 150.f, 35.f);
 }
 
-void UUIWidgetRenderer::PrepareUIWidget(EWidgetImageType ImageType, const FString& TexturePath, const FVector2D& CustomSize, float PaddingX, float PaddingY)
+
+UImage* UUIWidgetRenderer::PrepareUIWidget(EWidgetImageType ImageType, const FString& TexturePath, const FVector2D& CustomSize, float PaddingX, float PaddingY)
 {
     UImage** TargetImagePtr = nullptr;
     EWidgetAnchor Anchor = EWidgetAnchor::Center;
@@ -137,13 +138,15 @@ void UUIWidgetRenderer::PrepareUIWidget(EWidgetImageType ImageType, const FStrin
             break;
         default:
             UE_LOG(LogTemp, Error, TEXT("알 수 없는 이미지 위치 유형: %d"), static_cast<int32>(ImageType));
-            return;
+            return nullptr;
     }
 
     if (!TargetImagePtr)
-        return;
+        return nullptr;
 
     RenderUIImage(*TargetImagePtr, Anchor, TexturePath, CustomSize, PaddingX, PaddingY);
+
+    return *TargetImagePtr;
 }
 
 // 직접 참조로 이미지 설정

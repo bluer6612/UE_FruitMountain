@@ -14,9 +14,6 @@ void ATitleGameMode::BeginPlay()
 {
     Super::BeginPlay();
 
-    // TitleLevel에서도 Renderer 인스턴스 생성
-    //UUIWidgetRenderer::CreateDisplayWidget(GetWorld());
-    
     // 타이틀 위젯 생성 및 뷰포트에 추가
     if (!TitleWidget)
     {

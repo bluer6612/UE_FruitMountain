@@ -58,7 +58,7 @@ public:
     void SetupTitleImages();
 
     // 이미지 위젯 생성
-    void PrepareUIWidget(
+    UImage* PrepareUIWidget(
         EWidgetImageType ImageType,
         const FString& TexturePath,
         const FVector2D& CustomSize,

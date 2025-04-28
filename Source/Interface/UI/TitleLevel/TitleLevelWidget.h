@@ -17,6 +17,8 @@ public:
     // 메뉴 인덱스(0: 시작, 1: 종료 등)
     int32 CurrentMenuIndex = 0;
 
+    void InitializeTitleWidget();
+
 protected:
     UPROPERTY()
     class UBorder* FadeBorder = nullptr;
@@ -32,6 +34,7 @@ protected:
 
     void UpdateMenuSelection();
     void OnMenuSelect();
-public:
-    void InitializeTitleWidget();
+
+private:
+    float FadeOutDuration = 1.5f; // 페이드 아웃 지속 시간
 };

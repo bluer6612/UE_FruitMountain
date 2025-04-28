@@ -16,30 +16,16 @@ void AFruitHUD::BeginPlay()
 
     UE_LOG(LogTemp, Warning, TEXT("FruitHUD: BeginPlay 완료"));
 
-    // 2D 텍스쳐 위젯 그릴 위젯 생성
+    // UIWidgetRenderer 생성 및 뷰포트 추가
     CreateAndAddWidgets();
 
-    // TitleLevel이면 타이틀 이미지 세팅
-    UWorld* World = GetWorld();
-    if (World && World->GetMapName().Contains(TEXT("TitleLevel")))
+    // 이미지 생성 및 추가가 끝난 뒤 TitleLevelWidget 초기화
+    for (TObjectIterator<UTitleLevelWidget> i; i; ++i)
     {
-        if (TextureWidget)
+        if (i->IsInViewport())
         {
-            TextureWidget->SetupTitleImages();
-        }
-
-        // TitleLevelWidget 찾아서 초기화 함수 호출
-        for (TObjectIterator<UUserWidget> i; i; ++i)
-        {
-            if (i->IsA<UTitleLevelWidget>() && i->IsInViewport())
-            {
-                UTitleLevelWidget* TitleWidget = Cast<UTitleLevelWidget>(*i);
-                if (TitleWidget)
-                {
-                    TitleWidget->InitializeTitleWidget();
-                    break;
-                }
-            }
+            i->InitializeTitleWidget();
+            break;
         }
     }
 }
