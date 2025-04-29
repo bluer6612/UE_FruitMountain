@@ -4,11 +4,7 @@
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/Image.h"
-#include "Components/SizeBox.h"
-#include "Blueprint/WidgetTree.h"
 #include "Interface/UI/Core/UIWidgetRenderer.h"
-#include "Kismet/GameplayStatics.h"
-#include "Kismet/KismetSystemLibrary.h"
 #include "TimerManager.h"
 
 UTitleLevelWidget::UTitleLevelWidget(const FObjectInitializer& ObjectInitializer)
