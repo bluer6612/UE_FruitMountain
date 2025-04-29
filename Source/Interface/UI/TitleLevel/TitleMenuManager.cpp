@@ -54,6 +54,36 @@ void UTitleMenuManager::StartIndicatorAnimation()
     }
 }
 
+// 이징 함수 추가 (클래스 외부 또는 헤더에 정적 함수로 추가)
+namespace AnimationHelper
+{
+    // 바운스 효과가 있는 이징 함수
+    static float BounceEaseOut(float t)
+    {
+        // 바운스 효과 (목표에 닿으면 살짝 튕겨나감)
+        if (t < 0.5f)
+        {
+            // 처음에는 천천히 가속
+            return 4 * t * t * t;
+        }
+        else
+        {
+            // 후반부에는 오버슈트 후 진동하며 정착
+            float f = ((2 * t) - 2);
+            return 0.5f * f * f * f * f * f + 1;
+        }
+    }
+    
+    // 오버슈트 효과 (목표를 약간 지나친 후 돌아옴)
+    static float BackEaseOut(float t)
+    {
+        const float c1 = 1.70158f;
+        const float c3 = c1 + 1;
+        
+        return 1 + c3 * FMath::Pow(t - 1, 3) + c1 * FMath::Pow(t - 1, 2);
+    }
+}
+
 void UTitleMenuManager::PlayIndicatorAnimation()
 {
     if (!SelectIndicator)
@@ -97,22 +127,25 @@ void UTitleMenuManager::PlayIndicatorAnimation()
             }
             
             *ElapsedTime += TickInterval;
-            float Progress = *ElapsedTime / AnimDuration;
+            float Progress = FMath::Clamp(*ElapsedTime / AnimDuration, 0.0f, 1.0f);
             
             if (Progress <= 0.5f)
             {
                 // 첫 절반: 왼쪽으로 이동하면서 밝아짐
                 float NormalizedProgress = Progress * 2.0f; // 0.0 ~ 1.0
                 
-                // 위치 이동 (왼쪽으로 20.0f까지)
+                // 바운스 효과 적용
+                float EasedProgress = AnimationHelper::BounceEaseOut(NormalizedProgress);
+                
+                // 위치 이동 (왼쪽으로 15.f까지)
                 if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(WeakIndicator->Slot))
                 {
-                    float NewX = CurrentPos.X - 20.0f * NormalizedProgress;
+                    float NewX = CurrentPos.X - 15.f * EasedProgress;
                     IndicatorSlot->SetPosition(FVector2D(NewX, CurrentPos.Y));
                 }
                 
                 // 밝기 증가
-                float Brightness = 1.0f + 0.5f * NormalizedProgress;
+                float Brightness = 1.0f + 0.5f * EasedProgress;
                 WeakIndicator->SetColorAndOpacity(FLinearColor(Brightness, Brightness, Brightness));
             }
             else
@@ -120,14 +153,29 @@ void UTitleMenuManager::PlayIndicatorAnimation()
                 // 후반 절반: 다시 오른쪽으로 이동하여 원래 위치로 복귀
                 float NormalizedProgress = (Progress - 0.5f) * 2.0f; // 0.0 ~ 1.0
                 
+                // 바운스 효과 적용 (돌아올 때는 좀 더 빠르게 시작했다가 감속)
+                float EasedProgress = AnimationHelper::BackEaseOut(NormalizedProgress);
+                
                 if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(WeakIndicator->Slot))
                 {
-                    float NewX = (CurrentPos.X - 20.0f) + 20.0f * NormalizedProgress;
+                    // 왼쪽에서 시작해 오른쪽으로 이동하며 중간에 살짝 오버슈트
+                    float NewX = (CurrentPos.X - 15.f) + 15.f * EasedProgress;
+                    
+                    // 오버슈트 효과 (목표보다 살짝 더 움직였다가 돌아옴)
+                    if (NormalizedProgress > 0.8f && NormalizedProgress < 0.95f)
+                    {
+                        NewX += 3.0f * (NormalizedProgress - 0.8f) * 6.67f;
+                    }
+                    else if (NormalizedProgress >= 0.95f)
+                    {
+                        NewX += 3.0f * (1.0f - NormalizedProgress) * 60.0f;
+                    }
+                    
                     IndicatorSlot->SetPosition(FVector2D(NewX, CurrentPos.Y));
                 }
                 
-                // 색상 원래대로
-                float Brightness = 1.5f - 0.5f * NormalizedProgress;
+                // 색상 원래대로 (부드럽게 감소)
+                float Brightness = 1.5f - 0.5f * EasedProgress;
                 WeakIndicator->SetColorAndOpacity(FLinearColor(Brightness, Brightness, Brightness));
             }
             
