@@ -83,12 +83,14 @@ void UTitleMenuManager::PlayIndicatorAnimation()
     
     if (!SelectIndicator)
     {
+        IsAnimationRunning = false;
         return;
     }
     
     UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(SelectIndicator->Slot);
     if (!IndicatorSlot)
     {
+        IsAnimationRunning = false;
         return;
     }
     
@@ -100,137 +102,126 @@ void UTitleMenuManager::PlayIndicatorAnimation()
     TWeakObjectPtr<UTitleMenuManager> WeakThis(this);
     TWeakObjectPtr<UImage> WeakIndicator(SelectIndicator);
     
-    // 현재 위치 저장
-    FVector2D CurrentPos = IndicatorSlot->GetPosition();
-    
-    FTimerHandle* AnimHandle = new FTimerHandle();
+    // 애니메이션 시작 시 인디케이터의 원래 위치를 저장
+    FVector2D BasePosition = IndicatorSlot->GetPosition();
     
     if (UWorld* World = SelectIndicator->GetWorld())
     {
-        World->GetTimerManager().SetTimer(*AnimHandle, [WeakThis, WeakIndicator, AnimDuration, TickInterval, ElapsedTime, AnimHandle, CurrentPos]()
-        {
-            if (!WeakThis.IsValid() || !WeakIndicator.IsValid())
+        // 기존 타이머 정리
+        World->GetTimerManager().ClearTimer(IndicatorAnimationTimerHandle);
+
+        World->GetTimerManager().SetTimer(
+            IndicatorAnimationTimerHandle, 
+            [this, WeakThis, WeakIndicator, AnimDuration, TickInterval, ElapsedTime, BasePosition]()
             {
-                if (UWorld* TimerWorld = GEngine && WeakThis.IsValid() ? 
-                    GEngine->GetWorldFromContextObjectChecked(WeakThis.Get()) : nullptr)
+                if (!WeakThis.IsValid() || !WeakIndicator.IsValid())
                 {
-                    TimerWorld->GetTimerManager().ClearTimer(*AnimHandle);
-                }
-                delete AnimHandle;
-                delete ElapsedTime;
-                return;
-            }
-            
-            *ElapsedTime += TickInterval;
-            float Progress = FMath::Clamp(*ElapsedTime / AnimDuration, 0.0f, 1.0f);
-            
-            // 왼쪽으로 이동하는 구간 (13.33%)
-            if (Progress <= 0.1333f)
-            {
-                // 첫 13.33%: 원래 위치에서 왼쪽으로 더 빠르게 튕겨나감
-                float NormalizedProgress = Progress / 0.1333f; // 0.0 ~ 1.0
-                
-                // 가속되는 움직임 (easeOut)
-                float EasedProgress = 1.0f - FMath::Pow(1.0f - NormalizedProgress, 2.0f);
-                
-                if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(WeakIndicator->Slot))
-                {
-                    // 왼쪽으로 15.f 이동 (Y축 변화 없음)
-                    float NewX = CurrentPos.X - 15.f * EasedProgress;
-                    IndicatorSlot->SetPosition(FVector2D(NewX, CurrentPos.Y));
+                    delete ElapsedTime;
+                    return;
                 }
                 
-                // 밝기 증가
-                float Brightness = 1.0f + 0.5f * EasedProgress;
-                WeakIndicator->SetColorAndOpacity(FLinearColor(Brightness, Brightness, Brightness));
-            }
-            // 오른쪽으로 돌아오는 구간 (23.33%)
-            else if (Progress <= 0.3666f)
-            {
-                // 오른쪽으로 돌아오는 시간
-                float NormalizedProgress = (Progress - 0.1333f) / 0.2333f; // 0.0 ~ 1.0
+                *ElapsedTime += TickInterval;
+                float Progress = FMath::Clamp(*ElapsedTime / AnimDuration, 0.0f, 1.0f);
                 
-                // 천천히 시작하여 점점 가속 (easeIn)
-                float EasedProgress = NormalizedProgress * NormalizedProgress;
-                
-                if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(WeakIndicator->Slot))
+                // 왼쪽으로 이동하는 구간 (13.33%)
+                if (Progress <= 0.1333f)
                 {
-                    // 왼쪽에서 원래 위치로 빠르게 복귀 (Y축 변화 없음)
-                    float NewX = (CurrentPos.X - 15.f) + 15.f * EasedProgress;
-                    IndicatorSlot->SetPosition(FVector2D(NewX, CurrentPos.Y));
-                }
-                
-                // 밝기 감소
-                float Brightness = 1.5f - 0.5f * EasedProgress;
-                WeakIndicator->SetColorAndOpacity(FLinearColor(Brightness, Brightness, Brightness));
-            }
-            // 대기 시간 대폭 줄임 - 전체의 10%만 대기 (기존 63.34% → 10%)
-            else if (Progress <= 0.4666f) // 원위치에 0.1(10%)만 대기
-            {
-                // 원위치 유지
-                if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(WeakIndicator->Slot))
-                {
-                    IndicatorSlot->SetPosition(CurrentPos);
-                }
-                
-                // 색상은 원래대로
-                WeakIndicator->SetColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f));
-            }
-            // 애니메이션 조기 완료 처리
-            else
-            {
-                // 애니메이션을 조기에 완료로 간주하고 타이머 정리
-                if (UWorld* TimerWorld = GEngine && WeakThis.IsValid() ? 
-                    GEngine->GetWorldFromContextObjectChecked(WeakThis.Get()) : nullptr)
-                {
-                    TimerWorld->GetTimerManager().ClearTimer(*AnimHandle);
-                }
-                
-                delete AnimHandle;
-                delete ElapsedTime;
-                
-                // 애니메이션 플래그 업데이트
-                if (WeakThis.IsValid())
-                {
-                    WeakThis->IsAnimationRunning = false;
+                    float NormalizedProgress = Progress / 0.1333f;
+                    float EasedProgress = 1.0f - FMath::Pow(1.0f - NormalizedProgress, 2.0f);
                     
-                    // 계속 애니메이션할지 확인 후 재시작
-                    if (WeakThis->IsIndicatorAnimating)
+                    if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(WeakIndicator->Slot))
                     {
-                        WeakThis->PlayIndicatorAnimation();
+                        // 저장된 원래 위치를 기준으로 왼쪽으로 이동
+                        float NewX = BasePosition.X - 15.f * EasedProgress;
+                        IndicatorSlot->SetPosition(FVector2D(NewX, BasePosition.Y));
+                    }
+                    
+                    float Brightness = 1.0f + 0.5f * EasedProgress;
+                    WeakIndicator->SetColorAndOpacity(FLinearColor(Brightness, Brightness, Brightness));
+                }
+                // 오른쪽으로 돌아오는 구간 (23.33%)
+                else if (Progress <= 0.3666f)
+                {
+                    float NormalizedProgress = (Progress - 0.1333f) / 0.2333f; // 0.0 ~ 1.0
+                    float EasedProgress = NormalizedProgress * NormalizedProgress;
+                    
+                    if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(WeakIndicator->Slot))
+                    {
+                        // 원래 위치의 왼쪽에서 원래 위치로 복귀
+                        float NewX = BasePosition.X - 15.f + 15.f * EasedProgress;
+                        IndicatorSlot->SetPosition(FVector2D(NewX, BasePosition.Y));
+                    }
+                    
+                    float Brightness = 1.5f - 0.5f * EasedProgress;
+                    WeakIndicator->SetColorAndOpacity(FLinearColor(Brightness, Brightness, Brightness));
+                }
+                // 대기 시간 (10%)
+                else if (Progress <= 0.4666f)
+                {
+                    // 원래 위치로 복귀
+                    if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(WeakIndicator->Slot))
+                    {
+                        IndicatorSlot->SetPosition(BasePosition);
+                    }
+                    
+                    WeakIndicator->SetColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f));
+                }
+                // 여기서부터는 기존 코드와 동일
+                else
+                {
+                    // 애니메이션 조기 완료 처리
+                    if (UWorld* TimerWorld = GEngine && WeakThis.IsValid() ? 
+                        GEngine->GetWorldFromContextObjectChecked(WeakThis.Get()) : nullptr)
+                    {
+                        TimerWorld->GetTimerManager().ClearTimer(IndicatorAnimationTimerHandle);
+                    }
+                    
+                    delete ElapsedTime;
+                    
+                    // 애니메이션 플래그 업데이트
+                    if (WeakThis.IsValid())
+                    {
+                        WeakThis->IsAnimationRunning = false;
+                        
+                        // 계속 애니메이션할지 확인 후 재시작
+                        if (WeakThis->IsIndicatorAnimating)
+                        {
+                            WeakThis->PlayIndicatorAnimation();
+                        }
+                    }
+                    
+                    // 여기서 return을 추가하여 아래 코드가 실행되지 않도록 함
+                    return;
+                }
+                
+                // 표준 애니메이션 완료 (Progress >= 1.0f)
+                if (Progress >= 1.0f)
+                {
+                    // 타이머 정리
+                    if (UWorld* TimerWorld = GEngine && WeakThis.IsValid() ? 
+                        GEngine->GetWorldFromContextObjectChecked(WeakThis.Get()) : nullptr)
+                    {
+                        TimerWorld->GetTimerManager().ClearTimer(IndicatorAnimationTimerHandle);
+                    }
+                    
+                    delete ElapsedTime;
+                    
+                    // 애니메이션 플래그 업데이트
+                    if (WeakThis.IsValid())
+                    {
+                        WeakThis->IsAnimationRunning = false;
+                        
+                        // 계속 애니메이션할지 확인 후 재시작
+                        if (WeakThis->IsIndicatorAnimating)
+                        {
+                            WeakThis->PlayIndicatorAnimation();
+                        }
                     }
                 }
-                
-                // 여기서 return을 추가하여 아래 코드가 실행되지 않도록 함
-                return;
-            }
-            
-            // 표준 애니메이션 완료 (Progress >= 1.0f)
-            if (Progress >= 1.0f)
-            {
-                // 타이머 정리
-                if (UWorld* TimerWorld = GEngine && WeakThis.IsValid() ? 
-                    GEngine->GetWorldFromContextObjectChecked(WeakThis.Get()) : nullptr)
-                {
-                    TimerWorld->GetTimerManager().ClearTimer(*AnimHandle);
-                }
-                
-                delete AnimHandle;
-                delete ElapsedTime;
-                
-                // 애니메이션 플래그 업데이트
-                if (WeakThis.IsValid())
-                {
-                    WeakThis->IsAnimationRunning = false;
-                    
-                    // 계속 애니메이션할지 확인 후 재시작
-                    if (WeakThis->IsIndicatorAnimating)
-                    {
-                        WeakThis->PlayIndicatorAnimation();
-                    }
-                }
-            }
-        }, TickInterval, true);
+            },
+            TickInterval,
+            true
+        );
     }
 }
 
@@ -301,21 +292,55 @@ void UTitleMenuManager::SelectCurrentMenu()
 
 void UTitleMenuManager::UpdateMenuSelection()
 {
-    if (!SelectIndicator)
+    if (!SelectIndicator || !Owner || !Owner->MenuImage)
     {
         return;
     }
 
-    if (Owner && Owner->MenuImage)
+    // 모든 애니메이션 즉시 중단
+    IsIndicatorAnimating = false;
+    IsAnimationRunning = false; // 실행 중 플래그도 비활성화
+    
+    if (UWorld* World = SelectIndicator->GetWorld())
     {
-        if (UCanvasPanelSlot* MenuSlot = Cast<UCanvasPanelSlot>(Owner->MenuImage->Slot))
+        // 모든 관련 타이머 정리
+        World->GetTimerManager().ClearTimer(IndicatorAnimationTimerHandle);
+        
+        for (FTimerHandle& Handle : AnimationTimerHandles)
         {
-            FVector2D MenuBasePos = MenuSlot->GetPosition();
-            FVector2D TargetPos = {MenuBasePos.X + 42.5f, MenuBasePos.Y - 255.f + 50.f * CurrentMenuIndex};
+            World->GetTimerManager().ClearTimer(Handle);
+        }
+        AnimationTimerHandles.Empty();
+    }
 
-            if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(SelectIndicator->Slot))
+    // 위치 계산 및 인디케이터 이동
+    if (UCanvasPanelSlot* MenuSlot = Cast<UCanvasPanelSlot>(Owner->MenuImage->Slot))
+    {
+        FVector2D MenuBasePos = MenuSlot->GetPosition();
+        FVector2D TargetPos = {MenuBasePos.X + 42.5f, MenuBasePos.Y - 255.f + 70.f * CurrentMenuIndex};
+
+        if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(SelectIndicator->Slot))
+        {
+            // 즉시 새 위치로 이동
+            IndicatorSlot->SetPosition(TargetPos);
+            SelectIndicator->SetColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f));
+            
+            // 잠시 후 애니메이션 다시 시작
+            if (UWorld* World = SelectIndicator->GetWorld())
             {
-                IndicatorSlot->SetPosition(TargetPos);
+                FTimerHandle ResetAnimHandle;
+                AnimationTimerHandles.Add(ResetAnimHandle);
+                
+                World->GetTimerManager().SetTimer(
+                    ResetAnimHandle, 
+                    [this]() {
+                        // 애니메이션 재시작
+                        IsIndicatorAnimating = true;
+                        PlayIndicatorAnimation();
+                    }, 
+                    0.5f,
+                    false
+                );
             }
         }
     }
@@ -323,26 +348,8 @@ void UTitleMenuManager::UpdateMenuSelection()
 
 void UTitleMenuManager::PlaySelectionAnimation()
 {
-    if (!SelectIndicator)
-    {
-        return;
-    }
-    
-    // 크기 확대 애니메이션
-    SelectIndicator->SetRenderScale(FVector2D(1.2f, 1.2f));
-    
-    // 타이머를 사용하여 원래 크기로 복원
-    FTimerHandle ResetHandle;
-    if (UWorld* World = SelectIndicator->GetWorld())
-    {
-        World->GetTimerManager().SetTimer(ResetHandle, [this]()
-        {
-            if (SelectIndicator)
-            {
-                SelectIndicator->SetRenderScale(FVector2D(1.0f, 1.0f));
-            }
-        }, 0.15f, false);
-    }
+    // 선택 효과는 UpdateMenuSelection에서 처리하므로 비워둠
+    // 필요한 경우 소리 등의 추가 효과를 여기에 추가
 }
 
 void UTitleMenuManager::OpenPlayLevel()

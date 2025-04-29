@@ -31,6 +31,9 @@ public:
     void SelectCurrentMenu();
     void UpdateMenuSelection();
     
+    // 애니메이션 제어 함수
+    void StartIndicatorAnimation(bool bStart);
+    
 private:
     // 메뉴 동작 함수
     void OpenPlayLevel();
@@ -41,7 +44,6 @@ private:
     // 애니메이션 관련 함수
     void PlaySelectionAnimation();
     void PlayIndicatorAnimation();
-    void StartIndicatorAnimation(bool bStart = true);
 
     // 애니메이션 제어 멤버 변수
     bool IsIndicatorAnimating = true;
@@ -53,6 +55,7 @@ private:
     
     // 애니메이션 관련 변수
     FTimerHandle IndicatorAnimationTimerHandle;
+    TArray<FTimerHandle> AnimationTimerHandles;
     float IndicatorAnimationDuration = 2.75f;  // 애니메이션 지속 시간
     
     // 참조 변수

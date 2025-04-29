@@ -10,17 +10,42 @@
 UTitleLevelWidget::UTitleLevelWidget(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
-    bIsFocusable = true;
-    bHasScriptImplementedTick = true;
-
     // 메뉴 관리자를 생성자에서 올바르게 생성
     MenuManager = ObjectInitializer.CreateDefaultSubobject<UTitleMenuManager>(this, TEXT("MenuManager"));
 }
 
-void UTitleLevelWidget::NativeDestruct()
+void UTitleLevelWidget::NativeConstruct()
 {
-    Super::NativeDestruct();
-    GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
+    Super::NativeConstruct();
+    
+    // 키보드 포커스 설정 - 이걸 해야 키 입력을 받을 수 있음
+    bIsFocusable = true;
+    
+    // UI가 생성될 때 자동으로 포커스 가져오기
+    if (APlayerController* PC = GetOwningPlayer())
+    {
+        FInputModeUIOnly InputMode;
+        InputMode.SetWidgetToFocus(TakeWidget());
+        InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+        PC->SetInputMode(InputMode);
+        PC->bShowMouseCursor = true;
+    }
+    
+    // 메뉴 관리자 초기화
+    InitializeMenuManager();
+}
+
+void UTitleLevelWidget::InitializeMenuManager()
+{
+    if (SelectIndicator)
+    {
+        // 메뉴 관리자 생성 및 초기화
+        MenuManager = NewObject<UTitleMenuManager>(this);
+        if (MenuManager)
+        {
+            MenuManager->Initialize(SelectIndicator, this);
+        }
+    }
 }
 
 void UTitleLevelWidget::InitializeTitleWidget()
@@ -239,12 +264,36 @@ void UTitleLevelWidget::PlayFadeIn(UImage* TargetImage)
 
 FReply UTitleLevelWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
 {
-    // MenuManager에게 키 처리 위임
-    if (MenuManager && MenuManager->HandleKeyDown(InKeyEvent.GetKey()))
+    // MenuManager가 있으면 키 이벤트 전달
+    if (MenuManager)
     {
-        return FReply::Handled();
+        bool bHandled = MenuManager->HandleKeyDown(InKeyEvent.GetKey());
+        if (bHandled)
+        {
+            return FReply::Handled();
+        }
     }
     
-    // MenuManager에서 처리되지 않은 키는 기본 처리
+    // 처리되지 않은 키는 부모 클래스로 전달
     return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
+}
+
+void UTitleLevelWidget::NativeDestruct()
+{
+    // 메뉴 관리자의 애니메이션 중지
+    if (MenuManager)
+    {
+        // 필요한 경우 메뉴 관리자의 타이머 정리 등 수행
+        MenuManager->StartIndicatorAnimation(false);
+    }
+    
+    // 타이머 정리
+    if (UWorld* World = GetWorld())
+    {
+        // 혹시 남아있는 타이머가 있다면 정리
+        World->GetTimerManager().ClearAllTimersForObject(this);
+    }
+    
+    // 부모 클래스의 NativeDestruct 호출
+    Super::NativeDestruct();
 }

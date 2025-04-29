@@ -4,6 +4,9 @@
 #include "Blueprint/UserWidget.h"
 #include "TitleLevelWidget.generated.h"
 
+class UImage;
+class UTitleMenuManager;
+
 UCLASS()
 class UE_FRUITMOUNTAIN_API UTitleLevelWidget : public UUserWidget
 {
@@ -16,7 +19,11 @@ public:
     void InitializeTitleWidget();
 
     // 위젯 라이프사이클 함수
+    virtual void NativeConstruct() override;
     virtual void NativeDestruct() override;
+
+    // 헤더에 키 입력 처리 함수 추가
+    virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
     
     // 게임 UI 요소
     UPROPERTY()
@@ -29,9 +36,9 @@ public:
     class UImage* SelectIndicator;
     
 protected:
-    // 키 입력은 여전히 이 클래스에서 받아야 함 (가상 함수)
-    virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
-    
+    // 초기화
+    void InitializeMenuManager();
+
 private:
     // 페이드 효과 관련 변수 및 함수
     UPROPERTY(meta = (BindWidget))
