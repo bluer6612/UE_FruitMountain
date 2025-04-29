@@ -24,12 +24,8 @@ void UTitleMenuManager::Initialize(UImage* InSelectIndicator, UTitleLevelWidget*
     {
         SelectIndicator->SetRenderOpacity(1.0f);
         
-        // SelectIndicator의 원래 위치 저장 (애니메이션을 위해)
         if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(SelectIndicator->Slot))
         {
-            // 원래 위치 저장
-            IndicatorOriginalPosition = IndicatorSlot->GetPosition();
-            
             // 애니메이션 타이머 설정 (1.5초 후 첫 애니메이션 시작)
             StartIndicatorAnimation();
         }
@@ -66,13 +62,15 @@ void UTitleMenuManager::PlayIndicatorAnimation()
     
     TWeakObjectPtr<UTitleMenuManager> WeakThis(this);
     TWeakObjectPtr<UImage> WeakIndicator(SelectIndicator);
-    FVector2D OrigPos = IndicatorOriginalPosition;
+    
+    // 현재 위치 저장
+    FVector2D CurrentPos = IndicatorSlot->GetPosition();
     
     FTimerHandle* AnimHandle = new FTimerHandle();
     
     if (UWorld* World = SelectIndicator->GetWorld())
     {
-        World->GetTimerManager().SetTimer(*AnimHandle, [WeakThis, WeakIndicator, AnimDuration, TickInterval, ElapsedTime, AnimHandle, OrigPos]()
+        World->GetTimerManager().SetTimer(*AnimHandle, [WeakThis, WeakIndicator, AnimDuration, TickInterval, ElapsedTime, AnimHandle, CurrentPos]()
         {
             if (!WeakThis.IsValid() || !WeakIndicator.IsValid())
             {
@@ -94,41 +92,40 @@ void UTitleMenuManager::PlayIndicatorAnimation()
                 // 첫 절반: 왼쪽으로 이동하면서 밝아짐
                 float NormalizedProgress = Progress * 2.0f; // 0.0 ~ 1.0
                 
-                // 위치 이동 (최대 20.f 왼쪽으로)
+                // 위치 이동 (왼쪽으로 20.0f까지)
                 if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(WeakIndicator->Slot))
                 {
-                    float NewX = OrigPos.X - 20.0f * NormalizedProgress;
-                    IndicatorSlot->SetPosition(FVector2D(NewX, OrigPos.Y));
+                    float NewX = CurrentPos.X - 20.0f * NormalizedProgress;
+                    IndicatorSlot->SetPosition(FVector2D(NewX, CurrentPos.Y));
                 }
                 
-                // 색상 밝아짐 (1.0 -> 1.5)
+                // 밝기 증가
                 float Brightness = 1.0f + 0.5f * NormalizedProgress;
                 WeakIndicator->SetColorAndOpacity(FLinearColor(Brightness, Brightness, Brightness));
             }
             else
             {
-                // 후반 절반: 오른쪽으로 돌아오면서 어두워짐
+                // 후반 절반: 다시 오른쪽으로 이동하여 원래 위치로 복귀
                 float NormalizedProgress = (Progress - 0.5f) * 2.0f; // 0.0 ~ 1.0
                 
-                // 위치 이동 (원래 위치로 복귀)
                 if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(WeakIndicator->Slot))
                 {
-                    float NewX = OrigPos.X - 10.0f * (1.0f - NormalizedProgress);
-                    IndicatorSlot->SetPosition(FVector2D(NewX, OrigPos.Y));
+                    float NewX = (CurrentPos.X - 20.0f) + 20.0f * NormalizedProgress;
+                    IndicatorSlot->SetPosition(FVector2D(NewX, CurrentPos.Y));
                 }
                 
-                // 색상 원래대로 (1.5 -> 1.0)
-                float Brightness = 1.0f + 0.5f * (1.0f - NormalizedProgress);
+                // 색상 원래대로
+                float Brightness = 1.5f - 0.5f * NormalizedProgress;
                 WeakIndicator->SetColorAndOpacity(FLinearColor(Brightness, Brightness, Brightness));
             }
             
             // 애니메이션 완료
             if (Progress >= 1.0f)
             {
-                // 원래 상태로 복원
+                // 원래 위치로 복원 확인
                 if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(WeakIndicator->Slot))
                 {
-                    IndicatorSlot->SetPosition(OrigPos);
+                    IndicatorSlot->SetPosition(CurrentPos);
                 }
                 WeakIndicator->SetColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f));
                 
@@ -220,13 +217,12 @@ void UTitleMenuManager::UpdateMenuSelection()
     {
         if (UCanvasPanelSlot* MenuSlot = Cast<UCanvasPanelSlot>(Owner->MenuImage->Slot))
         {
-            float MenuBaseY = MenuSlot->GetPosition().Y; // 메뉴 이미지의 Y 위치
-            float IndicatorX = MenuBaseY - 350.f;
-            float TargetY = MenuBaseY - 250.f + 50.f * CurrentMenuIndex; // 메뉴 기준 + 50f씩 증가
+            FVector2D MenuBasePos = MenuSlot->GetPosition();
+            FVector2D TargetPos = {MenuBasePos.X + 37.5f, MenuBasePos.Y - 250.f + 50.f * CurrentMenuIndex};
 
             if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(SelectIndicator->Slot))
             {
-                IndicatorSlot->SetPosition(FVector2D(IndicatorX, TargetY));
+                IndicatorSlot->SetPosition(TargetPos);
             }
         }
     }
