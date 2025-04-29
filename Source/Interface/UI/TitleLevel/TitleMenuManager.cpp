@@ -79,7 +79,7 @@ namespace AnimationHelper
 
 void UTitleMenuManager::PlayIndicatorAnimation()
 {
-    IsAnimationRunning = true; // 애니메이션 시작 플래그 설정
+    IsAnimationRunning = true;
     
     if (!SelectIndicator)
     {
@@ -94,9 +94,8 @@ void UTitleMenuManager::PlayIndicatorAnimation()
         return;
     }
     
-    // 애니메이션 지속 시간 설정
     const float AnimDuration = IndicatorAnimationDuration;
-    const float TickInterval = 0.006f; // 약 166fps로 증가 (더 부드러운 애니메이션)
+    const float TickInterval = 0.006f;
     float* ElapsedTime = new float(0.0f);
     
     TWeakObjectPtr<UTitleMenuManager> WeakThis(this);
@@ -107,7 +106,6 @@ void UTitleMenuManager::PlayIndicatorAnimation()
     
     if (UWorld* World = SelectIndicator->GetWorld())
     {
-        // 기존 타이머 정리
         World->GetTimerManager().ClearTimer(IndicatorAnimationTimerHandle);
 
         World->GetTimerManager().SetTimer(
@@ -131,44 +129,84 @@ void UTitleMenuManager::PlayIndicatorAnimation()
                     
                     if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(WeakIndicator->Slot))
                     {
-                        // 저장된 원래 위치를 기준으로 왼쪽으로 이동
                         float NewX = BasePosition.X - 15.f * EasedProgress;
                         IndicatorSlot->SetPosition(FVector2D(NewX, BasePosition.Y));
                     }
                     
-                    float Brightness = 1.0f + 0.5f * EasedProgress;
+                    // 왼쪽으로 이동 시 반짝임 한 번만 발생 (산 모양 커브)
+                    // 0->1->0 형태로 한번만 반짝임 
+                    float FlashCurve;
+                    if (NormalizedProgress < 0.5f) {
+                        // 0->1 (서서히 밝아짐)
+                        FlashCurve = NormalizedProgress * 2.0f;
+                    } else {
+                        // 1->0 (서서히 어두워짐)
+                        FlashCurve = 2.0f - (NormalizedProgress * 2.0f);
+                    }
+                    
+                    // 밝기 조절 (0.7에서 1.0 사이)
+                    float Brightness = 1.0f + 0.3f * FlashCurve;
                     WeakIndicator->SetColorAndOpacity(FLinearColor(Brightness, Brightness, Brightness));
+                    
+                    // 투명도 조절 (0.7에서 1.0 사이)
+                    float Opacity = 0.7f + 0.3f * FlashCurve;
+                    WeakIndicator->SetRenderOpacity(Opacity);
                 }
                 // 오른쪽으로 돌아오는 구간 (23.33%)
                 else if (Progress <= 0.3666f)
                 {
-                    float NormalizedProgress = (Progress - 0.1333f) / 0.2333f; // 0.0 ~ 1.0
+                    float NormalizedProgress = (Progress - 0.1333f) / 0.2333f;
                     float EasedProgress = NormalizedProgress * NormalizedProgress;
                     
                     if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(WeakIndicator->Slot))
                     {
-                        // 원래 위치의 왼쪽에서 원래 위치로 복귀
                         float NewX = BasePosition.X - 15.f + 15.f * EasedProgress;
                         IndicatorSlot->SetPosition(FVector2D(NewX, BasePosition.Y));
                     }
                     
-                    float Brightness = 1.5f - 0.5f * EasedProgress;
+                    // 돌아올 때 한 번의 부드러운 반짝임 (종 모양 커브)
+                    // 원래 밝기->밝아짐->원래 밝기
+                    float BellCurve = FMath::Sin(NormalizedProgress * PI);  // 0->1->0 종 모양
+                    
+                    // 밝기 조절
+                    float Brightness = 1.0f + 0.2f * BellCurve;
                     WeakIndicator->SetColorAndOpacity(FLinearColor(Brightness, Brightness, Brightness));
+                    
+                    // 투명도 조절
+                    float Opacity = 0.8f + 0.2f * BellCurve;
+                    WeakIndicator->SetRenderOpacity(Opacity);
                 }
                 // 대기 시간 (10%)
                 else if (Progress <= 0.4666f)
                 {
-                    // 원래 위치로 복귀
                     if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(WeakIndicator->Slot))
                     {
                         IndicatorSlot->SetPosition(BasePosition);
                     }
                     
                     WeakIndicator->SetColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f));
+                    
+                    // 대기 시간 동안 한 번의 미세한 반짝임
+                    float IdleProgress = (Progress - 0.3666f) / 0.1f;  // 0->1
+                    float PulseCurve;
+                    
+                    if (IdleProgress < 0.5f) {
+                        // 첫 절반: 서서히 밝아짐
+                        PulseCurve = IdleProgress * 2.0f;
+                    } else {
+                        // 후반부: 서서히 어두워짐
+                        PulseCurve = 2.0f - (IdleProgress * 2.0f);
+                    }
+                    
+                    float IdleOpacity = 0.9f + 0.1f * PulseCurve;  // 미세한 변화
+                    WeakIndicator->SetRenderOpacity(IdleOpacity);
                 }
-                // 여기서부터는 기존 코드와 동일
                 else
                 {
+                    // 나머지 애니메이션 구간 - 투명도 1로 고정
+                    WeakIndicator->SetRenderOpacity(1.0f);
+                    WeakIndicator->SetColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f));
+                    
                     // 애니메이션 조기 완료 처리
                     if (UWorld* TimerWorld = GEngine && WeakThis.IsValid() ? 
                         GEngine->GetWorldFromContextObjectChecked(WeakThis.Get()) : nullptr)
@@ -178,19 +216,17 @@ void UTitleMenuManager::PlayIndicatorAnimation()
                     
                     delete ElapsedTime;
                     
-                    // 애니메이션 플래그 업데이트
+                    // 애니메이션 플래그 업데이트 및 재시작
                     if (WeakThis.IsValid())
                     {
                         WeakThis->IsAnimationRunning = false;
                         
-                        // 계속 애니메이션할지 확인 후 재시작
                         if (WeakThis->IsIndicatorAnimating)
                         {
                             WeakThis->PlayIndicatorAnimation();
                         }
                     }
                     
-                    // 여기서 return을 추가하여 아래 코드가 실행되지 않도록 함
                     return;
                 }
                 
@@ -206,12 +242,11 @@ void UTitleMenuManager::PlayIndicatorAnimation()
                     
                     delete ElapsedTime;
                     
-                    // 애니메이션 플래그 업데이트
+                    // 애니메이션 플래그 업데이트 및 재시작
                     if (WeakThis.IsValid())
                     {
                         WeakThis->IsAnimationRunning = false;
                         
-                        // 계속 애니메이션할지 확인 후 재시작
                         if (WeakThis->IsIndicatorAnimating)
                         {
                             WeakThis->PlayIndicatorAnimation();
@@ -317,7 +352,7 @@ void UTitleMenuManager::UpdateMenuSelection()
     if (UCanvasPanelSlot* MenuSlot = Cast<UCanvasPanelSlot>(Owner->MenuImage->Slot))
     {
         FVector2D MenuBasePos = MenuSlot->GetPosition();
-        FVector2D TargetPos = {MenuBasePos.X + 42.5f, MenuBasePos.Y - 255.f + 70.f * CurrentMenuIndex};
+        FVector2D TargetPos = {MenuBasePos.X + 50.f, MenuBasePos.Y - 255.f + 66.75f * CurrentMenuIndex};
 
         if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(SelectIndicator->Slot))
         {
@@ -334,11 +369,10 @@ void UTitleMenuManager::UpdateMenuSelection()
                 World->GetTimerManager().SetTimer(
                     ResetAnimHandle, 
                     [this]() {
-                        // 애니메이션 재시작
                         IsIndicatorAnimating = true;
                         PlayIndicatorAnimation();
                     }, 
-                    0.5f,
+                    0.125f,
                     false
                 );
             }
@@ -354,7 +388,43 @@ void UTitleMenuManager::PlaySelectionAnimation()
 
 void UTitleMenuManager::OpenPlayLevel()
 {
-    UGameplayStatics::OpenLevel(Owner, TEXT("PlayLevel"));
+    // 안전한 레벨 전환
+    if (Owner && Owner->GetWorld())
+    {
+        APlayerController* PC = Owner->GetWorld()->GetFirstPlayerController();
+        
+        if (PC)
+        {
+            // 입력 비활성화로 추가 입력 방지
+            PC->DisableInput(PC);
+            
+            // 페이드 아웃 효과 추가 (선택 사항)
+            if (SelectIndicator)
+            {
+                SelectIndicator->SetRenderOpacity(0.0f);
+            }
+            
+            // 약간의 지연 후 레벨 열기 - 즉시 전환 시 발생하는 메모리 문제 방지
+            FTimerHandle DelayHandle;
+            Owner->GetWorld()->GetTimerManager().SetTimer(
+                DelayHandle, 
+                [this]()
+                {
+                    if (Owner && Owner->GetWorld())
+                    {
+                        UGameplayStatics::OpenLevel(Owner->GetWorld(), TEXT("PlayLevel"));
+                    }
+                }, 
+                0.1f, 
+                false
+            );
+        }
+        else
+        {
+            // 대체 방법 - 직접 월드를 사용
+            UGameplayStatics::OpenLevel(Owner->GetWorld(), TEXT("PlayLevel"));
+        }
+    }
 }
 
 void UTitleMenuManager::OpenRankingMenu()
