@@ -306,7 +306,7 @@ void UTitleLevelWidget::StartGame()
     if (APlayerController* PC = GetOwningPlayer())
     {
         PC->DisableInput(PC);
-        
+
         // 2. HUD 정리 (옵셔널)
         if (AFruitHUD* FruitHUD = Cast<AFruitHUD>(PC->GetHUD()))
         {
@@ -315,19 +315,30 @@ void UTitleLevelWidget::StartGame()
         }
     }
 
-    // 3. 모든 애니메이션 중지
+    // 3. 모든 타이틀 위젯 숨김
+    if (LogoImage)
+    {
+        LogoImage->SetVisibility(ESlateVisibility::Hidden);
+        LogoImage->SetRenderOpacity(0.f);
+    }
+    if (MenuImage)
+    {
+        MenuImage->SetVisibility(ESlateVisibility::Hidden);
+        MenuImage->SetRenderOpacity(0.f);
+    }
     if (SelectIndicator)
     {
-        SelectIndicator->SetRenderOpacity(0.0f);
+        SelectIndicator->SetVisibility(ESlateVisibility::Hidden);
+        SelectIndicator->SetRenderOpacity(0.f);
     }
 
-    // 3-1. 타이머 모두 정리 (반드시 레벨 전환 전에!)
+    // 4. 타이머 모두 정리
     if (UWorld* World = GetWorld())
     {
         World->GetTimerManager().ClearAllTimersForObject(this);
     }
 
-    // 4. 직접 레벨 로드 요청 (this 캡처 금지)
+    // 5. 레벨 전환 예약
     if (UWorld* World = GetWorld())
     {
         FTimerHandle GameStartHandle;
