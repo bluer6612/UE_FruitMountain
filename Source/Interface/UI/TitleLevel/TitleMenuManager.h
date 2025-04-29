@@ -7,6 +7,7 @@
 
 class UImage;
 class UTitleLevelWidget;
+class UMenuIndicatorAnimator;
 
 /**
  * 타이틀 메뉴 관리자
@@ -31,8 +32,8 @@ public:
     void SelectCurrentMenu();
     void UpdateMenuSelection();
     
-    // 애니메이션 제어 함수
-    void StartIndicatorAnimation(bool bStart);
+    // 소멸 시 정리
+    virtual void BeginDestroy() override;
     
 private:
     // 메뉴 동작 함수
@@ -41,22 +42,12 @@ private:
     void OpenOptionsMenu();
     void OpenCreditScreen();
     
-    // 애니메이션 관련 함수
+    // 선택 효과 함수
     void PlaySelectionAnimation();
-    void PlayIndicatorAnimation();
 
-    // 애니메이션 제어 멤버 변수
-    bool IsIndicatorAnimating = true;
-    bool IsAnimationRunning = false;
-    
     // 메뉴 상태 변수
     int32 CurrentMenuIndex = 0;
     static constexpr int32 MenuItemCount = 4;
-    
-    // 애니메이션 관련 변수
-    FTimerHandle IndicatorAnimationTimerHandle;
-    TArray<FTimerHandle> AnimationTimerHandles;
-    float IndicatorAnimationDuration = 2.75f;  // 애니메이션 지속 시간
     
     // 참조 변수
     UPROPERTY()
@@ -64,4 +55,8 @@ private:
     
     UPROPERTY()
     UTitleLevelWidget* Owner = nullptr;
+    
+    // 애니메이션 관리자
+    UPROPERTY()
+    UMenuIndicatorAnimator* IndicatorAnimator = nullptr;
 };
