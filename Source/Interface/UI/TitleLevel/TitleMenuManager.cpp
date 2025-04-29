@@ -32,24 +32,21 @@ void UTitleMenuManager::Initialize(UImage* InSelectIndicator, UTitleLevelWidget*
                 FTimerHandle FirstAnimHandle;
                 World->GetTimerManager().SetTimer(FirstAnimHandle, [this]()
                 {
-                    // 첫 애니메이션 실행
+                    // 첫 애니메이션만 실행 (이후에는 자동 반복됨)
                     PlayIndicatorAnimation();
-                    
-                    // 이후 반복 실행 설정
-                    StartIndicatorAnimation();
                 }, 0.25f, false);
             }
         }
     }
 }
 
-void UTitleMenuManager::StartIndicatorAnimation()
+void UTitleMenuManager::StartIndicatorAnimation(bool bStart)
 {
-    if (UWorld* World = Owner ? Owner->GetWorld() : nullptr)
+    IsIndicatorAnimating = bStart;
+    
+    if (bStart && !IsAnimationRunning)
     {
-        // 애니메이션 반복 (두 번째 애니메이션부터)
-        World->GetTimerManager().SetTimer(IndicatorAnimationTimerHandle, this, 
-            &UTitleMenuManager::PlayIndicatorAnimation, IndicatorAnimationInterval, true);
+        PlayIndicatorAnimation();
     }
 }
 
@@ -82,6 +79,8 @@ namespace AnimationHelper
 
 void UTitleMenuManager::PlayIndicatorAnimation()
 {
+    IsAnimationRunning = true; // 애니메이션 시작 플래그 설정
+    
     if (!SelectIndicator)
     {
         return;
@@ -125,10 +124,11 @@ void UTitleMenuManager::PlayIndicatorAnimation()
             *ElapsedTime += TickInterval;
             float Progress = FMath::Clamp(*ElapsedTime / AnimDuration, 0.0f, 1.0f);
             
-            if (Progress <= 0.3f)
+            // 왼쪽으로 이동하는 구간 (13.33%)
+            if (Progress <= 0.1333f)
             {
-                // 첫 30%: 원래 위치에서 왼쪽으로 빠르게 튕겨나감
-                float NormalizedProgress = Progress / 0.3f; // 0.0 ~ 1.0
+                // 첫 13.33%: 원래 위치에서 왼쪽으로 더 빠르게 튕겨나감
+                float NormalizedProgress = Progress / 0.1333f; // 0.0 ~ 1.0
                 
                 // 가속되는 움직임 (easeOut)
                 float EasedProgress = 1.0f - FMath::Pow(1.0f - NormalizedProgress, 2.0f);
@@ -144,17 +144,18 @@ void UTitleMenuManager::PlayIndicatorAnimation()
                 float Brightness = 1.0f + 0.5f * EasedProgress;
                 WeakIndicator->SetColorAndOpacity(FLinearColor(Brightness, Brightness, Brightness));
             }
-            else
+            // 오른쪽으로 돌아오는 구간 (23.33%)
+            else if (Progress <= 0.3666f)
             {
-                // 나머지 70%: 왼쪽에서 천천히 원래 위치로 복귀
-                float NormalizedProgress = (Progress - 0.3f) / 0.7f; // 0.0 ~ 1.0
+                // 오른쪽으로 돌아오는 시간
+                float NormalizedProgress = (Progress - 0.1333f) / 0.2333f; // 0.0 ~ 1.0
                 
                 // 천천히 시작하여 점점 가속 (easeIn)
                 float EasedProgress = NormalizedProgress * NormalizedProgress;
                 
                 if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(WeakIndicator->Slot))
                 {
-                    // 왼쪽에서 원래 위치로 천천히 복귀 (Y축 변화 없음)
+                    // 왼쪽에서 원래 위치로 빠르게 복귀 (Y축 변화 없음)
                     float NewX = (CurrentPos.X - 15.f) + 15.f * EasedProgress;
                     IndicatorSlot->SetPosition(FVector2D(NewX, CurrentPos.Y));
                 }
@@ -163,20 +164,71 @@ void UTitleMenuManager::PlayIndicatorAnimation()
                 float Brightness = 1.5f - 0.5f * EasedProgress;
                 WeakIndicator->SetColorAndOpacity(FLinearColor(Brightness, Brightness, Brightness));
             }
-            
-            // 애니메이션 완료
-            if (Progress >= 1.0f)
+            // 대기 시간 대폭 줄임 - 전체의 10%만 대기 (기존 63.34% → 10%)
+            else if (Progress <= 0.4666f) // 원위치에 0.1(10%)만 대기
             {
-                // 색상만 원래대로 복원
-                WeakIndicator->SetColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f));
+                // 원위치 유지
+                if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(WeakIndicator->Slot))
+                {
+                    IndicatorSlot->SetPosition(CurrentPos);
+                }
                 
+                // 색상은 원래대로
+                WeakIndicator->SetColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f));
+            }
+            // 애니메이션 조기 완료 처리
+            else
+            {
+                // 애니메이션을 조기에 완료로 간주하고 타이머 정리
                 if (UWorld* TimerWorld = GEngine && WeakThis.IsValid() ? 
                     GEngine->GetWorldFromContextObjectChecked(WeakThis.Get()) : nullptr)
                 {
                     TimerWorld->GetTimerManager().ClearTimer(*AnimHandle);
                 }
+                
                 delete AnimHandle;
                 delete ElapsedTime;
+                
+                // 애니메이션 플래그 업데이트
+                if (WeakThis.IsValid())
+                {
+                    WeakThis->IsAnimationRunning = false;
+                    
+                    // 계속 애니메이션할지 확인 후 재시작
+                    if (WeakThis->IsIndicatorAnimating)
+                    {
+                        WeakThis->PlayIndicatorAnimation();
+                    }
+                }
+                
+                // 여기서 return을 추가하여 아래 코드가 실행되지 않도록 함
+                return;
+            }
+            
+            // 표준 애니메이션 완료 (Progress >= 1.0f)
+            if (Progress >= 1.0f)
+            {
+                // 타이머 정리
+                if (UWorld* TimerWorld = GEngine && WeakThis.IsValid() ? 
+                    GEngine->GetWorldFromContextObjectChecked(WeakThis.Get()) : nullptr)
+                {
+                    TimerWorld->GetTimerManager().ClearTimer(*AnimHandle);
+                }
+                
+                delete AnimHandle;
+                delete ElapsedTime;
+                
+                // 애니메이션 플래그 업데이트
+                if (WeakThis.IsValid())
+                {
+                    WeakThis->IsAnimationRunning = false;
+                    
+                    // 계속 애니메이션할지 확인 후 재시작
+                    if (WeakThis->IsIndicatorAnimating)
+                    {
+                        WeakThis->PlayIndicatorAnimation();
+                    }
+                }
             }
         }, TickInterval, true);
     }
@@ -259,7 +311,7 @@ void UTitleMenuManager::UpdateMenuSelection()
         if (UCanvasPanelSlot* MenuSlot = Cast<UCanvasPanelSlot>(Owner->MenuImage->Slot))
         {
             FVector2D MenuBasePos = MenuSlot->GetPosition();
-            FVector2D TargetPos = {MenuBasePos.X + 37.5f, MenuBasePos.Y - 250.f + 50.f * CurrentMenuIndex};
+            FVector2D TargetPos = {MenuBasePos.X + 42.5f, MenuBasePos.Y - 255.f + 50.f * CurrentMenuIndex};
 
             if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(SelectIndicator->Slot))
             {

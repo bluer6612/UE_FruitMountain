@@ -8,6 +8,9 @@
 class UImage;
 class UTitleLevelWidget;
 
+/**
+ * 타이틀 메뉴 관리자
+ */
 UCLASS()
 class UE_FRUITMOUNTAIN_API UTitleMenuManager : public UObject
 {
@@ -22,26 +25,35 @@ public:
     // 키 입력 처리
     bool HandleKeyDown(const FKey& Key);
     
-    // 메뉴 선택 위치 업데이트
-    void UpdateMenuSelection();
-    
-private:
     // 메뉴 선택 관련 함수
     void MoveSelectionUp();
     void MoveSelectionDown();
     void SelectCurrentMenu();
-    void PlaySelectionAnimation();
+    void UpdateMenuSelection();
     
-    // 메뉴 아이템 처리 함수
+private:
+    // 메뉴 동작 함수
     void OpenPlayLevel();
     void OpenRankingMenu();
     void OpenOptionsMenu();
     void OpenCreditScreen();
     
+    // 애니메이션 관련 함수
+    void PlaySelectionAnimation();
+    void PlayIndicatorAnimation();
+    void StartIndicatorAnimation(bool bStart = true);
+
+    // 애니메이션 제어 멤버 변수
+    bool IsIndicatorAnimating = true;
+    bool IsAnimationRunning = false;
+    
     // 메뉴 상태 변수
     int32 CurrentMenuIndex = 0;
     static constexpr int32 MenuItemCount = 4;
-    float MenuPositions[MenuItemCount] = { 50.0f, 100.0f, 150.0f, 200.0f };
+    
+    // 애니메이션 관련 변수
+    FTimerHandle IndicatorAnimationTimerHandle;
+    float IndicatorAnimationDuration = 2.75f;  // 애니메이션 지속 시간
     
     // 참조 변수
     UPROPERTY()
@@ -49,14 +61,4 @@ private:
     
     UPROPERTY()
     UTitleLevelWidget* Owner = nullptr;
-    
-    // 선택 표시기 애니메이션 관련 변수
-    FTimerHandle IndicatorAnimationTimerHandle;
-    float IndicatorAnimationDuration = 2.25f;
-    float IndicatorAnimationInterval = 4.5f;
-    FVector2D IndicatorOriginalPosition;
-    
-    // 선택 표시기 애니메이션 함수
-    void StartIndicatorAnimation();
-    void PlayIndicatorAnimation();
 };
