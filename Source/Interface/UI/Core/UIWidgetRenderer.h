@@ -13,7 +13,8 @@ enum class EWidgetImageType : uint8
     UI_Play_NextFruit,
     UI_Title_Logo,
     UI_Title_Menu,
-    UI_Title_Select
+    UI_Title_Select,
+    UI_None
 };
 
 class UCanvasPanel;
@@ -112,4 +113,7 @@ private:
 
     UPROPERTY()
     UImage* UI_Title_Menu;
+
+    UPROPERTY()
+    UImage* UI_Title_Select;
 };

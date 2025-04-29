@@ -11,11 +11,16 @@ UTitleLevelWidget::UTitleLevelWidget(const FObjectInitializer& ObjectInitializer
     : Super(ObjectInitializer)
 {
     bIsFocusable = true;
-    FadeOutDuration = 2.5f;
     bHasScriptImplementedTick = true;
 
     // 메뉴 관리자를 생성자에서 올바르게 생성
     MenuManager = ObjectInitializer.CreateDefaultSubobject<UTitleMenuManager>(this, TEXT("MenuManager"));
+}
+
+void UTitleLevelWidget::NativeDestruct()
+{
+    Super::NativeDestruct();
+    GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
 }
 
 void UTitleLevelWidget::InitializeTitleWidget()
@@ -36,7 +41,7 @@ void UTitleLevelWidget::InitializeTitleWidget()
         
         SelectIndicator = Renderer->PrepareUIWidget(EWidgetImageType::UI_Title_Select,
             TEXT("/Game/UI/TitleLevel/UI_Title_Select"),
-            FVector2D(50.f, 50.f), 150.f - 75.f, MenuPositions[0]);  // 메뉴 X 위치(150.f)에서 75.f만큼 왼쪽에 위치
+            FVector2D(59.f, 59.f), 150.f - 75.f, MenuPositions[0]);  // 메뉴 X 위치(150.f)에서 75.f만큼 왼쪽에 위치
         SelectIndicator->SetRenderOpacity(0.f);
     }
     else

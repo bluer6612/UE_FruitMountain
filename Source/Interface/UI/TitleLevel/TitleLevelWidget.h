@@ -14,6 +14,9 @@ public:
     
     // 위젯 초기화 함수
     void InitializeTitleWidget();
+
+    // 위젯 라이프사이클 함수
+    virtual void NativeDestruct() override;
     
 protected:
     // 키 입력은 여전히 이 클래스에서 받아야 함 (가상 함수)
