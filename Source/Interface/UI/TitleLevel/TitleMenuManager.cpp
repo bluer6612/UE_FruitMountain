@@ -103,8 +103,8 @@ void UTitleMenuManager::UpdateMenuSelection()
         if (UCanvasPanelSlot* MenuSlot = Cast<UCanvasPanelSlot>(Owner->MenuImage->Slot))
         {
             float MenuBaseY = MenuSlot->GetPosition().Y; // 메뉴 이미지의 Y 위치
-            float IndicatorX = 150.f - 75.f;
-            float TargetY = MenuBaseY + 200.f + 50.f * CurrentMenuIndex; // 메뉴 기준 + 50f씩 증가
+            float IndicatorX = 150.f;
+            float TargetY = MenuBaseY - 250.f + 50.f * CurrentMenuIndex; // 메뉴 기준 + 50f씩 증가
 
             UE_LOG(LogTemp, Warning, TEXT("[TitleMenuManager] 메뉴 위치 계산: Index=%d, MenuBaseY=%f, TargetY=%f"),
                 CurrentMenuIndex, MenuBaseY, TargetY);

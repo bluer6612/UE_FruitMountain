@@ -47,12 +47,8 @@ void UTitleLevelWidget::InitializeTitleWidget()
         
         SelectIndicator = Renderer->PrepareUIWidget(EWidgetImageType::UI_Title_Select,
             TEXT("/Game/UI/TitleLevel/UI_Title_Select"),
-            FVector2D(59.f, 59.f), 150.f - 75.f, -150.0f);  // 명시적으로 양수 값 사용
+            FVector2D(59.f, 59.f), 0.f, 0.f);
         SelectIndicator->SetRenderOpacity(0.f);
-        SelectIndicator->SetColorAndOpacity(FLinearColor(1,0,0,1)); // 빨간색, 완전 불투명
-        UE_LOG(LogTemp, Log, TEXT("[TitleLevelWidget] SelectIndicator 생성: %s (위치: X=%f, Y=%f)"), 
-               IsValid(SelectIndicator) ? TEXT("성공") : TEXT("실패"), 
-               150.f - 75.f, MenuPositions[0]);
 
         // 메뉴 Z-Order 설정
         if (UCanvasPanelSlot* MenuSlot = Cast<UCanvasPanelSlot>(MenuImage->Slot))
