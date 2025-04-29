@@ -304,6 +304,7 @@ FReply UTitleLevelWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKe
 
 void UTitleLevelWidget::NativeDestruct()
 {
+    UE_LOG(LogTemp, Warning, TEXT("TitleLevelWidget::NativeDestruct 호출: this=%p"), this);
     if (UWorld* World = GetWorld())
     {
         World->GetTimerManager().ClearAllTimersForObject(this);
@@ -321,6 +322,7 @@ void UTitleLevelWidget::StartGame()
         // 2. HUD 정리 (옵셔널)
         if (AFruitHUD* FruitHUD = Cast<AFruitHUD>(PC->GetHUD()))
         {
+            UE_LOG(LogTemp, Warning, TEXT("StartGame에서 ClearTitleWidget 호출"));
             FruitHUD->ClearTitleWidget();
         }
     }

@@ -47,6 +47,7 @@ void ATitleGameMode::BeginPlay()
                 // HUD에게 TitleWidget 인스턴스 전달
                 if (AFruitHUD* FruitHUD = Cast<AFruitHUD>(GetWorld()->GetFirstPlayerController()->GetHUD()))
                 {
+                    UE_LOG(LogTemp, Warning, TEXT("TitleGameMode: SetTitleWidget 호출, TitleWidget=%p"), TitleWidget);
                     FruitHUD->SetTitleWidget(TitleWidget);
                 }
 

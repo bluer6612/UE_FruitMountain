@@ -92,10 +92,16 @@ void AFruitHUD::CreateAndAddWidgets()
 
 void AFruitHUD::ClearTitleWidget()
 {
+    UE_LOG(LogTemp, Warning, TEXT("ClearTitleWidget 호출: TitleWidget=%p"), TitleWidget);
+
     if (TitleWidget)
     {
         UE_LOG(LogTemp, Warning, TEXT("FruitHUD: TitleWidget RemoveFromParent 및 nullptr 처리"));
         TitleWidget->RemoveFromParent();
         TitleWidget = nullptr;
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("FruitHUD: TitleWidget이 nullptr이어서 RemoveFromParent 생략"));
     }
 }
