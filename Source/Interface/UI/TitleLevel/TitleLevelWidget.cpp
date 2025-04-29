@@ -1,4 +1,5 @@
 #include "TitleLevelWidget.h"
+#include "TitleMenuManager.h"
 #include "Components/Border.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
@@ -16,6 +17,9 @@ UTitleLevelWidget::UTitleLevelWidget(const FObjectInitializer& ObjectInitializer
     bIsFocusable = true;
     FadeOutDuration = 2.5f;
     bHasScriptImplementedTick = true;
+    
+    // 메뉴 관리자 생성
+    MenuManager = NewObject<UTitleMenuManager>(this);
 }
 
 void UTitleLevelWidget::InitializeTitleWidget()
@@ -34,11 +38,10 @@ void UTitleLevelWidget::InitializeTitleWidget()
             FVector2D(592.f, 359.f), 150.f, 50.f);
         MenuImage->SetRenderOpacity(0.f);
         
-        // 선택 표시기 생성 부분 수정
         SelectIndicator = Renderer->PrepareUIWidget(EWidgetImageType::UI_Title_Select,
             TEXT("/Game/UI/TitleLevel/UI_Title_Select"),
             FVector2D(50.f, 50.f), 150.f - 75.f, MenuPositions[0]);  // 메뉴 X 위치(150.f)에서 75.f만큼 왼쪽에 위치
-        SelectIndicator->SetRenderOpacity(0.f);  // 페이드인 때까지 숨김
+        SelectIndicator->SetRenderOpacity(0.f);
     }
     else
     {
@@ -103,7 +106,13 @@ void UTitleLevelWidget::StartLogoAndMenuFadeIn()
                 if (SelectIndicator)
                 {
                     PlayFadeIn(SelectIndicator);
-                    UpdateMenuSelection();  // 초기 선택 상태 설정
+                    
+                    // 메뉴 관리자 초기화 및 첫번째 항목 선택
+                    if (MenuManager)
+                    {
+                        MenuManager->Initialize(SelectIndicator, this);
+                        MenuManager->UpdateMenuSelection();
+                    }
                 }
             }, 0.2f, false);
         }
@@ -215,126 +224,14 @@ void UTitleLevelWidget::PlayFadeIn(UImage* TargetImage)
     }, TickInterval, true);
 }
 
-void UTitleLevelWidget::UpdateMenuSelection()
-{
-    if (!SelectIndicator)
-    {
-        UE_LOG(LogTemp, Error, TEXT("메뉴 선택 표시기가 유효하지 않습니다."));
-        return;
-    }
-    
-    // 현재 선택된 메뉴 항목에 표시기 위치 설정
-    if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(SelectIndicator->Slot))
-    {
-        // X 위치는 메뉴 위치(150.f)에서 75.f 뺀 값으로 고정
-        float IndicatorX = 150.f - 75.f;
-        float TargetY = MenuPositions[CurrentMenuIndex];
-        
-        // 부드러운 이동 애니메이션
-        FVector2D NewPos(IndicatorX, TargetY);
-        IndicatorSlot->SetPosition(NewPos);
-        
-        // 활성화된 메뉴 시각적 피드백
-        IndicatorSlot->SetSize(FVector2D(60.f, 60.f));
-        
-        // 애니메이션 효과
-        PlaySelectionAnimation();
-    }
-}
-
-// 선택 효과를 위한 간단한 애니메이션
-void UTitleLevelWidget::PlaySelectionAnimation()
-{
-    if (!SelectIndicator) return;
-    
-    // 깜박임 또는 크기 변화 등의 간단한 애니메이션
-    SelectIndicator->SetRenderScale(FVector2D(1.2f, 1.2f));
-    
-    FTimerHandle ResetHandle;
-    GetWorld()->GetTimerManager().SetTimer(ResetHandle, [this]()
-    {
-        if (SelectIndicator)
-        {
-            SelectIndicator->SetRenderScale(FVector2D(1.0f, 1.0f));
-        }
-    }, 0.15f, false);
-}
-
 FReply UTitleLevelWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
 {
-    const FKey Key = InKeyEvent.GetKey();
-    
-    // 위로 이동 (UP, W)
-    if (Key == EKeys::Up || Key == EKeys::W)
+    // MenuManager에게 키 처리 위임
+    if (MenuManager && MenuManager->HandleKeyDown(InKeyEvent.GetKey()))
     {
-        // 순환식으로 인덱스 감소
-        CurrentMenuIndex = (CurrentMenuIndex - 1 + MenuItemCount) % MenuItemCount;
-        UpdateMenuSelection();
         return FReply::Handled();
     }
     
-    // 아래로 이동 (DOWN, S)
-    if (Key == EKeys::Down || Key == EKeys::S)
-    {
-        // 순환식으로 인덱스 증가
-        CurrentMenuIndex = (CurrentMenuIndex + 1) % MenuItemCount;
-        UpdateMenuSelection();
-        return FReply::Handled();
-    }
-    
-    // 선택 (Enter, SpaceBar)
-    if (Key == EKeys::SpaceBar || Key == EKeys::Enter)
-    {
-        OnMenuSelect();
-        return FReply::Handled();
-    }
-    
+    // MenuManager에서 처리되지 않은 키는 기본 처리
     return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
-}
-
-void UTitleLevelWidget::OnMenuSelect()
-{
-    switch (CurrentMenuIndex)
-    {
-        case 0: // 게임 시작
-            UGameplayStatics::OpenLevel(this, TEXT("PlayLevel"));
-            break;
-            
-        case 1: // 랭킹
-            // 랭킹 화면 표시
-            OpenRankingMenu();
-            break;
-            
-        case 2: // 옵션
-            // 옵션 메뉴 표시
-            OpenOptionsMenu();
-            break;
-            
-        case 3: // 크레딧
-            // 크레딧 표시
-            OpenCreditScreen();
-            break;
-    }
-}
-
-// 새로운 메뉴 함수들 추가
-void UTitleLevelWidget::OpenRankingMenu()
-{
-    // 랭킹 화면 표시 로직
-    // 예: 랭킹 위젯 생성 및 표시
-    UE_LOG(LogTemp, Warning, TEXT("랭킹 메뉴 열기"));
-}
-
-void UTitleLevelWidget::OpenOptionsMenu()
-{
-    // 옵션 메뉴 표시 로직
-    // 예: 옵션 위젯 생성 및 표시
-    UE_LOG(LogTemp, Warning, TEXT("옵션 메뉴 열기"));
-}
-
-void UTitleLevelWidget::OpenCreditScreen()
-{
-    // 크레딧 화면 표시 로직
-    // 예: 크레딧 위젯 생성 및 표시
-    UE_LOG(LogTemp, Warning, TEXT("크레딧 화면 열기"));
 }
