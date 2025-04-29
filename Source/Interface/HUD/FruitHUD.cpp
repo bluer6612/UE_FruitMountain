@@ -81,27 +81,14 @@ void AFruitHUD::CreateAndAddWidgets()
                 UE_LOG(LogTemp, Warning, TEXT("FruitHUD: SBox에 래핑한 위젯을 뷰포트에 직접 추가"));
             }
             
-            TitleWidget->InitializeTitleWidget();
+            if (World->GetMapName().Contains(TEXT("PlayLevel")))
+            {
+                TitleWidget->InitializeTitleWidget();
+            }
         }
         else
         {
             UE_LOG(LogTemp, Error, TEXT("FruitHUD: UIWidgetRenderer 생성 실패"));
         }
-    }
-}
-
-void AFruitHUD::ClearTitleWidget()
-{
-    UE_LOG(LogTemp, Warning, TEXT("ClearTitleWidget 호출: TitleWidget=%p"), TitleWidget);
-
-    if (TitleWidget)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("FruitHUD: TitleWidget RemoveFromParent 및 nullptr 처리"));
-        TitleWidget->RemoveFromParent();
-        TitleWidget = nullptr;
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("FruitHUD: TitleWidget이 nullptr이어서 RemoveFromParent 생략"));
     }
 }

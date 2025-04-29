@@ -2,9 +2,7 @@
 #include "Components/Image.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Kismet/GameplayStatics.h"
-#include "Kismet/KismetSystemLibrary.h"
 #include "TitleLevelWidget.h"
-#include "Interface/HUD/FruitHUD.h"
 #include "MenuIndicatorAnimator.h"
 
 UTitleMenuManager::UTitleMenuManager()

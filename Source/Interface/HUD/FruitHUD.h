@@ -20,9 +20,6 @@ public:
     // 필요한 위젯 생성 및 추가
     void CreateAndAddWidgets();
     
-    // TitleWidget 제거 함수
-    void ClearTitleWidget();
-    
     // TitleWidget 설정 함수
     void SetTitleWidget(UTitleLevelWidget* InTitleWidget) { TitleWidget = InTitleWidget; }
 

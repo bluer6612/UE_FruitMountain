@@ -1,11 +1,9 @@
 #include "TitleLevelWidget.h"
 #include "TitleMenuManager.h"
 #include "Components/Border.h"
-#include "Components/CanvasPanel.h"
-#include "Components/CanvasPanelSlot.h"
 #include "Components/Image.h"
+#include "Components/CanvasPanelSlot.h"
 #include "Interface/UI/Core/UIWidgetRenderer.h"
-#include "Interface/HUD/FruitHUD.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 
@@ -302,20 +300,7 @@ void UTitleLevelWidget::NativeDestruct()
 
 void UTitleLevelWidget::StartGame()
 {
-    // 1. 모든 입력 비활성화
-    if (APlayerController* PC = GetOwningPlayer())
-    {
-        PC->DisableInput(PC);
-
-        // 2. HUD 정리 (옵셔널)
-        if (AFruitHUD* FruitHUD = Cast<AFruitHUD>(PC->GetHUD()))
-        {
-            UE_LOG(LogTemp, Warning, TEXT("StartGame에서 ClearTitleWidget 호출"));
-            FruitHUD->ClearTitleWidget();
-        }
-    }
-
-    // 3. 모든 타이틀 위젯 숨김
+    // 1. 모든 타이틀 위젯 숨김
     if (LogoImage)
     {
         LogoImage->SetVisibility(ESlateVisibility::Hidden);
@@ -332,13 +317,13 @@ void UTitleLevelWidget::StartGame()
         SelectIndicator->SetRenderOpacity(0.f);
     }
 
-    // 4. 타이머 모두 정리
+    // 2. 타이머 모두 정리
     if (UWorld* World = GetWorld())
     {
         World->GetTimerManager().ClearAllTimersForObject(this);
     }
 
-    // 5. 레벨 전환 예약
+    // 3. 레벨 전환 예약
     if (UWorld* World = GetWorld())
     {
         FTimerHandle GameStartHandle;
