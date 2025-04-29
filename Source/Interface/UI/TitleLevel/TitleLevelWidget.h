@@ -14,9 +14,6 @@ public:
 
     virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
 
-    // 메뉴 인덱스(0: 시작, 1: 종료 등)
-    int32 CurrentMenuIndex = 0;
-
     void InitializeTitleWidget();
 
     float FadeOutDuration = 0.0f;
@@ -40,6 +37,17 @@ protected:
     void StartLogoAndMenuFadeIn();
 
 private:
+    // 메뉴 관련 변수
+    int32 CurrentMenuIndex = 0;
+    int32 MenuItemCount = 4;       // 4개 메뉴 슬롯
+    
+// 선택 표시기
+    UPROPERTY()
+    class UImage* SelectIndicator;
+    
+    // 메뉴 항목 Y 위치 배열
+    float MenuPositions[4] = { 50.0f, 100.0f, 150.0f, 200.0f };
+    
     bool bIsFading = false;
     float FadeTime = 0.0f;
 };
