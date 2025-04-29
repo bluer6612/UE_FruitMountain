@@ -52,8 +52,9 @@ private:
     
     // 선택 표시기 애니메이션 관련 변수
     FTimerHandle IndicatorAnimationTimerHandle;
-    float IndicatorAnimationDuration = 1.1f;  // 애니메이션 지속 시간
-    float IndicatorAnimationInterval = 2.f;  // 애니메이션 간격
+    float IndicatorAnimationDuration = 2.25f;
+    float IndicatorAnimationInterval = 4.5f;
+    FVector2D IndicatorOriginalPosition;
     
     // 선택 표시기 애니메이션 함수
     void StartIndicatorAnimation();

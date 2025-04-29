@@ -26,19 +26,18 @@ void UTitleMenuManager::Initialize(UImage* InSelectIndicator, UTitleLevelWidget*
         
         if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(SelectIndicator->Slot))
         {
-            // 첫 애니메이션은 0.5초 후 시작하고 그 이후부터는 1.5초마다 재생
+            // 첫 애니메이션은 0.5초 후 시작
             if (UWorld* World = Owner ? Owner->GetWorld() : nullptr)
             {
-                // 0.5초 후 첫 애니메이션 실행
                 FTimerHandle FirstAnimHandle;
                 World->GetTimerManager().SetTimer(FirstAnimHandle, [this]()
                 {
                     // 첫 애니메이션 실행
                     PlayIndicatorAnimation();
                     
-                    // 이후 1.5초마다 반복 실행 설정
+                    // 이후 반복 실행 설정
                     StartIndicatorAnimation();
-                }, 0.5f, false);
+                }, 0.25f, false);
             }
         }
     }
@@ -54,33 +53,21 @@ void UTitleMenuManager::StartIndicatorAnimation()
     }
 }
 
-// 이징 함수 추가 (클래스 외부 또는 헤더에 정적 함수로 추가)
+// 이징 함수 개선 - 더 자연스러운 바운스 효과
 namespace AnimationHelper
 {
-    // 바운스 효과가 있는 이징 함수
-    static float BounceEaseOut(float t)
+    // 사인파 진동을 이용한 이징 함수 - 돌아오는 과정에서 여러번 진동
+    static float ElasticEaseOut(float t)
     {
-        // 바운스 효과 (목표에 닿으면 살짝 튕겨나감)
-        if (t < 0.5f)
-        {
-            // 처음에는 천천히 가속
-            return 4 * t * t * t;
-        }
-        else
-        {
-            // 후반부에는 오버슈트 후 진동하며 정착
-            float f = ((2 * t) - 2);
-            return 0.5f * f * f * f * f * f + 1;
-        }
-    }
-    
-    // 오버슈트 효과 (목표를 약간 지나친 후 돌아옴)
-    static float BackEaseOut(float t)
-    {
-        const float c1 = 1.70158f;
-        const float c3 = c1 + 1;
+        const float c4 = (2.0f * PI) / 3.0f;
         
-        return 1 + c3 * FMath::Pow(t - 1, 3) + c1 * FMath::Pow(t - 1, 2);
+        if (t == 0.0f)
+            return 0.0f;
+        if (t == 1.0f)
+            return 1.0f;
+            
+        // 진동하는 돌아오는 움직임
+        return FMath::Pow(2.0f, -10.0f * t) * FMath::Sin((t * 10.0f - 0.75f) * c4) + 1.0f;
     }
 }
 
@@ -97,8 +84,8 @@ void UTitleMenuManager::PlayIndicatorAnimation()
         return;
     }
     
-    // 애니메이션을 위한 임시 변수
-    const float AnimDuration = IndicatorAnimationDuration;
+    // 애니메이션 지속 시간 3초로 설정
+    const float AnimDuration = 3.0f;
     const float TickInterval = 0.016f; // 약 60fps
     float* ElapsedTime = new float(0.0f);
     
@@ -129,13 +116,13 @@ void UTitleMenuManager::PlayIndicatorAnimation()
             *ElapsedTime += TickInterval;
             float Progress = FMath::Clamp(*ElapsedTime / AnimDuration, 0.0f, 1.0f);
             
-            if (Progress <= 0.5f)
+            if (Progress <= 0.4f)
             {
-                // 첫 절반: 왼쪽으로 이동하면서 밝아짐
-                float NormalizedProgress = Progress * 2.0f; // 0.0 ~ 1.0
+                // 첫 40%: 왼쪽으로 이동하면서 밝아짐
+                float NormalizedProgress = Progress / 0.4f; // 0.0 ~ 1.0
                 
-                // 바운스 효과 적용
-                float EasedProgress = AnimationHelper::BounceEaseOut(NormalizedProgress);
+                // 부드러운 가속
+                float EasedProgress = FMath::Pow(NormalizedProgress, 2.0f);
                 
                 // 위치 이동 (왼쪽으로 15.f까지)
                 if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(WeakIndicator->Slot))
@@ -150,43 +137,30 @@ void UTitleMenuManager::PlayIndicatorAnimation()
             }
             else
             {
-                // 후반 절반: 다시 오른쪽으로 이동하여 원래 위치로 복귀
-                float NormalizedProgress = (Progress - 0.5f) * 2.0f; // 0.0 ~ 1.0
+                // 나머지 60%: 돌아오는 과정에서 바운싱
+                float NormalizedProgress = (Progress - 0.4f) / 0.6f; // 0.0 ~ 1.0
                 
-                // 바운스 효과 적용 (돌아올 때는 좀 더 빠르게 시작했다가 감속)
-                float EasedProgress = AnimationHelper::BackEaseOut(NormalizedProgress);
+                // 탄성 효과 적용 - 돌아오면서 여러번 진동
+                float EasedProgress = AnimationHelper::ElasticEaseOut(NormalizedProgress);
                 
                 if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(WeakIndicator->Slot))
                 {
-                    // 왼쪽에서 시작해 오른쪽으로 이동하며 중간에 살짝 오버슈트
-                    float NewX = (CurrentPos.X - 15.f) + 15.f * EasedProgress;
-                    
-                    // 오버슈트 효과 (목표보다 살짝 더 움직였다가 돌아옴)
-                    if (NormalizedProgress > 0.8f && NormalizedProgress < 0.95f)
-                    {
-                        NewX += 3.0f * (NormalizedProgress - 0.8f) * 6.67f;
-                    }
-                    else if (NormalizedProgress >= 0.95f)
-                    {
-                        NewX += 3.0f * (1.0f - NormalizedProgress) * 60.0f;
-                    }
-                    
+                    // 진동하며 원래 위치로 복귀 (-15에서 0까지)
+                    float NewX = CurrentPos.X - 15.f * (1.0f - EasedProgress);
                     IndicatorSlot->SetPosition(FVector2D(NewX, CurrentPos.Y));
                 }
                 
-                // 색상 원래대로 (부드럽게 감소)
-                float Brightness = 1.5f - 0.5f * EasedProgress;
-                WeakIndicator->SetColorAndOpacity(FLinearColor(Brightness, Brightness, Brightness));
+                // 색상 변화도 탄성 효과와 함께 진동
+                float BrightnessFactor = 1.0f + 0.5f * (1.0f - EasedProgress);
+                // 탄성 효과에 의해 약간의 오버슈트 허용 (0.9~1.1 범위로 제한)
+                BrightnessFactor = FMath::Clamp(BrightnessFactor, 0.9f, 1.1f);
+                WeakIndicator->SetColorAndOpacity(FLinearColor(BrightnessFactor, BrightnessFactor, BrightnessFactor));
             }
             
             // 애니메이션 완료
             if (Progress >= 1.0f)
             {
-                // 원래 위치로 복원 확인
-                if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(WeakIndicator->Slot))
-                {
-                    IndicatorSlot->SetPosition(CurrentPos);
-                }
+                // 색상만 원래대로 복원
                 WeakIndicator->SetColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f));
                 
                 if (UWorld* TimerWorld = GEngine && WeakThis.IsValid() ? 
