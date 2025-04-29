@@ -47,7 +47,7 @@ void UTitleMenuManager::StartIndicatorAnimation()
 {
     if (UWorld* World = Owner ? Owner->GetWorld() : nullptr)
     {
-        // 1.5초마다 애니메이션 시작 (두 번째 애니메이션부터)
+        // 애니메이션 반복 (두 번째 애니메이션부터)
         World->GetTimerManager().SetTimer(IndicatorAnimationTimerHandle, this, 
             &UTitleMenuManager::PlayIndicatorAnimation, IndicatorAnimationInterval, true);
     }
@@ -56,18 +56,27 @@ void UTitleMenuManager::StartIndicatorAnimation()
 // 이징 함수 개선 - 더 자연스러운 바운스 효과
 namespace AnimationHelper
 {
-    // 사인파 진동을 이용한 이징 함수 - 돌아오는 과정에서 여러번 진동
-    static float ElasticEaseOut(float t)
+    // 빠른 바운싱 효과 (왼쪽으로 이동할 때)
+    static float FastBounceEasing(float t)
     {
-        const float c4 = (2.0f * PI) / 3.0f;
+        // 빠른 진동 주파수(20Hz)를 가진 사인파 + 선형 움직임
+        const float frequency = 20.0f;
+        float oscillation = FMath::Sin(t * frequency) * (1.0f - t) * 0.2f; // 진폭은 시간에 따라 감소
+        return t + oscillation; // 기본 진행에 진동 추가
+    }
+    
+    // 느린 탄성 효과 (오른쪽으로 돌아올 때)
+    static float SlowElasticEaseOut(float t)
+    {
+        const float c4 = (2.0f * PI) / 4.5f; // 진동 주파수 감소
         
         if (t == 0.0f)
             return 0.0f;
         if (t == 1.0f)
             return 1.0f;
             
-        // 진동하는 돌아오는 움직임
-        return FMath::Pow(2.0f, -10.0f * t) * FMath::Sin((t * 10.0f - 0.75f) * c4) + 1.0f;
+        // 진동하는 돌아오는 움직임 (진폭을 크게, 주파수는 낮게)
+        return FMath::Pow(2.0f, -7.0f * t) * FMath::Sin((t - 0.1f) * c4) + 1.0f;
     }
 }
 
@@ -84,9 +93,9 @@ void UTitleMenuManager::PlayIndicatorAnimation()
         return;
     }
     
-    // 애니메이션 지속 시간 3초로 설정
-    const float AnimDuration = 3.0f;
-    const float TickInterval = 0.016f; // 약 60fps
+    // 애니메이션 지속 시간 설정
+    const float AnimDuration = IndicatorAnimationDuration;
+    const float TickInterval = 0.006f; // 약 166fps로 증가 (더 부드러운 애니메이션)
     float* ElapsedTime = new float(0.0f);
     
     TWeakObjectPtr<UTitleMenuManager> WeakThis(this);
@@ -116,17 +125,17 @@ void UTitleMenuManager::PlayIndicatorAnimation()
             *ElapsedTime += TickInterval;
             float Progress = FMath::Clamp(*ElapsedTime / AnimDuration, 0.0f, 1.0f);
             
-            if (Progress <= 0.4f)
+            if (Progress <= 0.3f)
             {
-                // 첫 40%: 왼쪽으로 이동하면서 밝아짐
-                float NormalizedProgress = Progress / 0.4f; // 0.0 ~ 1.0
+                // 첫 30%: 원래 위치에서 왼쪽으로 빠르게 튕겨나감
+                float NormalizedProgress = Progress / 0.3f; // 0.0 ~ 1.0
                 
-                // 부드러운 가속
-                float EasedProgress = FMath::Pow(NormalizedProgress, 2.0f);
+                // 가속되는 움직임 (easeOut)
+                float EasedProgress = 1.0f - FMath::Pow(1.0f - NormalizedProgress, 2.0f);
                 
-                // 위치 이동 (왼쪽으로 15.f까지)
                 if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(WeakIndicator->Slot))
                 {
+                    // 왼쪽으로 15.f 이동 (Y축 변화 없음)
                     float NewX = CurrentPos.X - 15.f * EasedProgress;
                     IndicatorSlot->SetPosition(FVector2D(NewX, CurrentPos.Y));
                 }
@@ -137,24 +146,22 @@ void UTitleMenuManager::PlayIndicatorAnimation()
             }
             else
             {
-                // 나머지 60%: 돌아오는 과정에서 바운싱
-                float NormalizedProgress = (Progress - 0.4f) / 0.6f; // 0.0 ~ 1.0
+                // 나머지 70%: 왼쪽에서 천천히 원래 위치로 복귀
+                float NormalizedProgress = (Progress - 0.3f) / 0.7f; // 0.0 ~ 1.0
                 
-                // 탄성 효과 적용 - 돌아오면서 여러번 진동
-                float EasedProgress = AnimationHelper::ElasticEaseOut(NormalizedProgress);
+                // 천천히 시작하여 점점 가속 (easeIn)
+                float EasedProgress = NormalizedProgress * NormalizedProgress;
                 
                 if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(WeakIndicator->Slot))
                 {
-                    // 진동하며 원래 위치로 복귀 (-15에서 0까지)
-                    float NewX = CurrentPos.X - 15.f * (1.0f - EasedProgress);
+                    // 왼쪽에서 원래 위치로 천천히 복귀 (Y축 변화 없음)
+                    float NewX = (CurrentPos.X - 15.f) + 15.f * EasedProgress;
                     IndicatorSlot->SetPosition(FVector2D(NewX, CurrentPos.Y));
                 }
                 
-                // 색상 변화도 탄성 효과와 함께 진동
-                float BrightnessFactor = 1.0f + 0.5f * (1.0f - EasedProgress);
-                // 탄성 효과에 의해 약간의 오버슈트 허용 (0.9~1.1 범위로 제한)
-                BrightnessFactor = FMath::Clamp(BrightnessFactor, 0.9f, 1.1f);
-                WeakIndicator->SetColorAndOpacity(FLinearColor(BrightnessFactor, BrightnessFactor, BrightnessFactor));
+                // 밝기 감소
+                float Brightness = 1.5f - 0.5f * EasedProgress;
+                WeakIndicator->SetColorAndOpacity(FLinearColor(Brightness, Brightness, Brightness));
             }
             
             // 애니메이션 완료
