@@ -38,7 +38,12 @@ void APlayGameMode::BeginPlay()
 {
     Super::BeginPlay();
 
-    // PlayLevel UI만 생성
+    // 먼저 이전 TitleWidget이 있다면 정리
+    if (AFruitHUD* FruitHUD = Cast<AFruitHUD>(GetWorld()->GetFirstPlayerController()->GetHUD()))
+    {
+        FruitHUD->ClearTitleWidget();
+    }
+
     UUIWidgetRenderer::CreateDisplayWidget(GetWorld());
     // 현재 레벨 이름이 PlayLevel일 때만 Play UI 생성
     UWorld* World = GetWorld();

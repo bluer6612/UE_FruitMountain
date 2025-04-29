@@ -1,5 +1,5 @@
 #include "TitleGameMode.h"
-#include "Interface/UI/TitleLevel/TitleLevelWidget.h"
+#include "Interface/UI/TitleLevel/Default/TitleLevelWidget.h"
 #include "Blueprint/UserWidget.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Interface/HUD/FruitHUD.h"
@@ -26,24 +26,29 @@ void ATitleGameMode::BeginPlay()
 {
     Super::BeginPlay();
     
-    if (TitleWidgetClass)
+    // 현재 레벨이 TitleLevel인 경우에만 TitleWidget 생성
+    UWorld* World = GetWorld();
+    if (World && World->GetMapName().Contains(TEXT("TitleLevel")))
     {
-        TitleWidget = CreateWidget<UTitleLevelWidget>(GetWorld(), TitleWidgetClass);
-        if (TitleWidget)
+        if (TitleWidgetClass)
         {
-            TitleWidget->AddToViewport();
-
-            // HUD에게 TitleWidget 인스턴스 전달
-            if (AFruitHUD* FruitHUD = Cast<AFruitHUD>(GetWorld()->GetFirstPlayerController()->GetHUD()))
+            TitleWidget = CreateWidget<UTitleLevelWidget>(GetWorld(), TitleWidgetClass);
+            if (TitleWidget)
             {
-                FruitHUD->SetTitleWidget(TitleWidget);
-            }
+                TitleWidget->AddToViewport();
 
-            // 입력 비활성화: 플레이어 조종 막기
-            if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
-            {
-                PC->SetIgnoreMoveInput(true);
-                PC->SetIgnoreLookInput(true);
+                // HUD에게 TitleWidget 인스턴스 전달
+                if (AFruitHUD* FruitHUD = Cast<AFruitHUD>(GetWorld()->GetFirstPlayerController()->GetHUD()))
+                {
+                    FruitHUD->SetTitleWidget(TitleWidget);
+                }
+
+                // 입력 비활성화: 플레이어 조종 막기
+                if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+                {
+                    PC->SetIgnoreMoveInput(true);
+                    PC->SetIgnoreLookInput(true);
+                }
             }
         }
     }

@@ -4,6 +4,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "TitleLevelWidget.h"
+#include "Interface/HUD/FruitHUD.h"
 #include "MenuIndicatorAnimator.h"
 
 UTitleMenuManager::UTitleMenuManager()
@@ -130,46 +131,70 @@ void UTitleMenuManager::PlaySelectionAnimation()
 
 void UTitleMenuManager::OpenPlayLevel()
 {
+    // 타이머 핸들을 클래스 맴버로 이동 (나중에 정리를 위해)
+    static FTimerHandle LevelTransitionHandle;
+
     // 안전한 레벨 전환
-    if (Owner && Owner->GetWorld())
+    if (!Owner || !Owner->GetWorld())
     {
-        APlayerController* PC = Owner->GetWorld()->GetFirstPlayerController();
+        return;
+    }
+    
+    UWorld* World = Owner->GetWorld();
+    if (!World)
+    {
+        return;
+    }
+
+    // 약한 참조 생성 (소멸 시에도 안전)
+    TWeakObjectPtr<UTitleLevelWidget> WeakOwner(Owner);
+    
+    APlayerController* PC = World->GetFirstPlayerController();
+    if (PC)
+    {
+        // 입력 비활성화로 추가 입력 방지
+        PC->DisableInput(PC);
         
-        if (PC)
+        // UI 요소 숨기기
+        if (IndicatorAnimator)
         {
-            // 입력 비활성화로 추가 입력 방지
-            PC->DisableInput(PC);
-            
-            // 페이드 아웃 효과 추가 (선택 사항)
-            if (IndicatorAnimator)
+            IndicatorAnimator->StartAnimation(false);
+        }
+        
+        if (SelectIndicator)
+        {
+            SelectIndicator->SetRenderOpacity(0.0f);
+        }
+        
+        // 클래스 맴버 변수 참조 제거 및 약한 참조 사용
+        World->GetTimerManager().SetTimer(
+            LevelTransitionHandle, 
+            [WeakOwner]()
             {
-                IndicatorAnimator->StartAnimation(false);
-            }
-            
-            if (SelectIndicator)
-            {
-                SelectIndicator->SetRenderOpacity(0.0f);
-            }
-            
-            // 약간의 지연 후 레벨 열기
-            FTimerHandle DelayHandle;
-            Owner->GetWorld()->GetTimerManager().SetTimer(
-                DelayHandle, 
-                [this]()
+                // 객체 유효성 검사
+                if (WeakOwner.IsValid() && WeakOwner->GetWorld())
                 {
-                    if (Owner && Owner->GetWorld())
+                    // 레벨 전환 전 정리 작업
+                    if (APlayerController* PC = WeakOwner->GetWorld()->GetFirstPlayerController())
                     {
-                        UGameplayStatics::OpenLevel(Owner->GetWorld(), TEXT("PlayLevel"));
+                        if (AFruitHUD* FruitHUD = Cast<AFruitHUD>(PC->GetHUD()))
+                        {
+                            FruitHUD->ClearTitleWidget();
+                        }
                     }
-                }, 
-                0.1f, 
-                false
-            );
-        }
-        else
-        {
-            UGameplayStatics::OpenLevel(Owner->GetWorld(), TEXT("PlayLevel"));
-        }
+                    
+                    // 레벨 전환
+                    UGameplayStatics::OpenLevel(WeakOwner->GetWorld(), TEXT("PlayLevel"));
+                }
+            }, 
+            0.1f, 
+            false
+        );
+    }
+    else
+    {
+        // PC가 없는 경우 바로 레벨 전환
+        UGameplayStatics::OpenLevel(World, TEXT("PlayLevel"));
     }
 }
 
