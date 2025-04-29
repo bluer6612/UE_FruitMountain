@@ -33,9 +33,6 @@ private:
     int32 CurrentMenuIndex = 0;
     int32 MenuItemCount = 4;
     
-    // 메뉴 항목 Y 위치 배열 (UI_Title_Menu 상단에서 50f씩 증가)
-    float MenuPositions[4] = { 50.0f, 100.0f, 150.0f, 200.0f };
-    
     // 선택 표시기 참조
     UPROPERTY()
     class UImage* SelectIndicator = nullptr;

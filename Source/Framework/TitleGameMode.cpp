@@ -32,11 +32,18 @@ void ATitleGameMode::BeginPlay()
         if (TitleWidget)
         {
             TitleWidget->AddToViewport();
-            
+
             // HUD에게 TitleWidget 인스턴스 전달
             if (AFruitHUD* FruitHUD = Cast<AFruitHUD>(GetWorld()->GetFirstPlayerController()->GetHUD()))
             {
                 FruitHUD->SetTitleWidget(TitleWidget);
+            }
+
+            // 입력 비활성화: 플레이어 조종 막기
+            if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+            {
+                PC->SetIgnoreMoveInput(true);
+                PC->SetIgnoreLookInput(true);
             }
         }
     }

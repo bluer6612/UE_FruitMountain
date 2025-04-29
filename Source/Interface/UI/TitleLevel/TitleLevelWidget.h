@@ -18,6 +18,16 @@ public:
     // 위젯 라이프사이클 함수
     virtual void NativeDestruct() override;
     
+    // 게임 UI 요소
+    UPROPERTY()
+    class UImage* LogoImage;
+    
+    UPROPERTY()
+    class UImage* MenuImage;
+    
+    UPROPERTY()
+    class UImage* SelectIndicator;
+    
 protected:
     // 키 입력은 여전히 이 클래스에서 받아야 함 (가상 함수)
     virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
@@ -35,20 +45,7 @@ private:
     void PlayFadeIn(class UImage* TargetImage);
     void StartLogoAndMenuFadeIn();
     
-    // 게임 UI 요소
-    UPROPERTY()
-    class UImage* LogoImage;
-    
-    UPROPERTY()
-    class UImage* MenuImage;
-    
-    UPROPERTY()
-    class UImage* SelectIndicator;
-    
     // 메뉴 관리자
     UPROPERTY()
     class UTitleMenuManager* MenuManager;
-    
-    // 메뉴 위치 배열 (UI_Title_Menu 상단에서 50f씩 증가)
-    float MenuPositions[4] = { 50.0f, 100.0f, 150.0f, 200.0f };
 };

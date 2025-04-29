@@ -18,6 +18,12 @@ void UTitleMenuManager::Initialize(UImage* InSelectIndicator, UTitleLevelWidget*
     
     // 초기화 직후 메뉴 선택 업데이트
     UpdateMenuSelection();
+    
+    // 초기화 시 SelectIndicator가 명확히 보이도록 함
+    if (SelectIndicator)
+    {
+        SelectIndicator->SetRenderOpacity(1.0f);
+    }
 }
 
 bool UTitleMenuManager::HandleKeyDown(const FKey& Key)
@@ -52,6 +58,7 @@ void UTitleMenuManager::MoveSelectionUp()
     // 순환식으로 인덱스 감소
     CurrentMenuIndex = (CurrentMenuIndex - 1 + MenuItemCount) % MenuItemCount;
     UpdateMenuSelection();
+    PlaySelectionAnimation();  // 애니메이션 효과 추가
 }
 
 void UTitleMenuManager::MoveSelectionDown()
@@ -59,6 +66,7 @@ void UTitleMenuManager::MoveSelectionDown()
     // 순환식으로 인덱스 증가
     CurrentMenuIndex = (CurrentMenuIndex + 1) % MenuItemCount;
     UpdateMenuSelection();
+    PlaySelectionAnimation();  // 애니메이션 효과 추가
 }
 
 void UTitleMenuManager::SelectCurrentMenu()
@@ -89,26 +97,32 @@ void UTitleMenuManager::UpdateMenuSelection()
     {
         return;
     }
-    
-    // 현재 선택된 메뉴 항목에 표시기 위치 설정
-    if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(SelectIndicator->Slot))
+
+    if (Owner && Owner->MenuImage)
     {
-        // X 위치는 메뉴 위치(150.f)에서 75.f 뺀 값으로 고정
-        float IndicatorX = 150.f - 75.f;
-        float TargetY = MenuPositions[CurrentMenuIndex];
-        
-        // 위치 설정
-        FVector2D NewPos(IndicatorX, TargetY);
-        IndicatorSlot->SetPosition(NewPos);
-        
-        // 애니메이션 효과
-        PlaySelectionAnimation();
+        if (UCanvasPanelSlot* MenuSlot = Cast<UCanvasPanelSlot>(Owner->MenuImage->Slot))
+        {
+            float MenuBaseY = MenuSlot->GetPosition().Y; // 메뉴 이미지의 Y 위치
+            float IndicatorX = 150.f - 75.f;
+            float TargetY = MenuBaseY + 200.f + 50.f * CurrentMenuIndex; // 메뉴 기준 + 50f씩 증가
+
+            UE_LOG(LogTemp, Warning, TEXT("[TitleMenuManager] 메뉴 위치 계산: Index=%d, MenuBaseY=%f, TargetY=%f"),
+                CurrentMenuIndex, MenuBaseY, TargetY);
+
+            if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(SelectIndicator->Slot))
+            {
+                IndicatorSlot->SetPosition(FVector2D(IndicatorX, TargetY));
+            }
+        }
     }
 }
 
 void UTitleMenuManager::PlaySelectionAnimation()
 {
-    if (!SelectIndicator) return;
+    if (!SelectIndicator)
+    {
+        return;
+    }
     
     // 크기 확대 애니메이션
     SelectIndicator->SetRenderScale(FVector2D(1.2f, 1.2f));

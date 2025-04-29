@@ -47,8 +47,9 @@ void UTitleLevelWidget::InitializeTitleWidget()
         
         SelectIndicator = Renderer->PrepareUIWidget(EWidgetImageType::UI_Title_Select,
             TEXT("/Game/UI/TitleLevel/UI_Title_Select"),
-            FVector2D(59.f, 59.f), 150.f - 75.f, MenuPositions[0]);
+            FVector2D(59.f, 59.f), 150.f - 75.f, -150.0f);  // 명시적으로 양수 값 사용
         SelectIndicator->SetRenderOpacity(0.f);
+        SelectIndicator->SetColorAndOpacity(FLinearColor(1,0,0,1)); // 빨간색, 완전 불투명
         UE_LOG(LogTemp, Log, TEXT("[TitleLevelWidget] SelectIndicator 생성: %s (위치: X=%f, Y=%f)"), 
                IsValid(SelectIndicator) ? TEXT("성공") : TEXT("실패"), 
                150.f - 75.f, MenuPositions[0]);
@@ -122,23 +123,15 @@ void UTitleLevelWidget::StartLogoAndMenuFadeIn()
     
     if (LogoImage)
     {
-        UE_LOG(LogTemp, Warning, TEXT("[TitleLevelWidget] LogoImage 페이드인 시작 (유효함)"));
         PlayFadeIn(LogoImage);
     }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("[TitleLevelWidget] LogoImage가 유효하지 않음 - 페이드인 실패"));
-    }
     
-    UE_LOG(LogTemp, Warning, TEXT("[TitleLevelWidget] MenuImage 페이드인 타이머 설정 (0.5초 후)"));
     FTimerHandle MenuFadeHandle;
     GetWorld()->GetTimerManager().SetTimer(MenuFadeHandle, [this]()
     {
-        UE_LOG(LogTemp, Warning, TEXT("[TitleLevelWidget] MenuImage 페이드인 타이머 콜백 실행"));
         
         if (MenuImage)
         {
-            UE_LOG(LogTemp, Warning, TEXT("[TitleLevelWidget] MenuImage 페이드인 시작 (유효함)"));
             PlayFadeIn(MenuImage);
             
             // 메뉴가 표시된 후 선택 표시기 페이드인
@@ -164,16 +157,9 @@ void UTitleLevelWidget::StartLogoAndMenuFadeIn()
                     {
                         UE_LOG(LogTemp, Warning, TEXT("[TitleLevelWidget] MenuManager 초기화 및 첫 항목 선택 (MenuManager 유효함)"));
                         MenuManager->Initialize(SelectIndicator, this);
+                        
                         MenuManager->UpdateMenuSelection();
                     }
-                    else
-                    {
-                        UE_LOG(LogTemp, Error, TEXT("[TitleLevelWidget] MenuManager가 유효하지 않음 - 초기화 실패"));
-                    }
-                }
-                else
-                {
-                    UE_LOG(LogTemp, Error, TEXT("[TitleLevelWidget] SelectIndicator가 유효하지 않음 - 페이드인 실패"));
                 }
                 
                 UE_LOG(LogTemp, Warning, TEXT("[TitleLevelWidget] SelectIndicator 페이드인 타이머 콜백 종료"));
@@ -181,12 +167,6 @@ void UTitleLevelWidget::StartLogoAndMenuFadeIn()
             
             UE_LOG(LogTemp, Warning, TEXT("[TitleLevelWidget] SelectIndicator 페이드인 타이머 설정 완료"));
         }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT("[TitleLevelWidget] MenuImage가 유효하지 않음 - 페이드인 실패"));
-        }
-        
-        UE_LOG(LogTemp, Warning, TEXT("[TitleLevelWidget] MenuImage 페이드인 타이머 콜백 종료"));
     }, 0.5f, false);
     
     UE_LOG(LogTemp, Warning, TEXT("[TitleLevelWidget] StartLogoAndMenuFadeIn() 종료: 타이머 설정 완료"));
@@ -254,8 +234,14 @@ void UTitleLevelWidget::PlayFadeIn(UImage* TargetImage)
 {
     if (!TargetImage)
     {
+        UE_LOG(LogTemp, Error, TEXT("[TitleLevelWidget] PlayFadeIn: 대상 이미지가 nullptr"));
         return;
     }
+
+    const FString TargetName = TargetImage == LogoImage ? TEXT("LogoImage") : 
+                               TargetImage == MenuImage ? TEXT("MenuImage") : 
+                               TargetImage == SelectIndicator ? TEXT("SelectIndicator") : TEXT("알 수 없음");
+    UE_LOG(LogTemp, Warning, TEXT("[TitleLevelWidget] PlayFadeIn: %s 페이드인 시작"), *TargetName);
 
     const float FadeDuration = 0.25f;
     const float TickInterval = 0.02f;
@@ -265,13 +251,14 @@ void UTitleLevelWidget::PlayFadeIn(UImage* TargetImage)
     TWeakObjectPtr<UImage> WeakImage(TargetImage);
 
     FTimerHandle* FadeHandle = new FTimerHandle;
-    GetWorld()->GetTimerManager().SetTimer(*FadeHandle, [WeakThis, WeakImage, FadeDuration, TickInterval, Elapsed, FadeHandle]()
+    GetWorld()->GetTimerManager().SetTimer(*FadeHandle, [WeakThis, WeakImage, FadeDuration, TickInterval, Elapsed, FadeHandle, TargetName]()
     {
         if (!WeakThis.IsValid() || !WeakImage.IsValid())
         {
+            UE_LOG(LogTemp, Error, TEXT("[TitleLevelWidget] PlayFadeIn: %s 페이드인 중 객체 무효화"), *TargetName);
             if (FadeHandle)
             {
-                if (UWorld* World = GEngine->GetWorldFromContextObjectChecked(WeakThis.Get()))
+                if (UWorld* World = GEngine && WeakThis.IsValid() ? GEngine->GetWorldFromContextObjectChecked(WeakThis.Get()) : nullptr)
                 {
                     World->GetTimerManager().ClearTimer(*FadeHandle);
                 }
@@ -285,8 +272,11 @@ void UTitleLevelWidget::PlayFadeIn(UImage* TargetImage)
         float Alpha = FMath::Clamp(*Elapsed / FadeDuration, 0.f, 1.f);
         WeakImage->SetRenderOpacity(Alpha);
 
+        // 중간 과정은 로그가 너무 많아지므로 생략
+
         if (Alpha >= 1.f)
         {
+            UE_LOG(LogTemp, Warning, TEXT("[TitleLevelWidget] PlayFadeIn: %s 페이드인 완료 (불투명도 1.0)"), *TargetName);
             if (UWorld* World = GEngine->GetWorldFromContextObjectChecked(WeakThis.Get()))
             {
                 World->GetTimerManager().ClearTimer(*FadeHandle);
