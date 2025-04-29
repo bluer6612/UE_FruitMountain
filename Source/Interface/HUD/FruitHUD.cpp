@@ -17,17 +17,6 @@ void AFruitHUD::BeginPlay()
 
     // UIWidgetRenderer 생성 및 뷰포트 추가
     CreateAndAddWidgets();
-    
-    // 현재 레벨 확인 (ReceiveBeginPlay에서 이동)
-    UWorld* World = GetWorld();
-    if (World)
-    {
-        if (World->GetMapName().Contains(TEXT("PlayLevel")))
-        {
-            // PlayLevel이면 Title 위젯 제거
-            ClearTitleWidget();
-        }
-    }
 }
 
 void AFruitHUD::CreateAndAddWidgets()
@@ -81,7 +70,7 @@ void AFruitHUD::CreateAndAddWidgets()
                 UE_LOG(LogTemp, Warning, TEXT("FruitHUD: SBox에 래핑한 위젯을 뷰포트에 직접 추가"));
             }
             
-            if (World->GetMapName().Contains(TEXT("PlayLevel")))
+            if (World->GetMapName().Contains(TEXT("TitleLevel")))
             {
                 TitleWidget->InitializeTitleWidget();
             }

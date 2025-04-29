@@ -37,8 +37,6 @@ void UTitleLevelWidget::NativeConstruct()
 
 void UTitleLevelWidget::InitializeMenuManager()
 {
-    UE_LOG(LogTemp, Warning, TEXT("InitializeMenuManager: this=%p, SelectIndicator=%p, MenuManager=%p"), this, SelectIndicator, MenuManager);
-
     if (SelectIndicator && !MenuManager)
     {
         MenuManager = NewObject<UTitleMenuManager>(this);
@@ -51,19 +49,7 @@ void UTitleLevelWidget::InitializeMenuManager()
 
 void UTitleLevelWidget::InitializeTitleWidget()
 {
-    UE_LOG(LogTemp, Warning, TEXT("InitializeTitleWidget: this=%p"), this);
-
     UUIWidgetRenderer* Renderer = UUIWidgetRenderer::GetInstance();
-    UE_LOG(LogTemp, Warning, TEXT("Renderer=%p"), Renderer);
-
-    if (UWorld* World = GetWorld())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("MapName=%s"), *World->GetMapName());
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("GetWorld() is nullptr"));
-    }
 
     // 1. 게임 UI 요소 생성
     if (Renderer)
@@ -71,25 +57,16 @@ void UTitleLevelWidget::InitializeTitleWidget()
         LogoImage = Renderer->PrepareUIWidget(EWidgetImageType::UI_Title_Logo,
             TEXT("/Game/UI/TitleLevel/UI_Title_Logo"),
             FVector2D(633.f, 369.f), 150.f, 270.f);
-        UE_LOG(LogTemp, Warning, TEXT("LogoImage=%p"), LogoImage);
-
-        if (LogoImage)
             LogoImage->SetRenderOpacity(0.f);
 
         MenuImage = Renderer->PrepareUIWidget(EWidgetImageType::UI_Title_Menu,
             TEXT("/Game/UI/TitleLevel/UI_Title_Menu"),
             FVector2D(592.f, 359.f), 150.f, 50.f);
-        UE_LOG(LogTemp, Warning, TEXT("MenuImage=%p"), MenuImage);
-
-        if (MenuImage)
             MenuImage->SetRenderOpacity(0.f);
 
         SelectIndicator = Renderer->PrepareUIWidget(EWidgetImageType::UI_Title_Select,
             TEXT("/Game/UI/TitleLevel/UI_Title_Select"),
             FVector2D(59.f, 59.f), 0.f, 0.f);
-        UE_LOG(LogTemp, Warning, TEXT("SelectIndicator=%p"), SelectIndicator);
-
-        if (SelectIndicator)
             SelectIndicator->SetRenderOpacity(0.f);
 
         // 메뉴 Z-Order 설정
@@ -290,7 +267,7 @@ FReply UTitleLevelWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKe
 
 void UTitleLevelWidget::NativeDestruct()
 {
-    UE_LOG(LogTemp, Warning, TEXT("TitleLevelWidget::NativeDestruct 호출: this=%p"), this);
+    UE_LOG(LogTemp, Warning, TEXT("TitleLevelWidget::NativeDestruct 호출") );
     if (UWorld* World = GetWorld())
     {
         World->GetTimerManager().ClearAllTimersForObject(this);

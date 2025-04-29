@@ -38,12 +38,6 @@ void APlayGameMode::BeginPlay()
 {
     Super::BeginPlay();
 
-    if (AFruitHUD* FruitHUD = Cast<AFruitHUD>(GetWorld()->GetFirstPlayerController()->GetHUD()))
-    {
-        UE_LOG(LogTemp, Warning, TEXT("PlayGameMode::BeginPlay에서 ClearTitleWidget 호출"));
-        FruitHUD->ClearTitleWidget();
-    }
-
     UUIWidgetRenderer::CreateDisplayWidget(GetWorld());
     // 현재 레벨 이름이 PlayLevel일 때만 Play UI 생성
     UWorld* World = GetWorld();
