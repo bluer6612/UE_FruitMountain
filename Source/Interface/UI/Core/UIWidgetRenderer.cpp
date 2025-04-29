@@ -97,17 +97,6 @@ void UUIWidgetRenderer::SetupPlayImages()
                    FVector2D(301, 339), 120.0f, 60.0f);
 }
 
-void UUIWidgetRenderer::SetupTitleImages()
-{
-    PrepareUIWidget(EWidgetImageType::UI_Title_Logo,
-        TEXT("/Game/UI/TitleLevel/UI_Title_Logo"),
-        FVector2D(633.f, 369.f), 150.f, 267.5f);
-
-    PrepareUIWidget(EWidgetImageType::UI_Title_Menu,
-        TEXT("/Game/UI/TitleLevel/UI_Title_Menu"),
-        FVector2D(592.f, 359.f), 150.f, 35.f);
-}
-
 
 UImage* UUIWidgetRenderer::PrepareUIWidget(EWidgetImageType ImageType, const FString& TexturePath, const FVector2D& CustomSize, float PaddingX, float PaddingY)
 {

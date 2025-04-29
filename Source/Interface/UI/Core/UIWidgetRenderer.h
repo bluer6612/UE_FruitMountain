@@ -56,9 +56,6 @@ public:
     UFUNCTION(BlueprintCallable, Category = "UI TextureDisplay")
     void SetupPlayImages();
 
-    // 타이틀 레벨용 이미지 일괄 생성
-    void SetupTitleImages();
-
     // 이미지 위젯 생성
     UImage* PrepareUIWidget(
         EWidgetImageType ImageType,
