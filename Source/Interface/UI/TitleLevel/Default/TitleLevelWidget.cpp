@@ -5,6 +5,8 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Components/Image.h"
 #include "Interface/UI/Core/UIWidgetRenderer.h"
+#include "Interface/HUD/FruitHUD.h"
+#include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 
 UTitleLevelWidget::UTitleLevelWidget(const FObjectInitializer& ObjectInitializer)
@@ -289,4 +291,41 @@ void UTitleLevelWidget::NativeDestruct()
     
     // 부모 클래스의 NativeDestruct 호출
     Super::NativeDestruct();
+}
+
+void UTitleLevelWidget::StartGame()
+{
+    // 1. 모든 입력 비활성화
+    if (APlayerController* PC = GetOwningPlayer())
+    {
+        PC->DisableInput(PC);
+        
+        // 2. HUD 정리 (옵셔널)
+        if (AFruitHUD* FruitHUD = Cast<AFruitHUD>(PC->GetHUD()))
+        {
+            FruitHUD->ClearTitleWidget();
+        }
+    }
+
+    // 3. 모든 애니메이션 중지
+    if (SelectIndicator)
+    {
+        SelectIndicator->SetRenderOpacity(0.0f);
+    }
+    
+    // 4. 직접 레벨 로드 요청 (메뉴매니저가 아닌 위젯에서 직접 수행)
+    if (UWorld* World = GetWorld())
+    {
+        // 약간의 지연 후 레벨 전환
+        FTimerHandle GameStartHandle;
+        World->GetTimerManager().SetTimer(
+            GameStartHandle,
+            FTimerDelegate::CreateLambda([World]()
+            {
+                UGameplayStatics::OpenLevel(World, TEXT("PlayLevel"));
+            }),
+            0.2f,
+            false
+        );
+    }
 }

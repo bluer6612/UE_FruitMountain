@@ -131,70 +131,27 @@ void UTitleMenuManager::PlaySelectionAnimation()
 
 void UTitleMenuManager::OpenPlayLevel()
 {
-    // 타이머 핸들을 클래스 맴버로 이동 (나중에 정리를 위해)
-    static FTimerHandle LevelTransitionHandle;
-
-    // 안전한 레벨 전환
-    if (!Owner || !Owner->GetWorld())
+    // UI 애니메이션 중지
+    if (IndicatorAnimator)
     {
-        return;
+        IndicatorAnimator->StartAnimation(false);
     }
     
-    UWorld* World = Owner->GetWorld();
-    if (!World)
+    if (SelectIndicator)
     {
-        return;
+        SelectIndicator->SetRenderOpacity(0.0f);
     }
-
-    // 약한 참조 생성 (소멸 시에도 안전)
-    TWeakObjectPtr<UTitleLevelWidget> WeakOwner(Owner);
     
-    APlayerController* PC = World->GetFirstPlayerController();
-    if (PC)
+    // 위젯에 게임 시작 요청 위임
+    if (Owner)
     {
-        // 입력 비활성화로 추가 입력 방지
-        PC->DisableInput(PC);
-        
-        // UI 요소 숨기기
-        if (IndicatorAnimator)
-        {
-            IndicatorAnimator->StartAnimation(false);
-        }
-        
-        if (SelectIndicator)
-        {
-            SelectIndicator->SetRenderOpacity(0.0f);
-        }
-        
-        // 클래스 맴버 변수 참조 제거 및 약한 참조 사용
-        World->GetTimerManager().SetTimer(
-            LevelTransitionHandle, 
-            [WeakOwner]()
-            {
-                // 객체 유효성 검사
-                if (WeakOwner.IsValid() && WeakOwner->GetWorld())
-                {
-                    // 레벨 전환 전 정리 작업
-                    if (APlayerController* PC = WeakOwner->GetWorld()->GetFirstPlayerController())
-                    {
-                        if (AFruitHUD* FruitHUD = Cast<AFruitHUD>(PC->GetHUD()))
-                        {
-                            FruitHUD->ClearTitleWidget();
-                        }
-                    }
-                    
-                    // 레벨 전환
-                    UGameplayStatics::OpenLevel(WeakOwner->GetWorld(), TEXT("PlayLevel"));
-                }
-            }, 
-            0.1f, 
-            false
-        );
+        Owner->StartGame(); // 위젯에서 직접 처리하도록 변경
     }
     else
     {
-        // PC가 없는 경우 바로 레벨 전환
-        UGameplayStatics::OpenLevel(World, TEXT("PlayLevel"));
+        // 오류 상황 - 위젯 없이 직접 시도
+        UE_LOG(LogTemp, Warning, TEXT("TitleMenuManager: Owner가 없어 직접 레벨 전환 시도"));
+        UGameplayStatics::OpenLevel(GetWorld(), TEXT("PlayLevel"));
     }
 }
 
