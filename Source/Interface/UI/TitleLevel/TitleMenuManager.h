@@ -7,7 +7,7 @@
 #include "TitleMenuManager.generated.h"
 
 UCLASS()
-class INTERFACE_API UTitleMenuManager : public UObject
+class UE_FRUITMOUNTAIN_API UTitleMenuManager : public UObject
 {
     GENERATED_BODY()
     

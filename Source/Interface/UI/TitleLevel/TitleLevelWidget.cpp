@@ -13,9 +13,9 @@ UTitleLevelWidget::UTitleLevelWidget(const FObjectInitializer& ObjectInitializer
     bIsFocusable = true;
     FadeOutDuration = 2.5f;
     bHasScriptImplementedTick = true;
-    
-    // 메뉴 관리자 생성
-    MenuManager = NewObject<UTitleMenuManager>(this);
+
+    // 메뉴 관리자를 생성자에서 올바르게 생성
+    MenuManager = ObjectInitializer.CreateDefaultSubobject<UTitleMenuManager>(this, TEXT("MenuManager"));
 }
 
 void UTitleLevelWidget::InitializeTitleWidget()

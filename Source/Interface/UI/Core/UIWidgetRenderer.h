@@ -12,7 +12,8 @@ enum class EWidgetImageType : uint8
     UI_Play_FruitList,
     UI_Play_NextFruit,
     UI_Title_Logo,
-    UI_Title_Menu
+    UI_Title_Menu,
+    UI_Title_Select
 };
 
 class UCanvasPanel;

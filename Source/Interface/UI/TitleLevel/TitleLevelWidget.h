@@ -5,7 +5,7 @@
 #include "TitleLevelWidget.generated.h"
 
 UCLASS()
-class INTERFACE_API UTitleLevelWidget : public UUserWidget
+class UE_FRUITMOUNTAIN_API UTitleLevelWidget : public UUserWidget
 {
     GENERATED_BODY()
 
@@ -24,7 +24,7 @@ private:
     UPROPERTY(meta = (BindWidget))
     class UBorder* FadeBorder;
     
-    float FadeOutDuration = 2.5f;
+    float FadeOutDuration = 0.25f;
     float FadeTime = 0.0f;
     bool bIsFading = false;
     
