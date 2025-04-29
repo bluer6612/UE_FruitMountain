@@ -190,3 +190,12 @@ void UTitleMenuManager::OpenCreditScreen()
     // 크레딧 화면 표시 로직
     UE_LOG(LogTemp, Warning, TEXT("크레딧 화면 열기"));
 }
+
+void UTitleMenuManager::StartIndicatorAnimation(bool bStart)
+{
+    // 애니메이션 관리자를 통해 애니메이션 제어
+    if (IndicatorAnimator)
+    {
+        IndicatorAnimator->StartAnimation(bStart);
+    }
+}

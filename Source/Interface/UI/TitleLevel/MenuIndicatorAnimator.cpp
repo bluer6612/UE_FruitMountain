@@ -62,7 +62,7 @@ void UMenuIndicatorAnimator::MoveToPosition(const FVector2D& NewPosition)
     Indicator->SetColorAndOpacity(FLinearColor(1.0f, 1.0f, 1.0f));
     Indicator->SetRenderOpacity(1.0f);
     
-    // 0.5초 후 애니메이션 재개
+    // 0.125초 후 애니메이션 재개
     if (UWorld* World = Indicator->GetWorld())
     {
         FTimerHandle ResetAnimHandle;
@@ -74,7 +74,7 @@ void UMenuIndicatorAnimator::MoveToPosition(const FVector2D& NewPosition)
                 bIsAnimating = true;
                 PlayAnimation();
             }, 
-            0.5f,
+            0.125f,
             false
         );
     }

@@ -137,13 +137,6 @@ void UTitleLevelWidget::StartLogoAndMenuFadeIn()
             {
                 if (SelectIndicator)
                 {
-                    // 디버깅 목적으로 위치 로그만 유지
-                    // UE_LOG(LogTemp, Warning, TEXT("[TitleLevelWidget] SelectIndicator 위치: X=%f, Y=%f"),
-                    //     Cast<UCanvasPanelSlot>(SelectIndicator->Slot) ? 
-                    //     Cast<UCanvasPanelSlot>(SelectIndicator->Slot)->GetPosition().X : -1.f,
-                    //     Cast<UCanvasPanelSlot>(SelectIndicator->Slot) ? 
-                    //     Cast<UCanvasPanelSlot>(SelectIndicator->Slot)->GetPosition().Y : -1.f);
-                        
                     PlayFadeIn(SelectIndicator);
                     
                     // 메뉴 관리자 초기화 및 첫번째 항목 선택
@@ -153,7 +146,7 @@ void UTitleLevelWidget::StartLogoAndMenuFadeIn()
                         MenuManager->UpdateMenuSelection();
                     }
                 }
-            }, 0.2f, false);
+            }, 0.25f, false);
         }
     }, 0.5f, false);
 }
