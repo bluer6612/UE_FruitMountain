@@ -26,8 +26,20 @@ void UTitleMenuManager::Initialize(UImage* InSelectIndicator, UTitleLevelWidget*
         
         if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(SelectIndicator->Slot))
         {
-            // 애니메이션 타이머 설정 (1.5초 후 첫 애니메이션 시작)
-            StartIndicatorAnimation();
+            // 첫 애니메이션은 0.5초 후 시작하고 그 이후부터는 1.5초마다 재생
+            if (UWorld* World = Owner ? Owner->GetWorld() : nullptr)
+            {
+                // 0.5초 후 첫 애니메이션 실행
+                FTimerHandle FirstAnimHandle;
+                World->GetTimerManager().SetTimer(FirstAnimHandle, [this]()
+                {
+                    // 첫 애니메이션 실행
+                    PlayIndicatorAnimation();
+                    
+                    // 이후 1.5초마다 반복 실행 설정
+                    StartIndicatorAnimation();
+                }, 0.5f, false);
+            }
         }
     }
 }
@@ -36,7 +48,7 @@ void UTitleMenuManager::StartIndicatorAnimation()
 {
     if (UWorld* World = Owner ? Owner->GetWorld() : nullptr)
     {
-        // 1.5초마다 애니메이션 시작
+        // 1.5초마다 애니메이션 시작 (두 번째 애니메이션부터)
         World->GetTimerManager().SetTimer(IndicatorAnimationTimerHandle, this, 
             &UTitleMenuManager::PlayIndicatorAnimation, IndicatorAnimationInterval, true);
     }

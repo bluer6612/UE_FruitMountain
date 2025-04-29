@@ -41,7 +41,7 @@ void UTitleLevelWidget::InitializeTitleWidget()
         
         SelectIndicator = Renderer->PrepareUIWidget(EWidgetImageType::UI_Title_Select,
             TEXT("/Game/UI/TitleLevel/UI_Title_Select"),
-            FVector2D(59.f, 59.f), 187.5f, 150.f);
+            FVector2D(59.f, 59.f), 0.f, 0.f);
         SelectIndicator->SetRenderOpacity(0.f);
 
         // 메뉴 Z-Order 설정
