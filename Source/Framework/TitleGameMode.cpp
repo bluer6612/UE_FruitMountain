@@ -25,6 +25,13 @@ ATitleGameMode::ATitleGameMode()
 void ATitleGameMode::BeginPlay()
 {
     Super::BeginPlay();
+
+    FString MapName = GetWorld()->GetMapName();
+    if (!MapName.Contains(TEXT("TitleLevel"))) // 반드시 TitleLevel에서만 생성
+    {
+        UE_LOG(LogTemp, Warning, TEXT("TitleGameMode: 현재 맵이 TitleLevel이 아니므로 TitleLevelWidget을 생성하지 않습니다. (MapName=%s)"), *MapName);
+        return;
+    }
     
     // 현재 레벨이 TitleLevel인 경우에만 TitleWidget 생성
     UWorld* World = GetWorld();

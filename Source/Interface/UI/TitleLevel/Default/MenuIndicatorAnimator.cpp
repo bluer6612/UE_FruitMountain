@@ -19,9 +19,13 @@ void UMenuIndicatorAnimator::Initialize(UImage* InIndicator)
         if (UWorld* World = Indicator->GetWorld())
         {
             FTimerHandle FirstAnimHandle;
-            World->GetTimerManager().SetTimer(FirstAnimHandle, [this]()
+            TWeakObjectPtr<UMenuIndicatorAnimator> WeakThis(this);
+            World->GetTimerManager().SetTimer(FirstAnimHandle, [WeakThis]()
             {
-                PlayAnimation();
+                if (WeakThis.IsValid())
+                {
+                    WeakThis->PlayAnimation();
+                }
             }, 0.25f, false);
         }
     }
@@ -68,11 +72,15 @@ void UMenuIndicatorAnimator::MoveToPosition(const FVector2D& NewPosition)
         FTimerHandle ResetAnimHandle;
         AnimationTimerHandles.Add(ResetAnimHandle);
         
+        TWeakObjectPtr<UMenuIndicatorAnimator> WeakThis(this);
         World->GetTimerManager().SetTimer(
             ResetAnimHandle, 
-            [this]() {
-                bIsAnimating = true;
-                PlayAnimation();
+            [WeakThis]() {
+                if (WeakThis.IsValid())
+                {
+                    WeakThis->bIsAnimating = true;
+                    WeakThis->PlayAnimation();
+                }
             }, 
             0.125f,
             false
@@ -109,47 +117,61 @@ void UMenuIndicatorAnimator::BeginDestroy()
 void UMenuIndicatorAnimator::PlayAnimation()
 {
     bIsAnimationRunning = true;
-    
+
     if (!Indicator)
     {
         bIsAnimationRunning = false;
         return;
     }
-    
+
     UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(Indicator->Slot);
     if (!IndicatorSlot)
     {
         bIsAnimationRunning = false;
         return;
     }
-    
+
     const float AnimDuration = AnimationDuration;
     const float TickInterval = 0.006f;
     float* ElapsedTime = new float(0.0f);
-    
+
     TWeakObjectPtr<UMenuIndicatorAnimator> WeakThis(this);
     TWeakObjectPtr<UImage> WeakIndicator(Indicator);
-    
-    // 애니메이션 시작 시 인디케이터의 원래 위치를 저장
+
     FVector2D BasePosition = IndicatorSlot->GetPosition();
-    
+
     if (UWorld* World = Indicator->GetWorld())
     {
         World->GetTimerManager().ClearTimer(AnimationTimerHandle);
-        
+
         World->GetTimerManager().SetTimer(
-            AnimationTimerHandle, 
-            [this, WeakThis, WeakIndicator, AnimDuration, TickInterval, ElapsedTime, BasePosition]()
+            AnimationTimerHandle,
+            [WeakThis, WeakIndicator, AnimDuration, TickInterval, ElapsedTime, BasePosition]()
             {
+                // 유효성 체크 및 타이머 즉시 정리
                 if (!WeakThis.IsValid() || !WeakIndicator.IsValid())
                 {
+                    // 타이머 즉시 정리
+                    if (WeakIndicator.IsValid())
+                    {
+                        if (UWorld* TimerWorld = WeakIndicator->GetWorld())
+                        {
+                            // 반드시 참조로 넘겨야 하므로, AnimationTimerHandle을 static 지역변수로 복사
+                            static FTimerHandle StaticHandle;
+                            if (WeakThis.IsValid())
+                            {
+                                StaticHandle = WeakThis->AnimationTimerHandle;
+                                TimerWorld->GetTimerManager().ClearTimer(StaticHandle);
+                            }
+                        }
+                    }
                     delete ElapsedTime;
                     return;
                 }
-                
+
                 *ElapsedTime += TickInterval;
                 float Progress = FMath::Clamp(*ElapsedTime / AnimDuration, 0.0f, 1.0f);
-                
+
                 // 왼쪽으로 이동하는 구간 (13.33%)
                 if (Progress <= 0.1333f)
                 {
@@ -247,13 +269,13 @@ void UMenuIndicatorAnimator::PlayAnimation()
                     {
                         TimerWorld->GetTimerManager().ClearTimer(WeakThis->AnimationTimerHandle);
                     }
-                    
+
                     delete ElapsedTime;
-                    
+
                     if (WeakThis.IsValid())
                     {
                         WeakThis->bIsAnimationRunning = false;
-                        
+
                         if (WeakThis->bIsAnimating)
                         {
                             WeakThis->PlayAnimation();

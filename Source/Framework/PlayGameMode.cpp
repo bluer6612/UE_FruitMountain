@@ -38,7 +38,7 @@ void APlayGameMode::BeginPlay()
 {
     Super::BeginPlay();
 
-    // 먼저 이전 TitleWidget이 있다면 정리
+    // PlayLevel 진입 시 TitleWidget 제거
     if (AFruitHUD* FruitHUD = Cast<AFruitHUD>(GetWorld()->GetFirstPlayerController()->GetHUD()))
     {
         FruitHUD->ClearTitleWidget();

@@ -32,6 +32,13 @@ void AFruitHUD::BeginPlay()
 
 void AFruitHUD::CreateAndAddWidgets()
 {
+    UWorld* World = GetWorld();
+    if (World && !World->GetMapName().Contains(TEXT("TitleLevel")))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("FruitHUD: TitleLevel이 아니므로 TitleLevelWidget 생성/초기화 생략"));
+        return;
+    }
+
     APlayerController* Controller = GetOwningPlayerController();
     if (Controller)
     {
@@ -87,6 +94,7 @@ void AFruitHUD::ClearTitleWidget()
 {
     if (TitleWidget)
     {
+        UE_LOG(LogTemp, Warning, TEXT("FruitHUD: TitleWidget RemoveFromParent 및 nullptr 처리"));
         TitleWidget->RemoveFromParent();
         TitleWidget = nullptr;
     }

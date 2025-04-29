@@ -39,9 +39,10 @@ void UTitleLevelWidget::NativeConstruct()
 
 void UTitleLevelWidget::InitializeMenuManager()
 {
-    if (SelectIndicator)
+    UE_LOG(LogTemp, Warning, TEXT("InitializeMenuManager: this=%p, SelectIndicator=%p, MenuManager=%p"), this, SelectIndicator, MenuManager);
+
+    if (SelectIndicator && !MenuManager)
     {
-        // 메뉴 관리자 생성 및 초기화
         MenuManager = NewObject<UTitleMenuManager>(this);
         if (MenuManager)
         {
@@ -52,24 +53,46 @@ void UTitleLevelWidget::InitializeMenuManager()
 
 void UTitleLevelWidget::InitializeTitleWidget()
 {
-    // 1. 게임 UI 요소 생성
+    UE_LOG(LogTemp, Warning, TEXT("InitializeTitleWidget: this=%p"), this);
+
     UUIWidgetRenderer* Renderer = UUIWidgetRenderer::GetInstance();
+    UE_LOG(LogTemp, Warning, TEXT("Renderer=%p"), Renderer);
+
+    if (UWorld* World = GetWorld())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("MapName=%s"), *World->GetMapName());
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("GetWorld() is nullptr"));
+    }
+
+    // 1. 게임 UI 요소 생성
     if (Renderer)
     {
         LogoImage = Renderer->PrepareUIWidget(EWidgetImageType::UI_Title_Logo,
             TEXT("/Game/UI/TitleLevel/UI_Title_Logo"),
             FVector2D(633.f, 369.f), 150.f, 270.f);
-        LogoImage->SetRenderOpacity(0.f);
-        
+        UE_LOG(LogTemp, Warning, TEXT("LogoImage=%p"), LogoImage);
+
+        if (LogoImage)
+            LogoImage->SetRenderOpacity(0.f);
+
         MenuImage = Renderer->PrepareUIWidget(EWidgetImageType::UI_Title_Menu,
             TEXT("/Game/UI/TitleLevel/UI_Title_Menu"),
             FVector2D(592.f, 359.f), 150.f, 50.f);
-        MenuImage->SetRenderOpacity(0.f);
-        
+        UE_LOG(LogTemp, Warning, TEXT("MenuImage=%p"), MenuImage);
+
+        if (MenuImage)
+            MenuImage->SetRenderOpacity(0.f);
+
         SelectIndicator = Renderer->PrepareUIWidget(EWidgetImageType::UI_Title_Select,
             TEXT("/Game/UI/TitleLevel/UI_Title_Select"),
             FVector2D(59.f, 59.f), 0.f, 0.f);
-        SelectIndicator->SetRenderOpacity(0.f);
+        UE_LOG(LogTemp, Warning, TEXT("SelectIndicator=%p"), SelectIndicator);
+
+        if (SelectIndicator)
+            SelectIndicator->SetRenderOpacity(0.f);
 
         // 메뉴 Z-Order 설정
         if (UCanvasPanelSlot* MenuSlot = Cast<UCanvasPanelSlot>(MenuImage->Slot))
@@ -127,28 +150,34 @@ void UTitleLevelWidget::StartLogoAndMenuFadeIn()
     }
     
     FTimerHandle MenuFadeHandle;
-    GetWorld()->GetTimerManager().SetTimer(MenuFadeHandle, [this]()
+    TWeakObjectPtr<UTitleLevelWidget> WeakThis(this);
+    GetWorld()->GetTimerManager().SetTimer(MenuFadeHandle, [WeakThis]()
     {
-        if (MenuImage)
+        if (!WeakThis.IsValid()) return;
+        if (WeakThis->MenuImage)
         {
-            PlayFadeIn(MenuImage);
-            
-            // 메뉴가 표시된 후 선택 표시기 페이드인
+            WeakThis->PlayFadeIn(WeakThis->MenuImage);
             FTimerHandle IndicatorFadeHandle;
-            GetWorld()->GetTimerManager().SetTimer(IndicatorFadeHandle, [this]()
+            UWorld* World = WeakThis->GetWorld();
+            if (World)
             {
-                if (SelectIndicator)
+                World->GetTimerManager().SetTimer(IndicatorFadeHandle, [WeakThis]()
                 {
-                    PlayFadeIn(SelectIndicator);
-                    
-                    // 메뉴 관리자 초기화 및 첫번째 항목 선택
-                    if (MenuManager)
-                    {
-                        MenuManager->Initialize(SelectIndicator, this);
-                        MenuManager->UpdateMenuSelection();
+                    if (!WeakThis.IsValid()) {
+                        UE_LOG(LogTemp, Error, TEXT("IndicatorFadeHandle 람다: WeakThis가 유효하지 않음, MenuManager 초기화 생략"));
+                        return;
                     }
-                }
-            }, 0.25f, false);
+                    if (WeakThis->SelectIndicator)
+                    {
+                        WeakThis->PlayFadeIn(WeakThis->SelectIndicator);
+                        if (WeakThis->MenuManager)
+                        {
+                            WeakThis->MenuManager->Initialize(WeakThis->SelectIndicator, WeakThis.Get());
+                            WeakThis->MenuManager->UpdateMenuSelection();
+                        }
+                    }
+                }, 0.25f, false);
+            }
         }
     }, 0.5f, false);
 }
@@ -275,21 +304,10 @@ FReply UTitleLevelWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKe
 
 void UTitleLevelWidget::NativeDestruct()
 {
-    // 메뉴 관리자의 애니메이션 중지
-    if (MenuManager)
-    {
-        // 필요한 경우 메뉴 관리자의 타이머 정리 등 수행
-        MenuManager->StartIndicatorAnimation(false);
-    }
-    
-    // 타이머 정리
     if (UWorld* World = GetWorld())
     {
-        // 혹시 남아있는 타이머가 있다면 정리
         World->GetTimerManager().ClearAllTimersForObject(this);
     }
-    
-    // 부모 클래스의 NativeDestruct 호출
     Super::NativeDestruct();
 }
 
@@ -312,17 +330,26 @@ void UTitleLevelWidget::StartGame()
     {
         SelectIndicator->SetRenderOpacity(0.0f);
     }
-    
-    // 4. 직접 레벨 로드 요청 (메뉴매니저가 아닌 위젯에서 직접 수행)
+
+    // 3-1. 타이머 모두 정리 (반드시 레벨 전환 전에!)
     if (UWorld* World = GetWorld())
     {
-        // 약간의 지연 후 레벨 전환
+        World->GetTimerManager().ClearAllTimersForObject(this);
+    }
+
+    // 4. 직접 레벨 로드 요청 (this 캡처 금지)
+    if (UWorld* World = GetWorld())
+    {
         FTimerHandle GameStartHandle;
+        TWeakObjectPtr<UWorld> WeakWorld(World);
         World->GetTimerManager().SetTimer(
             GameStartHandle,
-            FTimerDelegate::CreateLambda([World]()
+            FTimerDelegate::CreateLambda([WeakWorld]()
             {
-                UGameplayStatics::OpenLevel(World, TEXT("PlayLevel"));
+                if (WeakWorld.IsValid())
+                {
+                    UGameplayStatics::OpenLevel(WeakWorld.Get(), TEXT("PlayLevel"));
+                }
             }),
             0.2f,
             false
