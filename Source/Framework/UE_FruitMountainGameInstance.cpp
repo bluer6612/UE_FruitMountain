@@ -29,5 +29,4 @@ void UUE_FruitMountainGameInstance::ShowFruitUIWidget()
     {
         UUIWidgetRenderer::CreateDisplayWidget(World);
     }
-    // TitleLevel일 때는 Title UI만 생성 (여기선 아무것도 안함)
 }

@@ -39,6 +39,7 @@ void APlayGameMode::BeginPlay()
     Super::BeginPlay();
 
     UUIWidgetRenderer::CreateDisplayWidget(GetWorld());
+
     // 현재 레벨 이름이 PlayLevel일 때만 Play UI 생성
     UWorld* World = GetWorld();
     if (World && World->GetMapName().Contains(TEXT("PlayLevel")))
@@ -54,6 +55,7 @@ void APlayGameMode::BeginPlay()
         GetWorldTimerManager().SetTimer(DelayHandle, [this]() {
             // 1. 먼저 HUD 참조 가져오기
             AFruitHUD* FruitHUD = Cast<AFruitHUD>(GetWorld()->GetFirstPlayerController()->GetHUD());
+            FruitHUD->CreateAndAddWidgets();
             
             // 2. 게임 시작 시퀀스 생성 및 실행
             UPlayStartSequenceManager* SequenceManager = UPlayStartSequenceManager::CreateInstance(this);
@@ -67,13 +69,9 @@ void APlayGameMode::BeginPlay()
                 
                 // 시퀀스 시작
                 SequenceManager->StartSequence(this);
+                UE_LOG(LogTemp, Display, TEXT("게임 시작 시퀀스 시작"));
             }
         }, 0.66f, false);
-    }
-    else if (World && World->GetMapName().Contains(TEXT("TitleLevel")))
-    {
-        // TitleLevel일 때는 아무것도 하지 않음
-        UE_LOG(LogTemp, Log, TEXT("TitleLevel에서 UIWidgetRenderer 생성 안 함"));
     }
 }
 
