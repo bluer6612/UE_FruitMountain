@@ -15,19 +15,7 @@ void UMenuIndicatorAnimator::Initialize(UImage* InIndicator)
     {
         Indicator->SetRenderOpacity(1.0f);
         
-        // 0.25초 후 애니메이션 시작
-        if (UWorld* World = Indicator->GetWorld())
-        {
-            FTimerHandle FirstAnimHandle;
-            TWeakObjectPtr<UMenuIndicatorAnimator> WeakThis(this);
-            World->GetTimerManager().SetTimer(FirstAnimHandle, [WeakThis]()
-            {
-                if (WeakThis.IsValid())
-                {
-                    WeakThis->PlayAnimation();
-                }
-            }, 0.25f, false);
-        }
+        PlayAnimation();
     }
 }
 

@@ -185,9 +185,7 @@ void UTitleLevelWidget::StartLogoAndMenuFadeIn()
 void UTitleLevelWidget::PlayFadeOut()
 {
     if (!FadeBorder)
-    {
         return;
-    }
 
     const float FadeDuration = FadeOutDuration;
     const float TickInterval = 0.02f;
@@ -201,37 +199,30 @@ void UTitleLevelWidget::PlayFadeOut()
     {
         if (!WeakThis.IsValid() || !WeakBorder.IsValid())
         {
-            if (FadeHandle)
+            if (UWorld* World = WeakThis.IsValid() ? WeakThis->GetWorld() : nullptr)
             {
-                if (UWorld* World = GEngine->GetWorldFromContextObjectChecked(WeakThis.Get()))
-                {
-                    World->GetTimerManager().ClearTimer(*FadeHandle);
-                }
-                delete FadeHandle;
+                World->GetTimerManager().ClearTimer(*FadeHandle);
             }
+            delete FadeHandle;
             delete Elapsed;
             return;
         }
 
         *Elapsed += TickInterval;
-        
-        // 알파값 계산 (1.0에서 0.0으로 감소)
         float Alpha = 1.0f - FMath::Clamp(*Elapsed / FadeDuration, 0.f, 1.f);
         WeakBorder->SetRenderOpacity(Alpha);
 
         if (*Elapsed >= FadeDuration)
         {
             WeakBorder->SetRenderOpacity(0.0f);
-            
-            // 타이머 정리
-            if (UWorld* World = GEngine->GetWorldFromContextObjectChecked(WeakThis.Get()))
+
+            if (UWorld* World = WeakThis->GetWorld())
             {
                 World->GetTimerManager().ClearTimer(*FadeHandle);
             }
-            
-            // 로고와 메뉴 페이드인 시작
+
             WeakThis->StartLogoAndMenuFadeIn();
-            
+
             delete FadeHandle;
             delete Elapsed;
         }
@@ -258,14 +249,11 @@ void UTitleLevelWidget::PlayFadeIn(UImage* TargetImage)
     {
         if (!WeakThis.IsValid() || !WeakImage.IsValid())
         {
-            if (FadeHandle)
+            if (UWorld* World = WeakThis.IsValid() ? WeakThis->GetWorld() : nullptr)
             {
-                if (UWorld* World = GEngine && WeakThis.IsValid() ? GEngine->GetWorldFromContextObjectChecked(WeakThis.Get()) : nullptr)
-                {
-                    World->GetTimerManager().ClearTimer(*FadeHandle);
-                }
-                delete FadeHandle;
+                World->GetTimerManager().ClearTimer(*FadeHandle);
             }
+            delete FadeHandle;
             delete Elapsed;
             return;
         }
@@ -276,7 +264,7 @@ void UTitleLevelWidget::PlayFadeIn(UImage* TargetImage)
 
         if (Alpha >= 1.f)
         {
-            if (UWorld* World = GEngine->GetWorldFromContextObjectChecked(WeakThis.Get()))
+            if (UWorld* World = WeakThis->GetWorld())
             {
                 World->GetTimerManager().ClearTimer(*FadeHandle);
             }
