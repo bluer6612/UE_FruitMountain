@@ -3,8 +3,10 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "InputCoreTypes.h"
-#include "Framework/Application/SlateApplication.h"
 #include "TitleMenuManager.generated.h"
+
+class UImage;
+class UTitleLevelWidget;
 
 UCLASS()
 class UE_FRUITMOUNTAIN_API UTitleMenuManager : public UObject
@@ -13,40 +15,48 @@ class UE_FRUITMOUNTAIN_API UTitleMenuManager : public UObject
     
 public:
     UTitleMenuManager();
+
+    // 초기화 메서드
+    void Initialize(UImage* InSelectIndicator, UTitleLevelWidget* InOwner);
     
-    // 메뉴 초기화
-    void Initialize(class UImage* InSelectIndicator, class UTitleLevelWidget* InOwner);
-    
-    // 키 입력 처리 - NativeOnKeyDown에서 호출될 함수
+    // 키 입력 처리
     bool HandleKeyDown(const FKey& Key);
     
-    // 메뉴 인덱스 관리
+    // 메뉴 선택 위치 업데이트
+    void UpdateMenuSelection();
+    
+private:
+    // 메뉴 선택 관련 함수
     void MoveSelectionUp();
     void MoveSelectionDown();
     void SelectCurrentMenu();
-    
-    // 메뉴 위치 업데이트
-    void UpdateMenuSelection();
-
-private:
-    // 메뉴 관련 변수
-    int32 CurrentMenuIndex = 0;
-    int32 MenuItemCount = 4;
-    
-    // 선택 표시기 참조
-    UPROPERTY()
-    class UImage* SelectIndicator = nullptr;
-    
-    // 소유자 참조 (TitleLevelWidget)
-    UPROPERTY()
-    class UTitleLevelWidget* Owner = nullptr;
-    
-    // 선택 효과를 위한 애니메이션
     void PlaySelectionAnimation();
     
-    // 메뉴 항목별 처리 함수
+    // 메뉴 아이템 처리 함수
     void OpenPlayLevel();
     void OpenRankingMenu();
     void OpenOptionsMenu();
     void OpenCreditScreen();
+    
+    // 메뉴 상태 변수
+    int32 CurrentMenuIndex = 0;
+    static constexpr int32 MenuItemCount = 4;
+    float MenuPositions[MenuItemCount] = { 50.0f, 100.0f, 150.0f, 200.0f };
+    
+    // 참조 변수
+    UPROPERTY()
+    UImage* SelectIndicator = nullptr;
+    
+    UPROPERTY()
+    UTitleLevelWidget* Owner = nullptr;
+    
+    // 선택 표시기 애니메이션 관련 변수
+    FTimerHandle IndicatorAnimationTimerHandle;
+    float IndicatorAnimationDuration = 0.8f;  // 애니메이션 지속 시간
+    float IndicatorAnimationInterval = 1.5f;  // 애니메이션 간격
+    FVector2D IndicatorOriginalPosition;      // 선택 표시기 원래 위치
+    
+    // 선택 표시기 애니메이션 함수
+    void StartIndicatorAnimation();
+    void PlayIndicatorAnimation();
 };

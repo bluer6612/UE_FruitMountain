@@ -25,25 +25,19 @@ void UTitleLevelWidget::NativeDestruct()
 
 void UTitleLevelWidget::InitializeTitleWidget()
 {
-    UE_LOG(LogTemp, Log, TEXT("[TitleLevelWidget] InitializeTitleWidget 시작"));
-    
     // 1. 게임 UI 요소 생성
     UUIWidgetRenderer* Renderer = UUIWidgetRenderer::GetInstance();
     if (Renderer)
     {
-        UE_LOG(LogTemp, Log, TEXT("[TitleLevelWidget] UIWidgetRenderer 인스턴스 획득 성공"));
-        
         LogoImage = Renderer->PrepareUIWidget(EWidgetImageType::UI_Title_Logo,
             TEXT("/Game/UI/TitleLevel/UI_Title_Logo"),
             FVector2D(633.f, 369.f), 150.f, 270.f);
         LogoImage->SetRenderOpacity(0.f);
-        UE_LOG(LogTemp, Log, TEXT("[TitleLevelWidget] LogoImage 생성: %s"), IsValid(LogoImage) ? TEXT("성공") : TEXT("실패"));
         
         MenuImage = Renderer->PrepareUIWidget(EWidgetImageType::UI_Title_Menu,
             TEXT("/Game/UI/TitleLevel/UI_Title_Menu"),
             FVector2D(592.f, 359.f), 150.f, 50.f);
         MenuImage->SetRenderOpacity(0.f);
-        UE_LOG(LogTemp, Log, TEXT("[TitleLevelWidget] MenuImage 생성: %s"), IsValid(MenuImage) ? TEXT("성공") : TEXT("실패"));
         
         SelectIndicator = Renderer->PrepareUIWidget(EWidgetImageType::UI_Title_Select,
             TEXT("/Game/UI/TitleLevel/UI_Title_Select"),
@@ -53,32 +47,26 @@ void UTitleLevelWidget::InitializeTitleWidget()
         // 메뉴 Z-Order 설정
         if (UCanvasPanelSlot* MenuSlot = Cast<UCanvasPanelSlot>(MenuImage->Slot))
         {
-            MenuSlot->SetZOrder(5); // 메뉴는 5로 설정
-            UE_LOG(LogTemp, Log, TEXT("[TitleLevelWidget] MenuImage Z-Order 설정: 5"));
+            MenuSlot->SetZOrder(5);
         }
         
         // 로고 Z-Order 설정
         if (UCanvasPanelSlot* LogoSlot = Cast<UCanvasPanelSlot>(LogoImage->Slot))
         {
-            LogoSlot->SetZOrder(1); // 로고는 맨 뒤
-            UE_LOG(LogTemp, Log, TEXT("[TitleLevelWidget] LogoImage Z-Order 설정: 1"));
+            LogoSlot->SetZOrder(1);
         }
 
         // 선택 표시기 Z-Order 설정
         if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(SelectIndicator->Slot))
         {
-            IndicatorSlot->SetZOrder(10); // 메뉴보다 높은 Z-Order 설정
-            UE_LOG(LogTemp, Log, TEXT("[TitleLevelWidget] SelectIndicator Z-Order 설정: 10"));
+            IndicatorSlot->SetZOrder(10);
         }
     }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("UIWidgetRenderer 인스턴스를 가져올 수 없음"));
-    }
 
-    // 바인딩된 FadeBorder가 있는지 확인
+    // 2. 페이드 아웃 재생
     if (!FadeBorder)
     {
+        // 중요 오류 로그 유지
         UE_LOG(LogTemp, Error, TEXT("FadeBorder가 블루프린트에 생성되지 않았습니다!"));
     }
     else
@@ -98,25 +86,14 @@ void UTitleLevelWidget::InitializeTitleWidget()
         {
             UE_LOG(LogTemp, Error, TEXT("FadeBorder의 CanvasPanelSlot을 가져올 수 없음"));
         }
-    }
-    
-    // 2. 페이드 아웃 시작
-    if (FadeBorder)
-    {
+
         PlayFadeOut();
     }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("FadeBorder 없음! 페이드아웃 불가"));
-    }
-    
-    // UE_LOG(LogTemp, Warning, TEXT("TitleLevelWidget::InitializeTitleWidget 종료"));
 }
+    
 
 void UTitleLevelWidget::StartLogoAndMenuFadeIn()
 {
-    UE_LOG(LogTemp, Warning, TEXT("[TitleLevelWidget] StartLogoAndMenuFadeIn() 시작"));
-    
     if (LogoImage)
     {
         PlayFadeIn(LogoImage);
@@ -125,47 +102,35 @@ void UTitleLevelWidget::StartLogoAndMenuFadeIn()
     FTimerHandle MenuFadeHandle;
     GetWorld()->GetTimerManager().SetTimer(MenuFadeHandle, [this]()
     {
-        
         if (MenuImage)
         {
             PlayFadeIn(MenuImage);
             
             // 메뉴가 표시된 후 선택 표시기 페이드인
-            UE_LOG(LogTemp, Warning, TEXT("[TitleLevelWidget] SelectIndicator 페이드인 타이머 설정 (0.2초 후)"));
             FTimerHandle IndicatorFadeHandle;
             GetWorld()->GetTimerManager().SetTimer(IndicatorFadeHandle, [this]()
             {
-                UE_LOG(LogTemp, Warning, TEXT("[TitleLevelWidget] SelectIndicator 페이드인 타이머 콜백 실행"));
-                
                 if (SelectIndicator)
                 {
-                    UE_LOG(LogTemp, Warning, TEXT("[TitleLevelWidget] SelectIndicator 페이드인 시작 (유효함)"));
-                    UE_LOG(LogTemp, Warning, TEXT("[TitleLevelWidget] SelectIndicator 위치: X=%f, Y=%f"),
-                        Cast<UCanvasPanelSlot>(SelectIndicator->Slot) ? 
-                        Cast<UCanvasPanelSlot>(SelectIndicator->Slot)->GetPosition().X : -1.f,
-                        Cast<UCanvasPanelSlot>(SelectIndicator->Slot) ? 
-                        Cast<UCanvasPanelSlot>(SelectIndicator->Slot)->GetPosition().Y : -1.f);
+                    // 디버깅 목적으로 위치 로그만 유지
+                    // UE_LOG(LogTemp, Warning, TEXT("[TitleLevelWidget] SelectIndicator 위치: X=%f, Y=%f"),
+                    //     Cast<UCanvasPanelSlot>(SelectIndicator->Slot) ? 
+                    //     Cast<UCanvasPanelSlot>(SelectIndicator->Slot)->GetPosition().X : -1.f,
+                    //     Cast<UCanvasPanelSlot>(SelectIndicator->Slot) ? 
+                    //     Cast<UCanvasPanelSlot>(SelectIndicator->Slot)->GetPosition().Y : -1.f);
                         
                     PlayFadeIn(SelectIndicator);
                     
                     // 메뉴 관리자 초기화 및 첫번째 항목 선택
                     if (MenuManager)
                     {
-                        UE_LOG(LogTemp, Warning, TEXT("[TitleLevelWidget] MenuManager 초기화 및 첫 항목 선택 (MenuManager 유효함)"));
                         MenuManager->Initialize(SelectIndicator, this);
-                        
                         MenuManager->UpdateMenuSelection();
                     }
                 }
-                
-                UE_LOG(LogTemp, Warning, TEXT("[TitleLevelWidget] SelectIndicator 페이드인 타이머 콜백 종료"));
             }, 0.2f, false);
-            
-            UE_LOG(LogTemp, Warning, TEXT("[TitleLevelWidget] SelectIndicator 페이드인 타이머 설정 완료"));
         }
     }, 0.5f, false);
-    
-    UE_LOG(LogTemp, Warning, TEXT("[TitleLevelWidget] StartLogoAndMenuFadeIn() 종료: 타이머 설정 완료"));
 }
 
 void UTitleLevelWidget::PlayFadeOut()
@@ -174,8 +139,6 @@ void UTitleLevelWidget::PlayFadeOut()
     {
         return;
     }
-    
-    // UE_LOG(LogTemp, Warning, TEXT("PlayFadeOut 시작: Duration=%f"), FadeDuration);
 
     const float FadeDuration = FadeOutDuration;
     const float TickInterval = 0.02f;
@@ -230,14 +193,9 @@ void UTitleLevelWidget::PlayFadeIn(UImage* TargetImage)
 {
     if (!TargetImage)
     {
-        UE_LOG(LogTemp, Error, TEXT("[TitleLevelWidget] PlayFadeIn: 대상 이미지가 nullptr"));
+        UE_LOG(LogTemp, Error, TEXT("PlayFadeIn: 대상 이미지가 nullptr"));
         return;
     }
-
-    const FString TargetName = TargetImage == LogoImage ? TEXT("LogoImage") : 
-                               TargetImage == MenuImage ? TEXT("MenuImage") : 
-                               TargetImage == SelectIndicator ? TEXT("SelectIndicator") : TEXT("알 수 없음");
-    UE_LOG(LogTemp, Warning, TEXT("[TitleLevelWidget] PlayFadeIn: %s 페이드인 시작"), *TargetName);
 
     const float FadeDuration = 0.25f;
     const float TickInterval = 0.02f;
@@ -247,11 +205,10 @@ void UTitleLevelWidget::PlayFadeIn(UImage* TargetImage)
     TWeakObjectPtr<UImage> WeakImage(TargetImage);
 
     FTimerHandle* FadeHandle = new FTimerHandle;
-    GetWorld()->GetTimerManager().SetTimer(*FadeHandle, [WeakThis, WeakImage, FadeDuration, TickInterval, Elapsed, FadeHandle, TargetName]()
+    GetWorld()->GetTimerManager().SetTimer(*FadeHandle, [WeakThis, WeakImage, FadeDuration, TickInterval, Elapsed, FadeHandle]()
     {
         if (!WeakThis.IsValid() || !WeakImage.IsValid())
         {
-            UE_LOG(LogTemp, Error, TEXT("[TitleLevelWidget] PlayFadeIn: %s 페이드인 중 객체 무효화"), *TargetName);
             if (FadeHandle)
             {
                 if (UWorld* World = GEngine && WeakThis.IsValid() ? GEngine->GetWorldFromContextObjectChecked(WeakThis.Get()) : nullptr)
@@ -268,11 +225,8 @@ void UTitleLevelWidget::PlayFadeIn(UImage* TargetImage)
         float Alpha = FMath::Clamp(*Elapsed / FadeDuration, 0.f, 1.f);
         WeakImage->SetRenderOpacity(Alpha);
 
-        // 중간 과정은 로그가 너무 많아지므로 생략
-
         if (Alpha >= 1.f)
         {
-            UE_LOG(LogTemp, Warning, TEXT("[TitleLevelWidget] PlayFadeIn: %s 페이드인 완료 (불투명도 1.0)"), *TargetName);
             if (UWorld* World = GEngine->GetWorldFromContextObjectChecked(WeakThis.Get()))
             {
                 World->GetTimerManager().ClearTimer(*FadeHandle);
