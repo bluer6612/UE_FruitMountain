@@ -5,6 +5,9 @@
 #include "Interface/UI/Core/UIWidgetRenderer.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
+#include "StartMenuWidget.h"
+#include "Interface/UI/TitleLevel/Default/TitleLevelWidget.h"
+#include "Interface/HUD/FruitHUD.h"
 
 UStartMenuWidget::UStartMenuWidget(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)

@@ -8,10 +8,8 @@
 class UImage;
 class UTitleLevelWidget;
 class UMenuIndicatorAnimator;
+class UStartMenuWidget;
 
-/**
- * 타이틀 메뉴 관리자
- */
 UCLASS()
 class UE_FRUITMOUNTAIN_API UTitleMenuManager : public UObject
 {

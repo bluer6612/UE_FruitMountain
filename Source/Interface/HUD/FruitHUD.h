@@ -25,6 +25,8 @@ public:
 
     // TextureWidget 접근자 함수 추가
     UUIWidgetRenderer* GetTextureWidget() const { return TextureWidget; }
+    
+    UTitleLevelWidget* GetTitleWidget() const { return TitleWidget; }
 
 protected:
     // 위젯 컴포넌트

@@ -4,6 +4,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "TitleLevelWidget.h"
 #include "MenuIndicatorAnimator.h"
+#include "Interface/UI/TitleLevel/Start/StartMenuWidget.h"
 
 UTitleMenuManager::UTitleMenuManager()
 {
@@ -171,29 +172,32 @@ void UTitleMenuManager::OpenStartMenu()
     // 게임 모드 선택 메뉴 생성 및 표시
     if (Owner)
     {
-        // StartMenuWidget 생성 및 표시 요청
-        UStartMenuWidget* StartMenu = CreateWidget<UStartMenuWidget>(GetWorld(), UStartMenuWidget::StaticClass());
-        if (StartMenu)
+        UWorld* World = Owner->GetWorld();
+        if (World)
         {
-            StartMenu->AddToViewport(9000);
-            StartMenu->InitializeStartMenu();
-            
-            // 입력 모드 설정 (기존 타이틀 메뉴는 안 보이게)
-            if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+            UStartMenuWidget* StartMenu = CreateWidget<UStartMenuWidget>(World, UStartMenuWidget::StaticClass());
+            if (StartMenu)
             {
-                FInputModeUIOnly InputMode;
-                InputMode.SetWidgetToFocus(StartMenu->TakeWidget());
-                PC->SetInputMode(InputMode);
-            }
-            
-            // 기존 타이틀 메뉴는 숨김
-            if (Owner->MenuImage)
-            {
-                Owner->MenuImage->SetVisibility(ESlateVisibility::Hidden);
-            }
-            if (Owner->LogoImage)
-            {
-                Owner->LogoImage->SetVisibility(ESlateVisibility::Hidden);
+                StartMenu->AddToViewport(9000);
+                StartMenu->InitializeStartMenu();
+                
+                // 입력 모드 설정 (기존 타이틀 메뉴는 안 보이게)
+                if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+                {
+                    FInputModeUIOnly InputMode;
+                    InputMode.SetWidgetToFocus(StartMenu->TakeWidget());
+                    PC->SetInputMode(InputMode);
+                }
+                
+                // 기존 타이틀 메뉴는 숨김
+                if (Owner->MenuImage)
+                {
+                    Owner->MenuImage->SetVisibility(ESlateVisibility::Hidden);
+                }
+                if (Owner->LogoImage)
+                {
+                    Owner->LogoImage->SetVisibility(ESlateVisibility::Hidden);
+                }
             }
         }
     }

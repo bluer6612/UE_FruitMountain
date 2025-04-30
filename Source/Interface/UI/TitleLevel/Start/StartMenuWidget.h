@@ -6,6 +6,8 @@
 
 class UImage;
 class UStartMenuManager;
+class UTitleLevelWidget;
+class AFruitHUD;
 
 UCLASS()
 class UE_FRUITMOUNTAIN_API UStartMenuWidget : public UUserWidget
