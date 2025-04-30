@@ -28,12 +28,6 @@ void UTitleMenuManager::MoveIndicatorTo(const FVector2D& NewPosition)
     }
 }
 
-void UTitleMenuManager::StartIndicatorAnimation(bool bStart)
-{
-    if (IndicatorAnimator)
-        IndicatorAnimator->StartAnimation(bStart);
-}
-
 bool UTitleMenuManager::HandleMenuKey(const FKey& Key, int32& InOutIndex, int32 ItemCount, TFunction<void()> OnSelect)
 {
     if (Key == EKeys::Up || Key == EKeys::W)

@@ -76,18 +76,20 @@ void UMainMenuManager::SelectCurrentMenu()
 void UMainMenuManager::UpdateMenuSelection()
 {
     if (!Owner || !Owner->MenuImage || !Owner->IndicatorAnimator)
+    {
         return;
+    }
 
     UImage* Indicator = Owner->IndicatorAnimator->GetIndicator();
     if (!Indicator)
+    {
         return;
+    }
 
     if (UCanvasPanelSlot* MenuSlot = Cast<UCanvasPanelSlot>(Owner->MenuImage->Slot))
     {
         FVector2D MenuBasePos = MenuSlot->GetPosition();
         FVector2D TargetPos = {MenuBasePos.X + 50.f, MenuBasePos.Y - 255.f + 67.5f * CurrentMenuIndex};
-        UE_LOG(LogTemp, Warning, TEXT("UpdateMenuSelection: CurrentMenuIndex=%d, MenuBasePos=(%.1f, %.1f), Indicator=%p"), CurrentMenuIndex, MenuBasePos.X, MenuBasePos.Y, Indicator);
-
         Owner->IndicatorAnimator->MoveToPosition(TargetPos);
     }
 }
@@ -104,7 +106,7 @@ void UMainMenuManager::OpenPlayLevel()
     // UI 애니메이션 중지
     if (IndicatorAnimator)
     {
-        IndicatorAnimator->StartAnimation(false);
+        IndicatorAnimator->EndAnimation();
     }
     
     if (Owner->SelectIndicator)
@@ -131,7 +133,7 @@ void UMainMenuManager::OpenStartMenu()
     // UI 애니메이션 중지
     if (IndicatorAnimator)
     {
-        IndicatorAnimator->StartAnimation(false);
+        IndicatorAnimator->EndAnimation();
     }
     
     if (Owner->SelectIndicator)
@@ -194,9 +196,4 @@ void UMainMenuManager::OpenCreditScreen()
 {
     // 크레딧 화면 표시 로직
     UE_LOG(LogTemp, Warning, TEXT("크레딧 화면 열기"));
-}
-
-void UMainMenuManager::StartIndicatorAnimation(bool bStart)
-{
-    UTitleMenuManager::StartIndicatorAnimation(bStart);
 }

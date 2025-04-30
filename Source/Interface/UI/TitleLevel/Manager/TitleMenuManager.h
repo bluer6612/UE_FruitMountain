@@ -3,7 +3,6 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "InputCoreTypes.h"
-#include "Components/Border.h"
 #include "TitleMenuManager.generated.h"
 
 class UImage;
@@ -18,7 +17,6 @@ public:
     // 인디케이터 애니메이션 및 위치 관리
     void InitializeIndicator(UImage* InSelectIndicator);
     void MoveIndicatorTo(const FVector2D& NewPosition);
-    void StartIndicatorAnimation(bool bStart = true);
 
     // 방향키/선택 공통 처리
     bool HandleMenuKey(const FKey& Key, int32& InOutIndex, int32 ItemCount, TFunction<void()> OnSelect);
@@ -35,10 +33,6 @@ public:
     float FadeOutDuration = 0.25f;
 
 protected:
-    // 페이드 효과 관련 변수 및 함수
-    UPROPERTY(meta = (BindWidget))
-    class UBorder* FadeBorder;
-    
     UPROPERTY()
     UMenuIndicatorAnimator* IndicatorAnimator = nullptr;
     

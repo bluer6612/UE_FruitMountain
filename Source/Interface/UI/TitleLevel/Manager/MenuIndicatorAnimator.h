@@ -21,7 +21,7 @@ public:
     void Initialize(UImage* InIndicator);
     
     // 애니메이션 시작/중지
-    void StartAnimation(bool bStart = true);
+    void EndAnimation();
     
     // 인디케이터 위치 변경
     void MoveToPosition(const FVector2D& NewPosition);

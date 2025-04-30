@@ -5,9 +5,9 @@
 #include "Interface/UI/Core/UIWidgetRenderer.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
-#include "StartMenuWidget.h"
-#include "Interface/UI/TitleLevel/MainMenu/MainMenuWidget.h"
+#include "Interface/UI/TitleLevel/Manager/MenuIndicatorAnimator.h"
 #include "Interface/HUD/FruitHUD.h"
+#include "Interface/UI/TitleLevel/MainMenu/MainMenuWidget.h"
 
 UStartMenuWidget::UStartMenuWidget(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -39,7 +39,6 @@ void UStartMenuWidget::NativeConstruct()
 
 void UStartMenuWidget::InitializeMenuManager()
 {
-    // InitializeMenuManager()
     if (SelectIndicator && !MenuManager)
     {
         MenuManager = NewObject<UStartMenuManager>(this);
@@ -90,35 +89,35 @@ void UStartMenuWidget::InitializeStartMenu()
         UE_LOG(LogTemp, Error, TEXT("InitializeStartMenu: GameModeMenuImage 생성 실패"));
     }
 
-    // 선택 인디케이터 (메뉴 왼쪽에 배치)
+    // 선택 인디케이터 생성
     SelectIndicator = Renderer->PrepareUIWidget(
         EWidgetImageType::UI_Title_Select,
         TEXT("/Game/UI/TitleLevel/UI_Title_Select"),
         FVector2D(59.f, 59.f), 
-        -230.f, -30.f); // 왼쪽으로 오프셋 (메뉴 왼쪽에 위치)
-        
-    // nullptr 체크 추가
+        -230.f, -30.f);
+
     if (SelectIndicator)
     {
         SelectIndicator->SetRenderOpacity(0.f);
-        
-        // Z-Order 설정
         if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(SelectIndicator->Slot))
         {
             IndicatorSlot->SetZOrder(10);
-            
-            // 왼쪽 배치를 위한 조정
             IndicatorSlot->SetAnchors(FAnchors(0.5f, 0.5f, 0.5f, 0.5f));
             IndicatorSlot->SetAlignment(FVector2D(0.5f, 0.5f));
         }
-        
-        // 페이드 인 효과
         PlayFadeIn(SelectIndicator);
+
+        // 반드시 여기서 IndicatorAnimator를 생성/초기화
+        if (!IndicatorAnimator)
+        {
+            IndicatorAnimator = NewObject<UMenuIndicatorAnimator>(this);
+        }
+        IndicatorAnimator->Initialize(SelectIndicator);
     }
     else
     {
         UE_LOG(LogTemp, Error, TEXT("InitializeStartMenu: SelectIndicator 생성 실패"));
-        return; // 선택 인디케이터가 없으면 메뉴 관리자 초기화 불가
+        return;
     }
 
     // 메뉴 관리자 초기화

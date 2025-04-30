@@ -31,9 +31,6 @@ public:
     void SelectCurrentMenu();
     void UpdateMenuSelection();
     
-    // 애니메이션 제어 함수 - 추가
-    void StartIndicatorAnimation(bool bStart);
-    
     // 소멸 시 정리
     virtual void BeginDestroy() override;
     

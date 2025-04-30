@@ -13,24 +13,15 @@ void UMenuIndicatorAnimator::Initialize(UImage* InIndicator)
     
     if (Indicator)
     {
-        Indicator->SetRenderOpacity(1.0f);
-        
         PlayAnimation();
     }
 }
 
-void UMenuIndicatorAnimator::StartAnimation(bool bStart)
+void UMenuIndicatorAnimator::EndAnimation()
 {
-    bIsAnimating = bStart;
+    bIsAnimating = false;
     
-    if (bStart && !bIsAnimationRunning)
-    {
-        PlayAnimation();
-    }
-    else if (!bStart)
-    {
-        ClearAnimationTimers();
-    }
+    ClearAnimationTimers();
 }
 
 void UMenuIndicatorAnimator::MoveToPosition(const FVector2D& NewPosition)

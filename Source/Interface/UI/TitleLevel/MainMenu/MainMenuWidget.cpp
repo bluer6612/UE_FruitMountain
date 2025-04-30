@@ -126,7 +126,7 @@ void UMainMenuWidget::StartLogoAndMenuFadeIn()
                     if (!WeakThis.IsValid()) return;
                     if (WeakThis->SelectIndicator)
                     {
-                        WeakThis->PlayFadeIn(WeakThis->SelectIndicator);
+                        //WeakThis->PlayFadeIn(WeakThis->SelectIndicator);
                         if (WeakThis->MenuManager)
                         {
                             WeakThis->MenuManager->Initialize(WeakThis.Get());

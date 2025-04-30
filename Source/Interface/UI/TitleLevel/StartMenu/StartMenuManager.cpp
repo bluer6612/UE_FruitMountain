@@ -24,7 +24,7 @@ void UStartMenuManager::BeginDestroy()
     // 정리 작업
     if (IndicatorAnimator)
     {
-        IndicatorAnimator->StartAnimation(false);
+        IndicatorAnimator->EndAnimation();
     }
     
     Super::BeginDestroy();
@@ -83,7 +83,7 @@ void UStartMenuManager::UpdateMenuSelection()
 {
     if (!Owner || !Owner->GameModeMenuImage || !Owner->IndicatorAnimator)
     {
-        UE_LOG(LogTemp, Error, TEXT("UpdateMenuSelection: 필요한 객체가 nullptr"));
+        UE_LOG(LogTemp, Error, TEXT(" 필요한 객체가 nullptr"));
         return;
     }
 
@@ -148,7 +148,7 @@ void UStartMenuManager::SelectClassicMode()
     // UI 애니메이션 중지
     if (IndicatorAnimator)
     {
-        IndicatorAnimator->StartAnimation(false);
+        IndicatorAnimator->EndAnimation();
     }
     
     // 기본 모드로 게임 시작
@@ -163,7 +163,7 @@ void UStartMenuManager::SelectTimeLimitMode()
     // UI 애니메이션 중지
     if (IndicatorAnimator)
     {
-        IndicatorAnimator->StartAnimation(false);
+        IndicatorAnimator->EndAnimation();
     }
     
     // 시간 제한 모드로 게임 시작
@@ -178,7 +178,7 @@ void UStartMenuManager::BackToMainMenu()
     // UI 애니메이션 중지
     if (IndicatorAnimator)
     {
-        IndicatorAnimator->StartAnimation(false);
+        IndicatorAnimator->EndAnimation();
     }
     
     // 메인 메뉴로 돌아가기
@@ -187,9 +187,4 @@ void UStartMenuManager::BackToMainMenu()
         CurrentMenuIndex = 0; // 메인 메뉴 복귀 시 인덱스 초기화
         Owner->BackToMainMenu();
     }
-}
-
-void UStartMenuManager::StartIndicatorAnimation(bool bStart)
-{
-    UTitleMenuManager::StartIndicatorAnimation(bStart);
 }
