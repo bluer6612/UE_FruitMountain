@@ -86,7 +86,7 @@ void UTitleMenuManager::SelectCurrentMenu()
     switch (CurrentMenuIndex)
     {
         case 0: // 게임 시작
-            OpenPlayLevel();
+            OpenStartMenu(); // OpenPlayLevel()에서 변경
             break;
             
         case 1: // 랭킹
@@ -127,6 +127,7 @@ void UTitleMenuManager::PlaySelectionAnimation()
     // 필요한 경우 소리 등의 추가 효과를 여기에 추가
 }
 
+// OpenPlayLevel은 미사용 상태로 남겨두거나 StartMenuWidget에서 호출할 수 있도록 함
 void UTitleMenuManager::OpenPlayLevel()
 {
     // UI 애니메이션 중지
@@ -143,13 +144,62 @@ void UTitleMenuManager::OpenPlayLevel()
     // 위젯에 게임 시작 요청 위임
     if (Owner)
     {
-        Owner->StartGame(); // 위젯에서 직접 처리하도록 변경
+        Owner->StartGame();
     }
     else
     {
         // 오류 상황 - 위젯 없이 직접 시도
         UE_LOG(LogTemp, Warning, TEXT("TitleMenuManager: Owner가 없어 직접 레벨 전환 시도"));
         UGameplayStatics::OpenLevel(GetWorld(), TEXT("PlayLevel"));
+    }
+}
+
+// 새로 추가된 함수: 게임 모드 선택 메뉴 열기
+void UTitleMenuManager::OpenStartMenu()
+{
+    // UI 애니메이션 중지
+    if (IndicatorAnimator)
+    {
+        IndicatorAnimator->StartAnimation(false);
+    }
+    
+    if (SelectIndicator)
+    {
+        SelectIndicator->SetRenderOpacity(0.0f);
+    }
+    
+    // 게임 모드 선택 메뉴 생성 및 표시
+    if (Owner)
+    {
+        // StartMenuWidget 생성 및 표시 요청
+        UStartMenuWidget* StartMenu = CreateWidget<UStartMenuWidget>(GetWorld(), UStartMenuWidget::StaticClass());
+        if (StartMenu)
+        {
+            StartMenu->AddToViewport(9000);
+            StartMenu->InitializeStartMenu();
+            
+            // 입력 모드 설정 (기존 타이틀 메뉴는 안 보이게)
+            if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+            {
+                FInputModeUIOnly InputMode;
+                InputMode.SetWidgetToFocus(StartMenu->TakeWidget());
+                PC->SetInputMode(InputMode);
+            }
+            
+            // 기존 타이틀 메뉴는 숨김
+            if (Owner->MenuImage)
+            {
+                Owner->MenuImage->SetVisibility(ESlateVisibility::Hidden);
+            }
+            if (Owner->LogoImage)
+            {
+                Owner->LogoImage->SetVisibility(ESlateVisibility::Hidden);
+            }
+        }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("TitleMenuManager: Owner가 없어 게임 모드 메뉴를 열 수 없음"));
     }
 }
 

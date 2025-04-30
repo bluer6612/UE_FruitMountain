@@ -14,6 +14,8 @@ enum class EWidgetImageType : uint8
     UI_Title_Logo,
     UI_Title_Menu,
     UI_Title_Select,
+    UI_Title_GameModeMenu,
+    UI_Title_GameModeDesc,
     UI_None
 };
 
