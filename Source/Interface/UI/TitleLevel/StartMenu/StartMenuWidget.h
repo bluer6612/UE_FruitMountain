@@ -52,8 +52,6 @@ private:
     float FadeInDuration = 0.25f;
     bool bIsFading = false;
     
-    void PlayFadeIn(class UImage* TargetImage);
-    
     // 메뉴 관리자
     UPROPERTY()
     class UStartMenuManager* MenuManager;

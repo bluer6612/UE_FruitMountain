@@ -105,33 +105,6 @@ void UMainMenuManager::PlaySelectionAnimation()
     // 필요한 경우 소리 등의 추가 효과를 여기에 추가
 }
 
-// OpenPlayLevel은 미사용 상태로 남겨두거나 StartMenuWidget에서 호출할 수 있도록 함
-void UMainMenuManager::OpenPlayLevel()
-{
-    // UI 애니메이션 중지
-    if (Owner->IndicatorAnimator)
-    {
-        Owner->IndicatorAnimator->EndAnimation();
-    }
-    
-    if (Owner->SelectIndicator)
-    {
-        Owner->SelectIndicator->SetRenderOpacity(0.0f);
-    }
-    
-    // 위젯에 게임 시작 요청 위임
-    if (Owner)
-    {
-        Owner->StartGame();
-    }
-    else
-    {
-        // 오류 상황 - 위젯 없이 직접 시도
-        UE_LOG(LogTemp, Warning, TEXT("MainMenuManager: Owner가 없어 직접 레벨 전환 시도"));
-        UGameplayStatics::OpenLevel(GetWorld(), TEXT("PlayLevel"));
-    }
-}
-
 // 새로 추가된 함수: 게임 모드 선택 메뉴 열기
 void UMainMenuManager::OpenStartMenu()
 {

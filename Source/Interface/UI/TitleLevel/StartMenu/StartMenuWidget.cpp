@@ -5,8 +5,8 @@
 #include "Interface/UI/Core/UIWidgetRenderer.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
-#include "Interface/UI/TitleLevel/Manager/MenuIndicatorAnimator.h"
 #include "Interface/HUD/FruitHUD.h"
+#include "Interface/UI/TitleLevel/Manager/MenuIndicatorAnimator.h"
 #include "Interface/UI/TitleLevel/MainMenu/MainMenuWidget.h"
 
 UStartMenuWidget::UStartMenuWidget(const FObjectInitializer& ObjectInitializer)
@@ -126,51 +126,6 @@ void UStartMenuWidget::InitializeStartMenu()
         MenuManager->Initialize(this);
         MenuManager->UpdateMenuSelection();
     }
-}
-
-void UStartMenuWidget::PlayFadeIn(UImage* TargetImage)
-{
-    if (!TargetImage)
-    {
-        UE_LOG(LogTemp, Error, TEXT("PlayFadeIn: 대상 이미지가 nullptr"));
-        return;
-    }
-
-    const float FadeDuration = FadeInDuration;
-    const float TickInterval = 0.02f;
-    float* Elapsed = new float(0.f);
-    FTimerHandle* FadeHandle = new FTimerHandle;
-
-    TWeakObjectPtr<UStartMenuWidget> WeakThis(this);
-    TWeakObjectPtr<UImage> WeakImage(TargetImage);
-
-    GetWorld()->GetTimerManager().SetTimer(*FadeHandle, [WeakThis, WeakImage, FadeDuration, TickInterval, Elapsed, FadeHandle]()
-    {
-        if (!WeakThis.IsValid() || !WeakImage.IsValid())
-        {
-            if (UWorld* World = WeakThis.IsValid() ? WeakThis->GetWorld() : nullptr)
-            {
-                World->GetTimerManager().ClearTimer(*FadeHandle);
-            }
-            delete FadeHandle;
-            delete Elapsed;
-            return;
-        }
-
-        *Elapsed += TickInterval;
-        float Alpha = FMath::Clamp(*Elapsed / FadeDuration, 0.f, 1.f);
-        WeakImage->SetRenderOpacity(Alpha);
-
-        if (Alpha >= 1.f)
-        {
-            if (UWorld* World = WeakThis->GetWorld())
-            {
-                World->GetTimerManager().ClearTimer(*FadeHandle);
-            }
-            delete FadeHandle;
-            delete Elapsed;
-        }
-    }, TickInterval, true);
 }
 
 FReply UStartMenuWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)

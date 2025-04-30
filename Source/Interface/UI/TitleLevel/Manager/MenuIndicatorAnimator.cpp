@@ -10,11 +10,6 @@ UMenuIndicatorAnimator::UMenuIndicatorAnimator()
 void UMenuIndicatorAnimator::Initialize(UImage* InIndicator)
 {
     Indicator = InIndicator;
-    
-    if (Indicator)
-    {
-        PlayAnimation();
-    }
 }
 
 void UMenuIndicatorAnimator::EndAnimation()
