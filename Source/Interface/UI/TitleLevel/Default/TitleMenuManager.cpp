@@ -3,7 +3,7 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Kismet/GameplayStatics.h"
 #include "TitleLevelWidget.h"
-#include "MenuIndicatorAnimator.h"
+#include "Interface/UI/TitleLevel/Animator/MenuIndicatorAnimator.h"
 #include "Interface/UI/TitleLevel/Start/StartMenuWidget.h"
 
 UTitleMenuManager::UTitleMenuManager()

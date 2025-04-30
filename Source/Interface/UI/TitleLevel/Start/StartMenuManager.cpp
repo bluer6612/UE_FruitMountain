@@ -1,6 +1,6 @@
 #include "StartMenuManager.h"
 #include "StartMenuWidget.h"
-#include "Interface/UI/TitleLevel/Default/MenuIndicatorAnimator.h"
+#include "Interface/UI/TitleLevel/Animator/MenuIndicatorAnimator.h"
 #include "Interface/UI/TitleLevel/Default/TitleLevelWidget.h"
 #include "Components/Image.h"
 #include "Components/CanvasPanelSlot.h"
