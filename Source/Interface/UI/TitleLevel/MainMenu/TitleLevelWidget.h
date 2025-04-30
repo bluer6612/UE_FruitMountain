@@ -5,7 +5,7 @@
 #include "TitleLevelWidget.generated.h"
 
 class UImage;
-class UTitleMenuManager;
+class UMainMenuManager;
 
 UCLASS()
 class UE_FRUITMOUNTAIN_API UTitleLevelWidget : public UUserWidget
@@ -57,5 +57,5 @@ private:
     
     // 메뉴 관리자
     UPROPERTY()
-    class UTitleMenuManager* MenuManager;
+    class UMainMenuManager* MenuManager;
 };

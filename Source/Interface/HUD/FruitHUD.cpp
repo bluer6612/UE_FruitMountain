@@ -3,7 +3,7 @@
 #include "Blueprint/UserWidget.h"
 #include "EngineUtils.h"
 #include "Interface\UI\Core\UIWidgetRenderer.h"
-#include "Interface/UI/TitleLevel/Default/TitleLevelWidget.h"
+#include "Interface/UI/TitleLevel/MeinMenu/TitleLevelWidget.h"
 
 AFruitHUD::AFruitHUD()
 {

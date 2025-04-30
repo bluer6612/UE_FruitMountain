@@ -1,8 +1,8 @@
 #include "TitleLevelWidget.h"
-#include "TitleMenuManager.h"
 #include "Components/Border.h"
 #include "Components/Image.h"
 #include "Components/CanvasPanelSlot.h"
+#include "Interface/UI/TitleLevel/Manager/MainMenuManager.h"
 #include "Interface/UI/Core/UIWidgetRenderer.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
@@ -11,7 +11,7 @@ UTitleLevelWidget::UTitleLevelWidget(const FObjectInitializer& ObjectInitializer
     : Super(ObjectInitializer)
 {
     // 메뉴 관리자를 생성자에서 올바르게 생성
-    MenuManager = ObjectInitializer.CreateDefaultSubobject<UTitleMenuManager>(this, TEXT("MenuManager"));
+    MenuManager = ObjectInitializer.CreateDefaultSubobject<UMainMenuManager>(this, TEXT("MenuManager"));
 }
 
 void UTitleLevelWidget::NativeConstruct()
@@ -39,7 +39,7 @@ void UTitleLevelWidget::InitializeMenuManager()
 {
     if (SelectIndicator && !MenuManager)
     {
-        MenuManager = NewObject<UTitleMenuManager>(this);
+        MenuManager = NewObject<UMainMenuManager>(this);
         if (MenuManager)
         {
             MenuManager->Initialize(SelectIndicator, this);

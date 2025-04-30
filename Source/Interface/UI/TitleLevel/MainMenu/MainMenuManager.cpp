@@ -1,17 +1,17 @@
-#include "TitleMenuManager.h"
+#include "MainMenuManager.h"
 #include "Components/Image.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Kismet/GameplayStatics.h"
 #include "TitleLevelWidget.h"
-#include "Interface/UI/TitleLevel/Animator/MenuIndicatorAnimator.h"
-#include "Interface/UI/TitleLevel/Start/StartMenuWidget.h"
+#include "Interface/UI/TitleLevel/Manager/MenuIndicatorAnimator.h"
+#include "Interface/UI/TitleLevel/StartMenu/StartMenuWidget.h"
 
-UTitleMenuManager::UTitleMenuManager()
+UMainMenuManager::UMainMenuManager()
 {
     // 기본 초기화
 }
 
-void UTitleMenuManager::Initialize(UImage* InSelectIndicator, UTitleLevelWidget* InOwner)
+void UMainMenuManager::Initialize(UImage* InSelectIndicator, UTitleLevelWidget* InOwner)
 {
     SelectIndicator = InSelectIndicator;
     Owner = InOwner;
@@ -28,7 +28,7 @@ void UTitleMenuManager::Initialize(UImage* InSelectIndicator, UTitleLevelWidget*
     UpdateMenuSelection();
 }
 
-void UTitleMenuManager::BeginDestroy()
+void UMainMenuManager::BeginDestroy()
 {
     // 정리 작업
     if (IndicatorAnimator)
@@ -39,7 +39,7 @@ void UTitleMenuManager::BeginDestroy()
     Super::BeginDestroy();
 }
 
-bool UTitleMenuManager::HandleKeyDown(const FKey& Key)
+bool UMainMenuManager::HandleKeyDown(const FKey& Key)
 {
     // 위로 이동 (UP, W)
     if (Key == EKeys::Up || Key == EKeys::W)
@@ -66,7 +66,7 @@ bool UTitleMenuManager::HandleKeyDown(const FKey& Key)
     return false;
 }
 
-void UTitleMenuManager::MoveSelectionUp()
+void UMainMenuManager::MoveSelectionUp()
 {
     // 순환식으로 인덱스 감소
     CurrentMenuIndex = (CurrentMenuIndex - 1 + MenuItemCount) % MenuItemCount;
@@ -74,7 +74,7 @@ void UTitleMenuManager::MoveSelectionUp()
     PlaySelectionAnimation();
 }
 
-void UTitleMenuManager::MoveSelectionDown()
+void UMainMenuManager::MoveSelectionDown()
 {
     // 순환식으로 인덱스 증가
     CurrentMenuIndex = (CurrentMenuIndex + 1) % MenuItemCount;
@@ -82,7 +82,7 @@ void UTitleMenuManager::MoveSelectionDown()
     PlaySelectionAnimation();
 }
 
-void UTitleMenuManager::SelectCurrentMenu()
+void UMainMenuManager::SelectCurrentMenu()
 {
     switch (CurrentMenuIndex)
     {
@@ -104,7 +104,7 @@ void UTitleMenuManager::SelectCurrentMenu()
     }
 }
 
-void UTitleMenuManager::UpdateMenuSelection()
+void UMainMenuManager::UpdateMenuSelection()
 {
     if (!SelectIndicator || !Owner || !Owner->MenuImage || !IndicatorAnimator)
     {
@@ -122,14 +122,14 @@ void UTitleMenuManager::UpdateMenuSelection()
     }
 }
 
-void UTitleMenuManager::PlaySelectionAnimation()
+void UMainMenuManager::PlaySelectionAnimation()
 {
     // 선택 효과는 UpdateMenuSelection에서 처리하므로 비워둠
     // 필요한 경우 소리 등의 추가 효과를 여기에 추가
 }
 
 // OpenPlayLevel은 미사용 상태로 남겨두거나 StartMenuWidget에서 호출할 수 있도록 함
-void UTitleMenuManager::OpenPlayLevel()
+void UMainMenuManager::OpenPlayLevel()
 {
     // UI 애니메이션 중지
     if (IndicatorAnimator)
@@ -150,13 +150,13 @@ void UTitleMenuManager::OpenPlayLevel()
     else
     {
         // 오류 상황 - 위젯 없이 직접 시도
-        UE_LOG(LogTemp, Warning, TEXT("TitleMenuManager: Owner가 없어 직접 레벨 전환 시도"));
+        UE_LOG(LogTemp, Warning, TEXT("MainMenuManager: Owner가 없어 직접 레벨 전환 시도"));
         UGameplayStatics::OpenLevel(GetWorld(), TEXT("PlayLevel"));
     }
 }
 
 // 새로 추가된 함수: 게임 모드 선택 메뉴 열기
-void UTitleMenuManager::OpenStartMenu()
+void UMainMenuManager::OpenStartMenu()
 {
     // UI 애니메이션 중지
     if (IndicatorAnimator)
@@ -203,29 +203,29 @@ void UTitleMenuManager::OpenStartMenu()
     }
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("TitleMenuManager: Owner가 없어 게임 모드 메뉴를 열 수 없음"));
+        UE_LOG(LogTemp, Error, TEXT("MainMenuManager: Owner가 없어 게임 모드 메뉴를 열 수 없음"));
     }
 }
 
-void UTitleMenuManager::OpenRankingMenu()
+void UMainMenuManager::OpenRankingMenu()
 {
     // 랭킹 화면 표시 로직
     UE_LOG(LogTemp, Warning, TEXT("랭킹 메뉴 열기"));
 }
 
-void UTitleMenuManager::OpenOptionsMenu()
+void UMainMenuManager::OpenOptionsMenu()
 {
     // 옵션 메뉴 표시 로직
     UE_LOG(LogTemp, Warning, TEXT("옵션 메뉴 열기"));
 }
 
-void UTitleMenuManager::OpenCreditScreen()
+void UMainMenuManager::OpenCreditScreen()
 {
     // 크레딧 화면 표시 로직
     UE_LOG(LogTemp, Warning, TEXT("크레딧 화면 열기"));
 }
 
-void UTitleMenuManager::StartIndicatorAnimation(bool bStart)
+void UMainMenuManager::StartIndicatorAnimation(bool bStart)
 {
     // 애니메이션 관리자를 통해 애니메이션 제어
     if (IndicatorAnimator)

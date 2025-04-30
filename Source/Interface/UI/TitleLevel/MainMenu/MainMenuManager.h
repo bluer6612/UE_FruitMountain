@@ -3,7 +3,8 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "InputCoreTypes.h"
-#include "TitleMenuManager.generated.h"
+#include "TitleMenuManager.h"
+#include "MainMenuManager.generated.h"
 
 class UImage;
 class UTitleLevelWidget;
@@ -11,12 +12,12 @@ class UMenuIndicatorAnimator;
 class UStartMenuWidget;
 
 UCLASS()
-class UE_FRUITMOUNTAIN_API UTitleMenuManager : public UObject
+class UE_FRUITMOUNTAIN_API UMainMenuManager : public UTitleMenuManager
 {
     GENERATED_BODY()
     
 public:
-    UTitleMenuManager();
+    UMainMenuManager();
 
     // 초기화 메서드
     void Initialize(UImage* InSelectIndicator, UTitleLevelWidget* InOwner);

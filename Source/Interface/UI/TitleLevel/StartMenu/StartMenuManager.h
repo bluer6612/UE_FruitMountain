@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "InputCoreTypes.h"
+#include "TitleMenuManager.h"
 #include "StartMenuManager.generated.h"
 
 class UImage;
@@ -13,7 +14,7 @@ class UMenuIndicatorAnimator;
  * 게임 모드 선택 메뉴 관리자
  */
 UCLASS()
-class UE_FRUITMOUNTAIN_API UStartMenuManager : public UObject
+class UE_FRUITMOUNTAIN_API UStartMenuManager : public UTitleMenuManager
 {
     GENERATED_BODY()
     

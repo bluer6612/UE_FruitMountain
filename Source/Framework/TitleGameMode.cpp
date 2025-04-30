@@ -1,5 +1,5 @@
 #include "TitleGameMode.h"
-#include "Interface/UI/TitleLevel/Default/TitleLevelWidget.h"
+#include "Interface/UI/TitleLevel/MeinMenu/TitleLevelWidget.h"
 #include "Blueprint/UserWidget.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Interface/HUD/FruitHUD.h"
