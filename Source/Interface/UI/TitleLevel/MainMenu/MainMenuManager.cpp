@@ -11,18 +11,10 @@ UMainMenuManager::UMainMenuManager()
     // 기본 초기화
 }
 
-void UMainMenuManager::Initialize(UImage* InSelectIndicator, UMainMenuWidget* InOwner)
+void UMainMenuManager::Initialize(UMainMenuWidget* InOwner)
 {
-    SelectIndicator = InSelectIndicator;
     Owner = InOwner;
     CurrentMenuIndex = 0;
-    
-    // 애니메이션 관리자 생성 및 초기화
-    IndicatorAnimator = NewObject<UMenuIndicatorAnimator>(this);
-    if (IndicatorAnimator)
-    {
-        IndicatorAnimator->Initialize(SelectIndicator);
-    }
     
     // 초기화 직후 메뉴 선택 업데이트
     UpdateMenuSelection();
@@ -30,12 +22,6 @@ void UMainMenuManager::Initialize(UImage* InSelectIndicator, UMainMenuWidget* In
 
 void UMainMenuManager::BeginDestroy()
 {
-    // 정리 작업
-    if (IndicatorAnimator)
-    {
-        IndicatorAnimator->StartAnimation(false);
-    }
-    
     Super::BeginDestroy();
 }
 
@@ -44,7 +30,7 @@ bool UMainMenuManager::HandleKeyDown(const FKey& Key)
     bool bMoved = HandleMenuKey(Key, CurrentMenuIndex, MenuItemCount, [this]() { SelectCurrentMenu(); });
     if (bMoved)
     {
-        UpdateMenuSelection(); // 인덱스가 바뀌면 인디케이터 위치 갱신!
+        UpdateMenuSelection();
     }
     return bMoved;
 }
@@ -89,19 +75,20 @@ void UMainMenuManager::SelectCurrentMenu()
 
 void UMainMenuManager::UpdateMenuSelection()
 {
-    if (!SelectIndicator || !Owner || !Owner->MenuImage || !IndicatorAnimator)
-    {
+    if (!Owner || !Owner->MenuImage || !Owner->IndicatorAnimator)
         return;
-    }
 
-    // 위치 계산
+    UImage* Indicator = Owner->IndicatorAnimator->GetIndicator();
+    if (!Indicator)
+        return;
+
     if (UCanvasPanelSlot* MenuSlot = Cast<UCanvasPanelSlot>(Owner->MenuImage->Slot))
     {
         FVector2D MenuBasePos = MenuSlot->GetPosition();
         FVector2D TargetPos = {MenuBasePos.X + 50.f, MenuBasePos.Y - 255.f + 67.5f * CurrentMenuIndex};
+        UE_LOG(LogTemp, Warning, TEXT("UpdateMenuSelection: CurrentMenuIndex=%d, MenuBasePos=(%.1f, %.1f), Indicator=%p"), CurrentMenuIndex, MenuBasePos.X, MenuBasePos.Y, Indicator);
 
-        // 애니메이터에게 위치 변경 요청
-        MoveIndicatorTo(TargetPos);
+        Owner->IndicatorAnimator->MoveToPosition(TargetPos);
     }
 }
 
@@ -120,9 +107,9 @@ void UMainMenuManager::OpenPlayLevel()
         IndicatorAnimator->StartAnimation(false);
     }
     
-    if (SelectIndicator)
+    if (Owner->SelectIndicator)
     {
-        SelectIndicator->SetRenderOpacity(0.0f);
+        Owner->SelectIndicator->SetRenderOpacity(0.0f);
     }
     
     // 위젯에 게임 시작 요청 위임
@@ -147,9 +134,9 @@ void UMainMenuManager::OpenStartMenu()
         IndicatorAnimator->StartAnimation(false);
     }
     
-    if (SelectIndicator)
+    if (Owner->SelectIndicator)
     {
-        SelectIndicator->SetRenderOpacity(0.0f);
+        Owner->SelectIndicator->SetRenderOpacity(0.0f);
     }
     
     // 게임 모드 선택 메뉴 생성 및 표시
@@ -161,6 +148,7 @@ void UMainMenuManager::OpenStartMenu()
             UStartMenuWidget* StartMenu = CreateWidget<UStartMenuWidget>(World, UStartMenuWidget::StaticClass());
             if (StartMenu)
             {
+                CurrentMenuIndex = 0;
                 StartMenu->AddToViewport(9000);
                 StartMenu->InitializeStartMenu();
                 

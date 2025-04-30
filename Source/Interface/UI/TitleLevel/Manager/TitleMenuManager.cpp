@@ -16,7 +16,16 @@ void UTitleMenuManager::InitializeIndicator(UImage* InSelectIndicator)
 void UTitleMenuManager::MoveIndicatorTo(const FVector2D& NewPosition)
 {
     if (IndicatorAnimator)
+    {
         IndicatorAnimator->MoveToPosition(NewPosition);
+
+        UE_LOG(LogTemp, Warning, TEXT("IndicatorAnimator가 초기화 됨됨."));
+
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("IndicatorAnimator가 초기화되지 않았습니다."));
+    }
 }
 
 void UTitleMenuManager::StartIndicatorAnimation(bool bStart)

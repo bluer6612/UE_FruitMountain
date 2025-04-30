@@ -29,6 +29,8 @@ public:
     // 객체 소멸 시 정리 작업
     virtual void BeginDestroy() override;
     
+    UImage* GetIndicator() const { return Indicator; }
+
 private:
     // 애니메이션 실행 함수
     void PlayAnimation();

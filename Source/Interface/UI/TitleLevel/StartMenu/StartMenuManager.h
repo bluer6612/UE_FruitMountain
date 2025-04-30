@@ -22,7 +22,7 @@ public:
     UStartMenuManager();
 
     // 초기화 메서드
-    void Initialize(UImage* InSelectIndicator, UStartMenuWidget* InOwner);
+    void Initialize(UStartMenuWidget* InOwner);
     
     // 키 입력 처리
     bool HandleKeyDown(const FKey& Key);
@@ -51,14 +51,9 @@ private:
     // 게임 모드 이미지 업데이트 (함수 이름 변경)
     void UpdateGameModeImage();
 
-    // 메뉴 상태 변수
-    int32 CurrentMenuIndex = 0;
     static constexpr int32 MenuItemCount = 3; // 기본 모드, 시간 제한 모드, 뒤로가기
     
     // 참조 변수
-    UPROPERTY()
-    UImage* SelectIndicator = nullptr;
-    
     UPROPERTY()
     UStartMenuWidget* Owner = nullptr;
 };

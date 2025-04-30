@@ -34,8 +34,11 @@ public:
     class UImage* GameModeMenuImage;
     
     UPROPERTY()
-    class UImage* SelectIndicator;
+    class UImage* SelectIndicator = nullptr;
     
+    UPROPERTY()
+    class UMenuIndicatorAnimator* IndicatorAnimator = nullptr;
+
     // 메뉴 작업 함수
     void StartGame(int32 GameMode = 0);
     void BackToMainMenu();

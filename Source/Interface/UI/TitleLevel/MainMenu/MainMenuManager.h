@@ -20,7 +20,7 @@ public:
     UMainMenuManager();
 
     // 초기화 메서드
-    void Initialize(UImage* InSelectIndicator, UMainMenuWidget* InOwner);
+    void Initialize(UMainMenuWidget* InOwner);
     
     // 키 입력 처리
     bool HandleKeyDown(const FKey& Key);
@@ -48,14 +48,8 @@ private:
     // 선택 효과 함수
     void PlaySelectionAnimation();
 
-    // 메뉴 상태 변수
-    int32 CurrentMenuIndex = 0;
     static constexpr int32 MenuItemCount = 4;
     
-    // 참조 변수
     UPROPERTY()
-    UImage* SelectIndicator = nullptr;
-    
-    UPROPERTY()
-    UMainMenuWidget* Owner = nullptr;
+    class UMainMenuWidget* Owner = nullptr;
 };

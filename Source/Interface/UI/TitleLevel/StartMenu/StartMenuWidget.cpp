@@ -45,7 +45,7 @@ void UStartMenuWidget::InitializeMenuManager()
         MenuManager = NewObject<UStartMenuManager>(this);
         if (MenuManager)
         {
-            MenuManager->Initialize(SelectIndicator, this);
+            MenuManager->Initialize(this);
         }
     }
 }
@@ -124,7 +124,7 @@ void UStartMenuWidget::InitializeStartMenu()
     // 메뉴 관리자 초기화
     if (MenuManager)
     {
-        MenuManager->Initialize(SelectIndicator, this);
+        MenuManager->Initialize(this);
         MenuManager->UpdateMenuSelection();
     }
 }

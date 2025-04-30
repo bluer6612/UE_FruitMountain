@@ -41,4 +41,7 @@ protected:
     
     UPROPERTY()
     UMenuIndicatorAnimator* IndicatorAnimator = nullptr;
+    
+    // 메뉴 상태 변수 (공통)
+    int32 CurrentMenuIndex = 0;
 };

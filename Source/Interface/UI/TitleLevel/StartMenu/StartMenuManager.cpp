@@ -11,23 +11,11 @@ UStartMenuManager::UStartMenuManager()
     // 기본 초기화
 }
 
-void UStartMenuManager::Initialize(UImage* InSelectIndicator, UStartMenuWidget* InOwner)
+void UStartMenuManager::Initialize(UStartMenuWidget* InOwner)
 {
-    SelectIndicator = InSelectIndicator;
     Owner = InOwner;
     CurrentMenuIndex = 0;
-    
-    // 애니메이션 관리자 생성 및 초기화
-    IndicatorAnimator = NewObject<UMenuIndicatorAnimator>(this);
-    if (IndicatorAnimator)
-    {
-        IndicatorAnimator->Initialize(SelectIndicator);
-    }
-    
-    // 초기화 직후 메뉴 선택 업데이트
     UpdateMenuSelection();
-    
-    // 모드 이미지 업데이트
     UpdateGameModeImage();
 }
 
@@ -93,24 +81,25 @@ void UStartMenuManager::SelectCurrentMenu()
 
 void UStartMenuManager::UpdateMenuSelection()
 {
-    if (!SelectIndicator || !Owner || !Owner->GameModeMenuImage || !IndicatorAnimator)
+    if (!Owner || !Owner->GameModeMenuImage || !Owner->IndicatorAnimator)
     {
         UE_LOG(LogTemp, Error, TEXT("UpdateMenuSelection: 필요한 객체가 nullptr"));
         return;
     }
 
-    // 메뉴 항목별 위치 계산
-    const float MenuItemBaseY = -30.f; // 첫 메뉴 항목의 Y 좌표 (중앙 기준)
-    const float MenuItemSpacing = 70.f; // 메뉴 항목 간 간격
-    
-    // 선택된 메뉴 항목의 위치
+    UImage* Indicator = Owner->IndicatorAnimator->GetIndicator();
+    if (!Indicator)
+    {
+        return;
+    }
+
+    // 위치 계산 및 이동
+    const float MenuItemBaseY = -30.f;
+    const float MenuItemSpacing = 70.f;
     float targetY = MenuItemBaseY + (CurrentMenuIndex * MenuItemSpacing);
-    
-    // 인디케이터 위치 설정 (메뉴 왼쪽에 배치)
     FVector2D TargetPos = FVector2D(-230.f, targetY);
-    
-    // 애니메이터에게 위치 변경 요청
-    MoveIndicatorTo(TargetPos);
+
+    Owner->IndicatorAnimator->MoveToPosition(TargetPos);
     UpdateGameModeImage();
 }
 
@@ -195,6 +184,7 @@ void UStartMenuManager::BackToMainMenu()
     // 메인 메뉴로 돌아가기
     if (Owner)
     {
+        CurrentMenuIndex = 0; // 메인 메뉴 복귀 시 인덱스 초기화
         Owner->BackToMainMenu();
     }
 }

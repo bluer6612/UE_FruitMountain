@@ -2,6 +2,7 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Interface/UI/TitleLevel/MainMenu/MainMenuManager.h"
 #include "Interface/UI/Core/UIWidgetRenderer.h"
+#include "Interface/UI/TitleLevel/Manager/MenuIndicatorAnimator.h"
 #include "Components/Image.h"
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
@@ -29,7 +30,7 @@ void UMainMenuWidget::InitializeMenuManager()
         MenuManager = NewObject<UMainMenuManager>(this);
         if (MenuManager)
         {
-            MenuManager->Initialize(SelectIndicator, this);
+            MenuManager->Initialize(this);
         }
     }
 }
@@ -54,6 +55,13 @@ void UMainMenuWidget::InitializeTitleWidget()
             TEXT("/Game/UI/TitleLevel/UI_Title_Select"),
             FVector2D(59.f, 59.f), 0.f, 0.f);
         SelectIndicator->SetRenderOpacity(0.f);
+
+        if (!IndicatorAnimator)
+        {
+            IndicatorAnimator = NewObject<UMenuIndicatorAnimator>(this);
+        }
+        IndicatorAnimator->Initialize(SelectIndicator); // 항상 SelectIndicator를 넘김
+        UE_LOG(LogTemp, Warning, TEXT("IndicatorAnimator가 초기화 됨. SelectIndicator=%p, Animator->Indicator=%p"), SelectIndicator, IndicatorAnimator->GetIndicator());
     }
 
     // 2. 페이드 아웃 재생
@@ -121,7 +129,7 @@ void UMainMenuWidget::StartLogoAndMenuFadeIn()
                         WeakThis->PlayFadeIn(WeakThis->SelectIndicator);
                         if (WeakThis->MenuManager)
                         {
-                            WeakThis->MenuManager->Initialize(WeakThis->SelectIndicator, WeakThis.Get());
+                            WeakThis->MenuManager->Initialize(WeakThis.Get());
                             WeakThis->MenuManager->UpdateMenuSelection();
                         }
                     }
