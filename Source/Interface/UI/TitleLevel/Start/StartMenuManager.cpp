@@ -42,6 +42,16 @@ void UStartMenuManager::BeginDestroy()
     Super::BeginDestroy();
 }
 
+void UStartMenuManager::PlaySelectionAnimation()
+{
+    // 선택 효과 재생
+    // 필요한 경우 사운드 효과 추가 가능
+    if (Owner && IndicatorAnimator)
+    {
+        // 짧은 선택 애니메이션 효과
+    }
+}
+
 bool UStartMenuManager::HandleKeyDown(const FKey& Key)
 {
     // 위로 이동 (UP, W)
