@@ -10,7 +10,7 @@ class UImage;
 class UMenuIndicatorAnimator;
 
 UCLASS()
-class UE_FRUITMOUNTAIN_API UTitleMenuManager : public UUserWidget
+class UE_FRUITMOUNTAIN_API UTitleMenuManager : public UObject
 {
     GENERATED_BODY()
     
@@ -28,7 +28,7 @@ public:
     void PlayFadeIn(UImage* TargetImage, UObject* WorldContext, float Duration = 0.25f);
 
     UFUNCTION(BlueprintCallable)
-    void PlayFadeOut(UBorder* FadeBorder, UObject* WorldContext, float FadeDuration = 0.25f);
+    void PlayFadeOut(UBorder* InFadeBorder, UObject* WorldContext, float FadeDuration = 0.25f);
 
     // 페이드 효과 관련 변수
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Fade")

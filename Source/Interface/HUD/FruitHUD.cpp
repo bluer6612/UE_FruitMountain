@@ -2,21 +2,25 @@
 #include "Engine/Canvas.h"
 #include "Blueprint/UserWidget.h"
 #include "EngineUtils.h"
-#include "Interface\UI\Core\UIWidgetRenderer.h"
 #include "Interface/UI/TitleLevel/MainMenu/MainMenuWidget.h"
+#include "Interface/UI/Core/UIWidgetRenderer.h"
 
 AFruitHUD::AFruitHUD()
 {
     TextureWidget = nullptr;
-    TitleWidget = nullptr; // 초기화 추가
+    MainMenuWidget = nullptr;
 }
 
 void AFruitHUD::BeginPlay()
 {
     Super::BeginPlay();
-
-    // UIWidgetRenderer 생성 및 뷰포트 추가
     CreateAndAddWidgets();
+
+    // MainMenuWidget이 있으면 초기화
+    if (MainMenuWidget)
+    {
+        MainMenuWidget->InitializeTitleWidget();
+    }
 }
 
 void AFruitHUD::CreateAndAddWidgets()
@@ -62,11 +66,12 @@ void AFruitHUD::CreateAndAddWidgets()
                 );
                 UE_LOG(LogTemp, Warning, TEXT("FruitHUD: SBox에 래핑한 위젯을 뷰포트에 직접 추가"));
             }
-            
+
             UWorld* World = GetWorld();
             if (World->GetMapName().Contains(TEXT("TitleLevel")))
             {
-                TitleWidget->InitializeTitleWidget();
+                MainMenuWidget->InitializeTitleWidget();
+                UE_LOG(LogTemp, Warning, TEXT("FruitHUD: InitializeTitleWidget 추가"));
             }
         }
         else

@@ -1,14 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Blueprint/UserWidget.h"
+#include "Interface/UI/TitleLevel/Manager/TitleLevelWidget.h"
 #include "MainMenuWidget.generated.h"
 
-class UImage;
-class UMainMenuManager;
-
 UCLASS()
-class UE_FRUITMOUNTAIN_API UMainMenuWidget : public UUserWidget
+class UE_FRUITMOUNTAIN_API UMainMenuWidget : public UTitleLevelWidget
 {
     GENERATED_BODY()
 
@@ -17,6 +14,8 @@ public:
     
     // 위젯 초기화 함수
     void InitializeTitleWidget();
+    
+    void StartLogoAndMenuFadeIn();
 
     // 위젯 라이프사이클 함수
     virtual void NativeConstruct() override;

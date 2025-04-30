@@ -2,7 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Interface/UI/TitleLevel/Manager/TitleLevelWidget.h"
 #include "StartMenuWidget.generated.h"
+
 
 class UImage;
 class UStartMenuManager;
@@ -10,7 +12,7 @@ class UMainMenuWidget;
 class AFruitHUD;
 
 UCLASS()
-class UE_FRUITMOUNTAIN_API UStartMenuWidget : public UUserWidget
+class UE_FRUITMOUNTAIN_API UStartMenuWidget : public UTitleLevelWidget
 {
     GENERATED_BODY()
 

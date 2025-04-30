@@ -1,15 +1,15 @@
 #include "MainMenuWidget.h"
-#include "Components/Border.h"
-#include "Components/Image.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Interface/UI/TitleLevel/MainMenu/MainMenuManager.h"
 #include "Interface/UI/Core/UIWidgetRenderer.h"
-#include "Kismet/GameplayStatics.h"
+#include "Components/Image.h"
 #include "TimerManager.h"
+#include "Kismet/GameplayStatics.h"
 
 UMainMenuWidget::UMainMenuWidget(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
+    bIsFocusable = true;
     // 메뉴 관리자를 생성자에서 올바르게 생성
     MenuManager = ObjectInitializer.CreateDefaultSubobject<UMainMenuManager>(this, TEXT("MenuManager"));
 }
@@ -17,19 +17,6 @@ UMainMenuWidget::UMainMenuWidget(const FObjectInitializer& ObjectInitializer)
 void UMainMenuWidget::NativeConstruct()
 {
     Super::NativeConstruct();
-    
-    // 키보드 포커스 설정 - 이걸 해야 키 입력을 받을 수 있음
-    bIsFocusable = true;
-    
-    // UI가 생성될 때 자동으로 포커스 가져오기
-    if (APlayerController* PC = GetOwningPlayer())
-    {
-        FInputModeUIOnly InputMode;
-        InputMode.SetWidgetToFocus(TakeWidget());
-        InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-        PC->SetInputMode(InputMode);
-        PC->bShowMouseCursor = true;
-    }
     
     // 메뉴 관리자 초기화
     InitializeMenuManager();
@@ -51,7 +38,6 @@ void UMainMenuWidget::InitializeTitleWidget()
 {
     UUIWidgetRenderer* Renderer = UUIWidgetRenderer::GetInstance();
 
-    // 1. 게임 UI 요소 생성
     if (Renderer)
     {
         LogoImage = Renderer->PrepareUIWidget(EWidgetImageType::UI_Title_Logo,
@@ -68,32 +54,85 @@ void UMainMenuWidget::InitializeTitleWidget()
             TEXT("/Game/UI/TitleLevel/UI_Title_Select"),
             FVector2D(59.f, 59.f), 0.f, 0.f);
         SelectIndicator->SetRenderOpacity(0.f);
-
-        // 메뉴 Z-Order 설정
-        if (UCanvasPanelSlot* MenuSlot = Cast<UCanvasPanelSlot>(MenuImage->Slot))
-        {
-            MenuSlot->SetZOrder(5);
-        }
-        
-        // 로고 Z-Order 설정
-        if (UCanvasPanelSlot* LogoSlot = Cast<UCanvasPanelSlot>(LogoImage->Slot))
-        {
-            LogoSlot->SetZOrder(1);
-        }
-
-        // 선택 표시기 Z-Order 설정
-        if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(SelectIndicator->Slot))
-        {
-            IndicatorSlot->SetZOrder(10);
-        }
     }
 
-    // FadeBorder 및 페이드 관련 코드 완전 제거
+    // 2. 페이드 아웃 재생
+    if (!FadeBorder)
+    {
+        // 중요 오류 로그 유지
+        UE_LOG(LogTemp, Error, TEXT("FadeBorder가 블루프린트에 생성되지 않았습니다!"));
+    }
+    else
+    {
+        // 페이드 보더 초기화 (완전 불투명 검은색으로 시작)
+        FadeBorder->SetBrushColor(FLinearColor(0, 0, 0, 1));
+        FadeBorder->SetRenderOpacity(1.0f);
+        
+        if (UCanvasPanelSlot* BorderSlot = Cast<UCanvasPanelSlot>(FadeBorder->Slot))
+        {
+            FVector2D ViewportSize = FVector2D(1920 * 3, 1080 * 2);
+            BorderSlot->SetSize(ViewportSize);
+            BorderSlot->SetPosition(FVector2D(-100, 0));
+            BorderSlot->SetZOrder(20000);
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("FadeBorder의 CanvasPanelSlot을 가져올 수 없음"));
+        }
+
+        UTitleLevelWidget::PlayFadeOut();
+    }
+}
+
+void UMainMenuWidget::StartLogoAndMenuFadeIn()
+{
+    if (LogoImage)
+    {
+        PlayFadeIn(LogoImage);
+    }
+    
+    // 입력 활성화
+    if (APlayerController* PC = GetOwningPlayer())
+    {
+        FInputModeUIOnly InputMode;
+        InputMode.SetWidgetToFocus(TakeWidget());
+        InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+        PC->SetInputMode(InputMode);
+        PC->bShowMouseCursor = true;
+    }
+
+    FTimerHandle MenuFadeHandle;
+    TWeakObjectPtr<UMainMenuWidget> WeakThis(this);
+    GetWorld()->GetTimerManager().SetTimer(MenuFadeHandle, [WeakThis]()
+    {
+        if (!WeakThis.IsValid()) return;
+        if (WeakThis->MenuImage)
+        {
+            WeakThis->PlayFadeIn(WeakThis->MenuImage);
+            FTimerHandle IndicatorFadeHandle;
+            UWorld* World = WeakThis->GetWorld();
+            if (World)
+            {
+                World->GetTimerManager().SetTimer(IndicatorFadeHandle, [WeakThis]()
+                {
+                    if (!WeakThis.IsValid()) return;
+                    if (WeakThis->SelectIndicator)
+                    {
+                        WeakThis->PlayFadeIn(WeakThis->SelectIndicator);
+                        if (WeakThis->MenuManager)
+                        {
+                            WeakThis->MenuManager->Initialize(WeakThis->SelectIndicator, WeakThis.Get());
+                            WeakThis->MenuManager->UpdateMenuSelection();
+                        }
+                    }
+                }, 0.25f, false);
+            }
+        }
+    }, 0.5f, false);
 }
 
 FReply UMainMenuWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
 {
-    // MenuManager가 있으면 키 이벤트 전달
     if (MenuManager)
     {
         bool bHandled = MenuManager->HandleKeyDown(InKeyEvent.GetKey());
@@ -102,8 +141,6 @@ FReply UMainMenuWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyE
             return FReply::Handled();
         }
     }
-    
-    // 처리되지 않은 키는 부모 클래스로 전달
     return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
 }
 
@@ -142,7 +179,13 @@ void UMainMenuWidget::StartGame()
         World->GetTimerManager().ClearAllTimersForObject(this);
     }
 
-    // 3. 레벨 전환 예약
+    // 3. 페이드 아웃 효과
+    if (FadeBorder)
+    {
+        UTitleLevelWidget::PlayFadeOut();
+    }
+
+    // 4. 레벨 전환 예약
     if (UWorld* World = GetWorld())
     {
         FTimerHandle GameStartHandle;

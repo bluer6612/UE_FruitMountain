@@ -41,7 +41,12 @@ void UMainMenuManager::BeginDestroy()
 
 bool UMainMenuManager::HandleKeyDown(const FKey& Key)
 {
-    return HandleMenuKey(Key, CurrentMenuIndex, MenuItemCount, [this]() { SelectCurrentMenu(); });
+    bool bMoved = HandleMenuKey(Key, CurrentMenuIndex, MenuItemCount, [this]() { SelectCurrentMenu(); });
+    if (bMoved)
+    {
+        UpdateMenuSelection(); // 인덱스가 바뀌면 인디케이터 위치 갱신!
+    }
+    return bMoved;
 }
 
 void UMainMenuManager::MoveSelectionUp()

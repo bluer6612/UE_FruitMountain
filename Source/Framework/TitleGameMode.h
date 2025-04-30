@@ -15,10 +15,9 @@ public:
     virtual void BeginPlay() override;
 
 protected:
-    // 타이틀 위젯 인스턴스
     UPROPERTY()
-    TSubclassOf<class UMainMenuWidget> TitleWidgetClass;
+    TSubclassOf<class UMainMenuWidget> MainMenuWidgetClass;
 
     UPROPERTY()
-    class UMainMenuWidget* TitleWidget;
+    class UMainMenuWidget* MainMenuWidget;
 };

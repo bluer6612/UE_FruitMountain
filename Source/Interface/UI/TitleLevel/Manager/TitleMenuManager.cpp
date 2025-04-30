@@ -80,9 +80,9 @@ void UTitleMenuManager::PlayFadeIn(UImage* TargetImage, UObject* WorldContext, f
     }, TickInterval, true);
 }
 
-void UTitleMenuManager::PlayFadeOut(UBorder* FadeBorder, UObject* WorldContext, float FadeDuration)
+void UTitleMenuManager::PlayFadeOut(UBorder* InFadeBorder, UObject* WorldContext, float FadeDuration)
 {
-    if (!FadeBorder || !WorldContext) return;
+    if (!InFadeBorder || !WorldContext) return;
 
     const float TickInterval = 0.02f;
     float* Elapsed = new float(0.f);

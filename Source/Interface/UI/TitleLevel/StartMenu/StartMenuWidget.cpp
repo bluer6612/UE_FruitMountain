@@ -261,8 +261,8 @@ void UStartMenuWidget::BackToMainMenu()
     {
         // MainMenuWidget 찾기 (앱에 맞게 수정 필요)
         AFruitHUD* FruitHUD = Cast<AFruitHUD>(PC->GetHUD());
-        if (FruitHUD && FruitHUD->GetTitleWidget()) {
-            UMainMenuWidget* TitleWidget = FruitHUD->GetTitleWidget();
+        if (FruitHUD && FruitHUD->GetMainMenuWidget()) {
+            UMainMenuWidget* TitleWidget = FruitHUD->GetMainMenuWidget();
             // 메뉴와 로고 다시 표시
             if (TitleWidget->MenuImage)
             {

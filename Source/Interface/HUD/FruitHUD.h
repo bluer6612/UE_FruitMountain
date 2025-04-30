@@ -11,29 +11,20 @@ UCLASS()
 class UE_FRUITMOUNTAIN_API AFruitHUD : public AHUD
 {
     GENERATED_BODY()
-
 public:
     AFruitHUD();
 
     virtual void BeginPlay() override;
-    
-    // 필요한 위젯 생성 및 추가
+
     void CreateAndAddWidgets();
-    
-    // TitleWidget 설정 함수
-    void SetTitleWidget(UMainMenuWidget* InTitleWidget) { TitleWidget = InTitleWidget; }
 
-    // TextureWidget 접근자 함수 추가
+    void SetMainMenuWidget(UMainMenuWidget* InWidget) { MainMenuWidget = InWidget; }
+    UMainMenuWidget* GetMainMenuWidget() const { return MainMenuWidget; }
     UUIWidgetRenderer* GetTextureWidget() const { return TextureWidget; }
-    
-    UMainMenuWidget* GetTitleWidget() const { return TitleWidget; }
-
 protected:
-    // 위젯 컴포넌트
     UPROPERTY()
     UUIWidgetRenderer* TextureWidget;
-    
-    // 타이틀 위젯 저장용 변수
+
     UPROPERTY()
-    UMainMenuWidget* TitleWidget;
+    UMainMenuWidget* MainMenuWidget;
 };
