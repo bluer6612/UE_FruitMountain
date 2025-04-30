@@ -14,7 +14,7 @@ UMainMenuManager::UMainMenuManager()
 void UMainMenuManager::Initialize(UMainMenuWidget* InOwner)
 {
     Owner = InOwner;
-    CurrentMenuIndex = 0;
+    Owner->CurrentMenuIndex = 0;
     
     // 초기화 직후 메뉴 선택 업데이트
     UpdateMenuSelection();
@@ -27,7 +27,12 @@ void UMainMenuManager::BeginDestroy()
 
 bool UMainMenuManager::HandleKeyDown(const FKey& Key)
 {
-    bool bMoved = HandleMenuKey(Key, CurrentMenuIndex, MenuItemCount, [this]() { SelectCurrentMenu(); });
+    if (!Owner)
+    {
+        return false;
+    }
+
+    bool bMoved = Owner->HandleMenuKey(Key, Owner->CurrentMenuIndex, MenuItemCount, [this]() { SelectCurrentMenu(); });
     if (bMoved)
     {
         UpdateMenuSelection();
@@ -38,7 +43,7 @@ bool UMainMenuManager::HandleKeyDown(const FKey& Key)
 void UMainMenuManager::MoveSelectionUp()
 {
     // 순환식으로 인덱스 감소
-    CurrentMenuIndex = (CurrentMenuIndex - 1 + MenuItemCount) % MenuItemCount;
+    Owner->CurrentMenuIndex = (Owner->CurrentMenuIndex - 1 + MenuItemCount) % MenuItemCount;
     UpdateMenuSelection();
     PlaySelectionAnimation();
 }
@@ -46,14 +51,14 @@ void UMainMenuManager::MoveSelectionUp()
 void UMainMenuManager::MoveSelectionDown()
 {
     // 순환식으로 인덱스 증가
-    CurrentMenuIndex = (CurrentMenuIndex + 1) % MenuItemCount;
+    Owner->CurrentMenuIndex = (Owner->CurrentMenuIndex + 1) % MenuItemCount;
     UpdateMenuSelection();
     PlaySelectionAnimation();
 }
 
 void UMainMenuManager::SelectCurrentMenu()
 {
-    switch (CurrentMenuIndex)
+    switch (Owner->CurrentMenuIndex)
     {
         case 0: // 게임 시작
             OpenStartMenu(); // OpenPlayLevel()에서 변경
@@ -89,7 +94,7 @@ void UMainMenuManager::UpdateMenuSelection()
     if (UCanvasPanelSlot* MenuSlot = Cast<UCanvasPanelSlot>(Owner->MenuImage->Slot))
     {
         FVector2D MenuBasePos = MenuSlot->GetPosition();
-        FVector2D TargetPos = {MenuBasePos.X + 50.f, MenuBasePos.Y - 255.f + 67.5f * CurrentMenuIndex};
+        FVector2D TargetPos = {MenuBasePos.X + 50.f, MenuBasePos.Y - 255.f + 67.5f * Owner->CurrentMenuIndex};
         Owner->IndicatorAnimator->MoveToPosition(TargetPos);
     }
 }
@@ -104,9 +109,9 @@ void UMainMenuManager::PlaySelectionAnimation()
 void UMainMenuManager::OpenPlayLevel()
 {
     // UI 애니메이션 중지
-    if (IndicatorAnimator)
+    if (Owner->IndicatorAnimator)
     {
-        IndicatorAnimator->EndAnimation();
+        Owner->IndicatorAnimator->EndAnimation();
     }
     
     if (Owner->SelectIndicator)
@@ -131,9 +136,9 @@ void UMainMenuManager::OpenPlayLevel()
 void UMainMenuManager::OpenStartMenu()
 {
     // UI 애니메이션 중지
-    if (IndicatorAnimator)
+    if (Owner->IndicatorAnimator)
     {
-        IndicatorAnimator->EndAnimation();
+        Owner->IndicatorAnimator->EndAnimation();
     }
     
     if (Owner->SelectIndicator)
@@ -150,7 +155,7 @@ void UMainMenuManager::OpenStartMenu()
             UStartMenuWidget* StartMenu = CreateWidget<UStartMenuWidget>(World, UStartMenuWidget::StaticClass());
             if (StartMenu)
             {
-                CurrentMenuIndex = 0;
+                Owner->CurrentMenuIndex = 0;
                 StartMenu->AddToViewport(9000);
                 StartMenu->InitializeStartMenu();
                 

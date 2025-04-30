@@ -59,19 +59,19 @@ void UStartMenuWidget::InitializeStartMenu()
     }
 
     // 게임 모드 메뉴 생성 (화면 중앙에 배치)
-    GameModeMenuImage = Renderer->PrepareUIWidget(
+    MenuImage = Renderer->PrepareUIWidget(
         EWidgetImageType::UI_Title_GameModeMenu,
         TEXT("/Game/UI/TitleLevel/UI_Title_GameMode1"),
         FVector2D(1526.f, 828.f),
         0.f, 0.f);
         
     // nullptr 체크 추가
-    if (GameModeMenuImage)
+    if (MenuImage)
     {
-        GameModeMenuImage->SetRenderOpacity(0.f);
+        MenuImage->SetRenderOpacity(0.f);
         
         // Z-Order 설정
-        if (UCanvasPanelSlot* MenuSlot = Cast<UCanvasPanelSlot>(GameModeMenuImage->Slot))
+        if (UCanvasPanelSlot* MenuSlot = Cast<UCanvasPanelSlot>(MenuImage->Slot))
         {
             MenuSlot->SetZOrder(5);
             
@@ -82,11 +82,11 @@ void UStartMenuWidget::InitializeStartMenu()
         }
         
         // 페이드 인 효과
-        PlayFadeIn(GameModeMenuImage);
+        PlayFadeIn(MenuImage);
     }
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("InitializeStartMenu: GameModeMenuImage 생성 실패"));
+        UE_LOG(LogTemp, Error, TEXT("InitializeStartMenu: MenuImage 생성 실패"));
     }
 
     // 선택 인디케이터 생성
@@ -201,10 +201,10 @@ void UStartMenuWidget::NativeDestruct()
 void UStartMenuWidget::StartGame(int32 GameMode)
 {
     // 모든 위젯 숨김
-    if (GameModeMenuImage)
+    if (MenuImage)
     {
-        GameModeMenuImage->SetVisibility(ESlateVisibility::Hidden);
-        GameModeMenuImage->SetRenderOpacity(0.f);
+        MenuImage->SetVisibility(ESlateVisibility::Hidden);
+        MenuImage->SetRenderOpacity(0.f);
     }
     if (SelectIndicator)
     {

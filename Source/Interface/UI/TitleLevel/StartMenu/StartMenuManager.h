@@ -1,9 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
-#include "InputCoreTypes.h"
-#include "Interface/UI/TitleLevel/Manager/TitleMenuManager.h"
 #include "StartMenuManager.generated.h"
 
 class UImage;
@@ -14,7 +11,7 @@ class UMenuIndicatorAnimator;
  * 게임 모드 선택 메뉴 관리자
  */
 UCLASS()
-class UE_FRUITMOUNTAIN_API UStartMenuManager : public UTitleMenuManager
+class UE_FRUITMOUNTAIN_API UStartMenuManager : public UObject
 {
     GENERATED_BODY()
     

@@ -113,7 +113,11 @@ void UMainMenuWidget::StartLogoAndMenuFadeIn()
     TWeakObjectPtr<UMainMenuWidget> WeakThis(this);
     GetWorld()->GetTimerManager().SetTimer(MenuFadeHandle, [WeakThis]()
     {
-        if (!WeakThis.IsValid()) return;
+        if (!WeakThis.IsValid())
+        {
+            return;
+        }
+
         if (WeakThis->MenuImage)
         {
             WeakThis->PlayFadeIn(WeakThis->MenuImage);
@@ -123,10 +127,8 @@ void UMainMenuWidget::StartLogoAndMenuFadeIn()
             {
                 World->GetTimerManager().SetTimer(IndicatorFadeHandle, [WeakThis]()
                 {
-                    if (!WeakThis.IsValid()) return;
                     if (WeakThis->SelectIndicator)
                     {
-                        //WeakThis->PlayFadeIn(WeakThis->SelectIndicator);
                         if (WeakThis->MenuManager)
                         {
                             WeakThis->MenuManager->Initialize(WeakThis.Get());

@@ -31,7 +31,7 @@ public:
     
     // 게임 모드 관련 UI 요소
     UPROPERTY()
-    class UImage* GameModeMenuImage;
+    class UImage* MenuImage;
     
     UPROPERTY()
     class UImage* SelectIndicator = nullptr;

@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/Border.h"
+#include "Templates/Function.h"
 #include "TitleLevelWidget.generated.h"
 
 class UImage;
@@ -26,6 +27,10 @@ public:
 
     UFUNCTION(BlueprintCallable)
     void PlayFadeOut();
+
+    bool HandleMenuKey(const FKey& Key, int32& InOutIndex, int32 ItemCount, TFunction<void()> OnSelect);
+    
+    int CurrentMenuIndex = 0;
 
 protected:
     virtual void NativeConstruct() override;

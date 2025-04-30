@@ -1,3 +1,5 @@
+// TitleLevelWidget.cpp
+
 #include "TitleLevelWidget.h"
 #include "Components/Border.h"
 #include "Components/Image.h"
@@ -65,7 +67,7 @@ void UTitleLevelWidget::PlayFadeOut()
     TWeakObjectPtr<UBorder> WeakBorder(FadeBorder);
 
     FTimerHandle* FadeHandle = new FTimerHandle;
-    GetWorld()->GetTimerManager().SetTimer(*FadeHandle, [WeakThis, WeakBorder, FadeDuration, TickInterval, Elapsed, FadeHandle]()
+    GetWorld()->GetTimerManager().SetTimer(*FadeHandle, [WeakThis, WeakBorder, FadeDuration, TickInterval, Elapsed, FadeHandle, this]()
     {
         if (!WeakThis.IsValid() || !WeakBorder.IsValid())
         {
@@ -91,14 +93,38 @@ void UTitleLevelWidget::PlayFadeOut()
                 World->GetTimerManager().ClearTimer(*FadeHandle);
             }
 
-            // 페이드 아웃이 끝나면 StartLogoAndMenuFadeIn 호출
-            if (UMainMenuWidget* MainMenu = Cast<UMainMenuWidget>(WeakThis.Get()))
+            UWorld* World = GetWorld();
+            if (World->GetMapName().Contains(TEXT("TitleLevel")))
             {
-                MainMenu->StartLogoAndMenuFadeIn();
+                // TitleLevel에서 페이드 아웃이 끝나면 StartLogoAndMenuFadeIn 호출
+                if (UMainMenuWidget* MainMenu = Cast<UMainMenuWidget>(WeakThis.Get()))
+                {
+                    MainMenu->StartLogoAndMenuFadeIn();
+                }
             }
 
             delete FadeHandle;
             delete Elapsed;
         }
     }, TickInterval, true);
+}
+
+bool UTitleLevelWidget::HandleMenuKey(const FKey& Key, int32& InOutIndex, int32 ItemCount, TFunction<void()> OnSelect)
+{
+    if (Key == EKeys::Up || Key == EKeys::W)
+    {
+        InOutIndex = (InOutIndex - 1 + ItemCount) % ItemCount;
+        return true;
+    }
+    if (Key == EKeys::Down || Key == EKeys::S)
+    {
+        InOutIndex = (InOutIndex + 1) % ItemCount;
+        return true;
+    }
+    if (Key == EKeys::Enter || Key == EKeys::SpaceBar)
+    {
+        if (OnSelect) OnSelect();
+        return true;
+    }
+    return false;
 }

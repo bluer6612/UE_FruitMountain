@@ -1,78 +1,66 @@
 #include "StartMenuManager.h"
 #include "StartMenuWidget.h"
 #include "Interface/UI/TitleLevel/Manager/MenuIndicatorAnimator.h"
-#include "Interface/UI/TitleLevel/MainMenu/MainMenuWidget.h"
 #include "Components/Image.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Engine/Texture2D.h"
+#include "Kismet/GameplayStatics.h"
 
 UStartMenuManager::UStartMenuManager()
 {
-    // 기본 초기화
 }
 
 void UStartMenuManager::Initialize(UStartMenuWidget* InOwner)
 {
     Owner = InOwner;
-    CurrentMenuIndex = 0;
+    Owner->CurrentMenuIndex = 0;
     UpdateMenuSelection();
-    UpdateGameModeImage();
 }
 
 void UStartMenuManager::BeginDestroy()
 {
-    // 정리 작업
-    if (IndicatorAnimator)
-    {
-        IndicatorAnimator->EndAnimation();
-    }
-    
     Super::BeginDestroy();
-}
-
-void UStartMenuManager::PlaySelectionAnimation()
-{
-    // 선택 효과 재생
-    // 필요한 경우 사운드 효과 추가 가능
-    if (Owner && IndicatorAnimator)
-    {
-        // 짧은 선택 애니메이션 효과
-    }
 }
 
 bool UStartMenuManager::HandleKeyDown(const FKey& Key)
 {
-    return HandleMenuKey(Key, CurrentMenuIndex, MenuItemCount, [this]() { SelectCurrentMenu(); });
+    if (!Owner)
+    {
+        return false;
+    }
+
+    bool bMoved = Owner->HandleMenuKey(Key, Owner->CurrentMenuIndex, MenuItemCount, [this]() { SelectCurrentMenu(); });
+    if (bMoved)
+    {
+        UpdateMenuSelection();
+    }
+    return bMoved;
 }
 
 void UStartMenuManager::MoveSelectionUp()
 {
-    // 순환식으로 인덱스 감소
-    CurrentMenuIndex = (CurrentMenuIndex - 1 + MenuItemCount) % MenuItemCount;
-    UpdateMenuSelection(); // 이것만 호출하면 내부에서 UpdateGameModeImage() 호출함
+    Owner->CurrentMenuIndex = (Owner->CurrentMenuIndex - 1 + MenuItemCount) % MenuItemCount;
+    UpdateMenuSelection();
     PlaySelectionAnimation();
 }
 
 void UStartMenuManager::MoveSelectionDown()
 {
-    // 순환식으로 인덱스 증가
-    CurrentMenuIndex = (CurrentMenuIndex + 1) % MenuItemCount;
-    UpdateMenuSelection(); // 이것만 호출하면 내부에서 UpdateGameModeImage() 호출함
+    Owner->CurrentMenuIndex = (Owner->CurrentMenuIndex + 1) % MenuItemCount;
+    UpdateMenuSelection();
     PlaySelectionAnimation();
 }
 
 void UStartMenuManager::SelectCurrentMenu()
 {
-    switch (CurrentMenuIndex)
+    switch (Owner->CurrentMenuIndex)
     {
         case 0: // 기본 모드
             SelectClassicMode();
             break;
-            
         case 1: // 시간 제한 모드
             SelectTimeLimitMode();
             break;
-            
         case 2: // 뒤로 가기
             BackToMainMenu();
             break;
@@ -81,9 +69,9 @@ void UStartMenuManager::SelectCurrentMenu()
 
 void UStartMenuManager::UpdateMenuSelection()
 {
-    if (!Owner || !Owner->GameModeMenuImage || !Owner->IndicatorAnimator)
+
+    if (!Owner || !Owner->MenuImage || !Owner->IndicatorAnimator)
     {
-        UE_LOG(LogTemp, Error, TEXT(" 필요한 객체가 nullptr"));
         return;
     }
 
@@ -93,65 +81,26 @@ void UStartMenuManager::UpdateMenuSelection()
         return;
     }
 
-    // 위치 계산 및 이동
-    const float MenuItemBaseY = -30.f;
-    const float MenuItemSpacing = 70.f;
-    float targetY = MenuItemBaseY + (CurrentMenuIndex * MenuItemSpacing);
-    FVector2D TargetPos = FVector2D(-230.f, targetY);
-
-    Owner->IndicatorAnimator->MoveToPosition(TargetPos);
-    UpdateGameModeImage();
+    if (UCanvasPanelSlot* MenuSlot = Cast<UCanvasPanelSlot>(Owner->MenuImage->Slot))
+    {
+        FVector2D MenuBasePos = MenuSlot->GetPosition();
+        FVector2D TargetPos = {MenuBasePos.X + 50.f, MenuBasePos.Y - 255.f + 67.5f * Owner->CurrentMenuIndex};
+        Owner->IndicatorAnimator->MoveToPosition(TargetPos);
+    }
 }
 
-// GameModeDescImage 대신 GameModeMenuImage의 텍스처를 교체하는 함수로 변경
-void UStartMenuManager::UpdateGameModeImage()
+void UStartMenuManager::PlaySelectionAnimation()
 {
-    if (!Owner || !Owner->GameModeMenuImage)
-    {
-        UE_LOG(LogTemp, Error, TEXT("UpdateGameModeImage: Owner 또는 GameModeMenuImage가 nullptr"));
-        return;
-    }
-    
-    // 현재 메뉴 선택에 따라 이미지 변경
-    FString TexturePath;
-    switch (CurrentMenuIndex)
-    {
-        case 0: // 기본 모드
-            TexturePath = TEXT("/Game/UI/TitleLevel/UI_Title_GameMode1");
-            break;
-            
-        case 1: // 시간 제한 모드
-            TexturePath = TEXT("/Game/UI/TitleLevel/UI_Title_GameMode2");
-            break;
-            
-        case 2: // 뒤로 가기
-            TexturePath = TEXT("/Game/UI/TitleLevel/UI_Title_GameMode3");
-            break;
-            
-        default:
-            TexturePath = TEXT("/Game/UI/TitleLevel/UI_Title_GameMode1");
-            break;
-    }
-    
-    // 텍스처 로드 및 설정
-    UTexture2D* LoadedTexture = LoadObject<UTexture2D>(nullptr, *TexturePath);
-    if (LoadedTexture)
-    {
-        FSlateBrush Brush = Owner->GameModeMenuImage->GetBrush();
-        Brush.SetResourceObject(LoadedTexture);
-        Owner->GameModeMenuImage->SetBrush(Brush);
-    }
+    // 선택 효과는 UpdateMenuSelection에서 처리하므로 비워둠
+    // 필요한 경우 소리 등의 추가 효과를 여기에 추가
 }
 
 void UStartMenuManager::SelectClassicMode()
 {
-    // UI 애니메이션 중지
-    if (IndicatorAnimator)
+    if (Owner && Owner->IndicatorAnimator)
     {
-        IndicatorAnimator->EndAnimation();
+        Owner->IndicatorAnimator->EndAnimation();
     }
-    
-    // 기본 모드로 게임 시작
     if (Owner)
     {
         Owner->StartGame(0);
@@ -160,13 +109,10 @@ void UStartMenuManager::SelectClassicMode()
 
 void UStartMenuManager::SelectTimeLimitMode()
 {
-    // UI 애니메이션 중지
-    if (IndicatorAnimator)
+    if (Owner && Owner->IndicatorAnimator)
     {
-        IndicatorAnimator->EndAnimation();
+        Owner->IndicatorAnimator->EndAnimation();
     }
-    
-    // 시간 제한 모드로 게임 시작
     if (Owner)
     {
         Owner->StartGame(1);
@@ -175,16 +121,46 @@ void UStartMenuManager::SelectTimeLimitMode()
 
 void UStartMenuManager::BackToMainMenu()
 {
-    // UI 애니메이션 중지
-    if (IndicatorAnimator)
+    if (Owner && Owner->IndicatorAnimator)
     {
-        IndicatorAnimator->EndAnimation();
+        Owner->IndicatorAnimator->EndAnimation();
     }
-    
-    // 메인 메뉴로 돌아가기
     if (Owner)
     {
-        CurrentMenuIndex = 0; // 메인 메뉴 복귀 시 인덱스 초기화
+        Owner->CurrentMenuIndex = 0;
         Owner->BackToMainMenu();
+    }
+}
+
+void UStartMenuManager::UpdateGameModeImage()
+{
+    if (!Owner || !Owner->MenuImage)
+    {
+        return;
+    }
+
+    FString TexturePath;
+    switch (Owner->CurrentMenuIndex)
+    {
+        case 0:
+            TexturePath = TEXT("/Game/UI/TitleLevel/UI_Title_GameMode1");
+            break;
+        case 1:
+            TexturePath = TEXT("/Game/UI/TitleLevel/UI_Title_GameMode2");
+            break;
+        case 2:
+            TexturePath = TEXT("/Game/UI/TitleLevel/UI_Title_GameMode3");
+            break;
+        default:
+            TexturePath = TEXT("/Game/UI/TitleLevel/UI_Title_GameMode1");
+            break;
+    }
+
+    UTexture2D* LoadedTexture = LoadObject<UTexture2D>(nullptr, *TexturePath);
+    if (LoadedTexture)
+    {
+        FSlateBrush Brush = Owner->MenuImage->GetBrush();
+        Brush.SetResourceObject(LoadedTexture);
+        Owner->MenuImage->SetBrush(Brush);
     }
 }
