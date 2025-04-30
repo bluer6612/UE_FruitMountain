@@ -5,7 +5,7 @@
 #include "Interface/UI/PlayLevel/Score/ScoreDisplayWidget.h"
 #include "Interface/UI/PlayLevel/Score/Total/TotalScoreWidget.h"
 #include "Interface/UI/PlayLevel/Score/Combo/ComboCountWidget.h"
-#include "Interface/UI/PlayLevel/StartMenu/PlayStartSequenceManager.h"
+#include "Interface/UI/PlayLevel/Start/PlayStartSequenceManager.h"
 #include "Gameplay/Score/ScoreManagerComponent.h"
 #include "PlayGameMode.generated.h"
 

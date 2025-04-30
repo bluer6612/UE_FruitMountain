@@ -3,11 +3,11 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "InputCoreTypes.h"
-#include "TitleMenuManager.h"
+#include "Interface/UI/TitleLevel/Manager/TitleMenuManager.h"
 #include "MainMenuManager.generated.h"
 
 class UImage;
-class UTitleLevelWidget;
+class UMainMenuWidget;
 class UMenuIndicatorAnimator;
 class UStartMenuWidget;
 
@@ -20,7 +20,7 @@ public:
     UMainMenuManager();
 
     // 초기화 메서드
-    void Initialize(UImage* InSelectIndicator, UTitleLevelWidget* InOwner);
+    void Initialize(UImage* InSelectIndicator, UMainMenuWidget* InOwner);
     
     // 키 입력 처리
     bool HandleKeyDown(const FKey& Key);
@@ -57,9 +57,5 @@ private:
     UImage* SelectIndicator = nullptr;
     
     UPROPERTY()
-    UTitleLevelWidget* Owner = nullptr;
-    
-    // 애니메이션 관리자
-    UPROPERTY()
-    UMenuIndicatorAnimator* IndicatorAnimator = nullptr;
+    UMainMenuWidget* Owner = nullptr;
 };

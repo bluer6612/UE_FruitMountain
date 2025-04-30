@@ -6,7 +6,7 @@
 
 class UImage;
 class UStartMenuManager;
-class UTitleLevelWidget;
+class UMainMenuWidget;
 class AFruitHUD;
 
 UCLASS()

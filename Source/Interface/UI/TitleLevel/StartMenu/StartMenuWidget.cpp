@@ -6,7 +6,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 #include "StartMenuWidget.h"
-#include "Interface/UI/TitleLevel/MeinMenu/TitleLevelWidget.h"
+#include "Interface/UI/TitleLevel/MainMenu/MainMenuWidget.h"
 #include "Interface/HUD/FruitHUD.h"
 
 UStartMenuWidget::UStartMenuWidget(const FObjectInitializer& ObjectInitializer)
@@ -259,10 +259,10 @@ void UStartMenuWidget::BackToMainMenu()
     // 타이틀 메뉴 위젯 다시 표시
     if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
     {
-        // TitleLevelWidget 찾기 (앱에 맞게 수정 필요)
+        // MainMenuWidget 찾기 (앱에 맞게 수정 필요)
         AFruitHUD* FruitHUD = Cast<AFruitHUD>(PC->GetHUD());
         if (FruitHUD && FruitHUD->GetTitleWidget()) {
-            UTitleLevelWidget* TitleWidget = FruitHUD->GetTitleWidget();
+            UMainMenuWidget* TitleWidget = FruitHUD->GetTitleWidget();
             // 메뉴와 로고 다시 표시
             if (TitleWidget->MenuImage)
             {

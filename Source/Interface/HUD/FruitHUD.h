@@ -5,7 +5,7 @@
 #include "FruitHUD.generated.h"
 
 class UUIWidgetRenderer;
-class UTitleLevelWidget;
+class UMainMenuWidget;
 
 UCLASS()
 class UE_FRUITMOUNTAIN_API AFruitHUD : public AHUD
@@ -21,12 +21,12 @@ public:
     void CreateAndAddWidgets();
     
     // TitleWidget 설정 함수
-    void SetTitleWidget(UTitleLevelWidget* InTitleWidget) { TitleWidget = InTitleWidget; }
+    void SetTitleWidget(UMainMenuWidget* InTitleWidget) { TitleWidget = InTitleWidget; }
 
     // TextureWidget 접근자 함수 추가
     UUIWidgetRenderer* GetTextureWidget() const { return TextureWidget; }
     
-    UTitleLevelWidget* GetTitleWidget() const { return TitleWidget; }
+    UMainMenuWidget* GetTitleWidget() const { return TitleWidget; }
 
 protected:
     // 위젯 컴포넌트
@@ -35,5 +35,5 @@ protected:
     
     // 타이틀 위젯 저장용 변수
     UPROPERTY()
-    UTitleLevelWidget* TitleWidget;
+    UMainMenuWidget* TitleWidget;
 };

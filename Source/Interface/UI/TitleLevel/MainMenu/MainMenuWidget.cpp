@@ -1,20 +1,20 @@
-#include "TitleLevelWidget.h"
+#include "MainMenuWidget.h"
 #include "Components/Border.h"
 #include "Components/Image.h"
 #include "Components/CanvasPanelSlot.h"
-#include "Interface/UI/TitleLevel/Manager/MainMenuManager.h"
+#include "Interface/UI/TitleLevel/MainMenu/MainMenuManager.h"
 #include "Interface/UI/Core/UIWidgetRenderer.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 
-UTitleLevelWidget::UTitleLevelWidget(const FObjectInitializer& ObjectInitializer)
+UMainMenuWidget::UMainMenuWidget(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
 {
     // 메뉴 관리자를 생성자에서 올바르게 생성
     MenuManager = ObjectInitializer.CreateDefaultSubobject<UMainMenuManager>(this, TEXT("MenuManager"));
 }
 
-void UTitleLevelWidget::NativeConstruct()
+void UMainMenuWidget::NativeConstruct()
 {
     Super::NativeConstruct();
     
@@ -35,7 +35,7 @@ void UTitleLevelWidget::NativeConstruct()
     InitializeMenuManager();
 }
 
-void UTitleLevelWidget::InitializeMenuManager()
+void UMainMenuWidget::InitializeMenuManager()
 {
     if (SelectIndicator && !MenuManager)
     {
@@ -47,7 +47,7 @@ void UTitleLevelWidget::InitializeMenuManager()
     }
 }
 
-void UTitleLevelWidget::InitializeTitleWidget()
+void UMainMenuWidget::InitializeTitleWidget()
 {
     UUIWidgetRenderer* Renderer = UUIWidgetRenderer::GetInstance();
 
@@ -117,7 +117,7 @@ void UTitleLevelWidget::InitializeTitleWidget()
 }
     
 
-void UTitleLevelWidget::StartLogoAndMenuFadeIn()
+void UMainMenuWidget::StartLogoAndMenuFadeIn()
 {
     if (LogoImage)
     {
@@ -125,7 +125,7 @@ void UTitleLevelWidget::StartLogoAndMenuFadeIn()
     }
     
     FTimerHandle MenuFadeHandle;
-    TWeakObjectPtr<UTitleLevelWidget> WeakThis(this);
+    TWeakObjectPtr<UMainMenuWidget> WeakThis(this);
     GetWorld()->GetTimerManager().SetTimer(MenuFadeHandle, [WeakThis]()
     {
         if (!WeakThis.IsValid()) return;
@@ -157,7 +157,7 @@ void UTitleLevelWidget::StartLogoAndMenuFadeIn()
     }, 0.5f, false);
 }
 
-void UTitleLevelWidget::PlayFadeOut()
+void UMainMenuWidget::PlayFadeOut()
 {
     if (!FadeBorder)
         return;
@@ -166,7 +166,7 @@ void UTitleLevelWidget::PlayFadeOut()
     const float TickInterval = 0.02f;
     float* Elapsed = new float(0.f);
 
-    TWeakObjectPtr<UTitleLevelWidget> WeakThis(this);
+    TWeakObjectPtr<UMainMenuWidget> WeakThis(this);
     TWeakObjectPtr<UBorder> WeakBorder(FadeBorder);
 
     FTimerHandle* FadeHandle = new FTimerHandle;
@@ -204,7 +204,7 @@ void UTitleLevelWidget::PlayFadeOut()
     }, TickInterval, true);
 }
 
-void UTitleLevelWidget::PlayFadeIn(UImage* TargetImage)
+void UMainMenuWidget::PlayFadeIn(UImage* TargetImage)
 {
     if (!TargetImage)
     {
@@ -216,7 +216,7 @@ void UTitleLevelWidget::PlayFadeIn(UImage* TargetImage)
     const float TickInterval = 0.02f;
     float* Elapsed = new float(0.f);
 
-    TWeakObjectPtr<UTitleLevelWidget> WeakThis(this);
+    TWeakObjectPtr<UMainMenuWidget> WeakThis(this);
     TWeakObjectPtr<UImage> WeakImage(TargetImage);
 
     FTimerHandle* FadeHandle = new FTimerHandle;
@@ -249,7 +249,7 @@ void UTitleLevelWidget::PlayFadeIn(UImage* TargetImage)
     }, TickInterval, true);
 }
 
-FReply UTitleLevelWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
+FReply UMainMenuWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
 {
     // MenuManager가 있으면 키 이벤트 전달
     if (MenuManager)
@@ -265,9 +265,9 @@ FReply UTitleLevelWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKe
     return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
 }
 
-void UTitleLevelWidget::NativeDestruct()
+void UMainMenuWidget::NativeDestruct()
 {
-    UE_LOG(LogTemp, Warning, TEXT("TitleLevelWidget::NativeDestruct 호출") );
+    UE_LOG(LogTemp, Warning, TEXT("MainMenuWidget::NativeDestruct 호출") );
     if (UWorld* World = GetWorld())
     {
         World->GetTimerManager().ClearAllTimersForObject(this);
@@ -275,7 +275,7 @@ void UTitleLevelWidget::NativeDestruct()
     Super::NativeDestruct();
 }
 
-void UTitleLevelWidget::StartGame()
+void UMainMenuWidget::StartGame()
 {
     // 1. 모든 타이틀 위젯 숨김
     if (LogoImage)

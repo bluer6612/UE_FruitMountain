@@ -2,7 +2,7 @@
 #include "Components/Image.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Kismet/GameplayStatics.h"
-#include "TitleLevelWidget.h"
+#include "MainMenuWidget.h"
 #include "Interface/UI/TitleLevel/Manager/MenuIndicatorAnimator.h"
 #include "Interface/UI/TitleLevel/StartMenu/StartMenuWidget.h"
 
@@ -11,7 +11,7 @@ UMainMenuManager::UMainMenuManager()
     // 기본 초기화
 }
 
-void UMainMenuManager::Initialize(UImage* InSelectIndicator, UTitleLevelWidget* InOwner)
+void UMainMenuManager::Initialize(UImage* InSelectIndicator, UMainMenuWidget* InOwner)
 {
     SelectIndicator = InSelectIndicator;
     Owner = InOwner;
@@ -41,29 +41,7 @@ void UMainMenuManager::BeginDestroy()
 
 bool UMainMenuManager::HandleKeyDown(const FKey& Key)
 {
-    // 위로 이동 (UP, W)
-    if (Key == EKeys::Up || Key == EKeys::W)
-    {
-        MoveSelectionUp();
-        return true;
-    }
-    
-    // 아래로 이동 (DOWN, S)
-    if (Key == EKeys::Down || Key == EKeys::S)
-    {
-        MoveSelectionDown();
-        return true;
-    }
-    
-    // 선택 (Enter, SpaceBar)
-    if (Key == EKeys::SpaceBar || Key == EKeys::Enter)
-    {
-        SelectCurrentMenu();
-        return true;
-    }
-    
-    // 처리되지 않은 키
-    return false;
+    return HandleMenuKey(Key, CurrentMenuIndex, MenuItemCount, [this]() { SelectCurrentMenu(); });
 }
 
 void UMainMenuManager::MoveSelectionUp()
@@ -118,7 +96,7 @@ void UMainMenuManager::UpdateMenuSelection()
         FVector2D TargetPos = {MenuBasePos.X + 50.f, MenuBasePos.Y - 255.f + 67.5f * CurrentMenuIndex};
 
         // 애니메이터에게 위치 변경 요청
-        IndicatorAnimator->MoveToPosition(TargetPos);
+        MoveIndicatorTo(TargetPos);
     }
 }
 
@@ -227,9 +205,5 @@ void UMainMenuManager::OpenCreditScreen()
 
 void UMainMenuManager::StartIndicatorAnimation(bool bStart)
 {
-    // 애니메이션 관리자를 통해 애니메이션 제어
-    if (IndicatorAnimator)
-    {
-        IndicatorAnimator->StartAnimation(bStart);
-    }
+    StartIndicatorAnimation(bStart);
 }

@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "InputCoreTypes.h"
-#include "TitleMenuManager.h"
+#include "Interface/UI/TitleLevel/Manager/TitleMenuManager.h"
 #include "StartMenuManager.generated.h"
 
 class UImage;
@@ -61,8 +61,4 @@ private:
     
     UPROPERTY()
     UStartMenuWidget* Owner = nullptr;
-    
-    // 애니메이션 관리자
-    UPROPERTY()
-    UMenuIndicatorAnimator* IndicatorAnimator = nullptr;
 };

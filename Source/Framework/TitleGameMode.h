@@ -17,8 +17,8 @@ public:
 protected:
     // 타이틀 위젯 인스턴스
     UPROPERTY()
-    TSubclassOf<class UTitleLevelWidget> TitleWidgetClass;
+    TSubclassOf<class UMainMenuWidget> TitleWidgetClass;
 
     UPROPERTY()
-    class UTitleLevelWidget* TitleWidget;
+    class UMainMenuWidget* TitleWidget;
 };

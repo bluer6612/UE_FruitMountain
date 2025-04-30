@@ -2,18 +2,18 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "TitleLevelWidget.generated.h"
+#include "MainMenuWidget.generated.h"
 
 class UImage;
 class UMainMenuManager;
 
 UCLASS()
-class UE_FRUITMOUNTAIN_API UTitleLevelWidget : public UUserWidget
+class UE_FRUITMOUNTAIN_API UMainMenuWidget : public UUserWidget
 {
     GENERATED_BODY()
 
 public:
-    UTitleLevelWidget(const FObjectInitializer& ObjectInitializer);
+    UMainMenuWidget(const FObjectInitializer& ObjectInitializer);
     
     // 위젯 초기화 함수
     void InitializeTitleWidget();
