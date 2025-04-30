@@ -205,5 +205,5 @@ void UMainMenuManager::OpenCreditScreen()
 
 void UMainMenuManager::StartIndicatorAnimation(bool bStart)
 {
-    StartIndicatorAnimation(bStart);
+    UTitleMenuManager::StartIndicatorAnimation(bStart);
 }

@@ -201,5 +201,5 @@ void UStartMenuManager::BackToMainMenu()
 
 void UStartMenuManager::StartIndicatorAnimation(bool bStart)
 {
-    StartIndicatorAnimation(bStart);
+    UTitleMenuManager::StartIndicatorAnimation(bStart);
 }
