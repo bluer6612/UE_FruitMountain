@@ -1,6 +1,7 @@
 #include "TitleMenuManager.h"
 #include "MenuIndicatorAnimator.h"
 #include "Components/Image.h"
+#include "Components/Border.h"
 #include "TimerManager.h"
 
 void UTitleMenuManager::InitializeIndicator(UImage* InSelectIndicator)
@@ -72,6 +73,43 @@ void UTitleMenuManager::PlayFadeIn(UImage* TargetImage, UObject* WorldContext, f
 
         if (Alpha >= 1.f)
         {
+            World->GetTimerManager().ClearTimer(*FadeHandle);
+            delete FadeHandle;
+            delete Elapsed;
+        }
+    }, TickInterval, true);
+}
+
+void UTitleMenuManager::PlayFadeOut(UBorder* FadeBorder, UObject* WorldContext, float FadeDuration)
+{
+    if (!FadeBorder || !WorldContext) return;
+
+    const float TickInterval = 0.02f;
+    float* Elapsed = new float(0.f);
+
+    TWeakObjectPtr<UBorder> WeakBorder(FadeBorder);
+
+    FTimerHandle* FadeHandle = new FTimerHandle;
+    UWorld* World = WorldContext->GetWorld();
+    if (!World) return;
+
+    World->GetTimerManager().SetTimer(*FadeHandle, [WeakBorder, FadeDuration, TickInterval, Elapsed, FadeHandle, World]()
+    {
+        if (!WeakBorder.IsValid())
+        {
+            World->GetTimerManager().ClearTimer(*FadeHandle);
+            delete FadeHandle;
+            delete Elapsed;
+            return;
+        }
+
+        *Elapsed += TickInterval;
+        float Alpha = 1.0f - FMath::Clamp(*Elapsed / FadeDuration, 0.f, 1.f);
+        WeakBorder->SetRenderOpacity(Alpha);
+
+        if (*Elapsed >= FadeDuration)
+        {
+            WeakBorder->SetRenderOpacity(0.0f);
             World->GetTimerManager().ClearTimer(*FadeHandle);
             delete FadeHandle;
             delete Elapsed;

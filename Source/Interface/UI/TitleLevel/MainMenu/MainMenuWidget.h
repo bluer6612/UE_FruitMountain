@@ -43,18 +43,6 @@ protected:
     void InitializeMenuManager();
 
 private:
-    // 페이드 효과 관련 변수 및 함수
-    UPROPERTY(meta = (BindWidget))
-    class UBorder* FadeBorder;
-    
-    float FadeOutDuration = 0.25f;
-    float FadeTime = 0.0f;
-    bool bIsFading = false;
-    
-    void PlayFadeOut();
-    void PlayFadeIn(class UImage* TargetImage);
-    void StartLogoAndMenuFadeIn();
-    
     // 메뉴 관리자
     UPROPERTY()
     class UMainMenuManager* MenuManager;
