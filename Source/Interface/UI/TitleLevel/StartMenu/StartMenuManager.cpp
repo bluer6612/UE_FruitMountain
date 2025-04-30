@@ -84,7 +84,7 @@ void UStartMenuManager::UpdateMenuSelection()
     if (UCanvasPanelSlot* MenuSlot = Cast<UCanvasPanelSlot>(Owner->MenuImage->Slot))
     {
         FVector2D MenuBasePos = MenuSlot->GetPosition();
-        FVector2D TargetPos = {MenuBasePos.X + 50.f, MenuBasePos.Y - 255.f + 67.5f * Owner->CurrentMenuIndex};
+        FVector2D TargetPos = {MenuBasePos.X - 600.f, MenuBasePos.Y - 67.5f + 67.5f * Owner->CurrentMenuIndex};
         Owner->IndicatorAnimator->MoveToPosition(TargetPos);
     }
 }

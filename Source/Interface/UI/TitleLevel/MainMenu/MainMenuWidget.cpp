@@ -55,13 +55,6 @@ void UMainMenuWidget::InitializeTitleWidget()
             TEXT("/Game/UI/TitleLevel/UI_Title_Select"),
             FVector2D(59.f, 59.f), 0.f, 0.f);
         SelectIndicator->SetRenderOpacity(0.f);
-
-        if (!IndicatorAnimator)
-        {
-            IndicatorAnimator = NewObject<UMenuIndicatorAnimator>(this);
-        }
-        IndicatorAnimator->Initialize(SelectIndicator); // 항상 SelectIndicator를 넘김
-        UE_LOG(LogTemp, Warning, TEXT("IndicatorAnimator가 초기화 됨. SelectIndicator=%p, Animator->Indicator=%p"), SelectIndicator, IndicatorAnimator->GetIndicator());
     }
 
     // 2. 페이드 아웃 재생
@@ -94,6 +87,14 @@ void UMainMenuWidget::InitializeTitleWidget()
 
 void UMainMenuWidget::StartLogoAndMenuFadeIn()
 {
+    // 1. 인디케이터 애니메이터 초기화
+    if (!IndicatorAnimator)
+    {
+        IndicatorAnimator = NewObject<UMenuIndicatorAnimator>(this);
+    }
+    IndicatorAnimator->Initialize(SelectIndicator);
+
+    // 2. 로고 이미지 페이드 인
     if (LogoImage)
     {
         PlayFadeIn(LogoImage);
