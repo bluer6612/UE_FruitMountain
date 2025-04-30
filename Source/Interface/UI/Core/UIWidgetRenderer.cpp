@@ -129,6 +129,14 @@ UImage* UUIWidgetRenderer::PrepareUIWidget(EWidgetImageType ImageType, const FSt
             TargetImagePtr = &UI_Title_Select;
             Anchor = EWidgetAnchor::BottomLeft;
             break;
+        case EWidgetImageType::UI_Title_GameModeMenu:
+            TargetImagePtr = &UI_Title_GameModeMenu;
+            Anchor = EWidgetAnchor::Center;
+            break;
+        case EWidgetImageType::UI_Title_GameModeSelect:
+            TargetImagePtr = &UI_Title_GameModeSelect;
+            Anchor = EWidgetAnchor::Center;
+            break;
         default:
             UE_LOG(LogTemp, Error, TEXT("알 수 없는 이미지 위치 유형: %d"), static_cast<int32>(ImageType));
             return nullptr;

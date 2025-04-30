@@ -53,54 +53,72 @@ void UStartMenuWidget::InitializeMenuManager()
 void UStartMenuWidget::InitializeStartMenu()
 {
     UUIWidgetRenderer* Renderer = UUIWidgetRenderer::GetInstance();
-
-    // 1. 게임 모드 메뉴 요소 생성
-    if (Renderer)
+    if (!Renderer)
     {
-        // 메뉴 배경 생성
-        GameModeMenuImage = Renderer->PrepareUIWidget(
-            EWidgetImageType::UI_None, // 커스텀 타입 추가 필요
-            TEXT("/Game/UI/TitleLevel/UI_Title_ModeSelect"),
-            FVector2D(592.f, 359.f),
-            150.f, 50.f);
+        UE_LOG(LogTemp, Error, TEXT("InitializeStartMenu: Renderer가 nullptr"));
+        return;
+    }
+
+    // 게임 모드 메뉴 생성 (화면 중앙에 배치)
+    GameModeMenuImage = Renderer->PrepareUIWidget(
+        EWidgetImageType::UI_Title_GameModeMenu,
+        TEXT("/Game/UI/TitleLevel/UI_Title_GameMode1"),
+        FVector2D(1526.f, 828.f),
+        0.f, 0.f);
+        
+    // nullptr 체크 추가
+    if (GameModeMenuImage)
+    {
         GameModeMenuImage->SetRenderOpacity(0.f);
-
-        // 모드 설명 이미지 (처음에는 기본 모드)
-        GameModeDescImage = Renderer->PrepareUIWidget(
-            EWidgetImageType::UI_None, // 커스텀 타입 추가 필요
-            TEXT("/Game/UI/TitleLevel/UI_Title_GameMode1"),
-            FVector2D(592.f, 359.f),
-            750.f, 50.f);
-        GameModeDescImage->SetRenderOpacity(0.f);
-
-        // 선택 인디케이터
-        SelectIndicator = Renderer->PrepareUIWidget(
-            EWidgetImageType::UI_Title_Select,
-            TEXT("/Game/UI/TitleLevel/UI_Title_Select"),
-            FVector2D(59.f, 59.f), 
-            0.f, 0.f);
-        SelectIndicator->SetRenderOpacity(0.f);
-
+        
         // Z-Order 설정
         if (UCanvasPanelSlot* MenuSlot = Cast<UCanvasPanelSlot>(GameModeMenuImage->Slot))
         {
             MenuSlot->SetZOrder(5);
-        }
-        
-        if (UCanvasPanelSlot* DescSlot = Cast<UCanvasPanelSlot>(GameModeDescImage->Slot))
-        {
-            DescSlot->SetZOrder(6);
-        }
-
-        if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(SelectIndicator->Slot))
-        {
-            IndicatorSlot->SetZOrder(10);
+            
+            // 중앙 배치를 위한 앵커 및 정렬 설정
+            MenuSlot->SetAnchors(FAnchors(0.5f, 0.5f, 0.5f, 0.5f));
+            MenuSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+            MenuSlot->SetPosition(FVector2D(0.f, 0.f)); // 중앙 기준점
         }
         
         // 페이드 인 효과
         PlayFadeIn(GameModeMenuImage);
-        PlayFadeIn(GameModeDescImage);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("InitializeStartMenu: GameModeMenuImage 생성 실패"));
+    }
+
+    // 선택 인디케이터 (메뉴 왼쪽에 배치)
+    SelectIndicator = Renderer->PrepareUIWidget(
+        EWidgetImageType::UI_Title_Select,
+        TEXT("/Game/UI/TitleLevel/UI_Title_Select"),
+        FVector2D(59.f, 59.f), 
+        -230.f, -30.f); // 왼쪽으로 오프셋 (메뉴 왼쪽에 위치)
+        
+    // nullptr 체크 추가
+    if (SelectIndicator)
+    {
+        SelectIndicator->SetRenderOpacity(0.f);
+        
+        // Z-Order 설정
+        if (UCanvasPanelSlot* IndicatorSlot = Cast<UCanvasPanelSlot>(SelectIndicator->Slot))
+        {
+            IndicatorSlot->SetZOrder(10);
+            
+            // 왼쪽 배치를 위한 조정
+            IndicatorSlot->SetAnchors(FAnchors(0.5f, 0.5f, 0.5f, 0.5f));
+            IndicatorSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+        }
+        
+        // 페이드 인 효과
         PlayFadeIn(SelectIndicator);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("InitializeStartMenu: SelectIndicator 생성 실패"));
+        return; // 선택 인디케이터가 없으면 메뉴 관리자 초기화 불가
     }
 
     // 메뉴 관리자 초기화
@@ -188,11 +206,6 @@ void UStartMenuWidget::StartGame(int32 GameMode)
     {
         GameModeMenuImage->SetVisibility(ESlateVisibility::Hidden);
         GameModeMenuImage->SetRenderOpacity(0.f);
-    }
-    if (GameModeDescImage)
-    {
-        GameModeDescImage->SetVisibility(ESlateVisibility::Hidden);
-        GameModeDescImage->SetRenderOpacity(0.f);
     }
     if (SelectIndicator)
     {

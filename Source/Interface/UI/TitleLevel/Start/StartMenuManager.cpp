@@ -27,8 +27,8 @@ void UStartMenuManager::Initialize(UImage* InSelectIndicator, UStartMenuWidget* 
     // 초기화 직후 메뉴 선택 업데이트
     UpdateMenuSelection();
     
-    // 설명 이미지 초기화
-    UpdateGameModeDescription();
+    // 모드 이미지 업데이트
+    UpdateGameModeImage();
 }
 
 void UStartMenuManager::BeginDestroy()
@@ -80,8 +80,7 @@ void UStartMenuManager::MoveSelectionUp()
 {
     // 순환식으로 인덱스 감소
     CurrentMenuIndex = (CurrentMenuIndex - 1 + MenuItemCount) % MenuItemCount;
-    UpdateMenuSelection();
-    UpdateGameModeDescription();
+    UpdateMenuSelection(); // 이것만 호출하면 내부에서 UpdateGameModeImage() 호출함
     PlaySelectionAnimation();
 }
 
@@ -89,8 +88,7 @@ void UStartMenuManager::MoveSelectionDown()
 {
     // 순환식으로 인덱스 증가
     CurrentMenuIndex = (CurrentMenuIndex + 1) % MenuItemCount;
-    UpdateMenuSelection();
-    UpdateGameModeDescription();
+    UpdateMenuSelection(); // 이것만 호출하면 내부에서 UpdateGameModeImage() 호출함
     PlaySelectionAnimation();
 }
 
@@ -114,40 +112,39 @@ void UStartMenuManager::SelectCurrentMenu()
 
 void UStartMenuManager::UpdateMenuSelection()
 {
-    if (!SelectIndicator || !Owner || !IndicatorAnimator)
+    if (!SelectIndicator || !Owner || !Owner->GameModeMenuImage || !IndicatorAnimator)
     {
+        UE_LOG(LogTemp, Error, TEXT("UpdateMenuSelection: 필요한 객체가 nullptr"));
         return;
     }
 
-    // 위치 계산 (게임 모드 메뉴에 맞게 조정)
-    if (UCanvasPanelSlot* MenuSlot = Cast<UCanvasPanelSlot>(Owner->GameModeMenuImage->Slot))
-    {
-        FVector2D MenuBasePos = MenuSlot->GetPosition();
-        
-        // 각 메뉴 항목의 위치 (조정 필요)
-        float BaseY = MenuBasePos.Y + 70.f;
-        float ItemSpacing = 75.f;
-        FVector2D TargetPos = {MenuBasePos.X + 50.f, BaseY + ItemSpacing * CurrentMenuIndex};
-
-        // 애니메이터에게 위치 변경 요청
-        IndicatorAnimator->MoveToPosition(TargetPos);
-    }
+    // 메뉴 항목별 위치 계산
+    const float MenuItemBaseY = -30.f; // 첫 메뉴 항목의 Y 좌표 (중앙 기준)
+    const float MenuItemSpacing = 70.f; // 메뉴 항목 간 간격
+    
+    // 선택된 메뉴 항목의 위치
+    float targetY = MenuItemBaseY + (CurrentMenuIndex * MenuItemSpacing);
+    
+    // 인디케이터 위치 설정 (메뉴 왼쪽에 배치)
+    FVector2D TargetPos = FVector2D(-230.f, targetY);
+    
+    // 애니메이터에게 위치 변경 요청
+    IndicatorAnimator->MoveToPosition(TargetPos);
+    
+    // 모드 이미지도 함께 업데이트
+    UpdateGameModeImage();
 }
 
-void UStartMenuManager::PlaySelectionAnimation()
+// GameModeDescImage 대신 GameModeMenuImage의 텍스처를 교체하는 함수로 변경
+void UStartMenuManager::UpdateGameModeImage()
 {
-    // 선택 효과는 UpdateMenuSelection에서 처리하므로 비워둠
-    // 필요한 경우 소리 등의 추가 효과를 여기에 추가
-}
-
-void UStartMenuManager::UpdateGameModeDescription()
-{
-    if (!Owner || !Owner->GameModeDescImage)
+    if (!Owner || !Owner->GameModeMenuImage)
     {
+        UE_LOG(LogTemp, Error, TEXT("UpdateGameModeImage: Owner 또는 GameModeMenuImage가 nullptr"));
         return;
     }
     
-    // 현재 메뉴 선택에 따라 설명 이미지 변경
+    // 현재 메뉴 선택에 따라 이미지 변경
     FString TexturePath;
     switch (CurrentMenuIndex)
     {
@@ -172,9 +169,9 @@ void UStartMenuManager::UpdateGameModeDescription()
     UTexture2D* LoadedTexture = LoadObject<UTexture2D>(nullptr, *TexturePath);
     if (LoadedTexture)
     {
-        FSlateBrush Brush = Owner->GameModeDescImage->GetBrush();
+        FSlateBrush Brush = Owner->GameModeMenuImage->GetBrush();
         Brush.SetResourceObject(LoadedTexture);
-        Owner->GameModeDescImage->SetBrush(Brush);
+        Owner->GameModeMenuImage->SetBrush(Brush);
     }
 }
 

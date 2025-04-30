@@ -32,9 +32,6 @@ public:
     class UImage* GameModeMenuImage;
     
     UPROPERTY()
-    class UImage* GameModeDescImage;
-    
-    UPROPERTY()
     class UImage* SelectIndicator;
     
     // 메뉴 작업 함수

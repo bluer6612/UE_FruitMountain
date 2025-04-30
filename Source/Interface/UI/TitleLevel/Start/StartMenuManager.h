@@ -47,8 +47,8 @@ private:
     // 선택 효과 함수
     void PlaySelectionAnimation();
     
-    // 게임 모드 설명 이미지 업데이트
-    void UpdateGameModeDescription();
+    // 게임 모드 이미지 업데이트 (함수 이름 변경)
+    void UpdateGameModeImage();
 
     // 메뉴 상태 변수
     int32 CurrentMenuIndex = 0;

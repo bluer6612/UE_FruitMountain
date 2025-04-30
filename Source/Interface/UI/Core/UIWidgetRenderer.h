@@ -15,7 +15,7 @@ enum class EWidgetImageType : uint8
     UI_Title_Menu,
     UI_Title_Select,
     UI_Title_GameModeMenu,
-    UI_Title_GameModeDesc,
+    UI_Title_GameModeSelect,
     UI_None
 };
 
@@ -115,4 +115,10 @@ private:
 
     UPROPERTY()
     UImage* UI_Title_Select;
+
+    UPROPERTY()
+    UImage* UI_Title_GameModeMenu;
+
+    UPROPERTY()
+    UImage* UI_Title_GameModeSelect;
 };
