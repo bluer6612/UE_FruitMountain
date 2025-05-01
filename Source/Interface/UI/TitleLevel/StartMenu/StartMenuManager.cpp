@@ -99,6 +99,7 @@ void UStartMenuManager::SelectClassicMode()
     if (Owner && Owner->IndicatorAnimator)
     {
         Owner->IndicatorAnimator->EndAnimation();
+        Owner->UTitleLevelWidget::PlayFadeOut();
         Owner->StartGame();
     }
 }

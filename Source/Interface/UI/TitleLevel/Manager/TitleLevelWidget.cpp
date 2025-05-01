@@ -7,11 +7,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "Interface/UI/TitleLevel/MainMenu/MainMenuWidget.h"
 
-void UTitleLevelWidget::NativeConstruct()
-{
-    Super::NativeConstruct();
-    // 필요시 초기화 코드
-}
 
 void UTitleLevelWidget::PlayFadeIn(UImage* TargetImage, float Duration)
 {

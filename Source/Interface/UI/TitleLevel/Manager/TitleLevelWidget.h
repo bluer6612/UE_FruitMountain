@@ -37,7 +37,6 @@ public:
     int CurrentMenuIndex = 0;
 
 protected:
-    virtual void NativeConstruct() override;
     
     /// 페이드 인 최초 호출 여부
     bool bLogoFadeInCalled = false;
