@@ -57,17 +57,17 @@ void UMainMenuWidget::InitializeMainMenuWidget()
     }
 
     // 2. 페이드 아웃 재생
-    if (!MainMenuFadeBorder)
+    if (!TitleFadeBorder)
     {
-        UE_LOG(LogTemp, Error, TEXT("MainMenuFadeBorder가 블루프린트에 생성되지 않았습니다!"));
+        UE_LOG(LogTemp, Error, TEXT("TitleFadeBorder가 블루프린트에 생성되지 않았습니다!"));
     }
     else
     {
         // 페이드 보더 초기화 (완전 불투명 검은색으로 시작)
-        MainMenuFadeBorder->SetBrushColor(FLinearColor(0, 0, 0, 1));
-        MainMenuFadeBorder->SetRenderOpacity(1.0f);
+        TitleFadeBorder->SetBrushColor(FLinearColor(0, 0, 0, 1));
+        TitleFadeBorder->SetRenderOpacity(1.0f);
         
-        if (UCanvasPanelSlot* BorderSlot = Cast<UCanvasPanelSlot>(MainMenuFadeBorder->Slot))
+        if (UCanvasPanelSlot* BorderSlot = Cast<UCanvasPanelSlot>(TitleFadeBorder->Slot))
         {
             FVector2D ViewportSize = FVector2D(1920 * 3, 1080 * 2);
             BorderSlot->SetSize(ViewportSize);
@@ -76,10 +76,10 @@ void UMainMenuWidget::InitializeMainMenuWidget()
         }
         else
         {
-            UE_LOG(LogTemp, Error, TEXT("MainMenuFadeBorder의 CanvasPanelSlot을 가져올 수 없음"));
+            UE_LOG(LogTemp, Error, TEXT("TitleFadeBorder의 CanvasPanelSlot을 가져올 수 없음"));
         }
 
-        PlayFadeOut(MainMenuFadeBorder);
+        PlayFadeOut();
     }
 }
 

@@ -23,7 +23,7 @@ public:
     void PlayFadeIn(UImage* TargetImage, float Duration = 0.25f);
 
     UFUNCTION(BlueprintCallable)
-    void PlayFadeOut(UBorder* TargetFadeBorder);
+    void PlayFadeOut();
 
     bool HandleMenuKey(const FKey& Key, int32& InOutIndex, int32 ItemCount, TFunction<void()> OnSelect);
     
@@ -32,15 +32,11 @@ public:
     
     int CurrentMenuIndex = 0;
 
-protected:
-    /// 페이드 인 최초 호출 여부
-    bool bLogoFadeInCalled = false;
-    
-    // 위젯 라이프사이클 함수
-    virtual void NativeConstruct() override;
-
-private:
     // 게임 UI 요소
     UPROPERTY(meta = (BindWidget))
     UBorder* TitleFadeBorder;
+
+protected:
+    /// 페이드 인 최초 호출 여부
+    bool bLogoFadeInCalled = false;
 };

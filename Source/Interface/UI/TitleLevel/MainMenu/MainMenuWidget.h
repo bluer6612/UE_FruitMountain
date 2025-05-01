@@ -36,9 +36,6 @@ public:
     UPROPERTY()
     class UMenuIndicatorAnimator* IndicatorAnimator = nullptr;
 
-    UPROPERTY(meta = (BindWidget))
-    UBorder* MainMenuFadeBorder;
-
 protected:
     // 초기화
     void InitializeMenuManager();
