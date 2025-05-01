@@ -5,8 +5,30 @@
 #include "Components/Image.h"
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/CanvasPanelSlot.h"
+#include "Components/Image.h"
 #include "Interface/UI/TitleLevel/MainMenu/MainMenuWidget.h"
 
+
+
+void UTitleLevelWidget::NativeConstruct()
+{
+    Super::NativeConstruct();
+
+    if (TitleFadeBorder)
+    {
+        TitleFadeBorder->SetBrushColor(FLinearColor(0, 0, 0, 1));
+        TitleFadeBorder->SetRenderOpacity(1.0f);
+
+        if (UCanvasPanelSlot* BorderSlot = Cast<UCanvasPanelSlot>(TitleFadeBorder->Slot))
+        {
+            FVector2D ViewportSize = FVector2D(1920 * 3, 1080 * 2);
+            BorderSlot->SetSize(ViewportSize);
+            BorderSlot->SetPosition(FVector2D(-100, 0));
+            BorderSlot->SetZOrder(20000);
+        }
+    }
+}
 
 void UTitleLevelWidget::PlayFadeIn(UImage* TargetImage, float Duration)
 {
@@ -48,30 +70,37 @@ void UTitleLevelWidget::PlayFadeIn(UImage* TargetImage, float Duration)
     }, TickInterval, true);
 }
 
-void UTitleLevelWidget::PlayFadeOut()
+void UTitleLevelWidget::PlayFadeOut(UBorder* TargetFadeBorder)
 {
-    if (!FadeBorder)
+    if (!TargetFadeBorder)
     {
-        UE_LOG(LogTemp, Error, TEXT("FadeBorder가 아닙니다."));
+        UE_LOG(LogTemp, Error, TEXT("PlayFadeOut: FadeBorder가 nullptr입니다."));
         return;
     }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("PlayFadeOut: FadeBorder가 유효합니다."));}
 
     const float FadeDuration = FadeOutDuration;
     const float TickInterval = 0.02f;
     float* Elapsed = new float(0.f);
 
-    TWeakObjectPtr<UTitleLevelWidget> WeakThis(this);
-    TWeakObjectPtr<UBorder> WeakBorder(FadeBorder);
-
+    TWeakObjectPtr<UBorder> WeakBorder(TargetFadeBorder);
     FTimerHandle* FadeHandle = new FTimerHandle;
-    GetWorld()->GetTimerManager().SetTimer(*FadeHandle, [WeakThis, WeakBorder, FadeDuration, TickInterval, Elapsed, FadeHandle, this]()
+    UWorld* World = GetWorld();
+    if (!World)
     {
-        if (!WeakThis.IsValid() || !WeakBorder.IsValid())
+        delete FadeHandle;
+        delete Elapsed;
+        return;
+    }
+
+    World->GetTimerManager().SetTimer(*FadeHandle, [WeakBorder, FadeDuration, TickInterval, Elapsed, FadeHandle, World]()
+    {
+        if (!WeakBorder.IsValid())
         {
-            if (UWorld* World = WeakThis.IsValid() ? WeakThis->GetWorld() : nullptr)
-            {
-                World->GetTimerManager().ClearTimer(*FadeHandle);
-            }
+            UE_LOG(LogTemp, Warning, TEXT("PlayFadeOut: WeakBorder가 유효하지 않습니다."));
+            World->GetTimerManager().ClearTimer(*FadeHandle);
             delete FadeHandle;
             delete Elapsed;
             return;
@@ -83,24 +112,9 @@ void UTitleLevelWidget::PlayFadeOut()
 
         if (*Elapsed >= FadeDuration)
         {
+            UE_LOG(LogTemp, Warning, TEXT("PlayFadeOut: FadeOut 완료"));
             WeakBorder->SetRenderOpacity(0.0f);
-
-            UWorld* World = WeakThis->GetWorld();
-            if (World)
-            {
-                World->GetTimerManager().ClearTimer(*FadeHandle);
-            }
-
-            // TitleLevel에서 페이드 아웃이 끝나면 StartLogoAndMenuFadeIn 호출
-            if (World->GetMapName().Contains(TEXT("TitleLevel")) && !bLogoFadeInCalled)
-            {
-                if (UMainMenuWidget* MainMenu = Cast<UMainMenuWidget>(WeakThis.Get()))
-                {
-                    bLogoFadeInCalled = true;
-                    MainMenu->StartLogoAndMenuFadeIn();
-                }
-            }
-
+            World->GetTimerManager().ClearTimer(*FadeHandle);
             delete FadeHandle;
             delete Elapsed;
         }
@@ -129,10 +143,10 @@ bool UTitleLevelWidget::HandleMenuKey(const FKey& Key, int32& InOutIndex, int32 
 
 void UTitleLevelWidget::StartGame()
 {
-    if (FadeBorder)
+    if (TitleFadeBorder)
     {
         // 페이드 아웃 등 효과 처리
-        PlayFadeOut();
+        PlayFadeOut(TitleFadeBorder);
 
         // 타이머 코드는 유지
         if (UWorld* World = GetWorld())
