@@ -23,10 +23,6 @@ public:
 
     // 헤더에 키 입력 처리 함수 추가
     virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
-    
-    // 게임 UI 요소
-    UPROPERTY(meta = (BindWidget))
-    UBorder* FadeBorder;
 
     UPROPERTY()
     class UImage* LogoImage;

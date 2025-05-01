@@ -15,6 +15,10 @@ class UE_FRUITMOUNTAIN_API UTitleLevelWidget : public UUserWidget
     GENERATED_BODY()
 
 public:
+    // 게임 UI 요소
+    UPROPERTY(meta = (BindWidget))
+    UBorder* FadeBorder;
+    
     // 페이드 효과 관련 변수
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Fade")
     float FadeOutDuration = 0.25f;
