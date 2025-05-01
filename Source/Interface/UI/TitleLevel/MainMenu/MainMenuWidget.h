@@ -25,6 +25,9 @@ public:
     virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
     
     // 게임 UI 요소
+    UPROPERTY(meta = (BindWidget))
+    UBorder* FadeBorder;
+
     UPROPERTY()
     class UImage* LogoImage;
     

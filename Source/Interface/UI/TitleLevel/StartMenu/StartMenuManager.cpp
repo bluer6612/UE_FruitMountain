@@ -69,7 +69,7 @@ void UStartMenuManager::SelectCurrentMenu()
 void UStartMenuManager::UpdateMenuSelection()
 {
 
-    if (!Owner || !Owner->MenuImage || !Owner->IndicatorAnimator)
+    if (!Owner || !Owner->StartMenuImage || !Owner->IndicatorAnimator)
     {
         return;
     }
@@ -80,7 +80,7 @@ void UStartMenuManager::UpdateMenuSelection()
         return;
     }
 
-    if (UCanvasPanelSlot* MenuSlot = Cast<UCanvasPanelSlot>(Owner->MenuImage->Slot))
+    if (UCanvasPanelSlot* MenuSlot = Cast<UCanvasPanelSlot>(Owner->StartMenuImage->Slot))
     {
         FVector2D MenuBasePos = MenuSlot->GetPosition();
         FVector2D TargetPos = {MenuBasePos.X - 600.f, MenuBasePos.Y - 67.5f + 67.5f * Owner->CurrentMenuIndex};
@@ -123,7 +123,7 @@ void UStartMenuManager::BackToMainMenu()
 
 void UStartMenuManager::UpdateGameModeImage()
 {
-    if (!Owner || !Owner->MenuImage)
+    if (!Owner || !Owner->StartMenuImage)
     {
         return;
     }
@@ -148,8 +148,8 @@ void UStartMenuManager::UpdateGameModeImage()
     UTexture2D* LoadedTexture = LoadObject<UTexture2D>(nullptr, *TexturePath);
     if (LoadedTexture)
     {
-        FSlateBrush Brush = Owner->MenuImage->GetBrush();
+        FSlateBrush Brush = Owner->StartMenuImage->GetBrush();
         Brush.SetResourceObject(LoadedTexture);
-        Owner->MenuImage->SetBrush(Brush);
+        Owner->StartMenuImage->SetBrush(Brush);
     }
 }

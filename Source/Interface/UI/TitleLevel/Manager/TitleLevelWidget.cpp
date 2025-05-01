@@ -55,8 +55,11 @@ void UTitleLevelWidget::PlayFadeIn(UImage* TargetImage, float Duration)
 
 void UTitleLevelWidget::PlayFadeOut()
 {
-    if (!FadeBorder)
+    // FadeBorder에 직접 접근하는 대신 자식 MainMenuWidget 체크
+    UMainMenuWidget* MainMenu = Cast<UMainMenuWidget>(this);
+    if (!MainMenu || !MainMenu->FadeBorder)
     {
+        UE_LOG(LogTemp, Error, TEXT("FadeBorder가 없거나 MainMenuWidget이 아닙니다."));
         return;
     }
 
@@ -65,7 +68,7 @@ void UTitleLevelWidget::PlayFadeOut()
     float* Elapsed = new float(0.f);
 
     TWeakObjectPtr<UTitleLevelWidget> WeakThis(this);
-    TWeakObjectPtr<UBorder> WeakBorder(FadeBorder);
+    TWeakObjectPtr<UBorder> WeakBorder(MainMenu->FadeBorder); // MainMenu->FadeBorder 사용
 
     FTimerHandle* FadeHandle = new FTimerHandle;
     GetWorld()->GetTimerManager().SetTimer(*FadeHandle, [WeakThis, WeakBorder, FadeDuration, TickInterval, Elapsed, FadeHandle, this]()
@@ -133,12 +136,14 @@ bool UTitleLevelWidget::HandleMenuKey(const FKey& Key, int32& InOutIndex, int32 
 
 void UTitleLevelWidget::StartGame()
 {
-    if (FadeBorder)
+    // FadeBorder에 직접 접근하는 대신 자식 MainMenuWidget 체크
+    UMainMenuWidget* MainMenu = Cast<UMainMenuWidget>(this);
+    if (MainMenu && MainMenu->FadeBorder)
     {
         // 페이드 아웃 등 효과 처리
         PlayFadeOut();
 
-        // 타이머로 레벨 전환 예약
+        // 타이머 코드는 유지
         if (UWorld* World = GetWorld())
         {
             FTimerHandle GameStartHandle;
@@ -161,6 +166,11 @@ void UTitleLevelWidget::StartGame()
     }
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("FadeBorder가 설정되지 않았습니다."));
+        UE_LOG(LogTemp, Error, TEXT("FadeBorder가 설정되지 않았거나 MainMenuWidget이 아닙니다."));
+        // 실패 시에도 레벨 전환은 시도
+        if (UWorld* World = GetWorld())
+        {
+            UGameplayStatics::OpenLevel(World, TEXT("PlayLevel"));
+        }
     }
 }
