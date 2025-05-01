@@ -55,7 +55,7 @@ void UTitleLevelWidget::PlayFadeIn(UImage* TargetImage, float Duration)
 
 void UTitleLevelWidget::PlayFadeOut()
 {
-    if (!!FadeBorder)
+    if (!FadeBorder)
     {
         UE_LOG(LogTemp, Error, TEXT("FadeBorder가 아닙니다."));
         return;

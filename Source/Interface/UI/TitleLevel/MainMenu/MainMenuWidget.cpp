@@ -59,7 +59,6 @@ void UMainMenuWidget::InitializeMainMenuWidget()
     // 2. 페이드 아웃 재생
     if (!FadeBorder)
     {
-        // 중요 오류 로그 유지
         UE_LOG(LogTemp, Error, TEXT("FadeBorder가 블루프린트에 생성되지 않았습니다!"));
     }
     else
@@ -70,6 +69,7 @@ void UMainMenuWidget::InitializeMainMenuWidget()
         
         if (UCanvasPanelSlot* BorderSlot = Cast<UCanvasPanelSlot>(FadeBorder->Slot))
         {
+            UE_LOG(LogTemp, Error, TEXT("FadeBorder의 CanvasPanelSlot을 가져옴"));
             FVector2D ViewportSize = FVector2D(1920 * 3, 1080 * 2);
             BorderSlot->SetSize(ViewportSize);
             BorderSlot->SetPosition(FVector2D(-100, 0));
