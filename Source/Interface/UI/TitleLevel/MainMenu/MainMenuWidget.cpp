@@ -34,7 +34,7 @@ void UMainMenuWidget::InitializeMenuManager()
     }
 }
 
-void UMainMenuWidget::InitializeTitleWidget()
+void UMainMenuWidget::InitializeMainMenuWidget()
 {
     UUIWidgetRenderer* Renderer = UUIWidgetRenderer::GetInstance();
 

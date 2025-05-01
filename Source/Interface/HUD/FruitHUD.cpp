@@ -14,13 +14,8 @@ AFruitHUD::AFruitHUD()
 void AFruitHUD::BeginPlay()
 {
     Super::BeginPlay();
-    CreateAndAddWidgets();
 
-    // MainMenuWidget이 있으면 초기화
-    if (MainMenuWidget)
-    {
-        MainMenuWidget->InitializeTitleWidget();
-    }
+    CreateAndAddWidgets();
 }
 
 void AFruitHUD::CreateAndAddWidgets()
@@ -70,7 +65,7 @@ void AFruitHUD::CreateAndAddWidgets()
             UWorld* World = GetWorld();
             if (World->GetMapName().Contains(TEXT("TitleLevel")))
             {
-                MainMenuWidget->InitializeTitleWidget();
+                MainMenuWidget->InitializeMainMenuWidget();
                 UE_LOG(LogTemp, Warning, TEXT("FruitHUD: InitializeTitleWidget 추가"));
             }
         }

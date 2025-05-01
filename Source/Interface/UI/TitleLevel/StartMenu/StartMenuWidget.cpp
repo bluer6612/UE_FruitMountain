@@ -59,19 +59,19 @@ void UStartMenuWidget::InitializeStartMenu()
     }
 
     // 게임 모드 메뉴 생성 (화면 중앙에 배치)
-    MenuImage = Renderer->PrepareUIWidget(
+    StartMenuImage = Renderer->PrepareUIWidget(
         EWidgetImageType::UI_Title_GameModeMenu,
         TEXT("/Game/UI/TitleLevel/UI_Title_GameMode1"),
         FVector2D(1526.f, 828.f),
         0.f, 0.f);
         
     // nullptr 체크 추가
-    if (MenuImage)
+    if (StartMenuImage)
     {
-        MenuImage->SetRenderOpacity(0.f);
+        StartMenuImage->SetRenderOpacity(0.f);
         
         // Z-Order 설정
-        if (UCanvasPanelSlot* MenuSlot = Cast<UCanvasPanelSlot>(MenuImage->Slot))
+        if (UCanvasPanelSlot* MenuSlot = Cast<UCanvasPanelSlot>(StartMenuImage->Slot))
         {
             MenuSlot->SetZOrder(5);
             
@@ -82,11 +82,11 @@ void UStartMenuWidget::InitializeStartMenu()
         }
         
         // 페이드 인 효과
-        PlayFadeIn(MenuImage);
+        PlayFadeIn(StartMenuImage);
     }
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("InitializeStartMenu: MenuImage 생성 실패"));
+        UE_LOG(LogTemp, Error, TEXT("InitializeStartMenu: StartMenuImage 생성 실패"));
     }
 
     // 선택 인디케이터 생성
@@ -153,52 +153,6 @@ void UStartMenuWidget::NativeDestruct()
     Super::NativeDestruct();
 }
 
-void UStartMenuWidget::StartGame(int32 GameMode)
-{
-    // 모든 위젯 숨김
-    if (MenuImage)
-    {
-        MenuImage->SetVisibility(ESlateVisibility::Hidden);
-        MenuImage->SetRenderOpacity(0.f);
-    }
-    if (SelectIndicator)
-    {
-        SelectIndicator->SetVisibility(ESlateVisibility::Hidden);
-        SelectIndicator->SetRenderOpacity(0.f);
-    }
-
-    // 타이머 모두 정리
-    if (UWorld* World = GetWorld())
-    {
-        World->GetTimerManager().ClearAllTimersForObject(this);
-    }
-
-    // 게임 모드에 따른 설정 (나중에 구현)
-    // 여기서 GameMode 값에 따라 다른 설정을 적용할 수 있음
-
-    // 레벨 전환 예약
-    if (UWorld* World = GetWorld())
-    {
-        FTimerHandle GameStartHandle;
-        TWeakObjectPtr<UWorld> WeakWorld(World);
-        World->GetTimerManager().SetTimer(
-            GameStartHandle,
-            FTimerDelegate::CreateLambda([WeakWorld]()
-            {
-                if (WeakWorld.IsValid())
-                {
-                    UGameplayStatics::OpenLevel(WeakWorld.Get(), TEXT("PlayLevel"));
-                }
-            }),
-            0.2f,
-            false
-        );
-    }
-    
-    // 위젯 제거
-    RemoveFromParent();
-}
-
 void UStartMenuWidget::BackToMainMenu()
 {
     // 타이머 모두 정리
@@ -207,8 +161,14 @@ void UStartMenuWidget::BackToMainMenu()
         World->GetTimerManager().ClearAllTimersForObject(this);
     }
 
-    // 위젯을 뷰포트에서 제거
-    RemoveFromParent();
+    if (StartMenuImage)
+    {
+        StartMenuImage->SetRenderOpacity(0.f);
+    }
+    if (SelectIndicator)
+    {
+        SelectIndicator->SetRenderOpacity(0.f);
+    }
 
     // 타이틀 메뉴 위젯 다시 표시
     if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
@@ -217,6 +177,7 @@ void UStartMenuWidget::BackToMainMenu()
         AFruitHUD* FruitHUD = Cast<AFruitHUD>(PC->GetHUD());
         if (FruitHUD && FruitHUD->GetMainMenuWidget()) {
             UMainMenuWidget* TitleWidget = FruitHUD->GetMainMenuWidget();
+            
             // 메뉴와 로고 다시 표시
             if (TitleWidget->MenuImage)
             {
@@ -228,8 +189,6 @@ void UStartMenuWidget::BackToMainMenu()
                 TitleWidget->LogoImage->SetVisibility(ESlateVisibility::Visible);
                 TitleWidget->LogoImage->SetRenderOpacity(1.0f);
             }
-            
-            // 타이틀 메뉴의 선택기도 다시 표시
             if (TitleWidget->SelectIndicator)
             {
                 TitleWidget->SelectIndicator->SetVisibility(ESlateVisibility::Visible);

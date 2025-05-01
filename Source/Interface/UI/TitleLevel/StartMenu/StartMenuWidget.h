@@ -31,7 +31,7 @@ public:
     
     // 게임 모드 관련 UI 요소
     UPROPERTY()
-    class UImage* MenuImage;
+    class UImage* StartMenuImage;
     
     UPROPERTY()
     class UImage* SelectIndicator = nullptr;
@@ -39,8 +39,6 @@ public:
     UPROPERTY()
     class UMenuIndicatorAnimator* IndicatorAnimator = nullptr;
 
-    // 메뉴 작업 함수
-    void StartGame(int32 GameMode = 0);
     void BackToMainMenu();
     
 protected:

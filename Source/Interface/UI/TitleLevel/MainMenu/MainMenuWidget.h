@@ -13,7 +13,7 @@ public:
     UMainMenuWidget(const FObjectInitializer& ObjectInitializer);
     
     // 위젯 초기화 함수
-    void InitializeTitleWidget();
+    void InitializeMainMenuWidget();
     
     void StartLogoAndMenuFadeIn();
 
@@ -36,7 +36,6 @@ public:
 
     UPROPERTY()
     class UMenuIndicatorAnimator* IndicatorAnimator = nullptr;
-
 protected:
     // 초기화
     void InitializeMenuManager();

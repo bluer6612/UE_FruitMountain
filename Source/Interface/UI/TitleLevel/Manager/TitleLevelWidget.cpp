@@ -89,17 +89,18 @@ void UTitleLevelWidget::PlayFadeOut()
         {
             WeakBorder->SetRenderOpacity(0.0f);
 
-            if (UWorld* World = WeakThis->GetWorld())
+            UWorld* World = WeakThis->GetWorld();
+            if (World)
             {
                 World->GetTimerManager().ClearTimer(*FadeHandle);
             }
 
-            UWorld* World = GetWorld();
-            if (World->GetMapName().Contains(TEXT("TitleLevel")))
+            // TitleLevel에서 페이드 아웃이 끝나면 StartLogoAndMenuFadeIn 호출
+            if (World->GetMapName().Contains(TEXT("TitleLevel")) && !bLogoFadeInCalled)
             {
-                // TitleLevel에서 페이드 아웃이 끝나면 StartLogoAndMenuFadeIn 호출
                 if (UMainMenuWidget* MainMenu = Cast<UMainMenuWidget>(WeakThis.Get()))
                 {
+                    bLogoFadeInCalled = true;
                     MainMenu->StartLogoAndMenuFadeIn();
                 }
             }
@@ -132,44 +133,34 @@ bool UTitleLevelWidget::HandleMenuKey(const FKey& Key, int32& InOutIndex, int32 
 
 void UTitleLevelWidget::StartGame()
 {
-    // 모든 주요 위젯 숨김 (자식에서 필요시 오버라이드 가능)
     if (FadeBorder)
     {
-        FadeBorder->SetVisibility(ESlateVisibility::Hidden);
-        FadeBorder->SetRenderOpacity(0.f);
-    }
-
-    // 타이머 모두 정리
-    if (UWorld* World = GetWorld())
-    {
-        World->GetTimerManager().ClearAllTimersForObject(this);
-    }
-
-    // 페이드 아웃 효과
-    if (FadeBorder)
-    {
+        // 페이드 아웃 등 효과 처리
         PlayFadeOut();
-    }
 
-    // 레벨 전환 예약
-    if (UWorld* World = GetWorld())
-    {
-        FTimerHandle GameStartHandle;
-        TWeakObjectPtr<UWorld> WeakWorld(World);
-        World->GetTimerManager().SetTimer(
-            GameStartHandle,
-            FTimerDelegate::CreateLambda([WeakWorld]()
-            {
-                if (WeakWorld.IsValid())
+        // 타이머로 레벨 전환 예약
+        if (UWorld* World = GetWorld())
+        {
+            FTimerHandle GameStartHandle;
+            TWeakObjectPtr<UTitleLevelWidget> WeakThis(this);
+            World->GetTimerManager().SetTimer(
+                GameStartHandle,
+                [WeakThis]()
                 {
-                    UGameplayStatics::OpenLevel(WeakWorld.Get(), TEXT("PlayLevel"));
-                }
-            }),
-            FadeOutDuration,
-            false
-        );
+                    if (WeakThis.IsValid())
+                    {
+                        UGameplayStatics::OpenLevel(WeakThis->GetWorld(), TEXT("PlayLevel"));
+                        // RemoveFromParent()는 여기서 호출
+                        WeakThis->RemoveFromParent();
+                    }
+                },
+                FadeOutDuration,
+                false
+            );
+        }
     }
-
-    // 위젯 제거
-    RemoveFromParent();
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("FadeBorder가 설정되지 않았습니다."));
+    }
 }

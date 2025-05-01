@@ -30,11 +30,14 @@ public:
 
     bool HandleMenuKey(const FKey& Key, int32& InOutIndex, int32 ItemCount, TFunction<void()> OnSelect);
     
+    UFUNCTION(BlueprintCallable)
+    void StartGame();
+    
     int CurrentMenuIndex = 0;
 
 protected:
     virtual void NativeConstruct() override;
     
-    UFUNCTION(BlueprintCallable)
-    virtual void StartGame();
+    /// 페이드 인 최초 호출 여부
+    bool bLogoFadeInCalled = false;
 };
