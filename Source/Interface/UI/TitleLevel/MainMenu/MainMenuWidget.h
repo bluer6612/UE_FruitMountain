@@ -36,9 +36,6 @@ public:
 
     UPROPERTY()
     class UMenuIndicatorAnimator* IndicatorAnimator = nullptr;
-    
-    // 게임 시작 함수 추가
-    void StartGame();
 
 protected:
     // 초기화

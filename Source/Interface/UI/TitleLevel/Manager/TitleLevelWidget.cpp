@@ -4,6 +4,7 @@
 #include "Components/Border.h"
 #include "Components/Image.h"
 #include "TimerManager.h"
+#include "Kismet/GameplayStatics.h"
 #include "Interface/UI/TitleLevel/MainMenu/MainMenuWidget.h"
 
 void UTitleLevelWidget::NativeConstruct()
@@ -127,4 +128,48 @@ bool UTitleLevelWidget::HandleMenuKey(const FKey& Key, int32& InOutIndex, int32 
         return true;
     }
     return false;
+}
+
+void UTitleLevelWidget::StartGame()
+{
+    // 모든 주요 위젯 숨김 (자식에서 필요시 오버라이드 가능)
+    if (FadeBorder)
+    {
+        FadeBorder->SetVisibility(ESlateVisibility::Hidden);
+        FadeBorder->SetRenderOpacity(0.f);
+    }
+
+    // 타이머 모두 정리
+    if (UWorld* World = GetWorld())
+    {
+        World->GetTimerManager().ClearAllTimersForObject(this);
+    }
+
+    // 페이드 아웃 효과
+    if (FadeBorder)
+    {
+        PlayFadeOut();
+    }
+
+    // 레벨 전환 예약
+    if (UWorld* World = GetWorld())
+    {
+        FTimerHandle GameStartHandle;
+        TWeakObjectPtr<UWorld> WeakWorld(World);
+        World->GetTimerManager().SetTimer(
+            GameStartHandle,
+            FTimerDelegate::CreateLambda([WeakWorld]()
+            {
+                if (WeakWorld.IsValid())
+                {
+                    UGameplayStatics::OpenLevel(WeakWorld.Get(), TEXT("PlayLevel"));
+                }
+            }),
+            FadeOutDuration,
+            false
+        );
+    }
+
+    // 위젯 제거
+    RemoveFromParent();
 }

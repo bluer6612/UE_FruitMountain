@@ -4,7 +4,6 @@
 #include "Components/Image.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Engine/Texture2D.h"
-#include "Kismet/GameplayStatics.h"
 
 UStartMenuManager::UStartMenuManager()
 {
@@ -100,8 +99,7 @@ void UStartMenuManager::SelectClassicMode()
     if (Owner && Owner->IndicatorAnimator)
     {
         Owner->IndicatorAnimator->EndAnimation();
-        OpenPlayLevel();
-        UE_LOG(LogTemp, Warning, TEXT("Classic Mode Selected"));
+        Owner->StartGame();
     }
 }
 
@@ -154,39 +152,4 @@ void UStartMenuManager::UpdateGameModeImage()
         Brush.SetResourceObject(LoadedTexture);
         Owner->MenuImage->SetBrush(Brush);
     }
-}
-
-void UStartMenuManager::OpenPlayLevel()
-{
-    if (!Owner)
-    {
-        return;
-    }
-
-    UWorld* World = Owner->GetWorld();
-    if (!World)
-    {
-        return;
-    }
-
-    // 페이드 아웃 시작
-    Owner->PlayFadeOut();
-
-    // 페이드 아웃이 끝나면 레벨 오픈
-    FTimerHandle FadeHandle;
-    TWeakObjectPtr<UStartMenuWidget> WeakOwner(Owner);
-
-    World->GetTimerManager().SetTimer(FadeHandle, [WeakOwner]()
-    {
-        if (!WeakOwner.IsValid())
-        {
-            return;
-        }
-
-        // 실제로 페이드 아웃이 끝났는지 FadeBorder의 Opacity로 체크(0.0f면 완료)
-        if (WeakOwner->FadeBorder && WeakOwner->FadeBorder->GetRenderOpacity() <= 0.01f)
-        {
-            UGameplayStatics::OpenLevel(WeakOwner->GetWorld(), TEXT("PlayLevel"));
-        }
-    }, 0.05f, false, WeakOwner->FadeOutDuration);
 }

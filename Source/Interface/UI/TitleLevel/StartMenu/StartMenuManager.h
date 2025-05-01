@@ -35,7 +35,6 @@ public:
     
 private:
     // 메뉴 동작 함수
-    void OpenPlayLevel();
     void SelectClassicMode();
     void SelectTimeLimitMode();
     void BackToMainMenu();

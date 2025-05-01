@@ -34,4 +34,7 @@ public:
 
 protected:
     virtual void NativeConstruct() override;
+    
+    UFUNCTION(BlueprintCallable)
+    virtual void StartGame();
 };

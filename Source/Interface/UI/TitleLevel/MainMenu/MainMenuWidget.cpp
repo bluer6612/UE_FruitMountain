@@ -5,7 +5,6 @@
 #include "Interface/UI/TitleLevel/Manager/MenuIndicatorAnimator.h"
 #include "Components/Image.h"
 #include "TimerManager.h"
-#include "Kismet/GameplayStatics.h"
 
 UMainMenuWidget::UMainMenuWidget(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -163,55 +162,4 @@ void UMainMenuWidget::NativeDestruct()
         World->GetTimerManager().ClearAllTimersForObject(this);
     }
     Super::NativeDestruct();
-}
-
-void UMainMenuWidget::StartGame()
-{
-    // 1. 모든 타이틀 위젯 숨김
-    if (LogoImage)
-    {
-        LogoImage->SetVisibility(ESlateVisibility::Hidden);
-        LogoImage->SetRenderOpacity(0.f);
-    }
-    if (MenuImage)
-    {
-        MenuImage->SetVisibility(ESlateVisibility::Hidden);
-        MenuImage->SetRenderOpacity(0.f);
-    }
-    if (SelectIndicator)
-    {
-        SelectIndicator->SetVisibility(ESlateVisibility::Hidden);
-        SelectIndicator->SetRenderOpacity(0.f);
-    }
-
-    // 2. 타이머 모두 정리
-    if (UWorld* World = GetWorld())
-    {
-        World->GetTimerManager().ClearAllTimersForObject(this);
-    }
-
-    // 3. 페이드 아웃 효과
-    if (FadeBorder)
-    {
-        UTitleLevelWidget::PlayFadeOut();
-    }
-
-    // 4. 레벨 전환 예약
-    if (UWorld* World = GetWorld())
-    {
-        FTimerHandle GameStartHandle;
-        TWeakObjectPtr<UWorld> WeakWorld(World);
-        World->GetTimerManager().SetTimer(
-            GameStartHandle,
-            FTimerDelegate::CreateLambda([WeakWorld]()
-            {
-                if (WeakWorld.IsValid())
-                {
-                    UGameplayStatics::OpenLevel(WeakWorld.Get(), TEXT("PlayLevel"));
-                }
-            }),
-            0.2f,
-            false
-        );
-    }
 }

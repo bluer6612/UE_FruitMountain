@@ -61,7 +61,7 @@ void UMainMenuManager::SelectCurrentMenu()
     switch (Owner->CurrentMenuIndex)
     {
         case 0: // 게임 시작
-            OpenStartMenu(); // OpenPlayLevel()에서 변경
+            OpenStartMenu();
             break;
             
         case 1: // 랭킹
