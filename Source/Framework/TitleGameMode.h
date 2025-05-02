@@ -13,6 +13,7 @@ public:
     ATitleGameMode();
 
     virtual void BeginPlay() override;
+    virtual void StartPlay() override;
 
 protected:
     UPROPERTY()
@@ -20,4 +21,8 @@ protected:
 
     UPROPERTY()
     class UMainMenuWidget* MainMenuWidget;
+
+    // Plate 관련 멤버 추가
+    UPROPERTY(EditDefaultsOnly, Category = "Game")
+    TSubclassOf<AActor> PlateClass;
 };

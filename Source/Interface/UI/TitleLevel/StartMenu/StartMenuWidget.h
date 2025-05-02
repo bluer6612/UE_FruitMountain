@@ -5,7 +5,6 @@
 #include "Interface/UI/TitleLevel/Manager/TitleLevelWidget.h"
 #include "StartMenuWidget.generated.h"
 
-
 class UImage;
 class UStartMenuManager;
 class UMainMenuWidget;
@@ -40,6 +39,13 @@ public:
     class UMenuIndicatorAnimator* IndicatorAnimator = nullptr;
 
     void BackToMainMenu();
+    
+    // MainMenuWidget 포인터 저장
+    UPROPERTY()
+    UMainMenuWidget* MainMenuWidget = nullptr;
+
+    // Setter 함수
+    void SetMainMenuWidget(UMainMenuWidget* InWidget) { MainMenuWidget = InWidget; }
     
 protected:
     // 초기화

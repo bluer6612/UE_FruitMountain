@@ -8,6 +8,7 @@
 
 class UImage;
 class UMainMenuManager;
+class UMainMenuWidget; // 전방 선언
 
 UCLASS()
 class UE_FRUITMOUNTAIN_API UTitleLevelWidget : public UUserWidget
@@ -35,6 +36,13 @@ public:
     // 게임 UI 요소
     UPROPERTY(meta = (BindWidget))
     UBorder* TitleFadeBorder;
+
+    // MainMenuWidget 포인터 저장
+    UPROPERTY()
+    UMainMenuWidget* MainMenuWidgetPtr = nullptr;
+
+    // Setter 함수
+    void SetMainMenuWidget(UMainMenuWidget* InWidget) { MainMenuWidgetPtr = InWidget; }
 
 protected:
     /// 페이드 인 최초 호출 여부

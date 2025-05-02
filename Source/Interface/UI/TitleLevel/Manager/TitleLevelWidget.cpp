@@ -7,7 +7,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "Interface/UI/TitleLevel/MainMenu/MainMenuWidget.h"
 
-
 void UTitleLevelWidget::PlayFadeIn(UImage* TargetImage, float Duration)
 {
     if (!TargetImage)
@@ -129,12 +128,13 @@ bool UTitleLevelWidget::HandleMenuKey(const FKey& Key, int32& InOutIndex, int32 
 
 void UTitleLevelWidget::StartGame()
 {
+    UE_LOG(LogTemp, Warning, TEXT("StartGame 진입: this=%p, TitleFadeBorder=%p, MainMenuWidgetPtr=%p"), this, TitleFadeBorder, MainMenuWidgetPtr);
+
     if (TitleFadeBorder)
     {
-        // 페이드 아웃 등 효과 처리
+        UE_LOG(LogTemp, Warning, TEXT("TitleFadeBorder 발견! 렌더 불투명도: %.1f"), TitleFadeBorder->GetRenderOpacity());
         PlayFadeOut();
 
-        // 타이머 코드는 유지
         if (UWorld* World = GetWorld())
         {
             FTimerHandle GameStartHandle;
@@ -146,7 +146,6 @@ void UTitleLevelWidget::StartGame()
                     if (WeakThis.IsValid())
                     {
                         UGameplayStatics::OpenLevel(WeakThis->GetWorld(), TEXT("PlayLevel"));
-                        // RemoveFromParent()는 여기서 호출
                         WeakThis->RemoveFromParent();
                     }
                 },
@@ -157,6 +156,17 @@ void UTitleLevelWidget::StartGame()
     }
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("TitleFadeBorder가 설정되지 않았다."));
+        UE_LOG(LogTemp, Error, TEXT("TitleFadeBorder가 nullptr입니다! 클래스: %s"), *GetClass()->GetName());
+    }
+
+    // MainMenuWidgetPtr 사용 예시
+    if (MainMenuWidgetPtr)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("MainMenuWidgetPtr 정상 접근! %p"), MainMenuWidgetPtr);
+        // MainMenuWidgetPtr->StartLogoAndMenuFadeIn(); // 필요시 호출
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("MainMenuWidgetPtr이 nullptr입니다!"));
     }
 }

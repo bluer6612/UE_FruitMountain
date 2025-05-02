@@ -1,7 +1,10 @@
 #include "TitleGameMode.h"
+#include "Kismet/GameplayStatics.h"
 #include "Interface/UI/TitleLevel/MainMenu/MainMenuWidget.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Interface/HUD/FruitHUD.h"
+#include "Actors/PlateActor.h"
+#include "Gameplay/Merging/Core/FruitMergeHelper.h"
 
 ATitleGameMode::ATitleGameMode()
 {
@@ -18,6 +21,9 @@ ATitleGameMode::ATitleGameMode()
     {
         UE_LOG(LogTemp, Error, TEXT("BP_MainMenuWidget 클래스를 찾을 수 없음!"));
     }
+
+    // Plate 기본 클래스 지정
+    PlateClass = APlateActor::StaticClass();
 }
 
 void ATitleGameMode::BeginPlay()
@@ -53,5 +59,45 @@ void ATitleGameMode::BeginPlay()
                 PC->SetIgnoreLookInput(true);
             }
         }
+    }
+
+    // 과일 메시 사전 로드
+    UFruitMergeHelper::PreloadAllFruitMeshes(GetWorld());
+}
+
+void ATitleGameMode::StartPlay()
+{
+    Super::StartPlay();
+
+    // Plate 액터가 있는지 확인, 없으면 생성
+    TArray<AActor*> PlateActors;
+    UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Plate"), PlateActors);
+    if (PlateActors.Num() == 0)
+    {
+        if (PlateClass)
+        {
+            FActorSpawnParameters SpawnParams;
+            SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+            FVector PlateLocation = FVector::ZeroVector;
+            FRotator PlateRotation = FRotator::ZeroRotator;
+            AActor* NewPlate = GetWorld()->SpawnActor<AActor>(PlateClass, PlateLocation, PlateRotation, SpawnParams);
+            if (NewPlate)
+            {
+                NewPlate->Tags.Add(FName("Plate"));
+                UE_LOG(LogTemp, Log, TEXT("접시 액터가 생성되었습니다."));
+            }
+            else
+            {
+                UE_LOG(LogTemp, Warning, TEXT("접시 액터 생성에 실패했습니다."));
+            }
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("PlateClass가 설정되어 있지 않습니다."));
+        }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Log, TEXT("이미 접시 액터가 존재합니다."));
     }
 }

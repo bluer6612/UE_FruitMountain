@@ -3,7 +3,6 @@
 #include "Logging/LogMacros.h"
 #include "System/Input/FruitInputMappingManager.h"
 #include "Gameplay/Controller/FruitPlayerController.h"
-#include "Actors/PlateActor.h"
 #include "Actors/PlayerPawn.h"
 #include "Actors/FruitBall.h"
 #include "Interface/HUD/FruitHUD.h"
@@ -26,9 +25,6 @@ APlayGameMode::APlayGameMode()
     // DefaultPawnClass 지정 (적절한 Pawn 클래스로 교체)
     DefaultPawnClass = APlayerPawn::StaticClass();
 
-    // Blueprint 없이 코드로 만든 PlateActor를 기본값으로 할당
-    PlateClass = APlateActor::StaticClass();
-    
     FruitBallClass = AFruitBall::StaticClass();
     
     UE_LOG(LogTemp, Log, TEXT("APlayGameMode 생성자 호출됨"));
@@ -44,9 +40,6 @@ void APlayGameMode::BeginPlay()
     UWorld* World = GetWorld();
     if (World && World->GetMapName().Contains(TEXT("PlayLevel")))
     {
-        // 게임 시작 시 모든 과일 메시 사전 로드
-        UFruitMergeHelper::PreloadAllFruitMeshes(GetWorld());
-        
         // 입력 매핑은 여기서 한 번만!
         UFruitInputMappingManager::ConfigureKeyMappings();
         
@@ -162,46 +155,6 @@ void APlayGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
     
     // 5. 배처 및 시스템 정리
     UFruitTrajectoryHelper::ResetTrajectorySystem();
-}
-
-void APlayGameMode::StartPlay()
-{
-    Super::StartPlay();
-
-    // 레벨에 "Plate" 태그가 부여된 액터가 있는지 확인
-    TArray<AActor*> PlateActors;
-    UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Plate"), PlateActors);
-    if (PlateActors.Num() == 0)
-    {
-        if (PlateClass)
-        {
-            FActorSpawnParameters SpawnParams;
-            SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-            // 접시 액터의 위치는 원하는 좌표로 수정 가능 (여기서는 원점 사용)
-            FVector PlateLocation = FVector::ZeroVector;
-            FRotator PlateRotation = FRotator::ZeroRotator;
-            AActor* NewPlate = GetWorld()->SpawnActor<AActor>(PlateClass, PlateLocation, PlateRotation, SpawnParams);
-            if (NewPlate)
-            {
-                // 스폰된 액터에 "Plate" 태그 추가
-                NewPlate->Tags.Add(FName("Plate"));
-                
-                UE_LOG(LogTemp, Log, TEXT("접시 액터가 생성되었습니다."));
-            }
-            else
-            {
-                UE_LOG(LogTemp, Warning, TEXT("접시 액터 생성에 실패했습니다."));
-            }
-        }
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("PlateClass가 설정되어 있지 않습니다."));
-        }
-    }
-    else
-    {
-        UE_LOG(LogTemp, Log, TEXT("이미 접시 액터가 존재합니다."));
-    }
 }
 
 void APlayGameMode::InitializeGameWidgets()

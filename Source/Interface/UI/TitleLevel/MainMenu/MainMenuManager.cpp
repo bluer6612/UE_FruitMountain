@@ -149,6 +149,17 @@ void UMainMenuManager::OpenStartMenu()
                 {
                     Owner->LogoImage->SetVisibility(ESlateVisibility::Hidden);
                 }
+
+                // StartMenuWidget과 MainMenuWidget 모두 생성된 후
+                if (StartMenu && Owner)
+                {
+                    StartMenu->SetMainMenuWidget(Owner);
+                    UE_LOG(LogTemp, Error, TEXT("StartMenu와 MainMenuWidget 모두 생성됨"));
+                }
+                else
+                {
+                    UE_LOG(LogTemp, Error, TEXT("StartMenu 또는 MainMenuWidget 생성 실패"));
+                }
             }
         }
     }

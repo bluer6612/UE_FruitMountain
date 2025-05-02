@@ -20,26 +20,17 @@ class UE_FRUITMOUNTAIN_API APlayGameMode : public AGameModeBase
 public:
     APlayGameMode();
 
-    // 기존 함수들
     virtual void BeginPlay() override;
-    virtual void StartPlay() override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-    
-    // 접시 클래스 지정 변수
-    UPROPERTY(EditDefaultsOnly, Category = "Game")
-    TSubclassOf<AActor> PlateClass;
-    
-    // 과일 볼 클래스 지정 변수
-    UPROPERTY(EditDefaultsOnly, Category = "Game")
-    TSubclassOf<AActor> FruitBallClass;
 
     UPROPERTY(BlueprintReadOnly, Category = "Game")
     class UScoreManagerComponent* ScoreManager;
 
-    // 클래스 선언부에 추가
     UFUNCTION()
     void OnGameStartSequenceFinished();
 
-    // 게임 UI 위젯 초기화 함수
     void InitializeGameWidgets();
+
+    UPROPERTY(EditDefaultsOnly, Category = "Game")
+    TSubclassOf<AActor> FruitBallClass;
 };

@@ -1,5 +1,6 @@
 #include "StartMenuManager.h"
 #include "StartMenuWidget.h"
+#include "Interface/UI/TitleLevel/MainMenu/MainMenuWidget.h"
 #include "Interface/UI/TitleLevel/Manager/MenuIndicatorAnimator.h"
 #include "Components/Image.h"
 #include "Components/CanvasPanelSlot.h"
@@ -99,7 +100,7 @@ void UStartMenuManager::SelectClassicMode()
     if (Owner && Owner->IndicatorAnimator)
     {
         Owner->IndicatorAnimator->EndAnimation();
-        Owner->StartGame();
+        Owner->MainMenuWidget->StartGame();
     }
 }
 
