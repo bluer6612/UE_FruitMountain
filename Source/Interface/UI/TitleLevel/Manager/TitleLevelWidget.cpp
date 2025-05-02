@@ -210,6 +210,8 @@ void UTitleLevelWidget::StartGame()
                     if (WeakThis.IsValid())
                     {
                         UGameplayStatics::OpenLevel(WeakThis->GetWorld(), TEXT("PlayLevel"));
+    
+                        WeakThis->RemoveFromParent();
                     }
                 },
                 FadeOutDuration,

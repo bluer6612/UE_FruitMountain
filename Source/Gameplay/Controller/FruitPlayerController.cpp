@@ -277,9 +277,6 @@ void AFruitPlayerController::RotateCamera(float Value)
     
     // 현재 시간을 마지막 업데이트 시간으로 기록
     LastCameraRotateTime = CurrentTime;
-    
-    // 디버그용 로그 (필요시)
-    // UE_LOG(LogTemp, Warning, TEXT("카메라 회전 실행: %f"), AccumulatedValue);
 }
 
 // 실제 업데이트 수행 함수 (무한 루프 방지 용으로 이중으로 거침)
