@@ -61,16 +61,14 @@ void UTitleLevelWidget::PlayFadeOut()
     TWeakObjectPtr<UTitleLevelWidget> WeakThis(this);
     TWeakObjectPtr<UBorder> WeakBorder(TitleFadeBorder);
 
-    FTimerHandle* FadeHandle = new FTimerHandle;
-    GetWorld()->GetTimerManager().SetTimer(*FadeHandle, [WeakThis, WeakBorder, FadeDuration, TickInterval, Elapsed, FadeHandle, this]()
+    GetWorld()->GetTimerManager().SetTimer(FadeOutTimerHandle, [WeakThis, WeakBorder, FadeDuration, TickInterval, Elapsed, this]()
     {
         if (!WeakThis.IsValid() || !WeakBorder.IsValid())
         {
             if (UWorld* World = WeakThis.IsValid() ? WeakThis->GetWorld() : nullptr)
             {
-                World->GetTimerManager().ClearTimer(*FadeHandle);
+                World->GetTimerManager().ClearTimer(FadeOutTimerHandle);
             }
-            delete FadeHandle;
             delete Elapsed;
             return;
         }
@@ -86,7 +84,7 @@ void UTitleLevelWidget::PlayFadeOut()
             UWorld* World = WeakThis->GetWorld();
             if (World)
             {
-                World->GetTimerManager().ClearTimer(*FadeHandle);
+                World->GetTimerManager().ClearTimer(FadeOutTimerHandle);
             }
 
             // TitleLevel에서 페이드 아웃이 끝나면 StartLogoAndMenuFadeIn 호출
@@ -99,7 +97,6 @@ void UTitleLevelWidget::PlayFadeOut()
                 }
             }
 
-            delete FadeHandle;
             delete Elapsed;
         }
     }, TickInterval, true);
@@ -177,8 +174,10 @@ bool UTitleLevelWidget::HandleMenuKey(const FKey& Key, int32& InOutIndex, int32 
 
 void UTitleLevelWidget::StartGame()
 {
-    // 1. 타이틀 용 미리보기 과일 제거
-    if (UWorld* World = GetWorld())
+    UWorld* World = GetWorld();
+
+    // 타이틀 용 미리보기 과일 제거
+    if (World)
     {
         TArray<AActor*> PreviewFruits;
         UGameplayStatics::GetAllActorsOfClass(World, AFruitBall::StaticClass(), PreviewFruits);
@@ -199,18 +198,29 @@ void UTitleLevelWidget::StartGame()
     {
         PlayFadeOut();
 
-        if (UWorld* World = GetWorld())
+        if (World)
         {
             FTimerHandle GameStartHandle;
             TWeakObjectPtr<UTitleLevelWidget> WeakThis(this);
             World->GetTimerManager().SetTimer(
                 GameStartHandle,
-                [WeakThis]()
+                [WeakThis, this]()
                 {
+                    if (!WeakThis.IsValid())
+                    {
+                        UE_LOG(LogTemp, Error, TEXT("WeakThis가 유효하지 않습니다! 클래스: "));
+                        return;
+                    }
                     if (WeakThis.IsValid())
                     {
+                        // 모든 타이머 해제 (자기 자신 및 주요 위젯)
+                        if (UWorld* World = WeakThis->GetWorld())
+                        {
+                            World->GetTimerManager().ClearTimer(WeakThis->FadeOutTimerHandle);
+                            World->GetTimerManager().ClearAllTimersForObject(this);
+                        }
+
                         UGameplayStatics::OpenLevel(WeakThis->GetWorld(), TEXT("PlayLevel"));
-    
                         WeakThis->RemoveFromParent();
                     }
                 },

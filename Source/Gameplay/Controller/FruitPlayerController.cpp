@@ -283,9 +283,9 @@ void AFruitPlayerController::RotateCamera(float Value)
 void AFruitPlayerController::ExecutePreviewBallUpdate()
 {
     UE_LOG(LogTemp, Warning, TEXT("ExecutePreviewBallUpdate() 진입, bIsGameOver=%d"), bIsGameOver ? 1 : 0);
-    if (bIsGameOver)
+    if (bIsGameOver || !IsValid(this) || !IsValid(GetWorld()))
     {
-        UE_LOG(LogTemp, Warning, TEXT("게임 오버 상태, 미리보기 공 업데이트 중단"));
+        UE_LOG(LogTemp, Warning, TEXT("게임 오버 또는 파괴된 컨트롤러/월드, 미리보기 공 업데이트 중단"));
         return;
     }
 
@@ -295,14 +295,14 @@ void AFruitPlayerController::ExecutePreviewBallUpdate()
     UFruitThrowHelper::UpdatePreviewBall(this, false);
     UE_LOG(LogTemp, Warning, TEXT("UFruitThrowHelper::UpdatePreviewBall 호출 완료"));
 
-    if (PreviewBall)
+    if (PreviewBall && IsValid(PreviewBall))
     {
         UE_LOG(LogTemp, Warning, TEXT("SetFruitRotation 호출, PreviewBall=%p"), PreviewBall);
         SetFruitRotation(PreviewBall);
     }
     else
     {
-        UE_LOG(LogTemp, Warning, TEXT("PreviewBall이 nullptr입니다."));
+        UE_LOG(LogTemp, Warning, TEXT("PreviewBall이 nullptr이거나 파괴됨"));
     }
     UE_LOG(LogTemp, Warning, TEXT("ExecutePreviewBallUpdate() 종료"));
 }
@@ -329,8 +329,9 @@ void AFruitPlayerController::UpdatePreviewBallWithDebounce()
 // 과일 회전 설정 함수 구현 - 항상 카메라 각도 고려
 void AFruitPlayerController::SetFruitRotation(AActor* Fruit)
 {
-    if (!Fruit)
+    if (!Fruit || !IsValid(Fruit))
     {
+        UE_LOG(LogTemp, Warning, TEXT("SetFruitRotation: Fruit가 nullptr이거나 파괴됨"));
         return;
     }
     
