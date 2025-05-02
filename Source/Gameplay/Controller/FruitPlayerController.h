@@ -95,4 +95,8 @@ private:
     float LastCameraRotateTime = 0.0f;  // 마지막으로 카메라 회전이 적용된 시간
     float CameraRotateInterval = 0.02f; // 카메라 회전 업데이트 간격 (초)
     float PendingCameraRotation = 0.0f; // 대기 중인 회전 값을 누적
+
+    // 접시 초기화 및 미리보기 공 설정 관련 변수 및 함수
+    FTimerHandle PlateSearchRetryHandle;
+    void TryInitPlateAndPreviewBall();
 };

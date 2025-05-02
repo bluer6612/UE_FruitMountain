@@ -165,7 +165,7 @@ void UFruitMergeHelper::SpawnPreviewFruitsOnPlate(UWorld* World)
 // 병합 이펙트 재생
 void UFruitMergeHelper::PlayMergeEffect(UWorld* World, const FVector& Location, int32 BallType)
 {
-    if (!World)
+    if (!World || !IsValid(World))
     {
         return;
     }
@@ -189,6 +189,11 @@ void UFruitMergeHelper::PlayMergeEffect(UWorld* World, const FVector& Location, 
     SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
     
     AActor* SpawnedEffect = World->SpawnActor<AActor>(MergeEffectClass, Location, FRotator::ZeroRotator, SpawnParams);
+    if (!IsValid(SpawnedEffect))
+    {
+        return;
+    }
+    
     if (SpawnedEffect)
     {
         // 과일 타입에 따라 이펙트 스케일 조정

@@ -41,59 +41,71 @@ void AFruitPlayerController::BeginPlay()
         UE_LOG(LogTemp, Warning, TEXT("GameMode의 FruitBallClass가 비어 있습니다."));
     }
 
-    // 타이머를 사용하여 약간의 지연 후 접시 액터 검색 (타이밍 문제 해결)
-    GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
-    {
-        // 접시 액터를 검색하여 회전 기준 위치로 사용
-        TArray<AActor*> PlateActors;
-        UE_LOG(LogTemp, Warning, TEXT("PlateActors 검색 시작"));
-        UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Plate"), PlateActors);
-        UE_LOG(LogTemp, Warning, TEXT("PlateActors 검색 완료, 개수: %d"), PlateActors.Num());
-        if (PlateActors.Num() > 0)
-        {
-            // 접시 경계 구하기 (중심점 정확히 계산)
-            FVector PlateOrigin;
-            FVector PlateExtent;
-            UE_LOG(LogTemp, Warning, TEXT("접시 경계 계산 시작"));
-            PlateActors[0]->GetActorBounds(false, PlateOrigin, PlateExtent);
-            UE_LOG(LogTemp, Warning, TEXT("접시 경계 계산 완료: Origin=%s, Extent=%s"), *PlateOrigin.ToString(), *PlateExtent.ToString());
-            PlateOrigin.Z += 10.0f; // 접시 표면 위로 약간 올림
+    TryInitPlateAndPreviewBall();
 
-            // 직접 중심점 설정 (오프셋 없이)
-            PlateLocation = PlateOrigin;
-
-            UE_LOG(LogTemp, Warning, TEXT("접시 액터를 찾았습니다: %s"), *PlateLocation.ToString());
-
-            // 카메라 위치 업데이트
-            UE_LOG(LogTemp, Warning, TEXT("카메라 위치 업데이트 시작"));
-            UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius);
-            UE_LOG(LogTemp, Warning, TEXT("카메라 위치 업데이트 완료"));
-        }
-        else
-        {
-            PlateLocation = FVector::ZeroVector;
-            UE_LOG(LogTemp, Warning, TEXT("접시 액터를 찾을 수 없습니다."));
-            return;
-        }
-        UE_LOG(LogTemp, Warning, TEXT("PlateActors 타이머 람다 끝"));
-    });
-
-    CurrentBallType = FMath::RandRange(1, AFruitBall::RandomBallTypeMax);
-    UE_LOG(LogTemp, Warning, TEXT("UpdatePreviewBallWithDebounce() 호출 직전: CurrentBallType=%d, FruitBallClass=%s, PlateLocation=%s, bIsGameOver=%d"),
-        CurrentBallType,
-        FruitBallClass ? *FruitBallClass->GetName() : TEXT("nullptr"),
-        *PlateLocation.ToString(),
-        bIsGameOver ? 1 : 0);
-    
-    UpdatePreviewBallWithDebounce();
-    
-    UE_LOG(LogTemp, Warning, TEXT("UpdatePreviewBallWithDebounce() 호출 완료"));
-    
     // 추가된 콘솔 명령 실행
     GetLocalPlayer()->ViewportClient->ConsoleCommand(TEXT("r.TranslucentSortPolicy 0"));
     GetLocalPlayer()->ViewportClient->ConsoleCommand(TEXT("r.AllowOcclusionQueries 0"));
     
     UE_LOG(LogTemp, Log, TEXT("AFruitPlayerController::BeginPlay 호출 완료됨"));
+}
+
+void AFruitPlayerController::TryInitPlateAndPreviewBall()
+{
+    // PlateActors 탐색 및 PlateLocation 설정
+    TArray<AActor*> PlateActors;
+    UE_LOG(LogTemp, Warning, TEXT("PlateActors 검색 시작"));
+    UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Plate"), PlateActors);
+    UE_LOG(LogTemp, Warning, TEXT("PlateActors 검색 완료, 개수: %d"), PlateActors.Num());
+    if (PlateActors.Num() > 0)
+    {
+        FVector PlateOrigin, PlateExtent;
+        UE_LOG(LogTemp, Warning, TEXT("접시 경계 계산 시작"));
+        PlateActors[0]->GetActorBounds(false, PlateOrigin, PlateExtent);
+        UE_LOG(LogTemp, Warning, TEXT("접시 경계 계산 완료: Origin=%s, Extent=%s"), *PlateOrigin.ToString(), *PlateExtent.ToString());
+        PlateOrigin.Z += 10.0f;
+        PlateLocation = PlateOrigin;
+        UE_LOG(LogTemp, Warning, TEXT("접시 액터를 찾았습니다: %s"), *PlateLocation.ToString());
+
+        // 카메라 위치 업데이트
+        UE_LOG(LogTemp, Warning, TEXT("카메라 위치 업데이트 시작"));
+        UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius);
+        UE_LOG(LogTemp, Warning, TEXT("카메라 위치 업데이트 완료"));
+
+        // PreviewBall 생성
+        CurrentBallType = FMath::RandRange(1, AFruitBall::RandomBallTypeMax);
+        UE_LOG(LogTemp, Warning, TEXT("UpdatePreviewBallWithDebounce() 호출 직전: CurrentBallType=%d, FruitBallClass=%s, PlateLocation=%s, bIsGameOver=%d"),
+            CurrentBallType,
+            FruitBallClass ? *FruitBallClass->GetName() : TEXT("nullptr"),
+            *PlateLocation.ToString(),
+            bIsGameOver ? 1 : 0);
+
+        UpdatePreviewBallWithDebounce();
+        UE_LOG(LogTemp, Warning, TEXT("UpdatePreviewBallWithDebounce() 호출 완료"));
+    }
+    else
+    {
+        PlateLocation = FVector::ZeroVector;
+        UE_LOG(LogTemp, Warning, TEXT("접시 액터를 찾을 수 없습니다. 0.2초 후 재시도"));
+        // 0.2초 후 재시도
+        TWeakObjectPtr<AFruitPlayerController> WeakThis(this);
+        GetWorld()->GetTimerManager().SetTimerForNextTick([WeakThis]()
+        {
+            if (!WeakThis.IsValid()) return;
+            UWorld* World = WeakThis->GetWorld();
+            if (!World) return;
+            World->GetTimerManager().SetTimer(
+                WeakThis->PlateSearchRetryHandle,
+                [WeakThis]()
+                {
+                    if (!WeakThis.IsValid()) return;
+                    WeakThis->TryInitPlateAndPreviewBall();
+                },
+                0.2f,
+                false
+            );
+        });
+    }
 }
 
 void AFruitPlayerController::SetupInputComponent()
@@ -334,18 +346,24 @@ void AFruitPlayerController::SetFruitRotation(AActor* Fruit)
         UE_LOG(LogTemp, Warning, TEXT("SetFruitRotation: Fruit가 nullptr이거나 파괴됨"));
         return;
     }
-    
+    USceneComponent* RootComp = Fruit->GetRootComponent();
+    if (!RootComp || !IsValid(RootComp))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("SetFruitRotation: Fruit의 RootComponent가 nullptr이거나 파괴됨"));
+        return;
+    }
+
     // 던지기 각도에 따른 피치 회전 계산
     float PitchAngle = ThrowAngle - 30.0f; // 30도라는 적절한 각도값 찾아 놓았음
     
     // 요(Yaw) 회전 - 항상 카메라가 바라보는 방향을 보도록 조정
     float YawAngle = CameraOrbitAngle - 180.0f;
-    
+
     // 360도 범위 내로 제한
     YawAngle = FMath::Fmod(YawAngle, 360.0f);
     if (YawAngle < 0.0f)
         YawAngle += 360.0f;
-    
+
     // 새로운 회전 설정
     FRotator NewRotation = FRotator(PitchAngle, YawAngle, 0.0f);
     Fruit->SetActorRotation(NewRotation);

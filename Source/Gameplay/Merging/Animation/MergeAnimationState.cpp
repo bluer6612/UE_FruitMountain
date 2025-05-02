@@ -80,6 +80,9 @@ void UMergeAnimationState::UpdateAnimation()
         return;
     }
     
+    // 타이머 람다 내
+    if (!IsValid(this) || !IsValid(NewFruit.Get())) return;
+    
     // 경과 시간 증가
     ElapsedTime += MergeAnimConstants::ANIMATION_UPDATE_INTERVAL;
     float Progress = FMath::Clamp(ElapsedTime / AnimDuration, 0.0f, 1.0f);
@@ -225,29 +228,25 @@ void UMergeAnimationState::SpawnNewMergingFruit()
 
 void UMergeAnimationState::UpdateFruitScale(float Progress)
 {
-    // 원본 과일 축소
     AFruitBall* Fruit1Ball = Fruit1.Get();
     AFruitBall* Fruit2Ball = Fruit2.Get();
     AFruitBall* NewBall = NewFruit.Get();
-    
-    if (Fruit1Ball)
+
+    if (Fruit1Ball && IsValid(Fruit1Ball))
     {
         float ShrinkScale = 1.0f - Progress * 0.95f;
         Fruit1Ball->SetActorScale3D(FVector(ShrinkScale * InitialScale1.X));
     }
     
-    if (Fruit2Ball)
+    if (Fruit2Ball && IsValid(Fruit2Ball))
     {
         float ShrinkScale = 1.0f - Progress * 0.95f;
         Fruit2Ball->SetActorScale3D(FVector(ShrinkScale * InitialScale2.X));
     }
     
-    if (NewBall)
+    if (NewBall && IsValid(NewBall))
     {
-        // 타입에 맞는 적절한 크기 계산 (FruitBall 클래스의 함수 활용)
         float TargetScale = AFruitBall::CalculateBallSize(NextBallType) / 100.0f; // UE 스케일로 변환
-        
-        // 작은 크기에서 목표 크기로 보간
         float GrowScale = 0.05f + Progress * (TargetScale - 0.05f);
         NewBall->SetActorScale3D(FVector(GrowScale));
     }
@@ -257,12 +256,13 @@ void UMergeAnimationState::DestroyOriginalFruits()
 {
     if (AFruitBall* Fruit1Ball = Fruit1.Get())
     {
-        Fruit1Ball->Destroy();
+        if (IsValid(Fruit1Ball))
+            Fruit1Ball->Destroy();
     }
-    
     if (AFruitBall* Fruit2Ball = Fruit2.Get())
     {
-        Fruit2Ball->Destroy();
+        if (IsValid(Fruit2Ball))
+            Fruit2Ball->Destroy();
     }
 }
 
