@@ -3,6 +3,9 @@
 #include "Kismet/GameplayStatics.h"
 #include "Engine/StaticMesh.h"
 #include "MergeController.h"
+#include "TimerManager.h"
+#include "Engine/World.h"
+#include "Math/UnrealMathUtility.h"
 
 void UFruitMergeHelper::RegisterCollisionHandlers(AFruitBall* Fruit)
 {
@@ -74,6 +77,87 @@ void UFruitMergeHelper::PreloadAllFruitMeshes(UWorld* World)
     }
     
     UE_LOG(LogTemp, Display, TEXT("게임 에셋 사전 로드 완료"));
+
+    // 미리보기 과일 스폰
+    SpawnPreviewFruitsOnPlate(World);
+}
+
+void UFruitMergeHelper::SpawnPreviewFruitsOnPlate(UWorld* World)
+{
+    if (!World) return;
+
+    // PlateActor 찾기
+    TArray<AActor*> Plates;
+    UGameplayStatics::GetAllActorsWithTag(World, FName("Plate"), Plates);
+    if (Plates.Num() == 0)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("SpawnPreviewFruitsOnPlate: PlateActor를 찾을 수 없습니다."));
+        return;
+    }
+    AActor* Plate = Plates[0];
+    FVector PlateLoc = Plate->GetActorLocation();
+
+    // 1~11까지 랜덤 순서 배열 생성
+    TArray<int32> BallTypes;
+    for (int32 i = 1; i <= 11; ++i)
+        BallTypes.Add(i);
+    for (int32 i = 0; i < BallTypes.Num(); ++i)
+    {
+        int32 SwapIdx = FMath::RandRange(i, BallTypes.Num() - 1);
+        BallTypes.Swap(i, SwapIdx);
+    }
+
+    // 타이머로 0.25초 간격으로 하나씩 스폰
+    struct FPreviewFruitSpawnData
+    {
+        UWorld* World;
+        FVector PlateLoc;
+        TArray<int32> BallTypes;
+        int32 Index;
+        FTimerHandle TimerHandle;
+    };
+    FPreviewFruitSpawnData* SpawnData = new FPreviewFruitSpawnData{ World, PlateLoc, BallTypes, 0 };
+
+    auto SpawnFunc = [SpawnData]()
+    {
+        if (!SpawnData->World || SpawnData->Index >= SpawnData->BallTypes.Num())
+        {
+            if (SpawnData->World)
+                SpawnData->World->GetTimerManager().ClearTimer(SpawnData->TimerHandle);
+            delete SpawnData;
+            return;
+        }
+
+        int32 BallType = SpawnData->BallTypes[SpawnData->Index];
+        FVector SpawnLoc = SpawnData->PlateLoc + FVector(0, 0, 600.f); // 하늘 위에서 떨어뜨림
+        FRotator SpawnRot = FRotator::ZeroRotator;
+
+        FActorSpawnParameters Params;
+        Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+        AFruitBall* Fruit = SpawnData->World->SpawnActor<AFruitBall>(AFruitBall::StaticClass(), SpawnLoc, SpawnRot, Params);
+        if (Fruit)
+        {
+            Fruit->SetBallType(BallType);
+            Fruit->bIsPreviewBall = true; // 미리보기임을 표시(충돌 등 방지)
+            Fruit->SetActorEnableCollision(false);
+            // 접시 중앙으로 자연스럽게 떨어지도록 중력만 적용
+        }
+
+        SpawnData->Index++;
+        if (SpawnData->Index >= SpawnData->BallTypes.Num())
+        {
+            if (SpawnData->World)
+                SpawnData->World->GetTimerManager().ClearTimer(SpawnData->TimerHandle);
+            delete SpawnData;
+        }
+    };
+
+    World->GetTimerManager().SetTimer(
+        SpawnData->TimerHandle,
+        FTimerDelegate::CreateLambda(SpawnFunc),
+        0.25f,
+        true
+    );
 }
 
 // 병합 이펙트 재생

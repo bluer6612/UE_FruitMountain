@@ -71,7 +71,7 @@ void AFruitPlayerController::BeginPlay()
         }
     });
 
-    CurrentBallType = FMath::RandRange(AFruitBall::RandomBallTypeMax, AFruitBall::RandomBallTypeMax);
+    CurrentBallType = FMath::RandRange(1, AFruitBall::RandomBallTypeMax);
     UpdatePreviewBallWithDebounce();
     
     // 추가된 콘솔 명령 실행
@@ -165,7 +165,7 @@ void AFruitPlayerController::ThrowFruit()
             EnableInput(this);
             
             // 새로운 미리보기 공 업데이트 (공 타입 바꾸기)
-            CurrentBallType = FMath::RandRange(AFruitBall::RandomBallTypeMax, AFruitBall::RandomBallTypeMax); // 다음에 던질 공 타입 랜덤 변경
+            CurrentBallType = FMath::RandRange(1, AFruitBall::RandomBallTypeMax); // 다음에 던질 공 타입 랜덤 변경
             UpdatePreviewBallWithDebounce();
         },
         BallThrowDelay,

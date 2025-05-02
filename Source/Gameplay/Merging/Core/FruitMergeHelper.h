@@ -25,4 +25,8 @@ public:
     // 병합 이펙트
     UFUNCTION(BlueprintCallable, Category = "Fruit Merging")
     static void PlayMergeEffect(UWorld* World, const FVector& Location, int32 BallType);
+
+    // 접시에 미리보기 과일 생성
+    UFUNCTION(BlueprintCallable, Category = "Fruit Merging")
+    static void SpawnPreviewFruitsOnPlate(UWorld* World);
 };

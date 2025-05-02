@@ -124,7 +124,8 @@ void UTitleLevelWidget::MenuFadeOut(UImage* TargetImage, float Duration)
     {
         if (!WeakImage.IsValid())
         {
-            World->GetTimerManager().ClearTimer(*FadeHandle);
+            if (IsValid(World))
+                World->GetTimerManager().ClearTimer(*FadeHandle);
             delete FadeHandle;
             delete Elapsed;
             return;
@@ -136,12 +137,9 @@ void UTitleLevelWidget::MenuFadeOut(UImage* TargetImage, float Duration)
         if (*Elapsed >= Duration)
         {
             WeakImage->SetRenderOpacity(0.0f);
-            World->GetTimerManager().ClearTimer(*FadeHandle);
-
-            // 안전하게 파괴
-            if (WeakImage.IsValid())
+            if (IsValid(World))
             {
-                WeakImage->RemoveFromParent();
+                World->GetTimerManager().ClearTimer(*FadeHandle);
             }
 
             delete FadeHandle;

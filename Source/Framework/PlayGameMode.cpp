@@ -67,6 +67,22 @@ void APlayGameMode::BeginPlay()
                 SequenceManager->StartSequence(this);
                 UE_LOG(LogTemp, Display, TEXT("게임 시작 시퀀스 시작"));
             }
+
+            // 3. 타이틀 용 과일 제거
+            TArray<AActor*> PreviewFruits;
+            UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFruitBall::StaticClass(), PreviewFruits);
+            int32 RemovedCount = 0;
+            for (AActor* FruitActor : PreviewFruits)
+            {
+                AFruitBall* Fruit = Cast<AFruitBall>(FruitActor);
+                if (Fruit && Fruit->bIsPreviewBall)
+                {
+                    Fruit->Destroy();
+                    ++RemovedCount;
+                }
+            }
+            UE_LOG(LogTemp, Display, TEXT("타이틀 미리보기 과일 %d개 제거 완료"), RemovedCount);
+
         }, 0.66f, false);
     }
 }
