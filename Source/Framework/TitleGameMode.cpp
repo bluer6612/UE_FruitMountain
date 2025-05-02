@@ -91,10 +91,13 @@ void ATitleGameMode::StartPlay()
                 APawn* Pawn = GetWorld()->GetFirstPlayerController() ? GetWorld()->GetFirstPlayerController()->GetPawn() : nullptr;
                 if (Pawn)
                 {
-                    float OrbitAngle = 30.0f;
-                    float OrbitRadius = 150.0f;
-                    UCameraOrbitFunctionLibrary::UpdateCameraOrbit(Pawn, NewPlate->GetActorLocation(), OrbitAngle, OrbitRadius);
-                    UE_LOG(LogTemp, Warning, TEXT("Pawn - 접시 위치: %s"), *NewPlate->GetActorLocation().ToString());
+                    FVector CamLoc = Pawn->GetActorLocation();
+                    CamLoc.X = -120.f;
+                    CamLoc.Y = -70.f;
+                    CamLoc.Z = 130.f;
+                    Pawn->SetActorLocation(CamLoc);
+
+                    UE_LOG(LogTemp, Warning, TEXT("Pawn - 접시 위치: %s, 카메라 위치: %s"), *NewPlate->GetActorLocation().ToString(), *CamLoc.ToString());
                 }
                 else
                 {
