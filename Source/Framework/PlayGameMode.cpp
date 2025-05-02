@@ -5,6 +5,7 @@
 #include "Gameplay/Controller/FruitPlayerController.h"
 #include "Actors/PlayerPawn.h"
 #include "Actors/FruitBall.h"
+#include "Actors/PlateActor.h"
 #include "Interface/HUD/FruitHUD.h"
 #include "Interface/UI/Core/UIWidgetRenderer.h"
 #include "Gameplay/Physics/FruitTrajectoryHelper.h"
@@ -26,6 +27,8 @@ APlayGameMode::APlayGameMode()
     DefaultPawnClass = APlayerPawn::StaticClass();
 
     FruitBallClass = AFruitBall::StaticClass();
+
+    PlateClass = APlateActor::StaticClass();
     
     UE_LOG(LogTemp, Log, TEXT("APlayGameMode 생성자 호출됨"));
 }
@@ -91,6 +94,41 @@ void APlayGameMode::OnGameStartSequenceFinished()
         // 여기서 명시적으로 이미지 설정
         FruitHUD->GetTextureWidget()->SetupPlayImages();
         UE_LOG(LogTemp, Display, TEXT("게임 UI 이미지 설정 완료"));
+    }
+}
+
+void APlayGameMode::StartPlay()
+{
+    Super::StartPlay();
+    // Plate 액터가 있는지 확인, 없으면 생성 (간단 방어 코드)
+    UWorld* World = GetWorld();
+    if (!World)
+    {
+        return;
+    }
+
+    TArray<AActor*> PlateActors;
+    UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Plate"), PlateActors);
+    if (PlateActors.Num() == 0 && PlateClass)
+    {
+        FActorSpawnParameters SpawnParams;
+        SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+        FVector PlateLocation = FVector::ZeroVector;
+        FRotator PlateRotation = FRotator::ZeroRotator;
+        AActor* NewPlate = GetWorld()->SpawnActor<AActor>(PlateClass, PlateLocation, PlateRotation, SpawnParams);
+        if (NewPlate)
+        {
+            NewPlate->Tags.Add(FName("Plate"));
+            UE_LOG(LogTemp, Log, TEXT("접시 액터가 생성되었습니다."));
+        }
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("접시 액터 생성에 실패했습니다."));
+        }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Log, TEXT("이미 접시 액터가 존재합니다."));
     }
 }
 

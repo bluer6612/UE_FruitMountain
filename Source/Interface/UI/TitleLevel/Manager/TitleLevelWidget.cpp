@@ -106,6 +106,58 @@ void UTitleLevelWidget::PlayFadeOut()
     }, TickInterval, true);
 }
 
+void UTitleLevelWidget::MenuFadeOut(UImage* TargetImage, float Duration)
+{
+    if (!TargetImage)
+    {
+        return;
+    }
+
+    const float TickInterval = 0.02f;
+    float* Elapsed = new float(0.f);
+    FTimerHandle* FadeHandle = new FTimerHandle;
+    TWeakObjectPtr<UImage> WeakImage(TargetImage);
+    UWorld* World = GetWorld();
+    if (!World) { delete FadeHandle; delete Elapsed; return; }
+
+    World->GetTimerManager().SetTimer(*FadeHandle, [WeakImage, Duration, TickInterval, Elapsed, FadeHandle, World]()
+    {
+        if (!WeakImage.IsValid())
+        {
+            World->GetTimerManager().ClearTimer(*FadeHandle);
+            delete FadeHandle;
+            delete Elapsed;
+            return;
+        }
+        *Elapsed += TickInterval;
+        float Alpha = 1.0f - FMath::Clamp(*Elapsed / Duration, 0.f, 1.f);
+        WeakImage->SetRenderOpacity(Alpha);
+
+        if (*Elapsed >= Duration)
+        {
+            WeakImage->SetRenderOpacity(0.0f);
+            World->GetTimerManager().ClearTimer(*FadeHandle);
+
+            // 안전하게 파괴
+            if (WeakImage.IsValid())
+            {
+                WeakImage->RemoveFromParent();
+            }
+
+            delete FadeHandle;
+            delete Elapsed;
+        }
+    }, TickInterval, true);
+}
+
+void UTitleLevelWidget::MenuFadeOutMultiple(const TArray<UImage*>& Images, float Duration)
+{
+    for (UImage* Img : Images)
+    {
+        MenuFadeOut(Img, Duration);
+    }
+}
+
 bool UTitleLevelWidget::HandleMenuKey(const FKey& Key, int32& InOutIndex, int32 ItemCount, TFunction<void()> OnSelect)
 {
     if (Key == EKeys::Up || Key == EKeys::W)
@@ -128,11 +180,8 @@ bool UTitleLevelWidget::HandleMenuKey(const FKey& Key, int32& InOutIndex, int32 
 
 void UTitleLevelWidget::StartGame()
 {
-    UE_LOG(LogTemp, Warning, TEXT("StartGame 진입: this=%p, TitleFadeBorder=%p, MainMenuWidgetPtr=%p"), this, TitleFadeBorder, MainMenuWidgetPtr);
-
     if (TitleFadeBorder)
     {
-        UE_LOG(LogTemp, Warning, TEXT("TitleFadeBorder 발견! 렌더 불투명도: %.1f"), TitleFadeBorder->GetRenderOpacity());
         PlayFadeOut();
 
         if (UWorld* World = GetWorld())
@@ -146,7 +195,6 @@ void UTitleLevelWidget::StartGame()
                     if (WeakThis.IsValid())
                     {
                         UGameplayStatics::OpenLevel(WeakThis->GetWorld(), TEXT("PlayLevel"));
-                        WeakThis->RemoveFromParent();
                     }
                 },
                 FadeOutDuration,
@@ -157,16 +205,5 @@ void UTitleLevelWidget::StartGame()
     else
     {
         UE_LOG(LogTemp, Error, TEXT("TitleFadeBorder가 nullptr입니다! 클래스: %s"), *GetClass()->GetName());
-    }
-
-    // MainMenuWidgetPtr 사용 예시
-    if (MainMenuWidgetPtr)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("MainMenuWidgetPtr 정상 접근! %p"), MainMenuWidgetPtr);
-        // MainMenuWidgetPtr->StartLogoAndMenuFadeIn(); // 필요시 호출
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("MainMenuWidgetPtr이 nullptr입니다!"));
     }
 }

@@ -100,6 +100,16 @@ void UStartMenuManager::SelectClassicMode()
     if (Owner && Owner->IndicatorAnimator)
     {
         Owner->IndicatorAnimator->EndAnimation();
+        
+        if (Owner->StartMenuImage)
+        {
+            Owner->MenuFadeOut(Owner->StartMenuImage, 0.25f);
+        }
+        if (Owner->SelectIndicator)
+        {
+            Owner->MenuFadeOut(Owner->SelectIndicator, 0.25f);
+        }
+        
         Owner->MainMenuWidget->StartGame();
     }
 }

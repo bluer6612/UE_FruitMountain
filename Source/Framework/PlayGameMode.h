@@ -21,6 +21,7 @@ public:
     APlayGameMode();
 
     virtual void BeginPlay() override;
+    virtual void StartPlay() override;
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
     UPROPERTY(BlueprintReadOnly, Category = "Game")
@@ -33,4 +34,7 @@ public:
 
     UPROPERTY(EditDefaultsOnly, Category = "Game")
     TSubclassOf<AActor> FruitBallClass;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Game")
+    TSubclassOf<AActor> PlateClass;
 };

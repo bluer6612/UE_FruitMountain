@@ -105,7 +105,7 @@ void UMainMenuManager::PlaySelectionAnimation()
     // 필요한 경우 소리 등의 추가 효과를 여기에 추가
 }
 
-// 새로 추가된 함수: 게임 모드 선택 메뉴 열기
+// 게임 모드 선택 메뉴 열기
 void UMainMenuManager::OpenStartMenu()
 {
     // UI 애니메이션 중지
@@ -140,25 +140,20 @@ void UMainMenuManager::OpenStartMenu()
                     PC->SetInputMode(InputMode);
                 }
                 
-                // 기존 타이틀 메뉴는 숨김
+                // 기존 타이틀 메뉴는 페이드아웃
                 if (Owner->MenuImage)
                 {
-                    Owner->MenuImage->SetVisibility(ESlateVisibility::Hidden);
+                    Owner->MenuFadeOut(Owner->MenuImage, 0.25f);
                 }
                 if (Owner->LogoImage)
                 {
-                    Owner->LogoImage->SetVisibility(ESlateVisibility::Hidden);
+                    Owner->MenuFadeOut(Owner->LogoImage, 0.25f);
                 }
 
                 // StartMenuWidget과 MainMenuWidget 모두 생성된 후
                 if (StartMenu && Owner)
                 {
                     StartMenu->SetMainMenuWidget(Owner);
-                    UE_LOG(LogTemp, Error, TEXT("StartMenu와 MainMenuWidget 모두 생성됨"));
-                }
-                else
-                {
-                    UE_LOG(LogTemp, Error, TEXT("StartMenu 또는 MainMenuWidget 생성 실패"));
                 }
             }
         }

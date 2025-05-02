@@ -18,13 +18,19 @@ class UE_FRUITMOUNTAIN_API UTitleLevelWidget : public UUserWidget
 public:
     // 페이드 효과 관련 변수
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Fade")
-    float FadeOutDuration = 0.25f;
+    float FadeOutDuration = 2.25f;
 
     UFUNCTION(BlueprintCallable)
     void PlayFadeIn(UImage* TargetImage, float Duration = 0.25f);
 
     UFUNCTION(BlueprintCallable)
     void PlayFadeOut();
+
+    UFUNCTION(BlueprintCallable)
+    void MenuFadeOut(UImage* TargetImage, float Duration = 0.25f);
+
+    // 여러 개를 동시에 페이드아웃
+    void MenuFadeOutMultiple(const TArray<UImage*>& Images, float Duration = 0.25f);
 
     bool HandleMenuKey(const FKey& Key, int32& InOutIndex, int32 ItemCount, TFunction<void()> OnSelect);
     
@@ -36,13 +42,6 @@ public:
     // 게임 UI 요소
     UPROPERTY(meta = (BindWidget))
     UBorder* TitleFadeBorder;
-
-    // MainMenuWidget 포인터 저장
-    UPROPERTY()
-    UMainMenuWidget* MainMenuWidgetPtr = nullptr;
-
-    // Setter 함수
-    void SetMainMenuWidget(UMainMenuWidget* InWidget) { MainMenuWidgetPtr = InWidget; }
 
 protected:
     /// 페이드 인 최초 호출 여부
