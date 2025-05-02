@@ -214,16 +214,11 @@ void UComboCountWidget::NativeConstruct()
 void UComboCountWidget::NativeDestruct()
 {
     Super::NativeDestruct();
-    
-    // 애니메이터 정리
     if (WidgetAnimator)
     {
         WidgetAnimator->CancelAnimation();
+        WidgetAnimator = nullptr;
     }
-    
-    // 인스턴스 참조 해제
     if (Instance == this)
-    {
         Instance = nullptr;
-    }
 }

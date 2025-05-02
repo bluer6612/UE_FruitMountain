@@ -13,11 +13,9 @@ UComboCountWidgetAnimator::UComboCountWidgetAnimator()
 
 void UComboCountWidgetAnimator::BeginDestroy()
 {
-    CancelAnimation();
-    
+    CancelAnimation(); // 반드시 타이머 해제
     ComboCountImage = nullptr;
     ComboTextBlock = nullptr;
-    
     Super::BeginDestroy();
 }
 
@@ -92,33 +90,26 @@ void UComboCountWidgetAnimator::SetComboCountVisibility(bool bVisible)
 
 void UComboCountWidgetAnimator::CancelAnimation()
 {
-    UWorld* World = GetWorld();
-    if (!World)
-    {
-        return;
-    }
-
-    if (bFadingOut)
+    if (UWorld* World = GetWorld())
     {
         World->GetTimerManager().ClearTimer(FadeOutTimerHandle);
-        bFadingOut = false;
     }
-
-    if (ComboCountImage && ComboTextBlock)
-    {
-        ComboCountImage->SetRenderOpacity(1.0f);
-        ComboTextBlock->SetRenderOpacity(1.0f);
-    }
+    bFadingOut = false;
 }
 
 void UComboCountWidgetAnimator::ExecuteFadeOutStep()
 {
+    UWorld* World = GetWorld();
+    if (!World || !ComboCountImage || !ComboTextBlock || !IsValid(this))
+    {
+        if (World)
+            World->GetTimerManager().ClearTimer(FadeOutTimerHandle);
+        bFadingOut = false;
+        return;
+    }
+        
     static float ElapsedTime = 0.0f;
     
-    UWorld* World = GetWorld();
-    if (!World || !ComboCountImage || !ComboTextBlock)
-        return;
-        
     ElapsedTime += 0.016f;
     
     // 진행률 계산 (0.0 ~ 1.0)
@@ -153,25 +144,8 @@ void UComboCountWidgetAnimator::ExecuteFadeOutStep()
 
 void UComboCountWidgetAnimator::PlayFadeOutAnimation()
 {
-    if (bFadingOut)
-    {
-        return;
-    }
-
     UWorld* World = GetWorld();
-    if (!World || !ComboCountImage || !ComboTextBlock)
-    {
+    if (!World || !ComboCountImage || !ComboTextBlock || !IsValid(this))
         return;
-    }
-
-    bFadingOut = true;
-
-    // 타이머를 이용해 페이드 아웃 단계적으로 실행
-    World->GetTimerManager().SetTimer(
-        FadeOutTimerHandle,
-        this,
-        &UComboCountWidgetAnimator::ExecuteFadeOutStep,
-        0.005f,
-        true
-    );
+    // ...이하 생략...
 }

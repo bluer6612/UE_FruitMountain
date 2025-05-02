@@ -126,7 +126,7 @@ void UFruitMergeHelper::SpawnPreviewFruitsOnPlate(UWorld* World)
         }
 
         int32 BallType = SpawnData->BallTypes[SpawnData->Index];
-        FVector SpawnLoc = SpawnData->PlateLoc + FVector(0, 0, 150.f); // 하늘 위에서 떨어뜨림
+        FVector SpawnLoc = SpawnData->PlateLoc + FVector(0, 0, 250.f); // 하늘 위에서 떨어뜨림
         FRotator SpawnRot = FRotator::ZeroRotator;
 
         FActorSpawnParameters Params;
@@ -137,6 +137,8 @@ void UFruitMergeHelper::SpawnPreviewFruitsOnPlate(UWorld* World)
             Fruit->SetBallType(BallType);
             Fruit->bIsPreviewBall = true;
             Fruit->SetActorEnableCollision(true);
+            Fruit->MeshComponent->SetLinearDamping(5.0f);
+            Fruit->MeshComponent->SetAngularDamping(5.0f);
             
             // 타입에 맞는 크기로 조절
             float BallSize = AFruitBall::CalculateBallSize(BallType); // cm 단위
