@@ -69,19 +69,22 @@ void APlayGameMode::BeginPlay()
             }
 
             // 3. 타이틀 용 과일 제거
-            TArray<AActor*> PreviewFruits;
-            UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFruitBall::StaticClass(), PreviewFruits);
-            int32 RemovedCount = 0;
-            for (AActor* FruitActor : PreviewFruits)
+            if (false)
             {
-                AFruitBall* Fruit = Cast<AFruitBall>(FruitActor);
-                if (Fruit && Fruit->bIsPreviewBall)
+                TArray<AActor*> PreviewFruits;
+                UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFruitBall::StaticClass(), PreviewFruits);
+                int32 RemovedCount = 0;
+                for (AActor* FruitActor : PreviewFruits)
                 {
-                    Fruit->Destroy();
-                    ++RemovedCount;
+                    AFruitBall* Fruit = Cast<AFruitBall>(FruitActor);
+                    if (Fruit && Fruit->bIsPreviewBall)
+                    {
+                        Fruit->Destroy();
+                        ++RemovedCount;
+                    }
                 }
+                UE_LOG(LogTemp, Display, TEXT("타이틀 미리보기 과일 %d개 제거 완료"), RemovedCount);
             }
-            UE_LOG(LogTemp, Display, TEXT("타이틀 미리보기 과일 %d개 제거 완료"), RemovedCount);
 
         }, 0.66f, false);
     }
@@ -116,7 +119,7 @@ void APlayGameMode::OnGameStartSequenceFinished()
 void APlayGameMode::StartPlay()
 {
     Super::StartPlay();
-    // Plate 액터가 있는지 확인, 없으면 생성 (간단 방어 코드)
+
     UWorld* World = GetWorld();
     if (!World)
     {
@@ -135,16 +138,16 @@ void APlayGameMode::StartPlay()
         if (NewPlate)
         {
             NewPlate->Tags.Add(FName("Plate"));
-            UE_LOG(LogTemp, Log, TEXT("접시 액터가 생성되었습니다."));
+            UE_LOG(LogTemp, Log, TEXT("APlayGameMode 접시 액터가 생성되었습니다."));
         }
         else
         {
-            UE_LOG(LogTemp, Warning, TEXT("접시 액터 생성에 실패했습니다."));
+            UE_LOG(LogTemp, Warning, TEXT("APlayGameMode 접시 액터 생성에 실패했습니다."));
         }
     }
     else
     {
-        UE_LOG(LogTemp, Log, TEXT("이미 접시 액터가 존재합니다."));
+        UE_LOG(LogTemp, Log, TEXT("APlayGameMode 이미 접시 액터가 존재합니다."));
     }
 }
 
@@ -152,7 +155,7 @@ void APlayGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     Super::EndPlay(EndPlayReason);
     
-    // 모든 UI 위젯 정리 (기존 코드를 확장)
+    // 모든 UI 위젯 정리
     
     // 1. ScoreDisplayWidget 정리 
     if (UScoreDisplayWidget::IsInstanceValid())

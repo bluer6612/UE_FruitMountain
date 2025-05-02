@@ -129,7 +129,7 @@ void UFruitMergeHelper::SpawnPreviewFruitsOnPlate(UWorld* World)
         }
 
         int32 BallType = SpawnData->BallTypes[SpawnData->Index];
-        FVector SpawnLoc = SpawnData->PlateLoc + FVector(0, 0, 600.f); // 하늘 위에서 떨어뜨림
+        FVector SpawnLoc = SpawnData->PlateLoc + FVector(0, 0, 300.f); // 하늘 위에서 떨어뜨림
         FRotator SpawnRot = FRotator::ZeroRotator;
 
         FActorSpawnParameters Params;

@@ -44,7 +44,7 @@ AMergeController* AMergeController::Get(const UObject* WorldContextObject)
         return nullptr;
     }
     
-    // 인스턴스를 찾지 못했으면 새로 생성하는 코드 추가
+    // 인스턴스를 찾지 못했으면 새로 생성
     FActorSpawnParameters SpawnParams;
     SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
     Instance = World->SpawnActor<AMergeController>(AMergeController::StaticClass(), 

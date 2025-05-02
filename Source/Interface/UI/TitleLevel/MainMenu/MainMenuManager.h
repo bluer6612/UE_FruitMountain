@@ -35,7 +35,7 @@ public:
     
 private:
     // 메뉴 동작 함수
-    void OpenStartMenu(); // 새로 추가: 게임 모드 선택 메뉴 열기
+    void OpenStartMenu();
     void OpenRankingMenu();
     void OpenOptionsMenu();
     void OpenCreditScreen();

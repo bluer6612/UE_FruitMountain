@@ -65,7 +65,6 @@ void UStartMenuWidget::InitializeStartMenu()
         FVector2D(1526.f, 828.f),
         0.f, 0.f);
         
-    // nullptr 체크 추가
     if (StartMenuImage)
     {
         StartMenuImage->SetRenderOpacity(0.f);

@@ -5,6 +5,7 @@
 #include "Interface/HUD/FruitHUD.h"
 #include "Actors/PlateActor.h"
 #include "Gameplay/Merging/Core/FruitMergeHelper.h"
+#include "System/Camera/CameraOrbitFunctionLibrary.h"
 
 ATitleGameMode::ATitleGameMode()
 {
@@ -84,20 +85,34 @@ void ATitleGameMode::StartPlay()
             if (NewPlate)
             {
                 NewPlate->Tags.Add(FName("Plate"));
-                UE_LOG(LogTemp, Log, TEXT("접시 액터가 생성되었습니다."));
+                UE_LOG(LogTemp, Log, TEXT("ATitleGameMode 접시 액터가 생성되었습니다."));
+
+                // --- 카메라 오빗 위치 조정: 접시가 화면 오른쪽에 보이도록 ---
+                APawn* Pawn = GetWorld()->GetFirstPlayerController() ? GetWorld()->GetFirstPlayerController()->GetPawn() : nullptr;
+                if (Pawn)
+                {
+                    float OrbitAngle = 30.0f;
+                    float OrbitRadius = 150.0f;
+                    UCameraOrbitFunctionLibrary::UpdateCameraOrbit(Pawn, NewPlate->GetActorLocation(), OrbitAngle, OrbitRadius);
+                    UE_LOG(LogTemp, Warning, TEXT("Pawn - 접시 위치: %s"), *NewPlate->GetActorLocation().ToString());
+                }
+                else
+                {
+                    UE_LOG(LogTemp, Warning, TEXT("Pawn을 찾을 수 없습니다."));
+                }
             }
             else
             {
-                UE_LOG(LogTemp, Warning, TEXT("접시 액터 생성에 실패했습니다."));
+                UE_LOG(LogTemp, Warning, TEXT("ATitleGameMode 접시 액터 생성에 실패했습니다."));
             }
         }
         else
         {
-            UE_LOG(LogTemp, Warning, TEXT("PlateClass가 설정되어 있지 않습니다."));
+            UE_LOG(LogTemp, Warning, TEXT("ATitleGameMode PlateClass가 설정되어 있지 않습니다."));
         }
     }
     else
     {
-        UE_LOG(LogTemp, Log, TEXT("이미 접시 액터가 존재합니다."));
+        UE_LOG(LogTemp, Log, TEXT("ATitleGameMode 이미 접시 액터가 존재합니다."));
     }
 }

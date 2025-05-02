@@ -26,7 +26,6 @@ public:
     static void ClearInstance();
     static bool IsInstanceValid();
     
-    // 애니메이터 접근 함수 추가
     UComboCountWidgetAnimator* GetAnimator() const { return WidgetAnimator; }
     
 private:

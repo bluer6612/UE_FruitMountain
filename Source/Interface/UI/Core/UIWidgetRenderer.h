@@ -40,7 +40,6 @@ public:
     UFUNCTION(BlueprintCallable, Category = "UI TextureDisplay")
     static bool IsInstanceValid();
     
-    // Instance에 접근할 수 있는 getter 추가
     UFUNCTION(BlueprintCallable, Category = "UI TextureDisplay")
     static UUIWidgetRenderer* GetInstance()
     {
@@ -106,7 +105,6 @@ private:
     UPROPERTY()
     UImage* UI_Play_NextFruit;
 
-    // 멤버 변수도 추가
     UPROPERTY()
     UImage* UI_Title_Logo;
 

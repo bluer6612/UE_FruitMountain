@@ -2,8 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "Components/TextBlock.h"  // 추가: TextBlock 헤더
-#include "ScoreWidgetAnimator.h"   // 추가: 애니메이터 클래스 헤더
+#include "Components/TextBlock.h"
+#include "ScoreWidgetAnimator.h"
 #include "ScoreDisplayWidget.generated.h"
 
 UCLASS()
