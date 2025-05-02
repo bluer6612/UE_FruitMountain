@@ -46,22 +46,28 @@ void AFruitPlayerController::BeginPlay()
     {
         // 접시 액터를 검색하여 회전 기준 위치로 사용
         TArray<AActor*> PlateActors;
+        UE_LOG(LogTemp, Warning, TEXT("PlateActors 검색 시작"));
         UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("Plate"), PlateActors);
+        UE_LOG(LogTemp, Warning, TEXT("PlateActors 검색 완료, 개수: %d"), PlateActors.Num());
         if (PlateActors.Num() > 0)
         {
             // 접시 경계 구하기 (중심점 정확히 계산)
             FVector PlateOrigin;
             FVector PlateExtent;
+            UE_LOG(LogTemp, Warning, TEXT("접시 경계 계산 시작"));
             PlateActors[0]->GetActorBounds(false, PlateOrigin, PlateExtent);
+            UE_LOG(LogTemp, Warning, TEXT("접시 경계 계산 완료: Origin=%s, Extent=%s"), *PlateOrigin.ToString(), *PlateExtent.ToString());
             PlateOrigin.Z += 10.0f; // 접시 표면 위로 약간 올림
-            
+
             // 직접 중심점 설정 (오프셋 없이)
             PlateLocation = PlateOrigin;
-            
+
             UE_LOG(LogTemp, Warning, TEXT("접시 액터를 찾았습니다: %s"), *PlateLocation.ToString());
-            
+
             // 카메라 위치 업데이트
+            UE_LOG(LogTemp, Warning, TEXT("카메라 위치 업데이트 시작"));
             UCameraOrbitFunctionLibrary::UpdateCameraOrbit(GetPawn(), PlateLocation, CameraOrbitAngle, CameraOrbitRadius);
+            UE_LOG(LogTemp, Warning, TEXT("카메라 위치 업데이트 완료"));
         }
         else
         {
@@ -69,10 +75,19 @@ void AFruitPlayerController::BeginPlay()
             UE_LOG(LogTemp, Warning, TEXT("접시 액터를 찾을 수 없습니다."));
             return;
         }
+        UE_LOG(LogTemp, Warning, TEXT("PlateActors 타이머 람다 끝"));
     });
 
     CurrentBallType = FMath::RandRange(1, AFruitBall::RandomBallTypeMax);
+    UE_LOG(LogTemp, Warning, TEXT("UpdatePreviewBallWithDebounce() 호출 직전: CurrentBallType=%d, FruitBallClass=%s, PlateLocation=%s, bIsGameOver=%d"),
+        CurrentBallType,
+        FruitBallClass ? *FruitBallClass->GetName() : TEXT("nullptr"),
+        *PlateLocation.ToString(),
+        bIsGameOver ? 1 : 0);
+    
     UpdatePreviewBallWithDebounce();
+    
+    UE_LOG(LogTemp, Warning, TEXT("UpdatePreviewBallWithDebounce() 호출 완료"));
     
     // 추가된 콘솔 명령 실행
     GetLocalPlayer()->ViewportClient->ConsoleCommand(TEXT("r.TranslucentSortPolicy 0"));
@@ -270,41 +285,48 @@ void AFruitPlayerController::RotateCamera(float Value)
 // 실제 업데이트 수행 함수 (무한 루프 방지 용으로 이중으로 거침)
 void AFruitPlayerController::ExecutePreviewBallUpdate()
 {
-    // 게임 오버 상태면 취소
+    UE_LOG(LogTemp, Warning, TEXT("ExecutePreviewBallUpdate() 진입, bIsGameOver=%d"), bIsGameOver ? 1 : 0);
     if (bIsGameOver)
     {
+        UE_LOG(LogTemp, Warning, TEXT("게임 오버 상태, 미리보기 공 업데이트 중단"));
         return;
     }
-    
+
     bPreviewBallUpdatePending = false;
-    
-    // 공 위치 업데이트 (회전은 별도 처리)
+
+    UE_LOG(LogTemp, Warning, TEXT("UFruitThrowHelper::UpdatePreviewBall 호출 직전, this=%p"), this);
     UFruitThrowHelper::UpdatePreviewBall(this, false);
-    
-    // 과일 각도 업데이트
+    UE_LOG(LogTemp, Warning, TEXT("UFruitThrowHelper::UpdatePreviewBall 호출 완료"));
+
     if (PreviewBall)
     {
+        UE_LOG(LogTemp, Warning, TEXT("SetFruitRotation 호출, PreviewBall=%p"), PreviewBall);
         SetFruitRotation(PreviewBall);
     }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("PreviewBall이 nullptr입니다."));
+    }
+    UE_LOG(LogTemp, Warning, TEXT("ExecutePreviewBallUpdate() 종료"));
 }
 
 // 미리보기 공 업데이트 함수 - 연속 호출 방지 (디바운싱) 처리
 void AFruitPlayerController::UpdatePreviewBallWithDebounce()
 {
-    // 이미 업데이트가 예약되어 있으면 중복 실행하지 않음
+    UE_LOG(LogTemp, Warning, TEXT("UpdatePreviewBallWithDebounce() 진입, bPreviewBallUpdatePending=%d"), bPreviewBallUpdatePending ? 1 : 0);
     if (!bPreviewBallUpdatePending)
     {
         bPreviewBallUpdatePending = true;
-        
-        // 타이머 설정: 일정 시간 후에만 업데이트 실행
+        UE_LOG(LogTemp, Warning, TEXT("PreviewBallUpdate 타이머 설정"));
         GetWorld()->GetTimerManager().SetTimer(
             PreviewBallUpdateTimerHandle,
             this,
             &AFruitPlayerController::ExecutePreviewBallUpdate,
             PreviewBallUpdateDelay,
-            false // 반복 실행 안 함
+            false
         );
     }
+    UE_LOG(LogTemp, Warning, TEXT("UpdatePreviewBallWithDebounce() 종료"));
 }
 
 // 과일 회전 설정 함수 구현 - 항상 카메라 각도 고려

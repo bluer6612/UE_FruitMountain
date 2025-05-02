@@ -77,9 +77,6 @@ void UFruitMergeHelper::PreloadAllFruitMeshes(UWorld* World)
     }
     
     UE_LOG(LogTemp, Display, TEXT("게임 에셋 사전 로드 완료"));
-
-    // 미리보기 과일 스폰
-    SpawnPreviewFruitsOnPlate(World);
 }
 
 void UFruitMergeHelper::SpawnPreviewFruitsOnPlate(UWorld* World)
@@ -97,9 +94,9 @@ void UFruitMergeHelper::SpawnPreviewFruitsOnPlate(UWorld* World)
     AActor* Plate = Plates[0];
     FVector PlateLoc = Plate->GetActorLocation();
 
-    // 1~11까지 랜덤 순서 배열 생성
+    // 1~10까지 랜덤 순서 배열 생성
     TArray<int32> BallTypes;
-    for (int32 i = 1; i <= 11; ++i)
+    for (int32 i = 1; i <= 10; ++i)
         BallTypes.Add(i);
     for (int32 i = 0; i < BallTypes.Num(); ++i)
     {
@@ -129,7 +126,7 @@ void UFruitMergeHelper::SpawnPreviewFruitsOnPlate(UWorld* World)
         }
 
         int32 BallType = SpawnData->BallTypes[SpawnData->Index];
-        FVector SpawnLoc = SpawnData->PlateLoc + FVector(0, 0, 300.f); // 하늘 위에서 떨어뜨림
+        FVector SpawnLoc = SpawnData->PlateLoc + FVector(0, 0, 150.f); // 하늘 위에서 떨어뜨림
         FRotator SpawnRot = FRotator::ZeroRotator;
 
         FActorSpawnParameters Params;
@@ -138,9 +135,14 @@ void UFruitMergeHelper::SpawnPreviewFruitsOnPlate(UWorld* World)
         if (Fruit)
         {
             Fruit->SetBallType(BallType);
-            Fruit->bIsPreviewBall = true; // 미리보기임을 표시(충돌 등 방지)
-            Fruit->SetActorEnableCollision(false);
-            // 접시 중앙으로 자연스럽게 떨어지도록 중력만 적용
+            Fruit->bIsPreviewBall = true;
+            Fruit->SetActorEnableCollision(true);
+            
+            // 타입에 맞는 크기로 조절
+            float BallSize = AFruitBall::CalculateBallSize(BallType); // cm 단위
+            float PreviewScale = BallSize / 100.f; // 1m = 100cm, 원하는 월드 스케일에 맞게 조정
+            Fruit->SetActorScale3D(FVector(PreviewScale));
+        
         }
 
         SpawnData->Index++;
@@ -155,7 +157,7 @@ void UFruitMergeHelper::SpawnPreviewFruitsOnPlate(UWorld* World)
     World->GetTimerManager().SetTimer(
         SpawnData->TimerHandle,
         FTimerDelegate::CreateLambda(SpawnFunc),
-        0.25f,
+        0.4f,
         true
     );
 }

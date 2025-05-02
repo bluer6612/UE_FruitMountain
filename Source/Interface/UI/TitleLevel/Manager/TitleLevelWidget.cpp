@@ -1,11 +1,10 @@
-// TitleLevelWidget.cpp
-
 #include "TitleLevelWidget.h"
 #include "Components/Border.h"
 #include "Components/Image.h"
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Interface/UI/TitleLevel/MainMenu/MainMenuWidget.h"
+#include "Actors/FruitBall.h"
 
 void UTitleLevelWidget::PlayFadeIn(UImage* TargetImage, float Duration)
 {
@@ -178,6 +177,24 @@ bool UTitleLevelWidget::HandleMenuKey(const FKey& Key, int32& InOutIndex, int32 
 
 void UTitleLevelWidget::StartGame()
 {
+    // 1. 타이틀 용 미리보기 과일 제거
+    if (UWorld* World = GetWorld())
+    {
+        TArray<AActor*> PreviewFruits;
+        UGameplayStatics::GetAllActorsOfClass(World, AFruitBall::StaticClass(), PreviewFruits);
+        int32 RemovedCount = 0;
+        for (AActor* FruitActor : PreviewFruits)
+        {
+            AFruitBall* Fruit = Cast<AFruitBall>(FruitActor);
+            if (Fruit && Fruit->bIsPreviewBall)
+            {
+                Fruit->Destroy();
+                ++RemovedCount;
+            }
+        }
+        UE_LOG(LogTemp, Display, TEXT("타이틀 미리보기 과일 %d개 제거 완료"), RemovedCount);
+    }
+
     if (TitleFadeBorder)
     {
         PlayFadeOut();

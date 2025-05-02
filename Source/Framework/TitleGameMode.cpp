@@ -103,6 +103,9 @@ void ATitleGameMode::StartPlay()
                 {
                     UE_LOG(LogTemp, Warning, TEXT("Pawn을 찾을 수 없습니다."));
                 }
+                
+                // Plate 생성 후 미리보기 과일 스폰
+                UFruitMergeHelper::SpawnPreviewFruitsOnPlate(GetWorld());
             }
             else
             {
